@@ -19,6 +19,7 @@ type DirectusResp = { data: NewsItem[] };
 
 // Dernières news (3)
 const fields = "id,status,title,slug,excerpt,cover,published_at,date_created";
+
 let latestNews: NewsItem[] = [];
 try {
   const resp = await directusGet<DirectusResp>(
@@ -39,6 +40,7 @@ const fmtDate = (iso?: string | null) => {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
+
   return d.toLocaleDateString("en-US", {
     day: "2-digit",
     month: "long",
@@ -46,17 +48,20 @@ const fmtDate = (iso?: string | null) => {
   });
 };
 ---
+
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
   <!-- BIG NOW PLAYING HERO -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
     <!-- Background glow -->
     <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
     <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+
     <div class="relative z-10">
       <div class="flex items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
         Now Playing
       </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
         <!-- LEFT: Cover + Text -->
         <div class="lg:col-span-2 min-w-0">
@@ -71,10 +76,12 @@ const fmtDate = (iso?: string | null) => {
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
               </div>
             </div>
+
             <!-- Text -->
             <div class="min-w-0">
               <div id="homeArtist" class="text-2xl md:text-4xl font-extrabold leading-tight truncate">—</div>
               <div id="homeTitle" class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
+
               <div class="mt-4 flex gap-3 flex-wrap md:flex-nowrap">
                 <button
                   id="jumpToPlayer"
@@ -86,6 +93,7 @@ const fmtDate = (iso?: string | null) => {
                 >
                   Open player ↓
                 </button>
+
                 <a
                   href="/music"
                   class="border border-white/20 px-5 py-2.5 rounded-xl
@@ -93,6 +101,7 @@ const fmtDate = (iso?: string | null) => {
                 >
                   Vote & charts
                 </a>
+
                 <a
                   href="/programs"
                   class="border border-white/20 px-5 py-2.5 rounded-xl
@@ -101,22 +110,26 @@ const fmtDate = (iso?: string | null) => {
                   Programs
                 </a>
               </div>
+
               <div class="mt-3 text-sm text-white/50">
                 The player stays pinned at the bottom of the screen.
               </div>
             </div>
           </div>
         </div>
+
         <!-- RIGHT: Weekly minimal block (with #1) -->
         <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
           <div class="text-sm text-white/50 uppercase tracking-wider mb-3">
             This week
           </div>
+
           <div class="space-y-3">
             <div class="flex items-center justify-between border-b border-white/5 pb-3">
               <div class="text-white/70 text-sm">Top voted tracks</div>
               <a class="text-cyan-300 hover:text-cyan-200 text-sm" href="/music">See →</a>
             </div>
+
             <!-- #1 dynamic -->
             <div id="heroTop1" class="rounded-2xl border border-white/10 bg-white/5 p-3 hidden">
               <div class="flex items-center gap-3">
@@ -129,6 +142,7 @@ const fmtDate = (iso?: string | null) => {
                     <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
                   </div>
                 </div>
+
                 <div class="min-w-0 flex-1">
                   <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
                   <div id="heroTop1Artist" class="font-semibold text-sm truncate">—</div>
@@ -136,12 +150,15 @@ const fmtDate = (iso?: string | null) => {
                 </div>
               </div>
             </div>
+
             <div id="heroTop1Empty" class="text-white/60 text-sm hidden">
               No votes yet — be the first 🙂
             </div>
+
             <div class="text-white/70 text-sm">
               Vote on tracks you love and shape the weekly chart.
             </div>
+
             <a
               href="/music"
               class="inline-flex items-center justify-center w-full
@@ -168,6 +185,7 @@ const fmtDate = (iso?: string | null) => {
         Full history →
       </a>
     </div>
+
     <!-- horizontal carousel -->
     <div
       id="homeLastCarousel"
@@ -175,6 +193,7 @@ const fmtDate = (iso?: string | null) => {
              snap-x snap-mandatory
              [-ms-overflow-style:none] [scrollbar-width:none]"
     ></div>
+
     <style is:inline>
       #homeLastCarousel::-webkit-scrollbar{ display:none; }
     </style>
@@ -201,6 +220,7 @@ const fmtDate = (iso?: string | null) => {
         All news →
       </a>
     </div>
+
     {latestNews?.length ? (
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         {latestNews.map((post) => {
@@ -221,7 +241,9 @@ const fmtDate = (iso?: string | null) => {
                     decoding="async"
                   />
                 ) : null}
+
                 <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
+
                 <div class="absolute left-4 bottom-3 right-4 flex items-end justify-between gap-3">
                   <div class="min-w-0">
                     <div class="text-[11px] text-white/65 uppercase tracking-wider">
@@ -236,6 +258,7 @@ const fmtDate = (iso?: string | null) => {
                   </div>
                 </div>
               </div>
+
               <div class="p-4">
                 <p class="text-white/70 text-sm leading-relaxed line-clamp-2">
                   {post.excerpt ?? ""}
@@ -250,6 +273,7 @@ const fmtDate = (iso?: string | null) => {
         No news yet — check back soon.
       </div>
     )}
+
     <style is:inline>
       .line-clamp-2{
         display:-webkit-box;
@@ -271,11 +295,12 @@ const fmtDate = (iso?: string | null) => {
         Vote & charts →
       </a>
     </div>
+
     <div class="border-t border-white/10 p-4">
       <div id="topWeekGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
           <article
-            class="abfCover rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
+            class="rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
             data-topweek-card
           >
             <div class="p-3 flex items-center gap-3">
@@ -285,16 +310,19 @@ const fmtDate = (iso?: string | null) => {
                   <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
                 </div>
               </div>
+
               <div class="min-w-0 flex-1">
                 <div class="text-xs text-white/50 uppercase tracking-wider" data-rank>#{i + 1}</div>
                 <div class="font-semibold text-sm truncate" data-artist>—</div>
                 <div class="text-xs text-white/70 truncate" data-title>—</div>
               </div>
+
               <div class="flex-none text-xs text-white/50" data-count>—</div>
             </div>
           </article>
         ))}
       </div>
+
       <div id="topWeekEmpty" class="mt-4 text-white/50 text-sm hidden">
         No votes yet this week — go vote on
         <a class="text-cyan-200 hover:text-cyan-100 transition" href="/music">/music</a> 🙂
@@ -331,6 +359,7 @@ const fmtDate = (iso?: string | null) => {
         </div>
       </div>
     </div>
+
     <!-- Card 2 (medium / FLAC) -->
     <div class="rounded-2xl border border-white/10 p-4
                 bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220]">
@@ -357,6 +386,7 @@ const fmtDate = (iso?: string | null) => {
         </button>
       </div>
     </div>
+
     <!-- Card 3 (lighter / Shows) -->
     <div class="rounded-2xl border border-white/10 p-4
                 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540]">
@@ -451,6 +481,7 @@ const fmtDate = (iso?: string | null) => {
   <script is:inline>
     (() => {
       const PROGRAMS_DIR = "/images/programs/";
+
       function getISOWeekId(d = new Date()){
         const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         const dayNum = date.getUTCDay() || 7;
@@ -459,13 +490,16 @@ const fmtDate = (iso?: string | null) => {
         const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
         return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
       }
+
       function votesKey(){ return `abf_votes_${getISOWeekId()}`; }
+
       function splitTrack(entry){
         const parts = String(entry || "").split(" - ");
         const artist = (parts[0] || "").trim();
         const title = (parts.slice(1).join(" - ") || "").trim();
         return { artist, title };
       }
+
       function normKey(a,t){
         return (a + " - " + t)
           .toLowerCase()
@@ -473,6 +507,7 @@ const fmtDate = (iso?: string | null) => {
           .replace(/[“”"']/g,"")
           .trim();
       }
+
       function esc(s){
         return String(s || "")
           .replace(/&/g,"&amp;")
@@ -481,9 +516,11 @@ const fmtDate = (iso?: string | null) => {
           .replace(/"/g,"&quot;")
           .replace(/'/g,"&#039;");
       }
+
       function upperArtist(s){
         return String(s || "—").trim().toUpperCase();
       }
+
       function titleCaseEN(input){
         const s = String(input || "").trim();
         if (!s) return "—";
@@ -512,6 +549,7 @@ const fmtDate = (iso?: string | null) => {
           return rebuilt.join("-");
         }).join("");
       }
+
       function setCover(url){
         const img = document.getElementById("homeCover");
         if (!img) return;
@@ -522,30 +560,17 @@ const fmtDate = (iso?: string | null) => {
           img.classList.add("hidden");
         }
       }
-      function getNowplayingPayload(){
-        const p = window.__abf?.__nowplaying;
-        if (!p || typeof p !== "object") return null;
-        return p;
-      }
-      function getHistoryFromPayload(p){
-        if (!p) return [];
-        const h1 = Array.isArray(p.history) ? p.history : null;
-        const h2 = Array.isArray(p.nowplaying?.history) ? p.nowplaying.history : null;
-        const h3 = Array.isArray(p.data?.history) ? p.data.history : null;
-        return h1 || h2 || h3 || [];
-      }
-      function getNowFromPayload(p){
-        if (!p) return null;
-        return p.now || p.nowplaying || p.data?.now || null;
-      }
 
+      // ---------- Votes API (Directus via /api/vote) ----------
       async function apiGetTopWeek(week){
         const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
         if (!r.ok) return { week, top: [] };
         const j = await r.json().catch(() => ({}));
         return { week: j?.week || week, top: Array.isArray(j?.top) ? j.top : [] };
       }
+
       let __homeVotesCache = { week: "", ts: 0, top: [] };
+
       async function getTopWeekCached(week){
         const now = Date.now();
         if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 8000) {
@@ -556,6 +581,7 @@ const fmtDate = (iso?: string | null) => {
         return __homeVotesCache.top || [];
       }
 
+      // #1 in hero (API)
       async function renderHeroTop1(){
         const box = document.getElementById("heroTop1");
         const empty = document.getElementById("heroTop1Empty");
@@ -563,20 +589,25 @@ const fmtDate = (iso?: string | null) => {
         const tEl = document.getElementById("heroTop1Title");
         const coverImg = document.getElementById("heroTop1Cover");
         if (!box || !empty || !aEl || !tEl) return;
+
         const week = getISOWeekId();
         const top = await getTopWeekCached(week);
         const first = top?.[0];
+
         if (!first || !first.track_key){
           box.classList.add("hidden");
           empty.classList.remove("hidden");
           return;
         }
+
         const tk = String(first.track_key || "");
         const parts = tk.split(" - ");
         const artistRaw = String(first.artist || "").trim() || (parts[0] || "—").trim();
-        const titleRaw = String(first.title || "").trim() || (parts.slice(1).join(" - ") || "—").trim();
+        const titleRaw  = String(first.title || "").trim()  || (parts.slice(1).join(" - ") || "—").trim();
+
         aEl.textContent = upperArtist(artistRaw);
         tEl.textContent = titleCaseEN(titleRaw);
+
         try {
           const covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}");
           const ck = normKey(artistRaw, titleRaw);
@@ -590,6 +621,7 @@ const fmtDate = (iso?: string | null) => {
             }
           }
         } catch {}
+
         empty.classList.add("hidden");
         box.classList.remove("hidden");
       }
@@ -598,21 +630,26 @@ const fmtDate = (iso?: string | null) => {
         const artistEl = document.getElementById("homeArtist");
         const titleEl = document.getElementById("homeTitle");
         if (!artistEl || !titleEl) return;
-        const payload = getNowplayingPayload();
-        const now = getNowFromPayload(payload);
-        const artist = String(now?.artist || "").trim();
-        const title = String(now?.title || "").trim();
-        if (!artist && !title){
+
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem("abf_history") || "[]"); } catch {}
+        const currentEntry = history[0];
+        const current = currentEntry?.t || "";
+
+        if (!current){
           artistEl.textContent = "—";
           titleEl.textContent = "—";
           setCover("");
           return;
         }
-        artistEl.textContent = upperArtist(artist || "—");
-        titleEl.textContent = titleCaseEN(title || "—");
+
+        const t = splitTrack(current);
+        artistEl.textContent = upperArtist(t.artist || "—");
+        titleEl.textContent = titleCaseEN(t.title || "—");
+
         try{
           const covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}");
-          const key = normKey(artist, title);
+          const key = normKey(t.artist, t.title);
           setCover(covers[key] || "");
         } catch {
           setCover("");
@@ -622,27 +659,26 @@ const fmtDate = (iso?: string | null) => {
       function renderLastPlayedCarousel(){
         const host = document.getElementById("homeLastCarousel");
         if (!host) return;
-        const payload = getNowplayingPayload();
-        const history = getHistoryFromPayload(payload);
-        const items = history
-          .filter(row => (row?.artist || row?.title || row?.raw))
-          .slice(1, 4);
+
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem("abf_history") || "[]"); } catch {}
+
+        const items = history.slice(1, 4).filter(e => e?.t);
+
         if (!items.length){
           host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
           return;
         }
+
         let covers = {};
-        try { covers = JSON darüber.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
-        host.innerHTML = items.map((row) => {
-          let artist = String(row?.artist || "").trim();
-          let title = String(row?.title || "").trim();
-          if (!artist && !title && row?.raw) {
-            const spl = splitTrack(row.raw);
-            artist = spl.artist;
-            title = spl.title;
-          }
-          const key = normKey(artist, title);
+        try { covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
+
+        host.innerHTML = items.map((entry) => {
+          const full = entry?.t || "";
+          const t = splitTrack(full);
+          const key = normKey(t.artist, t.title);
           const img = covers[key] || "";
+
           return `
             <a href="/music"
                class="snap-start flex-none w-[260px] md:w-[300px]
@@ -655,22 +691,26 @@ const fmtDate = (iso?: string | null) => {
                 </div>
               </div>
               <div class="min-w-0">
-                <div class="font-semibold text-white truncate">${esc(upperArtist(artist || "—"))}</div>
-                <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(title || "—"))}</div>
+                <div class="font-semibold text-white truncate">${esc(upperArtist(t.artist || "—"))}</div>
+                <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(t.title || "—"))}</div>
               </div>
             </a>
           `;
         }).join("");
       }
 
+      // Top 8 grid (API)
       async function renderTop(){
         const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
         const empty = document.getElementById("topWeekEmpty");
         if (!cards.length) return;
+
         let covers = {};
         try { covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
+
         const week = getISOWeekId();
-        const top = await getTopWeekCached(week);
+        const top = await getTopWeekCached(week); // [{track_key, artist, title, count}]
+
         if (!top.length){
           if (empty) empty.classList.remove("hidden");
           cards.forEach((card, i) => {
@@ -679,6 +719,7 @@ const fmtDate = (iso?: string | null) => {
             const tEl = card.querySelector("[data-title]");
             const cEl = card.querySelector("[data-count]");
             const img = card.querySelector("img");
+
             if (rankEl) rankEl.textContent = `#${i+1}`;
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "Vote on /music to build this chart";
@@ -688,14 +729,18 @@ const fmtDate = (iso?: string | null) => {
           });
           return;
         }
+
         if (empty) empty.classList.add("hidden");
+
         cards.forEach((card, i) => {
           const rankEl = card.querySelector("[data-rank]");
           const aEl = card.querySelector("[data-artist]");
           const tEl = card.querySelector("[data-title]");
           const cEl = card.querySelector("[data-count]");
           const img = card.querySelector("img");
+
           if (rankEl) rankEl.textContent = `#${i+1}`;
+
           const row = top[i];
           if (!row){
             if (aEl) aEl.textContent = "—";
@@ -705,13 +750,16 @@ const fmtDate = (iso?: string | null) => {
             card.classList.remove("bg-white/7");
             return;
           }
+
           const tk = String(row.track_key || "");
           const parts = tk.split(" - ");
           const artistRaw = String(row.artist || "").trim() || (parts[0] || "—").trim();
-          const titleRaw = String(row.title || "").trim() || (parts.slice(1).join(" - ") || "—").trim();
+          const titleRaw  = String(row.title || "").trim()  || (parts.slice(1).join(" - ") || "—").trim();
           const count = Number(row.count) || 0;
+
           const coverKey = normKey(artistRaw, titleRaw);
           const coverUrl = covers[coverKey] || "";
+
           if (img){
             if (coverUrl){
               img.src = coverUrl;
@@ -720,9 +768,11 @@ const fmtDate = (iso?: string | null) => {
               img.classList.add("hidden");
             }
           }
+
           if (aEl) aEl.textContent = upperArtist(artistRaw);
           if (tEl) tEl.textContent = titleCaseEN(titleRaw);
           if (cEl) cEl.textContent = `${count}`;
+
           if (i === 0) card.classList.add("bg-white/7");
           else card.classList.remove("bg-white/7");
         });
@@ -778,6 +828,7 @@ const fmtDate = (iso?: string | null) => {
           { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
         ]
       };
+
       function dayKey(){
         const d = new Date().getDay();
         if (d === 0) return "sun";
@@ -788,11 +839,13 @@ const fmtDate = (iso?: string | null) => {
         if (d === 5) return "fri";
         return "sat";
       }
+
       function parseTimeToMinutes(t){
         const m = String(t || "").match(/^(\d{1,2})h(\d{2})$/i);
         if (!m) return null;
         return Number(m[1]) * 60 + Number(m[2]);
       }
+
       function fmtCountdown(ms){
         if (ms <= 0) return "Starting now";
         const totalMin = Math.floor(ms / 60000);
@@ -801,16 +854,20 @@ const fmtDate = (iso?: string | null) => {
         if (h <= 0) return `Starts in ${m}m`;
         return `Starts in ${h}h ${String(m).padStart(2,"0")}m`;
       }
+
       function renderOnAirTonight(){
         const host = document.getElementById("onAirTonight");
         if (!host) return;
+
         const day = dayKey();
         const items = (SCHEDULE[day] || [])
           .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
           .filter(x => x.min !== null)
           .sort((a,b) => a.min - b.min);
+
         const now = new Date();
         const nowMin = now.getHours() * 60 + now.getMinutes();
+
         let liveIndex = -1;
         for (let i=0;i<items.length;i++){
           const startMin = items[i].min;
@@ -820,9 +877,11 @@ const fmtDate = (iso?: string | null) => {
             break;
           }
         }
+
         let selected = [];
         let mode = "next";
         let subline = "";
+
         if (liveIndex >= 0){
           mode = "live";
           selected = items.slice(liveIndex, liveIndex + 3);
@@ -842,6 +901,7 @@ const fmtDate = (iso?: string | null) => {
             subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
           }
         }
+
         if (!selected.length){
           host.innerHTML = `
             <div class="text-white/70">
@@ -858,8 +918,10 @@ const fmtDate = (iso?: string | null) => {
           `;
           return;
         }
+
         const first = selected[0];
         const others = selected.slice(1);
+
         const badge = (mode === "live")
           ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider">
                <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
@@ -868,12 +930,15 @@ const fmtDate = (iso?: string | null) => {
           : `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-semibold tracking-wider">
                NEXT
              </span>`;
+
         const liveWrapClass = (mode === "live") ? "onAirCard" : "";
+
         let firstDisplayTitle = first.title;
         if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
           const parts = firstDisplayTitle.split(" - ", 2);
           firstDisplayTitle = parts[0] + " - " + parts[1].toUpperCase();
         }
+
         host.innerHTML = `
           <div class="space-y-4">
             <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5 ${liveWrapClass}">
@@ -881,6 +946,7 @@ const fmtDate = (iso?: string | null) => {
                 ${badge}
                 <div class="text-white/50 text-sm">${esc(subline || "")}</div>
               </div>
+
               <div class="flex flex-col md:flex-row gap-6 items-stretch">
                 <div class="w-full md:w-56 flex-none">
                   <div class="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden flex items-center justify-center p-2">
@@ -893,16 +959,20 @@ const fmtDate = (iso?: string | null) => {
                     />
                   </div>
                 </div>
+
                 <div class="min-w-0 flex-1">
                   <div class="text-cyan-300 font-bold text-xl md:text-2xl">
                     ${esc(first.time)}
                   </div>
+
                   <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
                     ${esc(firstDisplayTitle)}
                   </div>
+
                   <div class="mt-2 text-white/70 text-base md:text-lg leading-relaxed">
                     ${esc(first.desc)}
                   </div>
+
                   <div class="mt-5 flex gap-3 flex-wrap">
                     <a href="/programs"
                        class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
@@ -910,6 +980,7 @@ const fmtDate = (iso?: string | null) => {
                               hover:scale-[1.01] transition">
                       View schedule
                     </a>
+
                     <button id="onAirRemindBtn"
                             type="button"
                             class="bg-white/5 hover:bg-white/10 border border-white/10
@@ -917,17 +988,20 @@ const fmtDate = (iso?: string | null) => {
                       Remind me
                     </button>
                   </div>
+
                   <div id="onAirRemindNote" class="mt-3 text-white/50 text-sm hidden">
                     Reminder saved locally (this device).
                   </div>
                 </div>
               </div>
             </div>
+
             ${others.length ? `
               <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5">
                 <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
                   ${mode === "live" ? "Up next" : "Later"}
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   ${others.map(x => {
                     let displayTitle = x.title;
@@ -969,8 +1043,10 @@ const fmtDate = (iso?: string | null) => {
             ` : ""}
           </div>
         `;
+
         const remindBtn = document.getElementById("onAirRemindBtn");
         const note = document.getElementById("onAirRemindNote");
+
         if (remindBtn){
           remindBtn.onclick = () => {
             try{
@@ -980,7 +1056,7 @@ const fmtDate = (iso?: string | null) => {
                 d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
                 return d ? d.getTime() : 0;
               })();
-              localStorage.setItem("abf_remind_next_show", JSON stringify({
+              localStorage.setItem("abf_remind_next_show", JSON.stringify({
                 day,
                 time: target.time,
                 title: target.title,
@@ -991,6 +1067,7 @@ const fmtDate = (iso?: string | null) => {
           };
         }
       }
+
       function injectOnAirStylesOnce(){
         if (document.getElementById("abfHomeOnAirStyles")) return;
         const st = document.createElement("style");
@@ -1021,12 +1098,6 @@ const fmtDate = (iso?: string | null) => {
             filter: blur(18px);
             opacity: .55;
           }
-          .line-clamp-2{
-            display:-webkit-box;
-            -webkit-line-clamp:2;
-            -webkit-box-orient:vertical;
-            overflow:hidden;
-          }
         `;
         document.head.appendChild(st);
       }
@@ -1037,73 +1108,106 @@ const fmtDate = (iso?: string | null) => {
         const openBtn2 = document.getElementById("openFlacModal2");
         const closeBtn = document.getElementById("flacClose");
         if (!modal || !openBtn || !closeBtn) return;
-        const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-        const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
-        const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
+
+        const lockScroll = (on) => {
+          document.documentElement.style.overflow = on ? "hidden" : "";
+        };
+
+        const open = () => {
+          modal.setAttribute("aria-hidden","false");
+          lockScroll(true);
+        };
+
+        const close = () => {
+          modal.setAttribute("aria-hidden","true");
+          lockScroll(false);
+        };
+
         openBtn.addEventListener("click", open);
         if (openBtn2) openBtn2.addEventListener("click", open);
         closeBtn.addEventListener("click", close);
+
         document.addEventListener("click", (e) => {
           const t = e.target;
           if (t?.dataset?.close === "flac") close();
         });
+
         document.addEventListener("keydown", (e) => {
           if (e.key !== "Escape") return;
           if (modal.getAttribute("aria-hidden") === "false") close();
         });
       }
+
       function bindStreamQualityModal(){
         const modal = document.getElementById("streamQualityModal");
         const openBtn = document.getElementById("openStreamQualityModal");
         const closeBtn = document.getElementById("streamQualityClose");
         if (!modal || !openBtn || !closeBtn) return;
-        const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-        const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
-        const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
+
+        const lockScroll = (on) => {
+          document.documentElement.style.overflow = on ? "hidden" : "";
+        };
+
+        const open = () => {
+          modal.setAttribute("aria-hidden","false");
+          lockScroll(true);
+        };
+
+        const close = () => {
+          modal.setAttribute("aria-hidden","true");
+          lockScroll(false);
+        };
+
         openBtn.addEventListener("click", open);
         closeBtn.addEventListener("click", close);
+
         document.addEventListener("click", (e) => {
           const t = e.target;
           if (t?.dataset?.close === "streamquality") close();
         });
+
         document.addEventListener("keydown", (e) => {
           if (e.key !== "Escape") return;
           if (modal.getAttribute("aria-hidden") === "false") close();
         });
       }
+
       async function initHome(){
         injectOnAirStylesOnce();
         bindFlacModal();
         bindStreamQualityModal();
+
         renderNowPlaying();
         renderLastPlayedCarousel();
         renderOnAirTonight();
+
         await renderTop();
         await renderHeroTop1();
-        setTimeout(() => {
-          renderNowPlaying();
-          renderLastPlayedCarousel();
-        }, 350);
+
         const jump = document.getElementById("jumpToPlayer");
         if (jump){
           jump.onclick = () => {
             window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
           };
         }
+
         if (!window.__abfHomeTimer){
           window.__abfHomeTimer = setInterval(() => {
             renderNowPlaying();
             renderLastPlayedCarousel();
             renderOnAirTonight();
-            renderTop();
-            renderHeroTop1();
+            renderTop();        // async ok (fire-and-forget)
+            renderHeroTop1();   // async ok (fire-and-forget)
           }, 8000);
         }
+
         if (!window.__abfOnAirTimer){
           window.__abfOnAirTimer = setInterval(renderOnAirTonight, 30000);
         }
       }
+
       initHome();
+
       if (!window.__abfHomeListeners){
         window.addEventListener("abf:history-updated", () => {
           renderNowPlaying();
@@ -1111,20 +1215,24 @@ const fmtDate = (iso?: string | null) => {
           renderTop();
           renderHeroTop1();
         });
+
         window.addEventListener("abf:nowplaying-updated", () => {
           renderNowPlaying();
           renderLastPlayedCarousel();
           renderTop();
           renderHeroTop1();
         });
+
         window.addEventListener("abf:cover-cache-updated", () => {
           renderNowPlaying();
           renderLastPlayedCarousel();
           renderTop();
           renderHeroTop1();
         });
+
         window.__abfHomeListeners = true;
       }
+
       document.addEventListener("astro:page-load", () => { initHome(); });
       document.addEventListener("astro:after-swap", () => { initHome(); });
     })();
