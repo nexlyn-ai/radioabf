@@ -324,6 +324,19 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         stroke-linejoin: round;
       }
     </style>
+	
+<!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8KQY09E05H"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8KQY09E05H', {
+        send_page_view: true,
+        anonymize_ip: true
+      });
+    </script>	
+	
   </head>
 
   <body
