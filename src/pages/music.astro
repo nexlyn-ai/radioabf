@@ -152,12 +152,13 @@ import Base from "../layouts/Base.astro";
 
     function nowTs(){ return Date.now(); }
 
-    function splitTrack(entry){
-      const parts = String(entry || "").split(" - ");
-      const artist = (parts[0] || "").trim();
-      const title = (parts.slice(1).join(" - ") || "").trim();
-      return { artist, title };
-    }
+  function splitTrack(entry){
+  const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
+  const idx = s.indexOf(" - ");
+  if (idx === -1) return { artist: s, title: "" };
+  return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+}
+
     function normKey(artist, title){
       return (artist + " - " + title)
         .toLowerCase()
@@ -223,21 +224,50 @@ import Base from "../layouts/Base.astro";
       }).filter(Boolean);
     }
 	
-	async function fetchServerNowPlaying(limit = 12){
+async function fetchServerNowPlaying(limit = 12){
   try{
     const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
     const data = await res.json().catch(()=> ({}));
     if (!data?.ok) return [];
-    // data.history peut être vide si Icecast ne fournit pas d'historique
-    // on utilise au moins "now" comme 1er item
+
     const out = [];
-    if (data?.now?.t) out.push({ t: data.now.t, ts: data.now.ts || Date.now() });
-    if (Array.isArray(data?.history)) out.push(...data.history);
-    return out;
+
+    // ✅ "now" -> { raw, played_at }
+    if (data?.now?.raw){
+      out.push({
+        t: String(data.now.raw),
+        ts: data.now.played_at ? new Date(data.now.played_at).getTime() : Date.now()
+      });
+    }
+
+    // ✅ "history" -> [{ raw, played_at, ... }]
+    if (Array.isArray(data?.history)){
+      for (const row of data.history){
+        const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
+        if (!raw) continue;
+        out.push({
+          t: String(raw),
+          ts: row?.played_at ? new Date(row.played_at).getTime() : 0
+        });
+      }
+    }
+
+    // dedupe (évite now + first history identiques)
+    const seen = new Set();
+    const deduped = [];
+    for (const item of out){
+      const k = String(item.t || "").toLowerCase();
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      deduped.push(item);
+    }
+
+    return deduped.slice(0, limit);
   }catch{
     return [];
   }
 }
+
 
 	
     // ===== Cover cache (same as before) =====
@@ -389,12 +419,11 @@ import Base from "../layouts/Base.astro";
       if (weekEl) weekEl.textContent = weekLabel();
       if (!artistEl || !titleEl || !listEl || !chartEl) return;
 
-      let history = loadHistory();
-if (!history.length){
-  // ✅ fallback prod-safe : récupère au moins le now playing côté serveur
-  const serverHist = await fetchServerNowPlaying(12);
-  if (serverHist.length) history = serverHist;
-}
+ let history = await fetchServerNowPlaying(12);
+
+// fallback local si jamais l'API tombe (optionnel)
+if (!history.length) history = loadHistory();
+
 
 
       if (!history.length){
