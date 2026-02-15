@@ -1,0 +1,11 @@
+---
+slug: "gmar"
+name: "GMAR"
+categories: ["guest"]
+portrait: "/artists/gmar.jpg"
+hero: "/artists/hero/gmar.jpg"
+source: "https://radioabf.com/artists/gmar"
+---
+
+
+						<h2>ABF CLUB // SATURDAYS GUEST MIX</h2><p><br><strong>GMAR</strong> is a <strong>Greek DJ and producer</strong> based in <strong>Athens, Greece</strong>. He specializes in <strong>techno</strong>, <strong>house</strong>, <strong>progressive</strong>, <strong>drum and bass</strong>, <strong>electro</strong>, <strong>melodic house</strong>, <strong>melodic techno</strong>, and <strong>tech house</strong> sounds. Recognized for his innovative mixes and performances that frequently top the charts on Mixcloud.</p><h3><strong>Career &amp; background</strong></h3><p>Born in Athens, GMAR developed an early passion for musical expression that naturally led him into electronic music. His influences are diverse, reflecting the full richness of the electronic spectrum.</p><p>For several years, he has actively shared his music through mixes on <strong>Mixcloud</strong> and <strong>SoundCloud</strong> (under the alias GMar), where his sets regularly climb the rankings.</p><p>His mixes, such as <strong>GMar on VA DE TECHNO RADIO #1</strong> (June 1, 2025) or <strong>GMar for JDK RADIO #7</strong> (June 1, 2025), showcase powerful techno rhythms, atmospheric textures, and forward-thinking production, often featuring tracks from both emerging and established artists.</p><h3><strong>Style &amp; vibe</strong></h3><p>GMAR’s sound is characterized by <strong>deep, emotive rhythms</strong>, <strong>spatial textures</strong>, and a constant evolution toward innovative electronic production. His sets are tailored for the club: a blend of high-intensity techno energy and melodic/progressive elements that make him a favorite on underground and festival scenes.</p><p>Very active in 2026, GMAR continues to release fresh mixes and push the boundaries of electronic music from Athens to the international scene.</p><p><strong>Quote often linked to his vibe:</strong> « Innovative beats from Athens — the future of techno is now. »</p><p>A rising force in the Greek and global electronic underground, <strong>GMAR</strong> delivers powerful, varied, and chart-dominating sets — keeping the dancefloor alive and evolving with every session. ???</p>					

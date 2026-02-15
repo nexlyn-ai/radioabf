@@ -1,0 +1,55 @@
+---
+type Props = {
+  kicker?: string;
+  title: string;
+  highlight?: string;
+  subtitle?: string;
+  right?: any; // slot via <Fragment slot="right" />
+  variant?: "default" | "thin";
+};
+
+const {
+  kicker = "",
+  title,
+  highlight = "",
+  subtitle = "",
+  variant = "default",
+} = Astro.props;
+
+const pad = variant === "thin" ? "p-5 sm:p-6" : "p-7 sm:p-10";
+const mb = variant === "thin" ? "mb-6" : "mb-8";
+---
+
+<section class={`relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] ${pad} ${mb} shadow-2xl`}>
+  <!-- background glow -->
+  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+  <div class="relative z-10">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        {kicker ? (
+          <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            <span>{kicker}</span>
+          </div>
+        ) : null}
+
+        <h1 class={`${variant === "thin" ? "text-3xl sm:text-4xl" : "text-3xl sm:text-5xl"} font-extrabold leading-tight`}>
+          {title}
+          {highlight ? <span class="text-cyan-200"> {highlight}</span> : null}
+        </h1>
+
+        {subtitle ? (
+          <p class="text-white/65 mt-3 max-w-2xl">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <slot name="right" />
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,18 @@
+{
+  "name": "radioabf",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "sync:artists": "node scripts/sync-artists.mjs"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^5.17.1",
+    "cheerio": "^1.2.0",
+    "tailwindcss": "^4.1.18"
+  }
+}

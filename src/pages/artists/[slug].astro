@@ -1,0 +1,338 @@
+---
+import Base from "../../layouts/Base.astro";
+import artists from "../../data/artists.json";
+
+// Build all pages
+export async function getStaticPaths() {
+  return artists.map((a) => ({ params: { slug: a.slug } }));
+}
+
+const { slug } = Astro.params;
+const artist = artists.find((a) => a.slug === slug);
+
+if (!artist) throw new Error(`Unknown artist slug: ${slug}`);
+
+// Load local HTML bio as RAW string (works with .html files)
+const bios = import.meta.glob("../../content/artists/*.html", { as: "raw", eager: true });
+const bioKey = `../../content/artists/${slug}.html`;
+const bioHtml = (bios[bioKey] as string) || "";
+
+// Meta (clean)
+const pageTitle = `${artist.name} — RadioABF`;
+const pageDesc =
+  (artist as any)?.description && String((artist as any).description).trim()
+    ? String((artist as any).description).trim()
+    : `Discover ${artist.name} on RadioABF — Alternative Bass Fréquence.`;
+const canonical = `/artists/${slug}`;
+const image = (artist as any)?.portrait || "/og-image.jpg";
+
+// Social (optional in artists.json)
+const social = {
+  instagram: (artist as any)?.instagram || "",
+  facebook: (artist as any)?.facebook || "",
+  soundcloud: (artist as any)?.soundcloud || "",
+  mixcloud: (artist as any)?.mixcloud || "",
+  youtube: (artist as any)?.youtube || "",
+  x: (artist as any)?.x || (artist as any)?.twitter || "",
+  website: (artist as any)?.website || "",
+};
+
+const hasSocial = Object.values(social).some((v) => String(v || "").trim().length > 0);
+
+function safeUrl(u: string) {
+  const s = String(u || "").trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  return "https://" + s.replace(/^\/+/, "");
+}
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={canonical}
+  image={image}
+>
+  <!-- TOP NAV -->
+  <section class="mb-5 flex items-center justify-between gap-3">
+    <a href="/artists" class="text-white/60 hover:text-cyan-200 transition text-sm">← Back to artists</a>
+    <a href="/programs" class="text-white/60 hover:text-cyan-200 transition text-sm">Programs →</a>
+  </section>
+
+  <!-- HERO (premium) -->
+  <section class="abfHero relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 sm:p-8 mb-6 shadow-2xl">
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[560px] h-[560px] rounded-full bg-cyan-500/18 blur-[130px]"></div>
+    <div class="pointer-events-none absolute -bottom-44 -right-44 w-[560px] h-[560px] rounded-full bg-blue-600/16 blur-[130px]"></div>
+    <div class="pointer-events-none absolute inset-0 abfNoise"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+        <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+        Artist profile
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+        <span class="text-cyan-200">{artist.name}</span>
+      </h1>
+
+      <p class="text-white/65 mt-3 max-w-2xl">
+        Residents, guests and the ABF team — discover the story, style and identity behind the decks.
+      </p>
+    </div>
+  </section>
+
+  <!-- CONTENT -->
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+    <!-- LEFT -->
+    <aside class="lg:col-span-1">
+      <div class="abfCard group relative rounded-3xl overflow-hidden">
+        <div class="abfCardRing pointer-events-none absolute inset-0"></div>
+        <div class="pointer-events-none absolute inset-0 abfNoise opacity-70"></div>
+
+        <div class="relative p-5">
+          <!-- portrait -->
+          <div class="abfPortraitWrap rounded-3xl border border-white/12 bg-white/5 overflow-hidden">
+            <div class="w-full aspect-square bg-gradient-to-br from-[#1F7DB8] to-[#2FC2FF]">
+              {artist.portrait ? (
+                <img
+                  src={artist.portrait}
+                  alt={artist.name}
+                  class="abfPortrait w-full h-full object-cover"
+                  loading="eager"
+                  decoding="async"
+                />
+              ) : null}
+            </div>
+            <div class="abfPortraitShine pointer-events-none absolute inset-0"></div>
+          </div>
+
+          <!-- name + cats -->
+          <div class="mt-4">
+            <div class="abfName text-xl font-extrabold leading-tight text-white">
+              {artist.name}
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              {(artist.categories || []).map((c) => (
+                <span class="abfCat">
+                  {c}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <!-- SOCIAL -->
+          <div class="mt-6">
+            <div class="text-[11px] text-white/55 uppercase tracking-wider mb-3">
+              Social
+            </div>
+
+            {hasSocial ? (
+              <div class="flex flex-wrap gap-2">
+                {social.instagram ? (
+                  <a class="abfSoc" href={safeUrl(social.instagram)} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <span class="abfSocDot"></span> Instagram
+                  </a>
+                ) : null}
+
+                {social.facebook ? (
+                  <a class="abfSoc" href={safeUrl(social.facebook)} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                    <span class="abfSocDot"></span> Facebook
+                  </a>
+                ) : null}
+
+                {social.soundcloud ? (
+                  <a class="abfSoc" href={safeUrl(social.soundcloud)} target="_blank" rel="noopener noreferrer" aria-label="SoundCloud">
+                    <span class="abfSocDot"></span> SoundCloud
+                  </a>
+                ) : null}
+
+                {social.mixcloud ? (
+                  <a class="abfSoc" href={safeUrl(social.mixcloud)} target="_blank" rel="noopener noreferrer" aria-label="Mixcloud">
+                    <span class="abfSocDot"></span> Mixcloud
+                  </a>
+                ) : null}
+
+                {social.youtube ? (
+                  <a class="abfSoc" href={safeUrl(social.youtube)} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                    <span class="abfSocDot"></span> YouTube
+                  </a>
+                ) : null}
+
+                {social.x ? (
+                  <a class="abfSoc" href={safeUrl(social.x)} target="_blank" rel="noopener noreferrer" aria-label="X">
+                    <span class="abfSocDot"></span> X
+                  </a>
+                ) : null}
+
+                {social.website ? (
+                  <a class="abfSoc" href={safeUrl(social.website)} target="_blank" rel="noopener noreferrer" aria-label="Website">
+                    <span class="abfSocDot"></span> Website
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <div class="text-white/55 text-sm">
+                Coming soon.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: BIO -->
+    <div class="lg:col-span-2">
+      <div class="abfCard relative rounded-3xl overflow-hidden">
+        <div class="abfCardRing pointer-events-none absolute inset-0"></div>
+        <div class="pointer-events-none absolute inset-0 abfNoise opacity-60"></div>
+
+        <div class="relative p-6 md:p-8">
+          <div class="flex items-center justify-between gap-3 mb-5">
+            <div class="text-sm text-white/55 uppercase tracking-wider">
+              Biography
+            </div>
+            <div class="text-xs text-white/50">
+              The DJs’ Frequency
+            </div>
+          </div>
+
+          <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6"></div>
+
+          <article
+            class="prose prose-invert max-w-none
+                   prose-p:text-white/80
+                   prose-li:text-white/80
+                   prose-strong:text-white
+                   prose-a:text-cyan-200
+                   prose-a:no-underline hover:prose-a:underline
+                   prose-headings:text-white"
+          >
+            <Fragment set:html={bioHtml || `<p class="text-white/60">No bio yet.</p>`} />
+          </article>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <style is:inline>
+    /* subtle noise like premium cards */
+    .abfNoise{
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      background-size: 220px 220px;
+      mix-blend-mode: overlay;
+      opacity: .10;
+    }
+
+    /* Premium glass cards */
+    .abfCard{
+      border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(135deg,
+        rgba(255,255,255,0.12),
+        rgba(255,255,255,0.07) 40%,
+        rgba(10,31,51,0.18));
+      backdrop-filter: blur(18px) saturate(150%);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      box-shadow:
+        0 22px 70px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(47,194,255,0.10) inset;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .abfCard:hover{
+      transform: translateY(-2px);
+      border-color: rgba(47,194,255,0.22);
+      box-shadow:
+        0 28px 80px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(47,194,255,0.14) inset;
+    }
+
+    /* Gradient ring overlay */
+    .abfCardRing{
+      background: radial-gradient(900px 260px at 20% 0%,
+        rgba(47,194,255,0.18),
+        rgba(255,255,255,0.06) 45%,
+        rgba(255,255,255,0.03) 100%);
+      opacity: .95;
+    }
+
+    /* Portrait premium */
+    .abfPortraitWrap{ position: relative; }
+    .abfPortrait{
+      transition: transform .25s ease, opacity .25s ease;
+      opacity: .98;
+    }
+    .abfCard:hover .abfPortrait{
+      transform: scale(1.02);
+      opacity: 1;
+    }
+    .abfPortraitShine{
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.18),
+        rgba(255,255,255,0.05) 35%,
+        rgba(255,255,255,0.00) 70%
+      );
+      opacity: .75;
+    }
+
+    .abfName{
+      text-shadow: 0 12px 26px rgba(0,0,0,0.45);
+    }
+
+    /* Categories */
+    .abfCat{
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.82);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Social buttons premium */
+    .abfSoc{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.86);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      transition: 160ms;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .abfSocDot{
+      width:8px; height:8px;
+      border-radius: 999px;
+      background: rgba(47,194,255,0.95);
+      box-shadow: 0 0 18px rgba(47,194,255,0.35);
+    }
+    .abfSoc:hover{
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(47,194,255,0.30);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 18px 40px rgba(47,194,255,0.12);
+      transform: translateY(-1px);
+    }
+
+    /* hero polish */
+    .abfHero{
+      box-shadow:
+        0 24px 90px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(47,194,255,0.08) inset;
+    }
+  </style>
+</Base>

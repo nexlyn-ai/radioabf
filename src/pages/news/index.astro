@@ -1,0 +1,621 @@
+---
+import Base from "../../layouts/Base.astro";
+import { directusGet, directusAsset } from "../../lib/directus";
+
+export const prerender = false;
+
+type NewsItem = {
+  id: number;
+  status: string;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  cover?: string | null;
+  published_at?: string | null;
+  date_created?: string | null;
+  category?: string | null; // ✅ NEW
+};
+
+type DirectusListResp = { data: NewsItem[] };
+
+const url = new URL(Astro.request.url);
+
+// ------------------------
+// CATEGORY FILTER
+// ------------------------
+const catParamRaw = (url.searchParams.get("cat") || "").toLowerCase();
+const selectedCat = catParamRaw === "radio" || catParamRaw === "music" ? catParamRaw : null;
+
+// ------------------------
+// YEAR FILTER
+// ------------------------
+const yearParam = url.searchParams.get("year");
+const selectedYear = yearParam && yearParam !== "all" ? Number(yearParam) : null;
+
+const yearStart = selectedYear
+  ? new Date(Date.UTC(selectedYear, 0, 1, 0, 0, 0)).toISOString()
+  : null;
+
+const yearEnd = selectedYear
+  ? new Date(Date.UTC(selectedYear + 1, 0, 1, 0, 0, 0)).toISOString()
+  : null;
+
+const yearFilterParams = selectedYear
+  ? [
+      `filter[_or][0][published_at][_gte]=${encodeURIComponent(yearStart!)}`,
+      `filter[_or][0][published_at][_lt]=${encodeURIComponent(yearEnd!)}`,
+      `filter[_or][1][published_at][_null]=true`,
+      `filter[_or][1][date_created][_gte]=${encodeURIComponent(yearStart!)}`,
+      `filter[_or][1][date_created][_lt]=${encodeURIComponent(yearEnd!)}`,
+    ].join("&")
+  : "";
+
+const catFilterParams = selectedCat ? `filter[category][_eq]=${encodeURIComponent(selectedCat)}` : "";
+
+function linkWithParams(nextPage: number) {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set("page", String(nextPage));
+
+  if (selectedYear) u.searchParams.set("year", String(selectedYear));
+  else u.searchParams.delete("year");
+
+  if (selectedCat) u.searchParams.set("cat", selectedCat);
+  else u.searchParams.delete("cat");
+
+  return u.pathname + "?" + u.searchParams.toString();
+}
+
+function linkWithYear(nextYear: string) {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set("page", "1");
+  if (nextYear === "all") u.searchParams.delete("year");
+  else u.searchParams.set("year", nextYear);
+
+  if (selectedCat) u.searchParams.set("cat", selectedCat);
+  else u.searchParams.delete("cat");
+
+  return u.pathname + "?" + u.searchParams.toString();
+}
+
+function linkWithCat(nextCat: string) {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set("page", "1");
+
+  if (selectedYear) u.searchParams.set("year", String(selectedYear));
+  else u.searchParams.delete("year");
+
+  if (nextCat === "all") u.searchParams.delete("cat");
+  else u.searchParams.set("cat", nextCat);
+
+  return u.pathname + "?" + u.searchParams.toString();
+}
+
+// ------------------------
+// PAGINATION
+// ------------------------
+const page = Math.max(1, Number(url.searchParams.get("page") || "1") || 1);
+const PER_PAGE = 9;
+const offset = (page - 1) * PER_PAGE;
+
+// ------------------------
+// FETCH LIST
+// ------------------------
+const fields = "id,status,title,slug,excerpt,cover,published_at,date_created,category";
+
+const listQuery =
+  `/items/news?fields=${encodeURIComponent(fields)}` +
+  `&filter[status][_eq]=published` +
+  (yearFilterParams ? `&${yearFilterParams}` : "") +
+  (catFilterParams ? `&${catFilterParams}` : "") +
+  `&sort=-published_at,-date_created&limit=${PER_PAGE}&offset=${offset}`;
+
+const resp = await directusGet<DirectusListResp>(listQuery);
+
+const totalQuery =
+  `/items/news?aggregate[count]=id` +
+  `&filter[status][_eq]=published` +
+  (yearFilterParams ? `&${yearFilterParams}` : "") +
+  (catFilterParams ? `&${catFilterParams}` : "");
+
+// NOTE: Directus aggregate shape can vary (number/string/object)
+const totalResp = await directusGet<{ data: any[] }>(totalQuery);
+
+function normalizeAggregateCount(v: any): number {
+  if (v == null) return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  if (typeof v === "object") {
+    if (typeof v.id === "number") return v.id;
+    if (typeof v.id === "string") {
+      const n = Number(v.id);
+      return Number.isFinite(n) ? n : 0;
+    }
+    if (typeof v.count === "number") return v.count;
+    if (typeof v.count === "string") {
+      const n = Number(v.count);
+      return Number.isFinite(n) ? n : 0;
+    }
+    if (typeof v.count === "object") return normalizeAggregateCount(v.count);
+  }
+  return 0;
+}
+
+const total = normalizeAggregateCount(totalResp?.data?.[0]?.count);
+const pageCount = Math.max(1, Math.ceil(total / PER_PAGE));
+
+const prev = page > 1 ? page - 1 : null;
+const next = page < pageCount ? page + 1 : null;
+
+// ------------------------
+// YEARS LIST (dropdown)
+// ------------------------
+const yearsResp = await directusGet<{ data: Pick<NewsItem, "published_at" | "date_created">[] }>(
+  `/items/news?fields=${encodeURIComponent("published_at,date_created")}` +
+    `&filter[status][_eq]=published&sort=-published_at,-date_created&limit=250`
+);
+
+function getEffectiveYear(published_at?: string | null, date_created?: string | null) {
+  const iso = published_at || date_created;
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.getFullYear();
+}
+
+const years = Array.from(
+  new Set(
+    (yearsResp?.data ?? [])
+      .map((it) => getEffectiveYear(it.published_at, it.date_created))
+      .filter((y): y is number => typeof y === "number")
+  )
+).sort((a, b) => b - a);
+
+// ------------------------
+// DATE FORMAT (ENGLISH)
+// ------------------------
+const fmtDate = (iso?: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
+};
+
+// ------------------------
+// VERCEL CDN CACHE (SSR)
+// ------------------------
+Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+
+// ------------------------
+// META (clean + stable)
+// ------------------------
+const metaTitle = "News — RadioABF";
+const metaDesc = "Latest updates from RadioABF: releases, programs, events, and station news.";
+
+let canonicalPath = "/news";
+const canonParams: string[] = [];
+if (selectedYear) canonParams.push(`year=${selectedYear}`);
+if (selectedCat) canonParams.push(`cat=${selectedCat}`);
+if (canonParams.length) canonicalPath += `?${canonParams.join("&")}`;
+
+// og/twitter image (absolute URL recommended)
+const ogSvgPath = `/og/news.svg?title=${encodeURIComponent("News — RadioABF")}`;
+const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toString();
+---
+
+<Base title={metaTitle} description={metaDesc} canonical={canonicalPath} image={ogSvgPath}>
+  <Fragment slot="head">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:url" content={new URL(Astro.request.url).toString()} />
+    <meta property="og:image" content={ogImageAbs} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={metaTitle} />
+    <meta name="twitter:description" content={metaDesc} />
+    <meta name="twitter:image" content={ogImageAbs} />
+  </Fragment>
+
+  <div class="abfPageWrap">
+    <!-- HERO -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-7 sm:p-10 mb-10 shadow-2xl">
+      <div class="absolute -top-40 -left-40 w-[520px] h-[520px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
+      <div class="absolute -bottom-40 -right-40 w-[520px] h-[520px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              News
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight">
+              Latest updates from <span class="text-cyan-200">RadioABF</span>
+            </h1>
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Releases, programs, events, and everything happening on The DJs’ Frequency.
+            </p>
+
+            <!-- CATEGORY TABS -->
+            <div class="mt-5 flex items-center gap-2 flex-wrap">
+              <a class={`catPill ${!selectedCat ? "active" : ""}`} href={linkWithCat("all")}>All</a>
+              <a class={`catPill ${selectedCat === "radio" ? "active" : ""}`} href={linkWithCat("radio")}>Radio</a>
+              <a class={`catPill ${selectedCat === "music" ? "active" : ""}`} href={linkWithCat("music")}>Music</a>
+            </div>
+          </div>
+
+          <!-- YEAR FILTER -->
+          <div class="flex items-center gap-2 flex-none">
+            <span class="text-xs text-white/55 uppercase tracking-wider">Year</span>
+            <select id="yearSelect" class="px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-white text-sm">
+              <option value={linkWithYear("all")} selected={!selectedYear}>All</option>
+              {years.map((y) => (
+                <option value={linkWithYear(String(y))} selected={selectedYear === y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-6">
+      {resp.data?.length ? (
+        <div class="newsGrid">
+          {resp.data.map((post) => {
+            const dateLabel = fmtDate(post.published_at || post.date_created);
+            const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
+
+            return (
+              <a href={`/news/${post.slug}`} class="newsCard group">
+                <div class="newsMedia">
+                  {cover ? <img src={cover} alt="" class="newsImg" loading="lazy" decoding="async" /> : null}
+                  <div class="newsShade"></div>
+
+                  <div class="newsMeta">
+                    {post.category ? (
+                      <div class={`newsCategory ${post.category}`}>
+                        {post.category}
+                      </div>
+                    ) : null}
+                    <div class="newsDate">{dateLabel || ""}</div>
+                    <div class="newsTitle">{post.title}</div>
+                  </div>
+
+                  <div class="newsArrow">→</div>
+                </div>
+
+                <div class="newsBody">
+                  <p class="newsExcerpt">{post.excerpt ?? ""}</p>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-6 text-white/70">
+          No news yet.
+        </div>
+      )}
+
+      <!-- ✅ PAGINATION (merged + centered + safe space for floating button) -->
+      <div class="pagerWrap">
+        <div class="pagerBar" id="pagerBar">
+          <div class="pagerInfo">
+            Page {page} / {pageCount} • {total} item(s)
+            {selectedYear ? ` • ${selectedYear}` : ""}
+            {selectedCat ? ` • ${selectedCat}` : ""}
+          </div>
+
+          <div class="pagerBtns">
+            {prev ? (
+              <a class="pagerBtn" href={linkWithParams(prev)}>← Prev</a>
+            ) : (
+              <span class="pagerBtn disabled">← Prev</span>
+            )}
+
+            {next ? (
+              <a class="pagerBtn" href={linkWithParams(next)}>Next →</a>
+            ) : (
+              <span class="pagerBtn disabled">Next →</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script is:inline>
+    // year dropdown
+    const sel = document.getElementById("yearSelect");
+    if (sel) {
+      sel.addEventListener("change", (e) => {
+        const v = e.target.value;
+        if (v) window.location.href = v;
+      });
+    }
+
+    // push floating back-to-top button up if it overlaps pager
+    // (works if Base.astro button has id="backToTopBtn")
+    const btt = document.getElementById("backToTopBtn");
+    const pager = document.getElementById("pagerBar");
+
+    function bumpBtt(){
+      if (!btt || !pager) return;
+      const r = pager.getBoundingClientRect();
+      const vh = window.innerHeight;
+
+      // if pager is near bottom, move button up
+      const overlapZone = 120; // px
+      const distFromBottom = vh - r.bottom;
+
+      if (distFromBottom < overlapZone) {
+        btt.style.transform = "translateY(-78px)";
+      } else {
+        btt.style.transform = "";
+      }
+    }
+
+    bumpBtt();
+    window.addEventListener("scroll", bumpBtt, { passive: true });
+    window.addEventListener("resize", bumpBtt);
+  </script>
+
+  <style is:inline>
+    .abfPageWrap{
+      width: 100%;
+      max-width: 72rem; /* same as max-w-6xl */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #yearSelect option{
+      background: #050B14;
+      color: #fff;
+    }
+
+    /* category pills */
+    .catPill{
+      display:inline-flex;
+      align-items:center;
+      height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.70);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      transition: background .2s ease, border-color .2s ease, color .2s ease;
+      text-decoration:none;
+    }
+    .catPill:hover{
+      background: rgba(255,255,255,.10);
+      color: rgba(255,255,255,.90);
+    }
+    .catPill.active{
+      background: rgba(34,211,238,.16);
+      border-color: rgba(34,211,238,.35);
+      color: rgba(165,243,252,.95);
+      box-shadow: 0 0 0 1px rgba(34,211,238,.12) inset;
+    }
+
+    /* responsive grid */
+    .newsGrid{
+      display:grid;
+      gap:16px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px){
+      .newsGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px){
+      .newsGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    /* card */
+    .newsCard{
+      display:flex;
+      flex-direction:column;
+      border-radius:24px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      overflow:hidden;
+      transition: background .2s ease, transform .2s ease;
+      height:100%;
+      text-decoration:none;
+    }
+    .newsCard:hover{
+      background: rgba(255,255,255,.10);
+      transform: translateY(-1px);
+    }
+
+    /* media */
+    .newsMedia{
+      position:relative;
+      aspect-ratio:16/9;
+      background: linear-gradient(135deg, #145C8F, #2FC2FF);
+      overflow:hidden;
+    }
+    .newsImg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.92;
+      transition: opacity .2s ease, transform .25s ease;
+    }
+    .newsCard:hover .newsImg{
+      opacity:1;
+      transform: scale(1.02);
+    }
+    .newsShade{
+      position:absolute;
+      inset:0;
+      background: linear-gradient(to top, rgba(5,11,20,.78), rgba(5,11,20,.12), transparent);
+    }
+
+    .newsMeta{
+      position:absolute;
+      left:16px;
+      right:56px;
+      bottom:14px;
+      min-width:0;
+    }
+
+    /* category badge */
+    .newsCategory{
+      display:inline-flex;
+      align-items:center;
+      height:18px;
+      padding:0 8px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      margin-bottom:6px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: rgba(255,255,255,.9);
+      width: fit-content;
+    }
+    .newsCategory.radio{
+      border-color: rgba(34,211,238,.35);
+      color: rgba(165,243,252,.95);
+      background: rgba(34,211,238,.10);
+    }
+    .newsCategory.music{
+      border-color: rgba(96,165,250,.35);
+      color: rgba(191,219,254,.95);
+      background: rgba(96,165,250,.10);
+    }
+
+    .newsDate{
+      font-size:11px;
+      color: rgba(255,255,255,.65);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+    }
+    .newsTitle{
+      margin-top:4px;
+      font-weight:900;
+      font-size:18px;
+      line-height:1.15;
+      color:#fff;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .newsArrow{
+      position:absolute;
+      right:14px;
+      bottom:14px;
+      width:40px;
+      height:40px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06);
+      display:grid;
+      place-items:center;
+      color: rgba(165, 243, 252, .92);
+    }
+
+    /* body equal height */
+    .newsBody{
+      padding:16px 18px 18px;
+      flex:1;
+      display:flex;
+    }
+    .newsExcerpt{
+      margin:0;
+      font-size:13px;
+      line-height:1.6;
+      color: rgba(255,255,255,.70);
+      display:-webkit-box;
+      -webkit-line-clamp:3;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    /* ✅ pager: centered + merged */
+    .pagerWrap{
+      display:flex;
+      justify-content:center;
+      padding-bottom: 84px; /* reserve space for floating button */
+    }
+
+    .pagerBar{
+      width: min(820px, 100%);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(8px);
+    }
+
+    .pagerInfo{
+      font-size:12px;
+      color: rgba(255,255,255,.55);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .pagerBtns{
+      display:flex;
+      gap:10px;
+      flex: none;
+    }
+
+    .pagerBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:34px;
+      padding:0 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.88);
+      font-size:13px;
+      font-weight:700;
+      transition: background .2s ease, transform .2s ease;
+    }
+    .pagerBtn:hover{
+      background: rgba(255,255,255,.10);
+      transform: translateY(-1px);
+    }
+    .pagerBtn.disabled{
+      opacity:.35;
+      pointer-events:none;
+    }
+
+    @media (max-width: 560px){
+      .pagerWrap{ padding-bottom: 96px; }
+      .pagerBar{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .pagerBtns{
+        width:100%;
+      }
+      .pagerBtn{
+        flex:1;
+      }
+    }
+  </style>
+</Base>

@@ -1,0 +1,503 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="Music — RadioABF"
+  description="Latest tracks played on RadioABF radioabf.com. Vote for favorites and check real-time community charts."
+  canonical="/music"
+  image="/og-image.jpg"
+>
+<section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+
+  <!-- background glow -->
+  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+  <div class="relative z-10">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+          Music
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+          Latest tracks played on <span class="text-cyan-200">RadioABF</span>
+        </h1>
+
+        <p class="text-white/65 mt-3 max-w-2xl">
+          Live history, covers and weekly community votes.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+  <!-- NOW PLAYING (bigger / classier) -->
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 mb-10 shadow-2xl">
+    <!-- background glow -->
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+    <div class="relative">
+      <div class="flex items-center justify-between gap-4 mb-5">
+        <div class="flex items-center gap-3">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          <div class="text-sm text-white/60 uppercase tracking-wider">Now Playing</div>
+        </div>
+
+        <div
+          id="musicTime"
+          class="flex-none text-xs px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/70 tabular-nums"
+        >
+          --:--
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-[140px_1fr_auto] gap-5 items-center">
+        <div class="flex items-center justify-center">
+          <div
+            id="musicCoverWrapper"
+            class="abfCover w-28 h-28 md:w-32 md:h-32 rounded-2xl border border-white/10 overflow-hidden flex-none shadow-xl"
+          >
+            <img id="musicCover" class="hidden" alt="Pochette actuelle" />
+            <div class="abfCoverFallback">
+              <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+            </div>
+          </div>
+        </div>
+
+        <div class="min-w-0">
+          <div id="musicArtist" class="text-xl md:text-2xl font-semibold text-white truncate leading-tight">—</div>
+          <div id="musicTitle" class="text-white/70 text-base md:text-lg truncate mt-1">—</div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-white/60 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl">
+              Live metadata
+            </span>
+            <span class="text-xs text-white/60 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl">
+              Vote once / 24h
+            </span>
+          </div>
+        </div>
+
+        <button
+          id="nowVoteBtn"
+          class="group w-full md:w-auto justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white/85 transition flex items-center gap-3"
+          type="button"
+        >
+          <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition">
+            👍
+          </span>
+          <span class="flex items-baseline gap-2">
+            <span class="font-semibold">Vote</span>
+            <span class="text-white/60">•</span>
+            <span class="tabular-nums font-semibold"><span id="nowVoteCount">0</span></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOP THIS WEEK (more visible) -->
+  <section class="rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 mb-10 shadow-xl">
+    <div class="flex items-start justify-between gap-4 mb-5">
+      <div class="min-w-0">
+        <div class="text-sm text-white/60 uppercase tracking-wider">Top This Week</div>
+        <div class="text-xs text-white/50 mt-1">
+          Community votes • updates in real time
+        </div>
+      </div>
+      <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
+        Week <span id="musicWeekId" class="tabular-nums">—</span>
+      </div>
+    </div>
+    <ol id="topChart" class="space-y-3"></ol>
+  </section>
+
+  <!-- LAST PLAYED -->
+  <section class="rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8">
+    <div class="flex items-center justify-between gap-4 mb-5">
+      <div class="text-sm text-white/60 uppercase tracking-wider">Last Played</div>
+      <div class="text-xs text-white/50">Tap 👍 to vote</div>
+    </div>
+    <ul id="lastPlayed" class="space-y-3 text-white/80 text-sm"></ul>
+  </section>
+
+  <style>
+    /* Safety: if any parent forces lowercase, we neutralize it where needed */
+    #topChart { text-transform: none; }
+    /* Nice numeric alignment */
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+  </style>
+
+  <script is:inline>
+    (() => {
+      const HISTORY_KEY = "abf_history";
+      const COVERS_KEY = "abf_covers_v1";
+      const DAY = 24 * 60 * 60 * 1000;
+
+      function getISOWeekId(d = new Date()){
+        const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const dayNum = date.getUTCDay() || 7;
+        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+        return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+      }
+      function weekLabel(){ return getISOWeekId().replace("-W"," W"); }
+      function votesKey(){ return `abf_votes_${getISOWeekId()}`; }
+      function votedKey(){ return `abf_voted_${getISOWeekId()}`; }
+
+      function loadJSON(key, fallback){
+        try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+        catch { return fallback; }
+      }
+      function saveJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+      function nowTs(){ return Date.now(); }
+
+      function splitTrack(entry){
+        const parts = String(entry || "").split(" - ");
+        const artist = (parts[0] || "").trim();
+        const title = (parts.slice(1).join(" - ") || "").trim();
+        return { artist, title };
+      }
+      function normKey(artist, title){
+        return (artist + " - " + title)
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .replace(/[“”"']/g, "")
+          .trim();
+      }
+      function esc(s){
+        return String(s || "")
+          .replace(/&/g,"&amp;")
+          .replace(/</g,"&lt;")
+          .replace(/>/g,"&gt;")
+          .replace(/"/g,"&quot;")
+          .replace(/'/g,"&#039;");
+      }
+      function fmtTime(ts){
+        if (!ts) return "--:--";
+        const d = new Date(ts);
+        const hh = String(d.getHours()).padStart(2,"0");
+        const mm = String(d.getMinutes()).padStart(2,"0");
+        return `${hh}:${mm}`;
+      }
+
+      // ===== Formatting rules (requested) =====
+      function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
+      function titleCaseEN(input){
+        const s = String(input || "").trim();
+        if (!s) return "—";
+        const lowerWords = new Set([
+          "a","an","the","and","but","or","nor","for","so","yet",
+          "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
+        ]);
+        const parts = s.split(/(\s+)/);
+        return parts.map((chunk, idx) => {
+          if (/^\s+$/.test(chunk)) return chunk;
+          const word = chunk;
+          if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
+          const hyParts = word.split("-");
+          const rebuilt = hyParts.map((w, hIdx) => {
+            const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
+            const lower = cleaned.toLowerCase();
+            const isFirst = idx === 0 && hIdx === 0;
+            const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
+            if (!cleaned) return w;
+            if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
+            const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
+            return w.replace(cleaned, cap);
+          });
+          return rebuilt.join("-");
+        }).join("");
+      }
+      // =======================================
+
+      function loadHistory(){
+        let raw = [];
+        try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+        catch{ raw = []; }
+        return (raw || []).map((x) => {
+          if (typeof x === "string") return { t: x, ts: 0 };
+          if (x && typeof x === "object" && typeof x.t === "string") return { t: x.t, ts: Number(x.ts) || 0 };
+          return null;
+        }).filter(Boolean);
+      }
+
+      function getVotes(){ return loadJSON(votesKey(), {}); }
+      function getVoted(){ return loadJSON(votedKey(), {}); }
+      function canVote(key){
+        const voted = getVoted();
+        const last = voted[key] || 0;
+        return (nowTs() - last) > DAY;
+      }
+      function vote(key){
+        if (!canVote(key)) return { ok:false, reason:"already" };
+        const votes = getVotes();
+        const voted = getVoted();
+        votes[key] = (votes[key] || 0) + 1;
+        voted[key] = nowTs();
+        saveJSON(votesKey(), votes);
+        saveJSON(votedKey(), voted);
+        return { ok:true, count: votes[key] };
+      }
+
+      function loadCoverCache(){
+        try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
+        catch { return {}; }
+      }
+
+      async function getCover(artist, title){
+        if (!artist || !title) return "";
+        const key = normKey(artist, title);
+        const cache = loadCoverCache();
+        if (cache[key] !== undefined) return cache[key];
+
+        const term = encodeURIComponent(`${artist} ${title}`);
+        const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) return "";
+          const data = await res.json();
+          const item = data?.results?.[0];
+          if (!item) return "";
+          const art = (item.artworkUrl100 || "").replace(/100x100bb.jpg$/, "600x600bb.jpg");
+          cache[key] = art || "";
+          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
+          window.dispatchEvent(new CustomEvent("abf:cover-cache-updated"));
+          return art || "";
+        } catch {
+          cache[key] = "";
+          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
+          return "";
+        }
+      }
+
+      function setCover(url){
+        const img = document.getElementById("musicCover");
+        if (!img) return;
+        if (url){
+          img.src = url;
+          img.classList.remove("hidden");
+        } else {
+          img.classList.add("hidden");
+        }
+      }
+
+      async function renderHistory(){
+        const artistEl = document.getElementById("musicArtist");
+        const titleEl = document.getElementById("musicTitle");
+        const timeEl = document.getElementById("musicTime");
+        const listEl = document.getElementById("lastPlayed");
+        const chartEl = document.getElementById("topChart");
+        const nowVoteBtn = document.getElementById("nowVoteBtn");
+        const nowVoteCount = document.getElementById("nowVoteCount");
+        const weekEl = document.getElementById("musicWeekId");
+
+        if (weekEl) weekEl.textContent = weekLabel();
+        if (!artistEl || !titleEl || !listEl || !chartEl) return;
+
+        let history = loadHistory();
+
+        if (!history.length){
+          artistEl.textContent = "—";
+          titleEl.textContent = "—";
+          if (timeEl) timeEl.textContent = "--:--";
+          listEl.innerHTML = `<li class="text-white/50">Commence le player pour charger l'historique.</li>`;
+          chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes cette semaine.</li>`;
+          setCover("");
+          if (nowVoteBtn) nowVoteBtn.style.display = "none";
+          return;
+        }
+
+        // NOW PLAYING
+        const currentEntry = history[0];
+        const current = splitTrack(currentEntry.t);
+
+        const prettyNowArtist = upperArtist(current.artist || "—");
+        const prettyNowTitle = titleCaseEN(current.title || "—");
+
+        artistEl.textContent = prettyNowArtist;
+        titleEl.textContent = prettyNowTitle;
+        if (timeEl) timeEl.textContent = fmtTime(currentEntry.ts);
+
+        setCover(await getCover(current.artist, current.title));
+
+        const currentKey = normKey(current.artist, current.title);
+        const nowVotes = getVotes();
+        if (nowVoteCount) nowVoteCount.textContent = String(nowVotes[currentKey] || 0);
+
+        if (nowVoteBtn){
+          nowVoteBtn.style.display = "flex";
+          const already = !canVote(currentKey);
+          nowVoteBtn.style.opacity = already ? "0.55" : "1";
+          nowVoteBtn.style.cursor = already ? "not-allowed" : "pointer";
+          nowVoteBtn.onclick = () => {
+            const r = vote(currentKey);
+            if (!r.ok){ alert("Déjà voté pour ce titre. Reviens dans 24h 🙂"); return; }
+            if (nowVoteCount) nowVoteCount.textContent = String(r.count);
+            nowVoteBtn.style.opacity = "0.55";
+            nowVoteBtn.style.cursor = "not-allowed";
+          };
+        }
+
+        const cache = loadCoverCache();
+        const votes = getVotes();
+
+        // Helper cover HTML
+        function coverHtml(key, sizeClass = "w-12 h-12 rounded-xl") {
+          const url = cache[key] || "";
+          return `
+            <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
+              <img src="${url ? esc(url) : ""}" alt="" class="${url ? "" : "hidden"}" loading="lazy" decoding="async" />
+              <div class="abfCoverFallback">
+                <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+              </div>
+            </div>
+          `;
+        }
+
+        // LAST PLAYED
+        listEl.innerHTML = history
+          .slice(1)
+          .map((entry) => {
+            const t = splitTrack(entry.t);
+            const prettyArtist = upperArtist(t.artist || "—");
+            const prettyTitle = titleCaseEN(t.title || "—");
+            const key = normKey(t.artist, t.title);
+            const time = fmtTime(entry.ts);
+
+            return `
+              <li class="flex items-center justify-between gap-3 border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                  ${coverHtml(key)}
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-3">
+                      <div class="font-semibold text-white truncate">${esc(prettyArtist)}</div>
+                      <div class="ml-auto flex-none text-xs px-2 py-0.5 rounded-lg border border-white/10 bg-white/5 text-white/60 tabular-nums">
+                        ${time}
+                      </div>
+                    </div>
+                    <div class="text-white/60 text-sm truncate">${esc(prettyTitle)}</div>
+                  </div>
+                </div>
+                <button
+                  class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
+                  data-key="${key}"
+                  type="button"
+                  aria-label="Vote"
+                  title="Vote"
+                >
+                  👍 <span class="voteCount tabular-nums">0</span>
+                </button>
+              </li>
+            `;
+          })
+          .join("");
+
+        // TOP THIS WEEK
+        const entries = Object.entries(votes)
+          .filter(([,count]) => Number(count) > 0)
+          .sort((a,b) => Number(b[1]) - Number(a[1]))
+          .slice(0, 10);
+
+        if (!entries.length){
+          chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes — sois le premier 🙂</li>`;
+        } else {
+          const max = Math.max(...entries.map(([,c]) => Number(c) || 0), 1);
+
+          chartEl.innerHTML = entries.map(([key, count], i) => {
+            const parts = key.split(" - ");
+            const artistRaw = parts[0] || "—";
+            const titleRaw = parts.slice(1).join(" - ") || "—";
+            const artist = upperArtist(artistRaw);
+            const title = titleCaseEN(titleRaw);
+
+            const pct = Math.round((Number(count) / max) * 100);
+            const rankBadge =
+              i === 0 ? "bg-white/10 border-white/15" :
+              i === 1 ? "bg-white/8 border-white/15" :
+              i === 2 ? "bg-white/6 border-white/15" :
+              "bg-white/5 border-white/10";
+
+            return `
+              <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
+                <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadge} flex items-center justify-center text-sm font-semibold text-white/90 tabular-nums">
+                  ${i+1}
+                </div>
+                ${coverHtml(key, "w-14 h-14 rounded-2xl")}
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start gap-3">
+                    <div class="min-w-0">
+                      <div class="font-semibold text-white truncate">${esc(artist)}</div>
+                      <div class="text-white/65 text-sm truncate">${esc(title)}</div>
+                    </div>
+                    <div class="ml-auto flex-none text-sm text-white/90 font-semibold tabular-nums">
+                      ${count} <span class="text-white/50 font-normal">votes</span>
+                    </div>
+                  </div>
+                  <div class="mt-3 h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]" style="width:${pct}%"></div>
+                  </div>
+                </div>
+              </li>
+            `;
+          }).join("");
+        }
+
+        // Wire vote buttons
+        listEl.querySelectorAll(".voteBtn").forEach((btn) => {
+          const k = btn.dataset.key;
+          if (!k) return;
+          const countEl = btn.querySelector(".voteCount");
+          if (countEl) countEl.textContent = String(votes[k] || 0);
+
+          const already = !canVote(k);
+          btn.style.opacity = already ? "0.55" : "1";
+          btn.style.cursor = already ? "not-allowed" : "pointer";
+
+          btn.onclick = () => {
+            const r = vote(k);
+            if (!r.ok){ alert("Déjà voté pour ce titre. Reviens dans 24h 🙂"); return; }
+            if (countEl) countEl.textContent = String(r.count);
+            btn.style.opacity = "0.55";
+            btn.style.cursor = "not-allowed";
+          };
+        });
+      }
+
+      function startMusicTimer(){
+        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+        window.__abfMusicTimer = setInterval(renderHistory, 8000);
+      }
+
+      function initMusicPage(){
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            renderHistory();
+            startMusicTimer();
+          });
+        });
+      }
+
+      initMusicPage();
+      document.addEventListener("astro:page-load", initMusicPage);
+      document.addEventListener("astro:after-swap", initMusicPage);
+
+      if (!window.__abfMusicListeners){
+        window.addEventListener("abf:history-updated", renderHistory);
+        window.addEventListener("abf:cover-cache-updated", renderHistory);
+        window.__abfMusicListeners = true;
+      }
+
+      document.addEventListener("astro:before-swap", () => {
+        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+      });
+    })();
+  </script>
+</Base>
