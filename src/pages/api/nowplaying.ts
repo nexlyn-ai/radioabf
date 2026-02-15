@@ -68,7 +68,7 @@ async function directusFetch(path: string, init: RequestInit = {}) {
 
 async function getLastPlay(): Promise<{ track_key?: string } | null> {
   const r = await directusFetch(
-    `/items/plays?fields=track_key,played_at&sort=-played_at&limit=1`,
+    `/items/plays?fields=track_key,played_at&sort=-played_at&filter[status][_eq]=published&limit=1`,
     { method: "GET" }
   );
   if (!r.ok) return null;
@@ -84,7 +84,6 @@ async function insertPlay(payload: {
   raw: string;
   source?: string;
 }) {
-  // on force status published si tu as un champ status Directus
   await directusFetch(`/items/plays`, {
     method: "POST",
     body: JSON.stringify({
@@ -96,7 +95,7 @@ async function insertPlay(payload: {
 
 async function getHistory(limit: number) {
   const r = await directusFetch(
-    `/items/plays?fields=track_key,artist,title,played_at,raw&sort=-played_at&limit=${limit}`,
+    `/items/plays?fields=track_key,artist,title,played_at,raw&sort=-played_at&filter[status][_eq]=published&limit=${limit}`,
     { method: "GET" }
   );
   if (!r.ok) return [];
