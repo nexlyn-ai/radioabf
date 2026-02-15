@@ -542,19 +542,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                   <option value="3">FLAC 728</option>
                 </select>
 
-                <button id="playBtn" type="button" class="w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]" aria-label="Play/Pause" title="Play/Pause">
+                               <button id="playBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hound:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]" aria-label="Play/Pause" title="Play/Pause">
                   <span class="abf-ic" data-ic="play"></span>
                 </button>
-
-                <button id="stopBtn" type="button" class="w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Stop" title="Stop">
+                <button id="stopBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Stop" title="Stop">
                   <span class="abf-ic" data-ic="stop"></span>
                 </button>
-
-                <button id="muteBtn" type="button" class="w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Mute" title="Mute">
+                <button id="muteBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Mute" title="Mute">
                   <span class="abf-ic" data-ic="volume"></span>
                 </button>
-
-                <button id="fsBtn" type="button" class="w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Full screen" title="Full screen">
+                <button id="fsBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Full screen" title="Full screen">
                   <span class="abf-ic" data-ic="fs"></span>
                 </button>
 
@@ -617,16 +614,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               <div id="fsTitle" data-abf-title class="mt-2 text-white/70 text-base sm:text-lg truncate">—</div>
 
               <div class="mt-6 flex flex-wrap items-center gap-2">
-                <button id="fsPlay" type="button" class="px-5 py-3 rounded-2xl font-semibold bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition" aria-label="Play/Pause">
+                                <button id="fsPlay" type="button" class="flex items-center justify-center px-5 py-3 rounded-2xl font-semibold bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition" aria-label="Play/Pause">
                   <span class="abf-ic" data-ic="play"></span>
                 </button>
-
-                <button id="fsStop" type="button" class="px-5 py-3 rounded-2xl font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Stop">
+                <button id="fsStop" type="button" class="flex items-center justify-center px-5 py-3 rounded-2xl font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Stop">
                   <span class="abf-ic" data-ic="stop"></span>
                   <span>Stop</span>
                 </button>
-
-                <button id="fsMute" type="button" class="px-5 py-3 rounded-2xl font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Mute">
+                <button id="fsMute" type="button" class="flex items-center justify-center px-5 py-3 rounded-2xl font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Mute">
                   <span class="abf-ic" data-ic="volume"></span>
                 </button>
 
