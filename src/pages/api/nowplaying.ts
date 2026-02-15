@@ -12,9 +12,6 @@ const DIRECTUS_URL =
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
 
-// 🔎 DEBUG FORCÉ (temporaire)
-const DEBUG = true;
-
 function cleanNowText(s: string) {
   let out = String(s || "").trim();
   out = out.replace(/^undefined\s*-\s*/i, "");
@@ -26,10 +23,7 @@ function splitTrack(entry: string) {
   const cleaned = cleanNowText(entry);
   const idx = cleaned.indexOf(" - ");
   if (idx === -1) return { artist: cleaned.trim(), title: "" };
-  return {
-    artist: cleaned.slice(0, idx).trim(),
-    title: cleaned.slice(idx + 3).trim(),
-  };
+  return { artist: cleaned.slice(0, idx).trim(), title: cleaned.slice(idx + 3).trim() };
 }
 
 function normKey(artist: string, title: string) {
@@ -43,12 +37,14 @@ function normKey(artist: string, title: string) {
 function extractNowPlaying(json: any): string {
   const src = json?.icestats?.source;
   const s = Array.isArray(src) ? src[0] : src;
-  return (
+
+  const t =
     (s?.title && String(s.title)) ||
     (s?.yp_currently_playing && String(s.yp_currently_playing)) ||
     (s?.streamtitle && String(s.streamtitle)) ||
-    ""
-  ).trim();
+    "";
+
+  return t.trim();
 }
 
 async function directusFetch(path: string, init: RequestInit = {}) {
@@ -59,65 +55,44 @@ async function directusFetch(path: string, init: RequestInit = {}) {
   return fetch(url, { ...init, headers });
 }
 
-async function getLastPlayDebug() {
-  const path =
-    `/items/plays?fields=track_key,played_at&sort=-played_at` +
-    `&filter[status][_eq]=published&limit=1`;
-
-  const r = await directusFetch(path, { method: "GET" });
-  const text = await r.text().catch(() => "");
-  let json: any = null;
-  try { json = JSON.parse(text); } catch {}
-
-  return {
-    ok: r.ok,
-    status: r.status,
-    body: json || text,
-    last: json?.data?.[0] || null,
-  };
+async function getLastPlay() {
+  const r = await directusFetch(
+    `/items/plays?fields=track_key,played_at&sort=-played_at&limit=1`,
+    { method: "GET" }
+  );
+  if (!r.ok) return null;
+  const j = await r.json().catch(() => ({}));
+  return j?.data?.[0] || null;
 }
 
-async function insertPlayDebug(payload: any) {
-  const r = await directusFetch(`/items/plays`, {
+async function insertPlay(payload: {
+  track_key: string;
+  artist: string;
+  title: string;
+  played_at: string;
+  raw: string;
+  source?: string;
+}) {
+  // ✅ NO STATUS
+  await directusFetch(`/items/plays`, {
     method: "POST",
-    body: JSON.stringify({ ...payload, status: "published" }),
+    body: JSON.stringify(payload),
   });
-
-  const text = await r.text().catch(() => "");
-  let json: any = null;
-  try { json = JSON.parse(text); } catch {}
-
-  return {
-    ok: r.ok,
-    status: r.status,
-    body: json || text,
-  };
 }
 
-async function getHistoryDebug(limit: number) {
-  const path =
-    `/items/plays?fields=track_key,artist,title,played_at,raw,status&sort=-played_at` +
-    `&filter[status][_eq]=published&limit=${limit}`;
-
-  const r = await directusFetch(path, { method: "GET" });
-  const text = await r.text().catch(() => "");
-  let json: any = null;
-  try { json = JSON.parse(text); } catch {}
-
-  return {
-    ok: r.ok,
-    status: r.status,
-    body: json || text,
-    history: Array.isArray(json?.data) ? json.data : [],
-  };
+async function getHistory(limit: number) {
+  const r = await directusFetch(
+    `/items/plays?fields=track_key,artist,title,played_at,raw&sort=-played_at&limit=${limit}`,
+    { method: "GET" }
+  );
+  if (!r.ok) return [];
+  const j = await r.json().catch(() => ({}));
+  return Array.isArray(j?.data) ? j.data : [];
 }
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
-  const limit = Math.max(
-    1,
-    Math.min(30, Number(url.searchParams.get("limit") || "12"))
-  );
+  const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || "12")));
 
   if (!ICECAST_STATUS_URL) {
     return new Response(JSON.stringify({ ok: false, error: "ICECAST_STATUS_URL missing" }), {
@@ -132,7 +107,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  // 1) Icecast
+  // Icecast
   let nowText = "";
   try {
     const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
@@ -155,56 +130,24 @@ export const GET: APIRoute = async ({ request }) => {
   const track_key = normKey(artist, title);
   const played_at = new Date().toISOString();
 
-  const directusDebug: any = {};
-
-  // 2) Insert Directus
+  // Insert si nouveau morceau
   if (artist && track_key && artist.toLowerCase() !== "undefined") {
     try {
-      const lastRes = await getLastPlayDebug();
-      directusDebug.last = lastRes;
-
-      const lastKey = String(lastRes.last?.track_key || "");
-      if (!lastKey || lastKey !== track_key) {
-        const ins = await insertPlayDebug({
-          track_key,
-          artist,
-          title,
-          played_at,
-          raw: nowText,
-          source: "icecast",
-        });
-        directusDebug.insert = ins;
-      } else {
-        directusDebug.insert = { ok: true, skipped: true };
+      const last = await getLastPlay();
+      if (!last || String(last?.track_key || "") !== track_key) {
+        await insertPlay({ track_key, artist, title, played_at, raw: nowText, source: "icecast" });
       }
-    } catch (e: any) {
-      directusDebug.insert = { ok: false, error: e?.message || "insert failed" };
-    }
-  } else {
-    directusDebug.insert = { ok: false, skipped: true, reason: "bad artist/title" };
+    } catch {}
   }
 
-  // 3) Read history
-  let history: any[] = [];
-  try {
-    const histRes = await getHistoryDebug(limit);
-    directusDebug.read = histRes;
-    history = histRes.history;
-  } catch (e: any) {
-    directusDebug.read = { ok: false, error: e?.message || "read failed" };
-  }
+  const history = await getHistory(limit);
 
   return new Response(
-    JSON.stringify({
-      ok: true,
-      now: { raw: nowText, artist, title, track_key, played_at },
-      history,
-      directus: directusDebug,
-    }),
+    JSON.stringify({ ok: true, now: { raw: nowText, artist, title, track_key, played_at }, history }),
     {
       headers: {
         "content-type": "application/json; charset=utf-8",
-        "cache-control": "no-store",
+        "cache-control": "s-maxage=5, stale-while-revalidate=25",
       },
     }
   );
