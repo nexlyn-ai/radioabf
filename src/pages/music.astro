@@ -62,7 +62,7 @@ import Base from "../layouts/Base.astro";
             id="musicCoverWrapper"
             class="abfCover w-28 h-28 md:w-32 md:h-32 rounded-2xl border border-white/10 overflow-hidden flex-none shadow-xl"
           >
-            <img id="musicCover" class="hidden" alt="Pochette actuelle" />
+            <img id="musicCover" class="hidden" alt="Current cover" />
             <div class="abfCoverFallback">
               <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
             </div>
@@ -135,6 +135,10 @@ import Base from "../layouts/Base.astro";
 
   <script is:inline>
   (() => {
+    // ✅ Prevent double-boot on Astro view transitions / re-entry
+    if (window.__abfMusicBooted) return;
+    window.__abfMusicBooted = true;
+
     const HISTORY_KEY = "abf_history";
     const COVERS_KEY = "abf_covers_v1";
     const DAY = 24 * 60 * 60 * 1000;
@@ -152,13 +156,14 @@ import Base from "../layouts/Base.astro";
 
     function nowTs(){ return Date.now(); }
 
-  function splitTrack(entry){
-  const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
-  const idx = s.indexOf(" - ");
-  if (idx === -1) return { artist: s, title: "" };
-  return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
-}
+    function splitTrack(entry){
+      const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
+      const idx = s.indexOf(" - ");
+      if (idx === -1) return { artist: s, title: "" };
+      return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+    }
 
+    // NORM key for local cache/session (covers, anti-spam in-session)
     function normKey(artist, title){
       return (artist + " - " + title)
         .toLowerCase()
@@ -166,6 +171,14 @@ import Base from "../layouts/Base.astro";
         .replace(/[“”"']/g, "")
         .trim();
     }
+
+    // RAW key for server (keeps original casing)
+    function rawKey(artist, title){
+      const a = String(artist || "").trim();
+      const t = String(title || "").trim();
+      return `${a} - ${t}`.trim();
+    }
+
     function esc(s){
       return String(s || "")
         .replace(/&/g,"&amp;")
@@ -212,7 +225,7 @@ import Base from "../layouts/Base.astro";
     }
     // =======================================
 
-    // ===== History (same as before) =====
+    // ===== History (fallback local) =====
     function loadHistory(){
       let raw = [];
       try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
@@ -223,58 +236,55 @@ import Base from "../layouts/Base.astro";
         return null;
       }).filter(Boolean);
     }
-	
-async function fetchServerNowPlaying(limit = 12){
-  try{
-    const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
-    const data = await res.json().catch(()=> ({}));
-    if (!data?.ok) return [];
 
-    const out = [];
+    async function fetchServerNowPlaying(limit = 12){
+      try{
+        const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
+        const data = await res.json().catch(()=> ({}));
+        if (!data?.ok) return [];
 
-// ✅ "now" -> { raw, played_at, played_at_ms }
-if (data?.now?.raw){
-  out.push({
-    t: String(data.now.raw),
-    ts: Number(data?.now?.played_at_ms) ||
-        (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now())
-  });
-}
+        const out = [];
 
-// ✅ "history" -> [{ raw, played_at, played_at_ms, ... }]
-if (Array.isArray(data?.history)){
-  for (const row of data.history){
-    const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
-    if (!raw) continue;
+        // now -> { raw, played_at, played_at_ms }
+        if (data?.now?.raw){
+          out.push({
+            t: String(data.now.raw),
+            ts: Number(data?.now?.played_at_ms) ||
+                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now())
+          });
+        }
 
-    out.push({
-      t: String(raw),
-      ts: Number(row?.played_at_ms) ||
-          (row?.played_at ? new Date(row.played_at).getTime() : 0)
-    });
-  }
-}
+        // history -> [{ raw, played_at, played_at_ms, ... }]
+        if (Array.isArray(data?.history)){
+          for (const row of data.history){
+            const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
+            if (!raw) continue;
 
+            out.push({
+              t: String(raw),
+              ts: Number(row?.played_at_ms) ||
+                  (row?.played_at ? new Date(row.played_at).getTime() : 0)
+            });
+          }
+        }
 
-    // dedupe (évite now + first history identiques)
-    const seen = new Set();
-    const deduped = [];
-    for (const item of out){
-      const k = String(item.t || "").toLowerCase();
-      if (!k || seen.has(k)) continue;
-      seen.add(k);
-      deduped.push(item);
+        // dedupe (avoid now + first history duplicates)
+        const seen = new Set();
+        const deduped = [];
+        for (const item of out){
+          const k = String(item.t || "").toLowerCase();
+          if (!k || seen.has(k)) continue;
+          seen.add(k);
+          deduped.push(item);
+        }
+
+        return deduped.slice(0, limit);
+      }catch{
+        return [];
+      }
     }
 
-    return deduped.slice(0, limit);
-  }catch{
-    return [];
-  }
-}
-
-
-	
-    // ===== Cover cache (same as before) =====
+    // ===== Cover cache =====
     function loadCoverCache(){
       try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
       catch { return {}; }
@@ -319,87 +329,83 @@ if (Array.isArray(data?.history)){
     }
 
     // =====================================================
-    // ✅ SERVER-SIDE VOTES (NO localStorage)
+    // ✅ SERVER-SIDE VOTES (NO localStorage votes)
     // Endpoint: /api/vote
-    // - GET  /api/vote?week=YYYY-Wxx      -> returns votes for week
-    // - POST /api/vote { track_key, week } -> returns updated count or error
-    // (Client is defensive: works with several response shapes)
+    // - GET  /api/vote?week=YYYY-Wxx      -> returns { ok:true, week, top:[{track_key,count,...}] }
+    // - POST /api/vote { track_key, week, artist, title } -> returns ok or error
     // =====================================================
 
-    // tiny cache in-memory to avoid spamming API every 2 seconds
+    // tiny cache in-memory to avoid spamming API
     const VOTES_TTL_MS = 10_000; // 10s
     function votesCacheKey(){ return `votes:${getISOWeekId()}`; }
 
     async function apiGetVotes(){
-  const week = getISOWeekId();
-  const k = votesCacheKey();
+      const week = getISOWeekId();
+      const k = votesCacheKey();
 
-  window.__abfVotesCache = window.__abfVotesCache || {};
-  const c = window.__abfVotesCache[k];
-  const now = nowTs();
-  if (c && now < c.exp) return c.votes || {};
+      window.__abfVotesCache = window.__abfVotesCache || {};
+      const c = window.__abfVotesCache[k];
+      const now = nowTs();
+      if (c && now < c.exp) return c.votes || {};
 
-  try {
-    const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
-    const data = await res.json().catch(() => ({}));
+      try {
+        const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
 
-    // ✅ Our API returns: { ok:true, week, top:[ {track_key,count,...} ] }
-    const votes = {};
-    const top = Array.isArray(data?.top) ? data.top : [];
-    for (const row of top){
-      const key = String(row?.track_key || "").trim();
-      const count = Number(row?.count || 0);
-      if (key) votes[key] = count;
+        // API: { ok:true, week, top:[ {track_key,count,...} ] }
+        const votes = {};
+        const top = Array.isArray(data?.top) ? data.top : [];
+        for (const row of top){
+          const key = String(row?.track_key || "").trim();
+          const count = Number(row?.count || 0);
+          if (key) votes[key] = count;
+        }
+
+        window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
+        return votes;
+      } catch {
+        return {};
+      }
     }
 
-    window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
-    return votes;
-  } catch {
-    return {};
-  }
-}
-
-
-    function markSessionVoted(trackKey){
+    // session UX anti-spam (24h per device session) — uses NORM key
+    function markSessionVoted(norm){
       window.__abfVotedSession = window.__abfVotedSession || {};
-      window.__abfVotedSession[trackKey] = nowTs();
+      window.__abfVotedSession[norm] = nowTs();
     }
-
-    function sessionAlreadyVoted(trackKey){
-      // UX only: avoid re-click spam in the same session
+    function sessionAlreadyVoted(norm){
       const m = window.__abfVotedSession || {};
-      const last = m[trackKey] || 0;
+      const last = m[norm] || 0;
       return (nowTs() - last) < DAY;
     }
 
-  async function apiVote(trackKey, artist = "", title = ""){
-  const week = getISOWeekId();
+    async function apiVote(trackKeyRaw, artist = "", title = ""){
+      const week = getISOWeekId();
 
-  const res = await fetch("/api/vote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ week, track_key: trackKey, artist, title }),
-  });
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ week, track_key: trackKeyRaw, artist, title }),
+      });
 
-  const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
 
-  if (!res.ok || data?.ok === false){
-    return {
-      ok: false,
-      status: res.status,
-      error: data?.error || `HTTP ${res.status}`,
-      reason: data?.reason || "",
-    };
-  }
+      if (!res.ok || data?.ok === false){
+        return {
+          ok: false,
+          status: res.status,
+          error: data?.error || `HTTP ${res.status}`,
+          reason: data?.reason || "",
+        };
+      }
 
-  // Your API currently returns { ok:true, week } (no count)
-  return { ok: true, status: res.status, week: data?.week || week };
-}
+      // Some backends may return count; if not, we’ll fallback client-side
+      return { ok: true, status: res.status, week: data?.week || week, count: data?.count };
+    }
 
-
-    // Helper cover HTML
-    function coverHtml(key, cache, sizeClass = "w-12 h-12 rounded-xl") {
-      const url = cache[key] || "";
+    // Helper cover HTML (uses NORM key cache)
+    function coverHtml(norm, cache, sizeClass = "w-12 h-12 rounded-xl") {
+      const url = cache[norm] || "";
       return `
         <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
           <img src="${url ? esc(url) : ""}" alt="" class="${url ? "" : "hidden"}" loading="lazy" decoding="async" />
@@ -408,6 +414,19 @@ if (Array.isArray(data?.history)){
           </div>
         </div>
       `;
+    }
+
+    function voteErrorToast(r){
+      // ✅ All vote-related notifications in English
+      if (r?.status === 409 || r?.reason === "cooldown"){
+        alert("You already voted for this track. Come back in 24h 🙂");
+        return;
+      }
+      if (r?.status === 429){
+        alert("Too many requests (rate limit). Please wait a few seconds and try again 🙂");
+        return;
+      }
+      alert(`Vote failed: ${r?.error || "Unknown error"}`);
     }
 
     async function renderHistory(){
@@ -423,19 +442,16 @@ if (Array.isArray(data?.history)){
       if (weekEl) weekEl.textContent = weekLabel();
       if (!artistEl || !titleEl || !listEl || !chartEl) return;
 
- let history = await fetchServerNowPlaying(12);
-
-// fallback local si jamais l'API tombe (optionnel)
-if (!history.length) history = loadHistory();
-
-
+      let history = await fetchServerNowPlaying(12);
+      // fallback local if API down
+      if (!history.length) history = loadHistory();
 
       if (!history.length){
         artistEl.textContent = "—";
         titleEl.textContent = "—";
         if (timeEl) timeEl.textContent = "--:--";
-        listEl.innerHTML = `<li class="text-white/50">Commence le player pour charger l'historique.</li>`;
-        chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes cette semaine.</li>`;
+        listEl.innerHTML = `<li class="text-white/50">Start the player to load the history.</li>`;
+        chartEl.innerHTML = `<li class="text-white/50">No votes yet this week.</li>`;
         setCover("");
         if (nowVoteBtn) nowVoteBtn.style.display = "none";
         return;
@@ -457,45 +473,52 @@ if (!history.length) history = loadHistory();
 
       setCover(await getCover(current.artist, current.title));
 
-      const currentKey = normKey(current.artist, current.title);
-      if (nowVoteCount) nowVoteCount.textContent = String(votes[currentKey] || 0);
+      // ✅ keys
+      const currentKeyNorm = normKey(current.artist, current.title);
+      const currentKeyRaw  = rawKey(current.artist, current.title);
+
+      // ✅ Votes map is keyed by whatever server stores (track_key)
+      // If your server stores RAW keys: votes[currentKeyRaw]
+      // If your server stores NORM keys: votes[currentKeyNorm]
+      // We'll try both (non-breaking migration).
+      const currentCount = (votes[currentKeyRaw] != null)
+        ? votes[currentKeyRaw]
+        : (votes[currentKeyNorm] || 0);
+
+      if (nowVoteCount) nowVoteCount.textContent = String(currentCount);
 
       if (nowVoteBtn){
         nowVoteBtn.style.display = "flex";
 
-        const alreadySession = sessionAlreadyVoted(currentKey);
+        const alreadySession = sessionAlreadyVoted(currentKeyNorm);
         nowVoteBtn.style.opacity = alreadySession ? "0.55" : "1";
         nowVoteBtn.style.cursor = alreadySession ? "not-allowed" : "pointer";
 
         nowVoteBtn.onclick = async () => {
-          if (sessionAlreadyVoted(currentKey)){
-            alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
+          if (sessionAlreadyVoted(currentKeyNorm)){
+            alert("You already voted for this track. Come back in 24h 🙂");
             return;
           }
 
           nowVoteBtn.style.opacity = "0.7";
           nowVoteBtn.style.cursor = "wait";
 
-          const r = await apiVote(currentKey, current.artist, current.title);
+          const r = await apiVote(currentKeyRaw, current.artist, current.title);
 
           if (!r.ok){
-  nowVoteBtn.style.opacity = "1";
-  nowVoteBtn.style.cursor = "pointer";
+            nowVoteBtn.style.opacity = "1";
+            nowVoteBtn.style.cursor = "pointer";
+            voteErrorToast(r);
+            return;
+          }
 
-  // ✅ message selon le vrai souci
-  if (r.status === 429 || r.reason === "cooldown") {
-    alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
-  } else {
-    alert(`Vote impossible: ${r.error}`);
-  }
-  return;
-}
-
-
-          markSessionVoted(currentKey);
+          markSessionVoted(currentKeyNorm);
 
           // update UI count
-          const newCount = (r.count != null) ? r.count : (Number(votes[currentKey] || 0) + 1);
+          const newCount = (r.count != null)
+            ? r.count
+            : (Number(currentCount || 0) + 1);
+
           if (nowVoteCount) nowVoteCount.textContent = String(newCount);
 
           // bust cache quickly + re-render
@@ -517,13 +540,16 @@ if (!history.length) history = loadHistory();
           const t = splitTrack(entry.t);
           const prettyArtist = upperArtist(t.artist || "—");
           const prettyTitle = titleCaseEN(t.title || "—");
-          const key = normKey(t.artist, t.title);
+
+          const kNorm = normKey(t.artist, t.title);
+          const kRaw  = rawKey(t.artist, t.title);
+
           const time = fmtTime(entry.ts);
 
           return `
             <li class="flex items-center justify-between gap-3 border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                ${coverHtml(key, cache)}
+                ${coverHtml(kNorm, cache)}
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-3">
                     <div class="font-semibold text-white truncate">${esc(prettyArtist)}</div>
@@ -536,7 +562,10 @@ if (!history.length) history = loadHistory();
               </div>
               <button
                 class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
-                data-key="${key}"
+                data-norm="${esc(kNorm)}"
+                data-raw="${esc(kRaw)}"
+                data-artist="${esc(t.artist || "")}"
+                data-title="${esc(t.title || "")}"
                 type="button"
                 aria-label="Vote"
                 title="Vote"
@@ -555,12 +584,13 @@ if (!history.length) history = loadHistory();
         .slice(0, 10);
 
       if (!entries.length){
-        chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes — sois le premier 🙂</li>`;
+        chartEl.innerHTML = `<li class="text-white/50">No votes yet — be the first 🙂</li>`;
       } else {
         const max = Math.max(...entries.map(([,c]) => Number(c) || 0), 1);
 
         chartEl.innerHTML = entries.map(([key, count], i) => {
-          const parts = key.split(" - ");
+          // key might be RAW or NORM; for display, try to split
+          const parts = String(key).split(" - ");
           const artistRaw = parts[0] || "—";
           const titleRaw = parts.slice(1).join(" - ") || "—";
           const artist = upperArtist(artistRaw);
@@ -573,12 +603,15 @@ if (!history.length) history = loadHistory();
             i === 2 ? "bg-white/6 border-white/15" :
             "bg-white/5 border-white/10";
 
+          // Cover cache uses NORM; try to map display -> norm
+          const kNorm = normKey(artistRaw, titleRaw);
+
           return `
             <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
               <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadge} flex items-center justify-center text-sm font-semibold text-white/90 tabular-nums">
                 ${i+1}
               </div>
-              ${coverHtml(key, cache, "w-14 h-14 rounded-2xl")}
+              ${coverHtml(kNorm, cache, "w-14 h-14 rounded-2xl")}
               <div class="min-w-0 flex-1">
                 <div class="flex items-start gap-3">
                   <div class="min-w-0">
@@ -600,50 +633,44 @@ if (!history.length) history = loadHistory();
 
       // Wire vote buttons (server-side)
       listEl.querySelectorAll(".voteBtn").forEach((btn) => {
-        const k = btn.dataset.key;
-        if (!k) return;
+        const kNorm = btn.dataset.norm || "";
+        const kRaw  = btn.dataset.raw || "";
+        const a     = btn.dataset.artist || "";
+        const t     = btn.dataset.title || "";
 
         const countEl = btn.querySelector(".voteCount");
-        if (countEl) countEl.textContent = String(votes[k] || 0);
 
-        const alreadySession = sessionAlreadyVoted(k);
+        // votes map may store RAW or NORM — try both
+        const c = (votes[kRaw] != null) ? votes[kRaw] : (votes[kNorm] || 0);
+        if (countEl) countEl.textContent = String(c);
+
+        const alreadySession = sessionAlreadyVoted(kNorm);
         btn.style.opacity = alreadySession ? "0.55" : "1";
         btn.style.cursor = alreadySession ? "not-allowed" : "pointer";
 
         btn.onclick = async () => {
-          if (sessionAlreadyVoted(k)){
-            alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
+          if (sessionAlreadyVoted(kNorm)){
+            alert("You already voted for this track. Come back in 24h 🙂");
             return;
           }
 
           btn.style.opacity = "0.7";
           btn.style.cursor = "wait";
 
-          // on reconstruit artist/title depuis la clé
-const parts = String(k).split(" - ");
-const a = (parts[0] || "").trim();
-const t = (parts.slice(1).join(" - ") || "").trim();
-const r = await apiVote(k, a, t);
-
+          const r = await apiVote(kRaw || rawKey(a, t), a, t);
 
           if (!r.ok){
-  btn.style.opacity = "1";
-  btn.style.cursor = "pointer";
-  if (r.status === 429 || r.reason === "cooldown") {
-    alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
-  } else {
-    alert(`Vote impossible: ${r.error}`);
-  }
-  return;
-}
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+            voteErrorToast(r);
+            return;
+          }
 
+          markSessionVoted(kNorm);
 
-          markSessionVoted(k);
-
-          const newCount = (r.count != null) ? r.count : (Number(votes[k] || 0) + 1);
+          const newCount = (r.count != null) ? r.count : (Number(c || 0) + 1);
           if (countEl) countEl.textContent = String(newCount);
 
-          // bust cache + refresh chart
           const kk = votesCacheKey();
           if (window.__abfVotesCache?.[kk]) window.__abfVotesCache[kk].exp = 0;
 

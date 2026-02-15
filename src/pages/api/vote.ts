@@ -20,16 +20,20 @@ function json(body: any, status = 200) {
     },
   });
 }
-function bad(status: number, message: string) {
-  return json({ ok: false, error: message }, status);
+
+function bad(status: number, message: string, extra?: Record<string, any>) {
+  return json({ ok: false, error: message, ...(extra || {}) }, status);
 }
+
 function assertEnv() {
   if (!DIRECTUS_URL) throw new Error("DIRECTUS_URL is missing");
   if (!TOKEN) throw new Error("DIRECTUS_VOTES_TOKEN is missing");
 }
+
 function dUrl(path: string) {
   return `${DIRECTUS_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
+
 async function dFetch(path: string, init?: RequestInit) {
   assertEnv();
   const res = await fetch(dUrl(path), {
@@ -59,7 +63,6 @@ function pickWeek(input?: string | null) {
 }
 
 function todayISO() {
-  // format YYYY-MM-DD
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -67,32 +70,30 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
-// Simple deterministic IP hash without external deps (NOT cryptographic)
-// Good enough for rate limiting / dedupe.
+// Simple deterministic IP hash (NOT cryptographic)
 async function ipHash(ip: string) {
   const enc = new TextEncoder().encode(ip || "0.0.0.0");
   const buf = await crypto.subtle.digest("SHA-256", enc);
   const arr = Array.from(new Uint8Array(buf));
-  return arr.map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+  return arr.map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
 }
 
 function getClientIp(request: Request) {
-  // Vercel / proxies
   const xff = request.headers.get("x-forwarded-for") || "";
   const first = xff.split(",")[0]?.trim();
   return first || request.headers.get("x-real-ip") || "0.0.0.0";
 }
 
-// -------- GET /api/vote?week=YYYY-WNN (week optional) --------
+// -------- GET /api/vote?week=YYYY-WNN --------
 export const GET: APIRoute = async ({ url }) => {
   try {
     const week = pickWeek(url.searchParams.get("week"));
-
-    // Align with your schema: week, track_key, count
     const fields = ["week", "track_key", "count"].join(",");
 
     const res = await dFetch(
-      `/items/${COLLECTION}?fields=${encodeURIComponent(fields)}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
+      `/items/${COLLECTION}?fields=${encodeURIComponent(fields)}&filter[week][_eq]=${encodeURIComponent(
+        week
+      )}&limit=2000`
     );
 
     if (!res.ok) {
@@ -103,7 +104,6 @@ export const GET: APIRoute = async ({ url }) => {
     const data = (await res.json()) as { data?: any[] };
     const rows = Array.isArray(data?.data) ? data.data : [];
 
-    // Sum counts per track_key
     const map = new Map<string, number>();
     for (const r of rows) {
       const k = String(r.track_key || "").trim();
@@ -122,7 +122,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 };
 
-// -------- POST /api/vote (week optional) --------
+// -------- POST /api/vote --------
 // Body: { week?, track_key }
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -132,19 +132,20 @@ export const POST: APIRoute = async ({ request }) => {
     const track_key = String(body?.track_key || "").trim();
     if (!track_key) return bad(400, "Missing track_key");
 
-    // 1 vote / day / IP
+    // 1 vote / day / IP / week / track_key
     const ip = getClientIp(request);
     const iph = await ipHash(ip);
     const vote_day = todayISO();
 
-    // Check existing vote for this ip_hash + vote_day + week
+    // ✅ FIX: include track_key in dedupe check (per-track cooldown)
     const checkFields = ["id"].join(",");
     const checkRes = await dFetch(
       `/items/${COLLECTION}?fields=${encodeURIComponent(checkFields)}`
-      + `&filter[week][_eq]=${encodeURIComponent(week)}`
-      + `&filter[vote_day][_eq]=${encodeURIComponent(vote_day)}`
-      + `&filter[ip_hash][_eq]=${encodeURIComponent(iph)}`
-      + `&limit=1`
+        + `&filter[week][_eq]=${encodeURIComponent(week)}`
+        + `&filter[vote_day][_eq]=${encodeURIComponent(vote_day)}`
+        + `&filter[ip_hash][_eq]=${encodeURIComponent(iph)}`
+        + `&filter[track_key][_eq]=${encodeURIComponent(track_key)}`
+        + `&limit=1`
     );
 
     if (!checkRes.ok) {
@@ -154,11 +155,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const checkJson = (await checkRes.json().catch(() => ({}))) as any;
     const already = Array.isArray(checkJson?.data) && checkJson.data.length > 0;
+
     if (already) {
-      return bad(429, "Already voted today (this device/IP).");
+      // ✅ Better semantics than 429
+      return bad(409, "Already voted for this track today.", { reason: "cooldown" });
     }
 
-    // Insert vote row
     const res = await dFetch(`/items/${COLLECTION}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
