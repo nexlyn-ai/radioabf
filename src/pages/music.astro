@@ -222,7 +222,24 @@ import Base from "../layouts/Base.astro";
         return null;
       }).filter(Boolean);
     }
+	
+	async function fetchServerNowPlaying(limit = 12){
+  try{
+    const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
+    const data = await res.json().catch(()=> ({}));
+    if (!data?.ok) return [];
+    // data.history peut être vide si Icecast ne fournit pas d'historique
+    // on utilise au moins "now" comme 1er item
+    const out = [];
+    if (data?.now?.t) out.push({ t: data.now.t, ts: data.now.ts || Date.now() });
+    if (Array.isArray(data?.history)) out.push(...data.history);
+    return out;
+  }catch{
+    return [];
+  }
+}
 
+	
     // ===== Cover cache (same as before) =====
     function loadCoverCache(){
       try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
@@ -373,6 +390,12 @@ import Base from "../layouts/Base.astro";
       if (!artistEl || !titleEl || !listEl || !chartEl) return;
 
       let history = loadHistory();
+if (!history.length){
+  // ✅ fallback prod-safe : récupère au moins le now playing côté serveur
+  const serverHist = await fetchServerNowPlaying(12);
+  if (serverHist.length) history = serverHist;
+}
+
 
       if (!history.length){
         artistEl.textContent = "—";
