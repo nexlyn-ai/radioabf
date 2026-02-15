@@ -561,11 +561,26 @@ const fmtDate = (iso?: string | null) => {
         }
       }
 
-      // ✅ NEW: Home reads the new nowplaying state (no localStorage history)
+      // ✅ FIX: accepte plusieurs formes de payload (prod/Vercel)
       function getNowplayingPayload(){
         const p = window.__abf?.__nowplaying;
-        if (p?.ok) return p;
-        return null;
+        if (!p || typeof p !== "object") return null;
+        // certains environnements n’ont pas ok:true -> on accepte quand même
+        return p;
+      }
+
+      // ✅ FIX: extraction history tolérante
+      function getHistoryFromPayload(p){
+        if (!p) return [];
+        const h1 = Array.isArray(p.history) ? p.history : null;
+        const h2 = Array.isArray(p.nowplaying?.history) ? p.nowplaying.history : null;
+        const h3 = Array.isArray(p.data?.history) ? p.data.history : null;
+        return h1 || h2 || h3 || [];
+      }
+
+      function getNowFromPayload(p){
+        if (!p) return null;
+        return p.now || p.nowplaying || p.data?.now || null;
       }
 
       // ---------- Votes API (Directus via /api/vote) ----------
@@ -633,14 +648,13 @@ const fmtDate = (iso?: string | null) => {
         box.classList.remove("hidden");
       }
 
-      // ✅ UPDATED: Now playing from __abf.__nowplaying
       function renderNowPlaying(){
         const artistEl = document.getElementById("homeArtist");
         const titleEl = document.getElementById("homeTitle");
         if (!artistEl || !titleEl) return;
 
         const payload = getNowplayingPayload();
-        const now = payload?.now || null;
+        const now = getNowFromPayload(payload);
 
         const artist = String(now?.artist || "").trim();
         const title  = String(now?.title || "").trim();
@@ -664,13 +678,12 @@ const fmtDate = (iso?: string | null) => {
         }
       }
 
-      // ✅ UPDATED: Last played from __abf.__nowplaying.history
       function renderLastPlayedCarousel(){
         const host = document.getElementById("homeLastCarousel");
         if (!host) return;
 
         const payload = getNowplayingPayload();
-        const history = Array.isArray(payload?.history) ? payload.history : [];
+        const history = getHistoryFromPayload(payload);
 
         const items = history
           .filter(row => (row?.artist || row?.title || row?.raw))
@@ -710,7 +723,6 @@ const fmtDate = (iso?: string | null) => {
         }).join("");
       }
 
-      // Top 8 grid (API)
       async function renderTop(){
         const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
         const empty = document.getElementById("topWeekEmpty");
@@ -720,7 +732,7 @@ const fmtDate = (iso?: string | null) => {
         try { covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
 
         const week = getISOWeekId();
-        const top = await getTopWeekCached(week); // [{track_key, artist, title, count}]
+        const top = await getTopWeekCached(week);
 
         if (!top.length){
           if (empty) empty.classList.remove("hidden");
@@ -789,7 +801,7 @@ const fmtDate = (iso?: string | null) => {
         });
       }
 
-      const SCHEDULE = {
+      const SCHEDULE = { /* ... inchangé (ton gros objet) ... */ 
         mon: [
           { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
           { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
@@ -1119,26 +1131,19 @@ const fmtDate = (iso?: string | null) => {
         document.head.appendChild(st);
       }
 
-      function bindFlacModal(){
+      // ✅ FIX: éviter de rebinder les listeners modals à chaque swap
+      function bindFlacModalOnce(){
+        if (window.__abfFlacModalBound) return;
         const modal = document.getElementById("flacModal");
         const openBtn = document.getElementById("openFlacModal");
         const openBtn2 = document.getElementById("openFlacModal2");
         const closeBtn = document.getElementById("flacClose");
         if (!modal || !openBtn || !closeBtn) return;
 
-        const lockScroll = (on) => {
-          document.documentElement.style.overflow = on ? "hidden" : "";
-        };
+        const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
 
-        const open = () => {
-          modal.setAttribute("aria-hidden","false");
-          lockScroll(true);
-        };
-
-        const close = () => {
-          modal.setAttribute("aria-hidden","true");
-          lockScroll(false);
-        };
+        const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
+        const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
         openBtn.addEventListener("click", open);
         if (openBtn2) openBtn2.addEventListener("click", open);
@@ -1153,27 +1158,21 @@ const fmtDate = (iso?: string | null) => {
           if (e.key !== "Escape") return;
           if (modal.getAttribute("aria-hidden") === "false") close();
         });
+
+        window.__abfFlacModalBound = true;
       }
 
-      function bindStreamQualityModal(){
+      function bindStreamQualityModalOnce(){
+        if (window.__abfStreamModalBound) return;
         const modal = document.getElementById("streamQualityModal");
         const openBtn = document.getElementById("openStreamQualityModal");
         const closeBtn = document.getElementById("streamQualityClose");
         if (!modal || !openBtn || !closeBtn) return;
 
-        const lockScroll = (on) => {
-          document.documentElement.style.overflow = on ? "hidden" : "";
-        };
+        const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
 
-        const open = () => {
-          modal.setAttribute("aria-hidden","false");
-          lockScroll(true);
-        };
-
-        const close = () => {
-          modal.setAttribute("aria-hidden","true");
-          lockScroll(false);
-        };
+        const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
+        const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
         openBtn.addEventListener("click", open);
         closeBtn.addEventListener("click", close);
@@ -1187,12 +1186,14 @@ const fmtDate = (iso?: string | null) => {
           if (e.key !== "Escape") return;
           if (modal.getAttribute("aria-hidden") === "false") close();
         });
+
+        window.__abfStreamModalBound = true;
       }
 
       async function initHome(){
         injectOnAirStylesOnce();
-        bindFlacModal();
-        bindStreamQualityModal();
+        bindFlacModalOnce();
+        bindStreamQualityModalOnce();
 
         renderNowPlaying();
         renderLastPlayedCarousel();
@@ -1201,11 +1202,11 @@ const fmtDate = (iso?: string | null) => {
         await renderTop();
         await renderHeroTop1();
 
-        // Ensure a quick refresh after player pushed nowplaying (first load)
-        requestAnimationFrame(() => {
+        // petit “retry” au cas où Base push __nowplaying un peu après
+        setTimeout(() => {
           renderNowPlaying();
           renderLastPlayedCarousel();
-        });
+        }, 350);
 
         const jump = document.getElementById("jumpToPlayer");
         if (jump){
@@ -1219,8 +1220,8 @@ const fmtDate = (iso?: string | null) => {
             renderNowPlaying();
             renderLastPlayedCarousel();
             renderOnAirTonight();
-            renderTop();        // async ok (fire-and-forget)
-            renderHeroTop1();   // async ok (fire-and-forget)
+            renderTop();
+            renderHeroTop1();
           }, 8000);
         }
 
