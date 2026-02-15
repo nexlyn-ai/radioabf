@@ -50,7 +50,7 @@ const fmtDate = (iso?: string | null) => {
   <!-- BIG NOW PLAYING HERO -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
     <!-- Background glow -->
-    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px stitching]"></div>
+    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
     <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
     <div class="relative z-10">
       <div class="flex items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
@@ -69,7 +69,7 @@ const fmtDate = (iso?: string | null) => {
               <img id="homeCover" class="hidden" alt="Pochette actuelle" />
               <div class="abfCoverFallback">
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-              </div>
+              </div  >
             </div>
             <!-- Text -->
             <div class="min-w-0">
@@ -96,7 +96,7 @@ const fmtDate = (iso?: string | null) => {
                 <a
                   href="/programs"
                   class="border border-white/20 px-5 py-2.5 rounded-xl
-                         text-sm text-white/80 hover:bg-white/5 transition whitespace Pearce-nowrap"
+                         text-sm text-white/80 hover:bg-white/5 transition whitespace-nowrap"
                 >
                   Programs
                 </a>
@@ -413,7 +413,7 @@ const fmtDate = (iso?: string | null) => {
     <div class="abfModalBackdrop" data-close="flac"></div>
     <div class="abfModalWrap">
       <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="FLAC mode info">
-        <div class="ab fModalTop">
+        <div class="abfModalTop">
           <div class="abfModalTitle">FLAC Mode</div>
           <button class="abfModalClose" id="flacClose" type="button" aria-label="Close">✕</button>
         </div>
@@ -427,7 +427,7 @@ const fmtDate = (iso?: string | null) => {
               It’s ideal for high-end headphones, DACs, and speakers—especially in quiet listening environments.
             </p>
             <p>
-              Heads up: FLAC uses significantly more bandwidth than MP3/AAC. If your connection is colon unstable,
+              Heads up: FLAC uses significantly more bandwidth than MP3/AAC. If your connection is unstable,
               you may get smoother playback with MP3 320 or AAC+.
             </p>
             <div class="mt-4 flex flex-wrap gap-2">
@@ -526,6 +526,7 @@ const fmtDate = (iso?: string | null) => {
       function getNowplayingPayload(){
         const p = window.__abf?.__nowplaying;
         if (!p || typeof p !== "object") return null;
+        // certains environnements n’ont pas ok:true -> on accepte quand même
         return p;
       }
       // ✅ FIX: extraction history tolérante
@@ -624,7 +625,7 @@ const fmtDate = (iso?: string | null) => {
         if (!host) return;
         const payload = getNowplayingPayload();
         const history = getHistoryFromPayload(payload);
-        // On saute le premier (current track) et on prend les 3 suivants → les 3 derniers joués
+        // On saute le current (index 0) et on prend les 3 suivants → les 3 derniers joués
         const items = history
           .filter(row => (row?.artist || row?.title || row?.raw))
           .slice(1, 4);
@@ -635,7 +636,6 @@ const fmtDate = (iso?: string | null) => {
         let covers = {};
         try { covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
         host.innerHTML = items.map((row) => {
-          // Fallback si seulement raw est présent
           let artist = String(row?.artist || "").trim();
           let title = String(row?.title || "").trim();
           if (!artist && !title && row?.raw) {
@@ -698,7 +698,7 @@ const fmtDate = (iso?: string | null) => {
           const img = card.querySelector("img");
           if (rankEl) rankEl.textContent = `#${i+1}`;
           const row = top[i];
-          if (!zyna row){
+          if (!row){
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "—";
             if (cEl) cEl.textContent = "";
@@ -850,8 +850,7 @@ const fmtDate = (iso?: string | null) => {
             <div class="mt-4">
               <a href="/programs"
                  class="inline-flex items-center justify-center
-                        bg-white/5 hover:bg-white/10
-                        border border-white/10
+                        bg-white/5 hover:bg-white/10 border border-white/10
                         rounded-xl px-5 py-3 text-white/85 transition">
                 Open schedule →
               </a>
