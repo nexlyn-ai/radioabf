@@ -69,7 +69,7 @@ const fmtDate = (iso?: string | null) => {
               <img id="homeCover" class="hidden" alt="Pochette actuelle" />
               <div class="abfCoverFallback">
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-              </div  >
+              </div>
             </div>
             <!-- Text -->
             <div class="min-w-0">
@@ -275,7 +275,7 @@ const fmtDate = (iso?: string | null) => {
       <div id="topWeekGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
           <article
-            class="rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
+            class="abfCover rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
             data-topweek-card
           >
             <div class="p-3 flex items-center gap-3">
@@ -522,14 +522,11 @@ const fmtDate = (iso?: string | null) => {
           img.classList.add("hidden");
         }
       }
-      // ✅ FIX: accepte plusieurs formes de payload (prod/Vercel)
       function getNowplayingPayload(){
         const p = window.__abf?.__nowplaying;
         if (!p || typeof p !== "object") return null;
-        // certains environnements n’ont pas ok:true -> on accepte quand même
         return p;
       }
-      // ✅ FIX: extraction history tolérante
       function getHistoryFromPayload(p){
         if (!p) return [];
         const h1 = Array.isArray(p.history) ? p.history : null;
@@ -541,7 +538,7 @@ const fmtDate = (iso?: string | null) => {
         if (!p) return null;
         return p.now || p.nowplaying || p.data?.now || null;
       }
-      // ---------- Votes API (Directus via /api/vote) ----------
+
       async function apiGetTopWeek(week){
         const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
         if (!r.ok) return { week, top: [] };
@@ -558,7 +555,7 @@ const fmtDate = (iso?: string | null) => {
         __homeVotesCache = { week, ts: now, top: data.top || [] };
         return __homeVotesCache.top || [];
       }
-      // #1 in hero (API)
+
       async function renderHeroTop1(){
         const box = document.getElementById("heroTop1");
         const empty = document.getElementById("heroTop1Empty");
@@ -596,6 +593,7 @@ const fmtDate = (iso?: string | null) => {
         empty.classList.add("hidden");
         box.classList.remove("hidden");
       }
+
       function renderNowPlaying(){
         const artistEl = document.getElementById("homeArtist");
         const titleEl = document.getElementById("homeTitle");
@@ -620,12 +618,12 @@ const fmtDate = (iso?: string | null) => {
           setCover("");
         }
       }
+
       function renderLastPlayedCarousel(){
         const host = document.getElementById("homeLastCarousel");
         if (!host) return;
         const payload = getNowplayingPayload();
         const history = getHistoryFromPayload(payload);
-        // On saute le current (index 0) et on prend les 3 suivants → les 3 derniers joués
         const items = history
           .filter(row => (row?.artist || row?.title || row?.raw))
           .slice(1, 4);
@@ -634,7 +632,7 @@ const fmtDate = (iso?: string | null) => {
           return;
         }
         let covers = {};
-        try { covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
+        try { covers = JSON darüber.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
         host.innerHTML = items.map((row) => {
           let artist = String(row?.artist || "").trim();
           let title = String(row?.title || "").trim();
@@ -664,6 +662,7 @@ const fmtDate = (iso?: string | null) => {
           `;
         }).join("");
       }
+
       async function renderTop(){
         const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
         const empty = document.getElementById("topWeekEmpty");
@@ -728,6 +727,7 @@ const fmtDate = (iso?: string | null) => {
           else card.classList.remove("bg-white/7");
         });
       }
+
       const SCHEDULE = {
         mon: [
           { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
@@ -980,7 +980,7 @@ const fmtDate = (iso?: string | null) => {
                 d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
                 return d ? d.getTime() : 0;
               })();
-              localStorage.setItem("abf_remind_next_show", JSON.stringify({
+              localStorage.setItem("abf_remind_next_show", JSON stringify({
                 day,
                 time: target.time,
                 title: target.title,
@@ -1030,9 +1030,8 @@ const fmtDate = (iso?: string | null) => {
         `;
         document.head.appendChild(st);
       }
-      // ✅ FIX: éviter de rebinder les listeners modals à chaque swap
-      function bindFlacModalOnce(){
-        if (window.__abfFlacModalBound) return;
+
+      function bindFlacModal(){
         const modal = document.getElementById("flacModal");
         const openBtn = document.getElementById("openFlacModal");
         const openBtn2 = document.getElementById("openFlacModal2");
@@ -1052,10 +1051,8 @@ const fmtDate = (iso?: string | null) => {
           if (e.key !== "Escape") return;
           if (modal.getAttribute("aria-hidden") === "false") close();
         });
-        window.__abfFlacModalBound = true;
       }
-      function bindStreamQualityModalOnce(){
-        if (window.__abfStreamModalBound) return;
+      function bindStreamQualityModal(){
         const modal = document.getElementById("streamQualityModal");
         const openBtn = document.getElementById("openStreamQualityModal");
         const closeBtn = document.getElementById("streamQualityClose");
@@ -1073,18 +1070,16 @@ const fmtDate = (iso?: string | null) => {
           if (e.key !== "Escape") return;
           if (modal.getAttribute("aria-hidden") === "false") close();
         });
-        window.__abfStreamModalBound = true;
       }
       async function initHome(){
         injectOnAirStylesOnce();
-        bindFlacModalOnce();
-        bindStreamQualityModalOnce();
+        bindFlacModal();
+        bindStreamQualityModal();
         renderNowPlaying();
         renderLastPlayedCarousel();
         renderOnAirTonight();
         await renderTop();
         await renderHeroTop1();
-        // petit “retry” au cas où Base push __nowplaying un peu après
         setTimeout(() => {
           renderNowPlaying();
           renderLastPlayedCarousel();
