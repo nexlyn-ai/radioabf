@@ -1708,6 +1708,13 @@ function refreshTabFxAfterSwap(){
 
        // Build / Updates (latest first) — Feb 2026
 const BUILDS = [
+  // 3.2.0 — Deployment & data layer stabilization
+  {
+    v: "3.2.0",
+    d: "Feb 16, 2026",
+    t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
+  },
+
   // 3.1.0 — Home + player stability milestone
   {
     v: "3.1.0",
@@ -1756,14 +1763,13 @@ const BUILDS = [
     d: "Feb 11, 2026",
     t: "Directus integration stabilization: safer handling of optional published_at, reduced unnecessary fallbacks where local assets exist, and general cleanup for deployment readiness."
   },
-
-  // 3.0.0 — Major redesign
   {
     v: "3.0.0",
     d: "Feb 08, 2026",
     t: "Major redesign: new ABF UI system (modern cards, gradients, spacing), persistent pinned player architecture foundations, refreshed layout/navigation, and the first Home structure (Now Playing hero, Last Played carousel, schedule preview)."
   }
 ];
+
 
 // Footer dynamic version (same as before)
 const latest = BUILDS[0]?.v || "—";
