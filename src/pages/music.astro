@@ -134,370 +134,498 @@ import Base from "../layouts/Base.astro";
   </style>
 
   <script is:inline>
-    (() => {
-      const HISTORY_KEY = "abf_history";
-      const COVERS_KEY = "abf_covers_v1";
-      const DAY = 24 * 60 * 60 * 1000;
+  (() => {
+    const HISTORY_KEY = "abf_history";
+    const COVERS_KEY = "abf_covers_v1";
+    const DAY = 24 * 60 * 60 * 1000;
 
-      function getISOWeekId(d = new Date()){
-        const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        const dayNum = date.getUTCDay() || 7;
-        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-        const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-        return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
-      }
-      function weekLabel(){ return getISOWeekId().replace("-W"," W"); }
-      function votesKey(){ return `abf_votes_${getISOWeekId()}`; }
-      function votedKey(){ return `abf_voted_${getISOWeekId()}`; }
+    // ====== WEEK ID (same as before) ======
+    function getISOWeekId(d = new Date()){
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+      return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+    }
+    function weekLabel(){ return getISOWeekId().replace("-W"," W"); }
 
-      function loadJSON(key, fallback){
-        try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
-        catch { return fallback; }
-      }
-      function saveJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
-      function nowTs(){ return Date.now(); }
+    function nowTs(){ return Date.now(); }
 
-      function splitTrack(entry){
-        const parts = String(entry || "").split(" - ");
-        const artist = (parts[0] || "").trim();
-        const title = (parts.slice(1).join(" - ") || "").trim();
-        return { artist, title };
+    function splitTrack(entry){
+      const parts = String(entry || "").split(" - ");
+      const artist = (parts[0] || "").trim();
+      const title = (parts.slice(1).join(" - ") || "").trim();
+      return { artist, title };
+    }
+    function normKey(artist, title){
+      return (artist + " - " + title)
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replace(/[“”"']/g, "")
+        .trim();
+    }
+    function esc(s){
+      return String(s || "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+    }
+    function fmtTime(ts){
+      if (!ts) return "--:--";
+      const d = new Date(ts);
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mm = String(d.getMinutes()).padStart(2,"0");
+      return `${hh}:${mm}`;
+    }
+
+    // ===== Formatting rules (requested) =====
+    function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
+    function titleCaseEN(input){
+      const s = String(input || "").trim();
+      if (!s) return "—";
+      const lowerWords = new Set([
+        "a","an","the","and","but","or","nor","for","so","yet",
+        "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
+      ]);
+      const parts = s.split(/(\s+)/);
+      return parts.map((chunk, idx) => {
+        if (/^\s+$/.test(chunk)) return chunk;
+        const word = chunk;
+        if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
+        const hyParts = word.split("-");
+        const rebuilt = hyParts.map((w, hIdx) => {
+          const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
+          const lower = cleaned.toLowerCase();
+          const isFirst = idx === 0 && hIdx === 0;
+          const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
+          if (!cleaned) return w;
+          if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
+          const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
+          return w.replace(cleaned, cap);
+        });
+        return rebuilt.join("-");
+      }).join("");
+    }
+    // =======================================
+
+    // ===== History (same as before) =====
+    function loadHistory(){
+      let raw = [];
+      try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+      catch{ raw = []; }
+      return (raw || []).map((x) => {
+        if (typeof x === "string") return { t: x, ts: 0 };
+        if (x && typeof x === "object" && typeof x.t === "string") return { t: x.t, ts: Number(x.ts) || 0 };
+        return null;
+      }).filter(Boolean);
+    }
+
+    // ===== Cover cache (same as before) =====
+    function loadCoverCache(){
+      try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
+      catch { return {}; }
+    }
+
+    async function getCover(artist, title){
+      if (!artist || !title) return "";
+      const key = normKey(artist, title);
+      const cache = loadCoverCache();
+      if (cache[key] !== undefined) return cache[key];
+
+      const term = encodeURIComponent(`${artist} ${title}`);
+      const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) return "";
+        const data = await res.json();
+        const item = data?.results?.[0];
+        if (!item) return "";
+        const art = (item.artworkUrl100 || "").replace(/100x100bb.jpg$/, "600x600bb.jpg");
+        cache[key] = art || "";
+        localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
+        window.dispatchEvent(new CustomEvent("abf:cover-cache-updated"));
+        return art || "";
+      } catch {
+        cache[key] = "";
+        localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
+        return "";
       }
-      function normKey(artist, title){
-        return (artist + " - " + title)
-          .toLowerCase()
-          .replace(/\s+/g, " ")
-          .replace(/[“”"']/g, "")
-          .trim();
+    }
+
+    function setCover(url){
+      const img = document.getElementById("musicCover");
+      if (!img) return;
+      if (url){
+        img.src = url;
+        img.classList.remove("hidden");
+      } else {
+        img.classList.add("hidden");
       }
-      function esc(s){
-        return String(s || "")
-          .replace(/&/g,"&amp;")
-          .replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;")
-          .replace(/"/g,"&quot;")
-          .replace(/'/g,"&#039;");
-      }
-      function fmtTime(ts){
-        if (!ts) return "--:--";
-        const d = new Date(ts);
-        const hh = String(d.getHours()).padStart(2,"0");
-        const mm = String(d.getMinutes()).padStart(2,"0");
-        return `${hh}:${mm}`;
+    }
+
+    // =====================================================
+    // ✅ SERVER-SIDE VOTES (NO localStorage)
+    // Endpoint: /api/vote
+    // - GET  /api/vote?week=YYYY-Wxx      -> returns votes for week
+    // - POST /api/vote { track_key, week } -> returns updated count or error
+    // (Client is defensive: works with several response shapes)
+    // =====================================================
+
+    // tiny cache in-memory to avoid spamming API every 2 seconds
+    const VOTES_TTL_MS = 10_000; // 10s
+    function votesCacheKey(){ return `votes:${getISOWeekId()}`; }
+
+    async function apiGetVotes(){
+  const week = getISOWeekId();
+  const k = votesCacheKey();
+
+  window.__abfVotesCache = window.__abfVotesCache || {};
+  const c = window.__abfVotesCache[k];
+  const now = nowTs();
+  if (c && now < c.exp) return c.votes || {};
+
+  try {
+    const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+
+    // ✅ Our API returns: { ok:true, week, top:[ {track_key,count,...} ] }
+    const votes = {};
+    const top = Array.isArray(data?.top) ? data.top : [];
+    for (const row of top){
+      const key = String(row?.track_key || "").trim();
+      const count = Number(row?.count || 0);
+      if (key) votes[key] = count;
+    }
+
+    window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
+    return votes;
+  } catch {
+    return {};
+  }
+}
+
+
+    function markSessionVoted(trackKey){
+      window.__abfVotedSession = window.__abfVotedSession || {};
+      window.__abfVotedSession[trackKey] = nowTs();
+    }
+
+    function sessionAlreadyVoted(trackKey){
+      // UX only: avoid re-click spam in the same session
+      const m = window.__abfVotedSession || {};
+      const last = m[trackKey] || 0;
+      return (nowTs() - last) < DAY;
+    }
+
+  async function apiVote(trackKey, artist = "", title = ""){
+  const week = getISOWeekId();
+
+  const res = await fetch("/api/vote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ week, track_key: trackKey, artist, title }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || data?.ok === false){
+    return {
+      ok: false,
+      status: res.status,
+      error: data?.error || `HTTP ${res.status}`,
+      reason: data?.reason || "",
+    };
+  }
+
+  // Your API currently returns { ok:true, week } (no count)
+  return { ok: true, status: res.status, week: data?.week || week };
+}
+
+
+    // Helper cover HTML
+    function coverHtml(key, cache, sizeClass = "w-12 h-12 rounded-xl") {
+      const url = cache[key] || "";
+      return `
+        <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
+          <img src="${url ? esc(url) : ""}" alt="" class="${url ? "" : "hidden"}" loading="lazy" decoding="async" />
+          <div class="abfCoverFallback">
+            <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+          </div>
+        </div>
+      `;
+    }
+
+    async function renderHistory(){
+      const artistEl = document.getElementById("musicArtist");
+      const titleEl = document.getElementById("musicTitle");
+      const timeEl = document.getElementById("musicTime");
+      const listEl = document.getElementById("lastPlayed");
+      const chartEl = document.getElementById("topChart");
+      const nowVoteBtn = document.getElementById("nowVoteBtn");
+      const nowVoteCount = document.getElementById("nowVoteCount");
+      const weekEl = document.getElementById("musicWeekId");
+
+      if (weekEl) weekEl.textContent = weekLabel();
+      if (!artistEl || !titleEl || !listEl || !chartEl) return;
+
+      let history = loadHistory();
+
+      if (!history.length){
+        artistEl.textContent = "—";
+        titleEl.textContent = "—";
+        if (timeEl) timeEl.textContent = "--:--";
+        listEl.innerHTML = `<li class="text-white/50">Commence le player pour charger l'historique.</li>`;
+        chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes cette semaine.</li>`;
+        setCover("");
+        if (nowVoteBtn) nowVoteBtn.style.display = "none";
+        return;
       }
 
-      // ===== Formatting rules (requested) =====
-      function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
-      function titleCaseEN(input){
-        const s = String(input || "").trim();
-        if (!s) return "—";
-        const lowerWords = new Set([
-          "a","an","the","and","but","or","nor","for","so","yet",
-          "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
-        ]);
-        const parts = s.split(/(\s+)/);
-        return parts.map((chunk, idx) => {
-          if (/^\s+$/.test(chunk)) return chunk;
-          const word = chunk;
-          if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
-          const hyParts = word.split("-");
-          const rebuilt = hyParts.map((w, hIdx) => {
-            const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
-            const lower = cleaned.toLowerCase();
-            const isFirst = idx === 0 && hIdx === 0;
-            const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
-            if (!cleaned) return w;
-            if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
-            const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
-            return w.replace(cleaned, cap);
-          });
-          return rebuilt.join("-");
+      // fetch votes (server-side)
+      const votes = await apiGetVotes();
+
+      // NOW PLAYING
+      const currentEntry = history[0];
+      const current = splitTrack(currentEntry.t);
+
+      const prettyNowArtist = upperArtist(current.artist || "—");
+      const prettyNowTitle = titleCaseEN(current.title || "—");
+
+      artistEl.textContent = prettyNowArtist;
+      titleEl.textContent = prettyNowTitle;
+      if (timeEl) timeEl.textContent = fmtTime(currentEntry.ts);
+
+      setCover(await getCover(current.artist, current.title));
+
+      const currentKey = normKey(current.artist, current.title);
+      if (nowVoteCount) nowVoteCount.textContent = String(votes[currentKey] || 0);
+
+      if (nowVoteBtn){
+        nowVoteBtn.style.display = "flex";
+
+        const alreadySession = sessionAlreadyVoted(currentKey);
+        nowVoteBtn.style.opacity = alreadySession ? "0.55" : "1";
+        nowVoteBtn.style.cursor = alreadySession ? "not-allowed" : "pointer";
+
+        nowVoteBtn.onclick = async () => {
+          if (sessionAlreadyVoted(currentKey)){
+            alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
+            return;
+          }
+
+          nowVoteBtn.style.opacity = "0.7";
+          nowVoteBtn.style.cursor = "wait";
+
+          const r = await apiVote(currentKey, current.artist, current.title);
+
+          if (!r.ok){
+  nowVoteBtn.style.opacity = "1";
+  nowVoteBtn.style.cursor = "pointer";
+
+  // ✅ message selon le vrai souci
+  if (r.status === 429 || r.reason === "cooldown") {
+    alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
+  } else {
+    alert(`Vote impossible: ${r.error}`);
+  }
+  return;
+}
+
+
+          markSessionVoted(currentKey);
+
+          // update UI count
+          const newCount = (r.count != null) ? r.count : (Number(votes[currentKey] || 0) + 1);
+          if (nowVoteCount) nowVoteCount.textContent = String(newCount);
+
+          // bust cache quickly + re-render
+          const k = votesCacheKey();
+          if (window.__abfVotesCache?.[k]) window.__abfVotesCache[k].exp = 0;
+
+          nowVoteBtn.style.opacity = "0.55";
+          nowVoteBtn.style.cursor = "not-allowed";
+          renderHistory();
+        };
+      }
+
+      const cache = loadCoverCache();
+
+      // LAST PLAYED
+      listEl.innerHTML = history
+        .slice(1)
+        .map((entry) => {
+          const t = splitTrack(entry.t);
+          const prettyArtist = upperArtist(t.artist || "—");
+          const prettyTitle = titleCaseEN(t.title || "—");
+          const key = normKey(t.artist, t.title);
+          const time = fmtTime(entry.ts);
+
+          return `
+            <li class="flex items-center justify-between gap-3 border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                ${coverHtml(key, cache)}
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-3">
+                    <div class="font-semibold text-white truncate">${esc(prettyArtist)}</div>
+                    <div class="ml-auto flex-none text-xs px-2 py-0.5 rounded-lg border border-white/10 bg-white/5 text-white/60 tabular-nums">
+                      ${time}
+                    </div>
+                  </div>
+                  <div class="text-white/60 text-sm truncate">${esc(prettyTitle)}</div>
+                </div>
+              </div>
+              <button
+                class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
+                data-key="${key}"
+                type="button"
+                aria-label="Vote"
+                title="Vote"
+              >
+                👍 <span class="voteCount tabular-nums">0</span>
+              </button>
+            </li>
+          `;
+        })
+        .join("");
+
+      // TOP THIS WEEK
+      const entries = Object.entries(votes)
+        .filter(([,count]) => Number(count) > 0)
+        .sort((a,b) => Number(b[1]) - Number(a[1]))
+        .slice(0, 10);
+
+      if (!entries.length){
+        chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes — sois le premier 🙂</li>`;
+      } else {
+        const max = Math.max(...entries.map(([,c]) => Number(c) || 0), 1);
+
+        chartEl.innerHTML = entries.map(([key, count], i) => {
+          const parts = key.split(" - ");
+          const artistRaw = parts[0] || "—";
+          const titleRaw = parts.slice(1).join(" - ") || "—";
+          const artist = upperArtist(artistRaw);
+          const title = titleCaseEN(titleRaw);
+
+          const pct = Math.round((Number(count) / max) * 100);
+          const rankBadge =
+            i === 0 ? "bg-white/10 border-white/15" :
+            i === 1 ? "bg-white/8 border-white/15" :
+            i === 2 ? "bg-white/6 border-white/15" :
+            "bg-white/5 border-white/10";
+
+          return `
+            <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
+              <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadge} flex items-center justify-center text-sm font-semibold text-white/90 tabular-nums">
+                ${i+1}
+              </div>
+              ${coverHtml(key, cache, "w-14 h-14 rounded-2xl")}
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start gap-3">
+                  <div class="min-w-0">
+                    <div class="font-semibold text-white truncate">${esc(artist)}</div>
+                    <div class="text-white/65 text-sm truncate">${esc(title)}</div>
+                  </div>
+                  <div class="ml-auto flex-none text-sm text-white/90 font-semibold tabular-nums">
+                    ${count} <span class="text-white/50 font-normal">votes</span>
+                  </div>
+                </div>
+                <div class="mt-3 h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </li>
+          `;
         }).join("");
       }
-      // =======================================
 
-      function loadHistory(){
-        let raw = [];
-        try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-        catch{ raw = []; }
-        return (raw || []).map((x) => {
-          if (typeof x === "string") return { t: x, ts: 0 };
-          if (x && typeof x === "object" && typeof x.t === "string") return { t: x.t, ts: Number(x.ts) || 0 };
-          return null;
-        }).filter(Boolean);
-      }
+      // Wire vote buttons (server-side)
+      listEl.querySelectorAll(".voteBtn").forEach((btn) => {
+        const k = btn.dataset.key;
+        if (!k) return;
 
-      function getVotes(){ return loadJSON(votesKey(), {}); }
-      function getVoted(){ return loadJSON(votedKey(), {}); }
-      function canVote(key){
-        const voted = getVoted();
-        const last = voted[key] || 0;
-        return (nowTs() - last) > DAY;
-      }
-      function vote(key){
-        if (!canVote(key)) return { ok:false, reason:"already" };
-        const votes = getVotes();
-        const voted = getVoted();
-        votes[key] = (votes[key] || 0) + 1;
-        voted[key] = nowTs();
-        saveJSON(votesKey(), votes);
-        saveJSON(votedKey(), voted);
-        return { ok:true, count: votes[key] };
-      }
+        const countEl = btn.querySelector(".voteCount");
+        if (countEl) countEl.textContent = String(votes[k] || 0);
 
-      function loadCoverCache(){
-        try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
-        catch { return {}; }
-      }
+        const alreadySession = sessionAlreadyVoted(k);
+        btn.style.opacity = alreadySession ? "0.55" : "1";
+        btn.style.cursor = alreadySession ? "not-allowed" : "pointer";
 
-      async function getCover(artist, title){
-        if (!artist || !title) return "";
-        const key = normKey(artist, title);
-        const cache = loadCoverCache();
-        if (cache[key] !== undefined) return cache[key];
+        btn.onclick = async () => {
+          if (sessionAlreadyVoted(k)){
+            alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
+            return;
+          }
 
-        const term = encodeURIComponent(`${artist} ${title}`);
-        const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+          btn.style.opacity = "0.7";
+          btn.style.cursor = "wait";
 
-        try {
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) return "";
-          const data = await res.json();
-          const item = data?.results?.[0];
-          if (!item) return "";
-          const art = (item.artworkUrl100 || "").replace(/100x100bb.jpg$/, "600x600bb.jpg");
-          cache[key] = art || "";
-          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
-          window.dispatchEvent(new CustomEvent("abf:cover-cache-updated"));
-          return art || "";
-        } catch {
-          cache[key] = "";
-          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
-          return "";
-        }
-      }
+          // on reconstruit artist/title depuis la clé
+const parts = String(k).split(" - ");
+const a = (parts[0] || "").trim();
+const t = (parts.slice(1).join(" - ") || "").trim();
+const r = await apiVote(k, a, t);
 
-      function setCover(url){
-        const img = document.getElementById("musicCover");
-        if (!img) return;
-        if (url){
-          img.src = url;
-          img.classList.remove("hidden");
-        } else {
-          img.classList.add("hidden");
-        }
-      }
 
-      async function renderHistory(){
-        const artistEl = document.getElementById("musicArtist");
-        const titleEl = document.getElementById("musicTitle");
-        const timeEl = document.getElementById("musicTime");
-        const listEl = document.getElementById("lastPlayed");
-        const chartEl = document.getElementById("topChart");
-        const nowVoteBtn = document.getElementById("nowVoteBtn");
-        const nowVoteCount = document.getElementById("nowVoteCount");
-        const weekEl = document.getElementById("musicWeekId");
+          if (!r.ok){
+  btn.style.opacity = "1";
+  btn.style.cursor = "pointer";
+  if (r.status === 429 || r.reason === "cooldown") {
+    alert("Déjà voté pour ce titre. Reviens dans 24h 🙂");
+  } else {
+    alert(`Vote impossible: ${r.error}`);
+  }
+  return;
+}
 
-        if (weekEl) weekEl.textContent = weekLabel();
-        if (!artistEl || !titleEl || !listEl || !chartEl) return;
 
-        let history = loadHistory();
+          markSessionVoted(k);
 
-        if (!history.length){
-          artistEl.textContent = "—";
-          titleEl.textContent = "—";
-          if (timeEl) timeEl.textContent = "--:--";
-          listEl.innerHTML = `<li class="text-white/50">Commence le player pour charger l'historique.</li>`;
-          chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes cette semaine.</li>`;
-          setCover("");
-          if (nowVoteBtn) nowVoteBtn.style.display = "none";
-          return;
-        }
+          const newCount = (r.count != null) ? r.count : (Number(votes[k] || 0) + 1);
+          if (countEl) countEl.textContent = String(newCount);
 
-        // NOW PLAYING
-        const currentEntry = history[0];
-        const current = splitTrack(currentEntry.t);
+          // bust cache + refresh chart
+          const kk = votesCacheKey();
+          if (window.__abfVotesCache?.[kk]) window.__abfVotesCache[kk].exp = 0;
 
-        const prettyNowArtist = upperArtist(current.artist || "—");
-        const prettyNowTitle = titleCaseEN(current.title || "—");
-
-        artistEl.textContent = prettyNowArtist;
-        titleEl.textContent = prettyNowTitle;
-        if (timeEl) timeEl.textContent = fmtTime(currentEntry.ts);
-
-        setCover(await getCover(current.artist, current.title));
-
-        const currentKey = normKey(current.artist, current.title);
-        const nowVotes = getVotes();
-        if (nowVoteCount) nowVoteCount.textContent = String(nowVotes[currentKey] || 0);
-
-        if (nowVoteBtn){
-          nowVoteBtn.style.display = "flex";
-          const already = !canVote(currentKey);
-          nowVoteBtn.style.opacity = already ? "0.55" : "1";
-          nowVoteBtn.style.cursor = already ? "not-allowed" : "pointer";
-          nowVoteBtn.onclick = () => {
-            const r = vote(currentKey);
-            if (!r.ok){ alert("Déjà voté pour ce titre. Reviens dans 24h 🙂"); return; }
-            if (nowVoteCount) nowVoteCount.textContent = String(r.count);
-            nowVoteBtn.style.opacity = "0.55";
-            nowVoteBtn.style.cursor = "not-allowed";
-          };
-        }
-
-        const cache = loadCoverCache();
-        const votes = getVotes();
-
-        // Helper cover HTML
-        function coverHtml(key, sizeClass = "w-12 h-12 rounded-xl") {
-          const url = cache[key] || "";
-          return `
-            <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
-              <img src="${url ? esc(url) : ""}" alt="" class="${url ? "" : "hidden"}" loading="lazy" decoding="async" />
-              <div class="abfCoverFallback">
-                <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-              </div>
-            </div>
-          `;
-        }
-
-        // LAST PLAYED
-        listEl.innerHTML = history
-          .slice(1)
-          .map((entry) => {
-            const t = splitTrack(entry.t);
-            const prettyArtist = upperArtist(t.artist || "—");
-            const prettyTitle = titleCaseEN(t.title || "—");
-            const key = normKey(t.artist, t.title);
-            const time = fmtTime(entry.ts);
-
-            return `
-              <li class="flex items-center justify-between gap-3 border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
-                <div class="flex items-center gap-3 min-w-0 flex-1">
-                  ${coverHtml(key)}
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-3">
-                      <div class="font-semibold text-white truncate">${esc(prettyArtist)}</div>
-                      <div class="ml-auto flex-none text-xs px-2 py-0.5 rounded-lg border border-white/10 bg-white/5 text-white/60 tabular-nums">
-                        ${time}
-                      </div>
-                    </div>
-                    <div class="text-white/60 text-sm truncate">${esc(prettyTitle)}</div>
-                  </div>
-                </div>
-                <button
-                  class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
-                  data-key="${key}"
-                  type="button"
-                  aria-label="Vote"
-                  title="Vote"
-                >
-                  👍 <span class="voteCount tabular-nums">0</span>
-                </button>
-              </li>
-            `;
-          })
-          .join("");
-
-        // TOP THIS WEEK
-        const entries = Object.entries(votes)
-          .filter(([,count]) => Number(count) > 0)
-          .sort((a,b) => Number(b[1]) - Number(a[1]))
-          .slice(0, 10);
-
-        if (!entries.length){
-          chartEl.innerHTML = `<li class="text-white/50">Pas encore de votes — sois le premier 🙂</li>`;
-        } else {
-          const max = Math.max(...entries.map(([,c]) => Number(c) || 0), 1);
-
-          chartEl.innerHTML = entries.map(([key, count], i) => {
-            const parts = key.split(" - ");
-            const artistRaw = parts[0] || "—";
-            const titleRaw = parts.slice(1).join(" - ") || "—";
-            const artist = upperArtist(artistRaw);
-            const title = titleCaseEN(titleRaw);
-
-            const pct = Math.round((Number(count) / max) * 100);
-            const rankBadge =
-              i === 0 ? "bg-white/10 border-white/15" :
-              i === 1 ? "bg-white/8 border-white/15" :
-              i === 2 ? "bg-white/6 border-white/15" :
-              "bg-white/5 border-white/10";
-
-            return `
-              <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
-                <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadge} flex items-center justify-center text-sm font-semibold text-white/90 tabular-nums">
-                  ${i+1}
-                </div>
-                ${coverHtml(key, "w-14 h-14 rounded-2xl")}
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-start gap-3">
-                    <div class="min-w-0">
-                      <div class="font-semibold text-white truncate">${esc(artist)}</div>
-                      <div class="text-white/65 text-sm truncate">${esc(title)}</div>
-                    </div>
-                    <div class="ml-auto flex-none text-sm text-white/90 font-semibold tabular-nums">
-                      ${count} <span class="text-white/50 font-normal">votes</span>
-                    </div>
-                  </div>
-                  <div class="mt-3 h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]" style="width:${pct}%"></div>
-                  </div>
-                </div>
-              </li>
-            `;
-          }).join("");
-        }
-
-        // Wire vote buttons
-        listEl.querySelectorAll(".voteBtn").forEach((btn) => {
-          const k = btn.dataset.key;
-          if (!k) return;
-          const countEl = btn.querySelector(".voteCount");
-          if (countEl) countEl.textContent = String(votes[k] || 0);
-
-          const already = !canVote(k);
-          btn.style.opacity = already ? "0.55" : "1";
-          btn.style.cursor = already ? "not-allowed" : "pointer";
-
-          btn.onclick = () => {
-            const r = vote(k);
-            if (!r.ok){ alert("Déjà voté pour ce titre. Reviens dans 24h 🙂"); return; }
-            if (countEl) countEl.textContent = String(r.count);
-            btn.style.opacity = "0.55";
-            btn.style.cursor = "not-allowed";
-          };
-        });
-      }
-
-      function startMusicTimer(){
-        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
-        window.__abfMusicTimer = setInterval(renderHistory, 8000);
-      }
-
-      function initMusicPage(){
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            renderHistory();
-            startMusicTimer();
-          });
-        });
-      }
-
-      initMusicPage();
-      document.addEventListener("astro:page-load", initMusicPage);
-      document.addEventListener("astro:after-swap", initMusicPage);
-
-      if (!window.__abfMusicListeners){
-        window.addEventListener("abf:history-updated", renderHistory);
-        window.addEventListener("abf:cover-cache-updated", renderHistory);
-        window.__abfMusicListeners = true;
-      }
-
-      document.addEventListener("astro:before-swap", () => {
-        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+          btn.style.opacity = "0.55";
+          btn.style.cursor = "not-allowed";
+          renderHistory();
+        };
       });
-    })();
-  </script>
+    }
+
+    function startMusicTimer(){
+      if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+      window.__abfMusicTimer = setInterval(renderHistory, 8000);
+    }
+
+    function initMusicPage(){
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          renderHistory();
+          startMusicTimer();
+        });
+      });
+    }
+
+    initMusicPage();
+    document.addEventListener("astro:page-load", initMusicPage);
+    document.addEventListener("astro:after-swap", initMusicPage);
+
+    if (!window.__abfMusicListeners){
+      window.addEventListener("abf:history-updated", renderHistory);
+      window.addEventListener("abf:cover-cache-updated", renderHistory);
+      window.__abfMusicListeners = true;
+    }
+
+    document.addEventListener("astro:before-swap", () => {
+      if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+    });
+  })();
+</script>
+
 </Base>
