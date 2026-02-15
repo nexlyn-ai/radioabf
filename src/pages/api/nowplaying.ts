@@ -135,4 +135,18 @@ export const GET: APIRoute = async ({ request }) => {
     { method: "GET" }
   );
   const histBody = await readJsonSafe(histRes);
-  const history = Array.isArray(histBody.json?.data) ? histB
+  const history = Array.isArray(histBody.json?.data) ? histBody.json.data : [];
+  directus.read = { ok: histRes.ok, status: histRes.status, body: histBody.json || histBody.text };
+
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      now: { raw: nowText, artist, title, track_key, played_at },
+      history,
+      ...(DEBUG ? { directus, collection: PLAYS_COLLECTION } : {}),
+    }),
+    {
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    }
+  );
+};
