@@ -49,6 +49,22 @@ function extractNowPlaying(json: any): string {
   return t.trim();
 }
 
+/**
+ * ✅ Normalize Directus datetime strings.
+ * If Directus returns "2026-02-15T18:12:00" (no TZ),
+ * we assume it's UTC and force "Z" to avoid 1h offset in Paris (UTC+1 in Feb).
+ */
+function toUTCms(v: any): number {
+  const s = String(v || "").trim();
+  if (!s) return 0;
+
+  // already has timezone -> parse as-is
+  if (/[zZ]$/.test(s) || /[+\-]\d\d:\d\d$/.test(s)) return Date.parse(s);
+
+  // no timezone -> treat as UTC and force Z
+  return Date.parse(s + "Z");
+}
+
 async function directusFetch(path: string, init: RequestInit = {}) {
   const url = `${DIRECTUS_URL}${path}`;
   const headers = new Headers(init.headers || {});
@@ -129,7 +145,10 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { artist, title } = splitTrack(nowText);
   const track_key = normKey(artist, title);
+
+  // ✅ Always UTC ISO with Z
   const played_at = new Date().toISOString();
+  const played_at_ms = Date.parse(played_at);
 
   // Insert si nouveau morceau
   if (artist && track_key && artist.toLowerCase() !== "undefined") {
@@ -141,15 +160,20 @@ export const GET: APIRoute = async ({ request }) => {
     } catch {}
   }
 
-  const history = await getHistory(limit);
+  const historyRaw = await getHistory(limit);
 
-  return new Response(
-    JSON.stringify({ ok: true, now: { raw: nowText, artist, title, track_key, played_at }, history }),
-    {
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "cache-control": "s-maxage=5, stale-while-revalidate=25",
-      },
-    }
-  );
+  // ✅ add played_at_ms (normalized) for perfect client display
+  const history = historyRaw.map((row: any) => ({
+    ...row,
+    played_at_ms: toUTCms(row?.played_at),
+  }));
+
+  const now = { raw: nowText, artist, title, track_key, played_at, played_at_ms };
+
+  return new Response(JSON.stringify({ ok: true, now, history }), {
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "s-maxage=5, stale-while-revalidate=25",
+    },
+  });
 };

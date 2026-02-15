@@ -232,25 +232,29 @@ async function fetchServerNowPlaying(limit = 12){
 
     const out = [];
 
-    // ✅ "now" -> { raw, played_at }
-    if (data?.now?.raw){
-      out.push({
-        t: String(data.now.raw),
-        ts: data.now.played_at ? new Date(data.now.played_at).getTime() : Date.now()
-      });
-    }
+// ✅ "now" -> { raw, played_at, played_at_ms }
+if (data?.now?.raw){
+  out.push({
+    t: String(data.now.raw),
+    ts: Number(data?.now?.played_at_ms) ||
+        (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now())
+  });
+}
 
-    // ✅ "history" -> [{ raw, played_at, ... }]
-    if (Array.isArray(data?.history)){
-      for (const row of data.history){
-        const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
-        if (!raw) continue;
-        out.push({
-          t: String(raw),
-          ts: row?.played_at ? new Date(row.played_at).getTime() : 0
-        });
-      }
-    }
+// ✅ "history" -> [{ raw, played_at, played_at_ms, ... }]
+if (Array.isArray(data?.history)){
+  for (const row of data.history){
+    const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
+    if (!raw) continue;
+
+    out.push({
+      t: String(raw),
+      ts: Number(row?.played_at_ms) ||
+          (row?.played_at ? new Date(row.played_at).getTime() : 0)
+    });
+  }
+}
+
 
     // dedupe (évite now + first history identiques)
     const seen = new Set();
