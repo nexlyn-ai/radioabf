@@ -8,32 +8,30 @@ import Base from "../layouts/Base.astro";
   canonical="/music"
   image="/og-image.jpg"
 >
-<section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+    <!-- background glow -->
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-  <!-- background glow -->
-  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <div class="relative z-10">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            Music
+          </div>
 
-  <div class="relative z-10">
-    <div class="flex items-start justify-between gap-4 flex-wrap">
-      <div class="min-w-0">
-        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-          Music
+          <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+            Latest tracks played on <span class="text-cyan-200">RadioABF</span>
+          </h1>
+
+          <p class="text-white/65 mt-3 max-w-2xl">
+            Live history, covers and weekly community votes.
+          </p>
         </div>
-
-        <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-          Latest tracks played on <span class="text-cyan-200">RadioABF</span>
-        </h1>
-
-        <p class="text-white/65 mt-3 max-w-2xl">
-          Live history, covers and weekly community votes.
-        </p>
       </div>
     </div>
-  </div>
-</section>
-
+  </section>
 
   <!-- NOW PLAYING (bigger / classier) -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 mb-10 shadow-2xl">
@@ -134,581 +132,590 @@ import Base from "../layouts/Base.astro";
   </style>
 
   <script is:inline>
-  (() => {
-    // ✅ Prevent double-boot on Astro view transitions / re-entry
-    if (window.__abfMusicBooted) return;
-    window.__abfMusicBooted = true;
+    (() => {
+      // ✅ Prevent double-boot on Astro view transitions / re-entry
+      if (window.__abfMusicBooted) return;
+      window.__abfMusicBooted = true;
 
-    const HISTORY_KEY = "abf_history";
-    const COVERS_KEY = "abf_covers_v1";
-    const DAY = 24 * 60 * 60 * 1000;
+      const HISTORY_KEY = "abf_history";
+      const COVERS_KEY = "abf_covers_v1";
+      const DAY = 24 * 60 * 60 * 1000;
 
-    // ====== WEEK ID (same as before) ======
-    function getISOWeekId(d = new Date()){
-      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-      const dayNum = date.getUTCDay() || 7;
-      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-      return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
-    }
-    function weekLabel(){ return getISOWeekId().replace("-W"," W"); }
+      // ====== WEEK ID ======
+      function getISOWeekId(d = new Date()){
+        const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const dayNum = date.getUTCDay() || 7;
+        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+        return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+      }
+      function weekLabel(){ return getISOWeekId().replace("-W"," W"); }
+      function nowTs(){ return Date.now(); }
 
-    function nowTs(){ return Date.now(); }
+      function splitTrack(entry){
+        const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
+        const idx = s.indexOf(" - ");
+        if (idx === -1) return { artist: s, title: "" };
+        return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+      }
 
-    function splitTrack(entry){
-      const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
-      const idx = s.indexOf(" - ");
-      if (idx === -1) return { artist: s, title: "" };
-      return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
-    }
+      // NORM key (covers + session anti-spam)
+      function normKey(artist, title){
+        return (artist + " - " + title)
+          .toLowerCase()
+          .replace(/\u00A0/g, " ")
+          .replace(/\s+/g, " ")
+          .replace(/[“”"']/g, "")
+          .trim();
+      }
 
-    // NORM key for local cache/session (covers, anti-spam in-session)
-    function normKey(artist, title){
-      return (artist + " - " + title)
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .replace(/[“”"']/g, "")
-        .trim();
-    }
+      // RAW key (what we POST to server to keep nicer display if you store raw)
+      function rawKey(artist, title){
+        const a = String(artist || "").trim();
+        const t = String(title || "").trim();
+        return `${a} - ${t}`.trim();
+      }
 
-    // RAW key for server (keeps original casing)
-    function rawKey(artist, title){
-      const a = String(artist || "").trim();
-      const t = String(title || "").trim();
-      return `${a} - ${t}`.trim();
-    }
+      function esc(s){
+        return String(s || "")
+          .replace(/&/g,"&amp;")
+          .replace(/</g,"&lt;")
+          .replace(/>/g,"&gt;")
+          .replace(/"/g,"&quot;")
+          .replace(/'/g,"&#039;");
+      }
+      function fmtTime(ts){
+        if (!ts) return "--:--";
+        const d = new Date(ts);
+        const hh = String(d.getHours()).padStart(2,"0");
+        const mm = String(d.getMinutes()).padStart(2,"0");
+        return `${hh}:${mm}`;
+      }
 
-    function esc(s){
-      return String(s || "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-    }
-    function fmtTime(ts){
-      if (!ts) return "--:--";
-      const d = new Date(ts);
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mm = String(d.getMinutes()).padStart(2,"0");
-      return `${hh}:${mm}`;
-    }
-
-    // ===== Formatting rules (requested) =====
-    function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
-    function titleCaseEN(input){
-      const s = String(input || "").trim();
-      if (!s) return "—";
-      const lowerWords = new Set([
-        "a","an","the","and","but","or","nor","for","so","yet",
-        "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
-      ]);
-      const parts = s.split(/(\s+)/);
-      return parts.map((chunk, idx) => {
-        if (/^\s+$/.test(chunk)) return chunk;
-        const word = chunk;
-        if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
-        const hyParts = word.split("-");
-        const rebuilt = hyParts.map((w, hIdx) => {
-          const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
-          const lower = cleaned.toLowerCase();
-          const isFirst = idx === 0 && hIdx === 0;
-          const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
-          if (!cleaned) return w;
-          if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
-          const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
-          return w.replace(cleaned, cap);
-        });
-        return rebuilt.join("-");
-      }).join("");
-    }
-    // =======================================
-
-    // ===== History (fallback local) =====
-    function loadHistory(){
-      let raw = [];
-      try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-      catch{ raw = []; }
-      return (raw || []).map((x) => {
-        if (typeof x === "string") return { t: x, ts: 0 };
-        if (x && typeof x === "object" && typeof x.t === "string") return { t: x.t, ts: Number(x.ts) || 0 };
-        return null;
-      }).filter(Boolean);
-    }
-
-    async function fetchServerNowPlaying(limit = 12){
-      try{
-        const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
-        const data = await res.json().catch(()=> ({}));
-        if (!data?.ok) return [];
-
-        const out = [];
-
-        // now -> { raw, played_at, played_at_ms }
-        if (data?.now?.raw){
-          out.push({
-            t: String(data.now.raw),
-            ts: Number(data?.now?.played_at_ms) ||
-                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now())
+      // ===== Formatting rules =====
+      function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
+      function titleCaseEN(input){
+        const s = String(input || "").trim();
+        if (!s) return "—";
+        const lowerWords = new Set([
+          "a","an","the","and","but","or","nor","for","so","yet",
+          "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
+        ]);
+        const parts = s.split(/(\s+)/);
+        return parts.map((chunk, idx) => {
+          if (/^\s+$/.test(chunk)) return chunk;
+          const word = chunk;
+          if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
+          const hyParts = word.split("-");
+          const rebuilt = hyParts.map((w, hIdx) => {
+            const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
+            const lower = cleaned.toLowerCase();
+            const isFirst = idx === 0 && hIdx === 0;
+            const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
+            if (!cleaned) return w;
+            if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
+            const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
+            return w.replace(cleaned, cap);
           });
-        }
-
-        // history -> [{ raw, played_at, played_at_ms, ... }]
-        if (Array.isArray(data?.history)){
-          for (const row of data.history){
-            const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
-            if (!raw) continue;
-
-            out.push({
-              t: String(raw),
-              ts: Number(row?.played_at_ms) ||
-                  (row?.played_at ? new Date(row.played_at).getTime() : 0)
-            });
-          }
-        }
-
-        // dedupe (avoid now + first history duplicates)
-        const seen = new Set();
-        const deduped = [];
-        for (const item of out){
-          const k = String(item.t || "").toLowerCase();
-          if (!k || seen.has(k)) continue;
-          seen.add(k);
-          deduped.push(item);
-        }
-
-        return deduped.slice(0, limit);
-      }catch{
-        return [];
-      }
-    }
-
-    // ===== Cover cache =====
-    function loadCoverCache(){
-      try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
-      catch { return {}; }
-    }
-
-    async function getCover(artist, title){
-      if (!artist || !title) return "";
-      const key = normKey(artist, title);
-      const cache = loadCoverCache();
-      if (cache[key] !== undefined) return cache[key];
-
-      const term = encodeURIComponent(`${artist} ${title}`);
-      const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
-
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) return "";
-        const data = await res.json();
-        const item = data?.results?.[0];
-        if (!item) return "";
-        const art = (item.artworkUrl100 || "").replace(/100x100bb.jpg$/, "600x600bb.jpg");
-        cache[key] = art || "";
-        localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
-        window.dispatchEvent(new CustomEvent("abf:cover-cache-updated"));
-        return art || "";
-      } catch {
-        cache[key] = "";
-        localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
-        return "";
-      }
-    }
-
-    function setCover(url){
-      const img = document.getElementById("musicCover");
-      if (!img) return;
-      if (url){
-        img.src = url;
-        img.classList.remove("hidden");
-      } else {
-        img.classList.add("hidden");
-      }
-    }
-
-    // =====================================================
-    // ✅ SERVER-SIDE VOTES (NO localStorage votes)
-    // Endpoint: /api/vote
-    // - GET  /api/vote?week=YYYY-Wxx      -> returns { ok:true, week, top:[{track_key,count,...}] }
-    // - POST /api/vote { track_key, week, artist, title } -> returns ok or error
-    // =====================================================
-
-    // tiny cache in-memory to avoid spamming API
-    const VOTES_TTL_MS = 10_000; // 10s
-    function votesCacheKey(){ return `votes:${getISOWeekId()}`; }
-
-    async function apiGetVotes(){
-      const week = getISOWeekId();
-      const k = votesCacheKey();
-
-      window.__abfVotesCache = window.__abfVotesCache || {};
-      const c = window.__abfVotesCache[k];
-      const now = nowTs();
-      if (c && now < c.exp) return c.votes || {};
-
-      try {
-        const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
-        const data = await res.json().catch(() => ({}));
-
-        // API: { ok:true, week, top:[ {track_key,count,...} ] }
-        const votes = {};
-        const top = Array.isArray(data?.top) ? data.top : [];
-        for (const row of top){
-          const key = String(row?.track_key || "").trim();
-          const count = Number(row?.count || 0);
-          if (key) votes[key] = count;
-        }
-
-        window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
-        return votes;
-      } catch {
-        return {};
-      }
-    }
-
-    // session UX anti-spam (24h per device session) — uses NORM key
-    function markSessionVoted(norm){
-      window.__abfVotedSession = window.__abfVotedSession || {};
-      window.__abfVotedSession[norm] = nowTs();
-    }
-    function sessionAlreadyVoted(norm){
-      const m = window.__abfVotedSession || {};
-      const last = m[norm] || 0;
-      return (nowTs() - last) < DAY;
-    }
-
-    async function apiVote(trackKeyRaw, artist = "", title = ""){
-      const week = getISOWeekId();
-
-      const res = await fetch("/api/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ week, track_key: trackKeyRaw, artist, title }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || data?.ok === false){
-        return {
-          ok: false,
-          status: res.status,
-          error: data?.error || `HTTP ${res.status}`,
-          reason: data?.reason || "",
-        };
-      }
-
-      // Some backends may return count; if not, we’ll fallback client-side
-      return { ok: true, status: res.status, week: data?.week || week, count: data?.count };
-    }
-
-    // Helper cover HTML (uses NORM key cache)
-    function coverHtml(norm, cache, sizeClass = "w-12 h-12 rounded-xl") {
-      const url = cache[norm] || "";
-      return `
-        <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
-          <img src="${url ? esc(url) : ""}" alt="" class="${url ? "" : "hidden"}" loading="lazy" decoding="async" />
-          <div class="abfCoverFallback">
-            <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-          </div>
-        </div>
-      `;
-    }
-
-    function voteErrorToast(r){
-      // ✅ All vote-related notifications in English
-      if (r?.status === 409 || r?.reason === "cooldown"){
-        alert("You already voted for this track. Come back in 24h 🙂");
-        return;
-      }
-      if (r?.status === 429){
-        alert("Too many requests (rate limit). Please wait a few seconds and try again 🙂");
-        return;
-      }
-      alert(`Vote failed: ${r?.error || "Unknown error"}`);
-    }
-
-    async function renderHistory(){
-      const artistEl = document.getElementById("musicArtist");
-      const titleEl = document.getElementById("musicTitle");
-      const timeEl = document.getElementById("musicTime");
-      const listEl = document.getElementById("lastPlayed");
-      const chartEl = document.getElementById("topChart");
-      const nowVoteBtn = document.getElementById("nowVoteBtn");
-      const nowVoteCount = document.getElementById("nowVoteCount");
-      const weekEl = document.getElementById("musicWeekId");
-
-      if (weekEl) weekEl.textContent = weekLabel();
-      if (!artistEl || !titleEl || !listEl || !chartEl) return;
-
-      let history = await fetchServerNowPlaying(12);
-      // fallback local if API down
-      if (!history.length) history = loadHistory();
-
-      if (!history.length){
-        artistEl.textContent = "—";
-        titleEl.textContent = "—";
-        if (timeEl) timeEl.textContent = "--:--";
-        listEl.innerHTML = `<li class="text-white/50">Start the player to load the history.</li>`;
-        chartEl.innerHTML = `<li class="text-white/50">No votes yet this week.</li>`;
-        setCover("");
-        if (nowVoteBtn) nowVoteBtn.style.display = "none";
-        return;
-      }
-
-      // fetch votes (server-side)
-      const votes = await apiGetVotes();
-
-      // NOW PLAYING
-      const currentEntry = history[0];
-      const current = splitTrack(currentEntry.t);
-
-      const prettyNowArtist = upperArtist(current.artist || "—");
-      const prettyNowTitle = titleCaseEN(current.title || "—");
-
-      artistEl.textContent = prettyNowArtist;
-      titleEl.textContent = prettyNowTitle;
-      if (timeEl) timeEl.textContent = fmtTime(currentEntry.ts);
-
-      setCover(await getCover(current.artist, current.title));
-
-      // ✅ keys
-      const currentKeyNorm = normKey(current.artist, current.title);
-      const currentKeyRaw  = rawKey(current.artist, current.title);
-
-      // ✅ Votes map is keyed by whatever server stores (track_key)
-      // If your server stores RAW keys: votes[currentKeyRaw]
-      // If your server stores NORM keys: votes[currentKeyNorm]
-      // We'll try both (non-breaking migration).
-      const currentCount = (votes[currentKeyRaw] != null)
-        ? votes[currentKeyRaw]
-        : (votes[currentKeyNorm] || 0);
-
-      if (nowVoteCount) nowVoteCount.textContent = String(currentCount);
-
-      if (nowVoteBtn){
-        nowVoteBtn.style.display = "flex";
-
-        const alreadySession = sessionAlreadyVoted(currentKeyNorm);
-        nowVoteBtn.style.opacity = alreadySession ? "0.55" : "1";
-        nowVoteBtn.style.cursor = alreadySession ? "not-allowed" : "pointer";
-
-        nowVoteBtn.onclick = async () => {
-          if (sessionAlreadyVoted(currentKeyNorm)){
-            alert("You already voted for this track. Come back in 24h 🙂");
-            return;
-          }
-
-          nowVoteBtn.style.opacity = "0.7";
-          nowVoteBtn.style.cursor = "wait";
-
-          const r = await apiVote(currentKeyRaw, current.artist, current.title);
-
-          if (!r.ok){
-            nowVoteBtn.style.opacity = "1";
-            nowVoteBtn.style.cursor = "pointer";
-            voteErrorToast(r);
-            return;
-          }
-
-          markSessionVoted(currentKeyNorm);
-
-          // update UI count
-          const newCount = (r.count != null)
-            ? r.count
-            : (Number(currentCount || 0) + 1);
-
-          if (nowVoteCount) nowVoteCount.textContent = String(newCount);
-
-          // bust cache quickly + re-render
-          const k = votesCacheKey();
-          if (window.__abfVotesCache?.[k]) window.__abfVotesCache[k].exp = 0;
-
-          nowVoteBtn.style.opacity = "0.55";
-          nowVoteBtn.style.cursor = "not-allowed";
-          renderHistory();
-        };
-      }
-
-      const cache = loadCoverCache();
-
-      // LAST PLAYED
-      listEl.innerHTML = history
-        .slice(1)
-        .map((entry) => {
-          const t = splitTrack(entry.t);
-          const prettyArtist = upperArtist(t.artist || "—");
-          const prettyTitle = titleCaseEN(t.title || "—");
-
-          const kNorm = normKey(t.artist, t.title);
-          const kRaw  = rawKey(t.artist, t.title);
-
-          const time = fmtTime(entry.ts);
-
-          return `
-            <li class="flex items-center justify-between gap-3 border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                ${coverHtml(kNorm, cache)}
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-3">
-                    <div class="font-semibold text-white truncate">${esc(prettyArtist)}</div>
-                    <div class="ml-auto flex-none text-xs px-2 py-0.5 rounded-lg border border-white/10 bg-white/5 text-white/60 tabular-nums">
-                      ${time}
-                    </div>
-                  </div>
-                  <div class="text-white/60 text-sm truncate">${esc(prettyTitle)}</div>
-                </div>
-              </div>
-              <button
-                class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
-                data-norm="${esc(kNorm)}"
-                data-raw="${esc(kRaw)}"
-                data-artist="${esc(t.artist || "")}"
-                data-title="${esc(t.title || "")}"
-                type="button"
-                aria-label="Vote"
-                title="Vote"
-              >
-                👍 <span class="voteCount tabular-nums">0</span>
-              </button>
-            </li>
-          `;
-        })
-        .join("");
-
-      // TOP THIS WEEK
-      const entries = Object.entries(votes)
-        .filter(([,count]) => Number(count) > 0)
-        .sort((a,b) => Number(b[1]) - Number(a[1]))
-        .slice(0, 10);
-
-      if (!entries.length){
-        chartEl.innerHTML = `<li class="text-white/50">No votes yet — be the first 🙂</li>`;
-      } else {
-        const max = Math.max(...entries.map(([,c]) => Number(c) || 0), 1);
-
-        chartEl.innerHTML = entries.map(([key, count], i) => {
-          // key might be RAW or NORM; for display, try to split
-          const parts = String(key).split(" - ");
-          const artistRaw = parts[0] || "—";
-          const titleRaw = parts.slice(1).join(" - ") || "—";
-          const artist = upperArtist(artistRaw);
-          const title = titleCaseEN(titleRaw);
-
-          const pct = Math.round((Number(count) / max) * 100);
-          const rankBadge =
-            i === 0 ? "bg-white/10 border-white/15" :
-            i === 1 ? "bg-white/8 border-white/15" :
-            i === 2 ? "bg-white/6 border-white/15" :
-            "bg-white/5 border-white/10";
-
-          // Cover cache uses NORM; try to map display -> norm
-          const kNorm = normKey(artistRaw, titleRaw);
-
-          return `
-            <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
-              <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadge} flex items-center justify-center text-sm font-semibold text-white/90 tabular-nums">
-                ${i+1}
-              </div>
-              ${coverHtml(kNorm, cache, "w-14 h-14 rounded-2xl")}
-              <div class="min-w-0 flex-1">
-                <div class="flex items-start gap-3">
-                  <div class="min-w-0">
-                    <div class="font-semibold text-white truncate">${esc(artist)}</div>
-                    <div class="text-white/65 text-sm truncate">${esc(title)}</div>
-                  </div>
-                  <div class="ml-auto flex-none text-sm text-white/90 font-semibold tabular-nums">
-                    ${count} <span class="text-white/50 font-normal">votes</span>
-                  </div>
-                </div>
-                <div class="mt-3 h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]" style="width:${pct}%"></div>
-                </div>
-              </div>
-            </li>
-          `;
+          return rebuilt.join("-");
         }).join("");
       }
 
-      // Wire vote buttons (server-side)
-      listEl.querySelectorAll(".voteBtn").forEach((btn) => {
-        const kNorm = btn.dataset.norm || "";
-        const kRaw  = btn.dataset.raw || "";
-        const a     = btn.dataset.artist || "";
-        const t     = btn.dataset.title || "";
+      // ===== History fallback local =====
+      function loadHistory(){
+        let raw = [];
+        try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+        catch{ raw = []; }
+        return (raw || []).map((x) => {
+          if (typeof x === "string") return { t: x, ts: 0 };
+          if (x && typeof x === "object" && typeof x.t === "string") return { t: x.t, ts: Number(x.ts) || 0 };
+          return null;
+        }).filter(Boolean);
+      }
 
-        const countEl = btn.querySelector(".voteCount");
+      async function fetchServerNowPlaying(limit = 12){
+        try{
+          const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
+          const data = await res.json().catch(()=> ({}));
+          if (!data?.ok) return [];
 
-        // votes map may store RAW or NORM — try both
-        const c = (votes[kRaw] != null) ? votes[kRaw] : (votes[kNorm] || 0);
-        if (countEl) countEl.textContent = String(c);
+          const out = [];
 
-        const alreadySession = sessionAlreadyVoted(kNorm);
-        btn.style.opacity = alreadySession ? "0.55" : "1";
-        btn.style.cursor = alreadySession ? "not-allowed" : "pointer";
-
-        btn.onclick = async () => {
-          if (sessionAlreadyVoted(kNorm)){
-            alert("You already voted for this track. Come back in 24h 🙂");
-            return;
+          // now -> { raw, played_at, played_at_ms }
+          if (data?.now?.raw){
+            out.push({
+              t: String(data.now.raw),
+              ts: Number(data?.now?.played_at_ms) ||
+                  (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now())
+            });
           }
 
-          btn.style.opacity = "0.7";
-          btn.style.cursor = "wait";
+          // history -> [{ raw, played_at, played_at_ms, ... }]
+          if (Array.isArray(data?.history)){
+            for (const row of data.history){
+              const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
+              if (!raw) continue;
 
-          const r = await apiVote(kRaw || rawKey(a, t), a, t);
-
-          if (!r.ok){
-            btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
-            voteErrorToast(r);
-            return;
+              out.push({
+                t: String(raw),
+                ts: Number(row?.played_at_ms) ||
+                    (row?.played_at ? new Date(row.played_at).getTime() : 0)
+              });
+            }
           }
 
-          markSessionVoted(kNorm);
+          // dedupe (avoid now + first history duplicates)
+          const seen = new Set();
+          const deduped = [];
+          for (const item of out){
+            const k = String(item.t || "").toLowerCase();
+            if (!k || seen.has(k)) continue;
+            seen.add(k);
+            deduped.push(item);
+          }
 
-          const newCount = (r.count != null) ? r.count : (Number(c || 0) + 1);
-          if (countEl) countEl.textContent = String(newCount);
+          return deduped.slice(0, limit);
+        }catch{
+          return [];
+        }
+      }
 
-          const kk = votesCacheKey();
-          if (window.__abfVotesCache?.[kk]) window.__abfVotesCache[kk].exp = 0;
+      // ===== Cover cache =====
+      function loadCoverCache(){
+        try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
+        catch { return {}; }
+      }
 
-          btn.style.opacity = "0.55";
-          btn.style.cursor = "not-allowed";
-          renderHistory();
-        };
-      });
-    }
+      async function getCover(artist, title){
+        if (!artist || !title) return "";
+        const key = normKey(artist, title);
+        const cache = loadCoverCache();
+        if (cache[key] !== undefined) return cache[key];
 
-    function startMusicTimer(){
-      if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
-      window.__abfMusicTimer = setInterval(renderHistory, 8000);
-    }
+        const term = encodeURIComponent(`${artist} ${title}`);
+        const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
 
-    function initMusicPage(){
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          renderHistory();
-          startMusicTimer();
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) return "";
+          const data = await res.json();
+          const item = data?.results?.[0];
+          if (!item) return "";
+          const art = (item.artworkUrl100 || "").replace(/100x100bb.jpg$/, "600x600bb.jpg");
+          cache[key] = art || "";
+          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
+          window.dispatchEvent(new CustomEvent("abf:cover-cache-updated"));
+          return art || "";
+        } catch {
+          cache[key] = "";
+          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
+          return "";
+        }
+      }
+
+      function setCover(url){
+        const img = document.getElementById("musicCover");
+        if (!img) return;
+        if (url){
+          img.src = url;
+          img.classList.remove("hidden");
+        } else {
+          img.classList.add("hidden");
+        }
+      }
+
+      // ===== Votes API =====
+      const VOTES_TTL_MS = 10_000; // 10s
+      function votesCacheKey(){ return `votes:${getISOWeekId()}`; }
+
+      async function apiGetVotes(){
+        const week = getISOWeekId();
+        const k = votesCacheKey();
+
+        window.__abfVotesCache = window.__abfVotesCache || {};
+        const c = window.__abfVotesCache[k];
+        const now = nowTs();
+        if (c && now < c.exp) return c.votes || {};
+
+        try {
+          const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
+          const data = await res.json().catch(() => ({}));
+
+          // API: { ok:true, week, top:[ {track_key,count} ] }
+          const votes = {};
+          const top = Array.isArray(data?.top) ? data.top : [];
+          for (const row of top){
+            const key = String(row?.track_key || "").trim();
+            const count = Number(row?.count || 0);
+            if (key) votes[key] = count;
+          }
+
+          window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
+          return votes;
+        } catch {
+          return {};
+        }
+      }
+
+      // session UX anti-spam (24h per device session) — uses NORM key
+      function markSessionVoted(norm){
+        window.__abfVotedSession = window.__abfVotedSession || {};
+        window.__abfVotedSession[norm] = nowTs();
+      }
+      function sessionAlreadyVoted(norm){
+        const m = window.__abfVotedSession || {};
+        const last = m[norm] || 0;
+        return (nowTs() - last) < DAY;
+      }
+
+      async function apiVote(trackKeyRaw, artist = "", title = ""){
+        const week = getISOWeekId();
+
+        const res = await fetch("/api/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ week, track_key: trackKeyRaw, artist, title }),
         });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data?.ok === false){
+          return {
+            ok: false,
+            status: res.status,
+            error: data?.error || `HTTP ${res.status}`,
+            reason: data?.reason || "",
+          };
+        }
+
+        return { ok: true, status: res.status, week: data?.week || week, count: data?.count };
+      }
+
+      function voteErrorToast(r){
+        // ✅ All vote-related notifications in English
+        if (r?.status === 409 || r?.reason === "cooldown"){
+          alert("You already voted for this track. Come back in 24h 🙂");
+          return;
+        }
+        if (r?.status === 429){
+          // In your backend 429 is also "already voted today", so keep it user-friendly:
+          alert("You already voted today. Come back in 24h 🙂");
+          return;
+        }
+        alert(`Vote failed: ${r?.error || "Unknown error"}`);
+      }
+
+      // Helper cover HTML (uses NORM key cache)
+      function coverHtml(norm, cache, sizeClass = "w-12 h-12 rounded-xl") {
+        const url = cache[norm] || "";
+        return `
+          <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
+            <img src="${url ? esc(url) : ""}" alt="" class="${url ? "" : "hidden"}" loading="lazy" decoding="async" />
+            <div class="abfCoverFallback">
+              <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+            </div>
+          </div>
+        `;
+      }
+
+      // ✅ FRONT FIX: dedupe Top This Week by normalized key (mask duplicates)
+      function dedupeTopEntries(votesObj){
+        // votesObj: { [track_key_from_server]: count }
+        // We group by normalized key derived from splitting the server key.
+        // If two keys normalize to same, we SUM counts and keep the "best display key".
+        const map = new Map(); // norm -> { displayKey, count }
+
+        for (const [serverKey, countRaw] of Object.entries(votesObj || {})){
+          const count = Number(countRaw) || 0;
+          if (count <= 0) continue;
+
+          const parts = String(serverKey).split(" - ");
+          const aRaw = (parts[0] || "").trim();
+          const tRaw = (parts.slice(1).join(" - ") || "").trim();
+          const n = normKey(aRaw, tRaw) || String(serverKey).trim().toLowerCase();
+
+          const prev = map.get(n);
+          if (!prev){
+            map.set(n, { displayKey: String(serverKey), count });
+          } else {
+            prev.count += count;
+
+            // Keep the "nicer" display key: prefer one with more uppercase/lowercase (not all lower)
+            const oldK = prev.displayKey;
+            const oldAllLower = oldK === oldK.toLowerCase();
+            const newAllLower = String(serverKey) === String(serverKey).toLowerCase();
+            if (oldAllLower && !newAllLower) prev.displayKey = String(serverKey);
+          }
+        }
+
+        return Array.from(map.values())
+          .sort((a,b) => (b.count || 0) - (a.count || 0))
+          .slice(0, 10);
+      }
+
+      async function renderHistory(){
+        const artistEl = document.getElementById("musicArtist");
+        const titleEl = document.getElementById("musicTitle");
+        const timeEl = document.getElementById("musicTime");
+        const listEl = document.getElementById("lastPlayed");
+        const chartEl = document.getElementById("topChart");
+        const nowVoteBtn = document.getElementById("nowVoteBtn");
+        const nowVoteCount = document.getElementById("nowVoteCount");
+        const weekEl = document.getElementById("musicWeekId");
+
+        if (weekEl) weekEl.textContent = weekLabel();
+        if (!artistEl || !titleEl || !listEl || !chartEl) return;
+
+        let history = await fetchServerNowPlaying(12);
+        if (!history.length) history = loadHistory();
+
+        if (!history.length){
+          artistEl.textContent = "—";
+          titleEl.textContent = "—";
+          if (timeEl) timeEl.textContent = "--:--";
+          listEl.innerHTML = `<li class="text-white/50">Start the player to load the history.</li>`;
+          chartEl.innerHTML = `<li class="text-white/50">No votes yet this week.</li>`;
+          setCover("");
+          if (nowVoteBtn) nowVoteBtn.style.display = "none";
+          return;
+        }
+
+        const votes = await apiGetVotes();
+
+        // NOW PLAYING
+        const currentEntry = history[0];
+        const current = splitTrack(currentEntry.t);
+
+        const prettyNowArtist = upperArtist(current.artist || "—");
+        const prettyNowTitle = titleCaseEN(current.title || "—");
+
+        artistEl.textContent = prettyNowArtist;
+        titleEl.textContent = prettyNowTitle;
+        if (timeEl) timeEl.textContent = fmtTime(currentEntry.ts);
+
+        setCover(await getCover(current.artist, current.title));
+
+        const currentKeyNorm = normKey(current.artist, current.title);
+        const currentKeyRaw  = rawKey(current.artist, current.title);
+
+        // Votes map may be keyed by RAW or NORM (migration-safe)
+        const currentCount = (votes[currentKeyRaw] != null)
+          ? votes[currentKeyRaw]
+          : (votes[currentKeyNorm] || 0);
+
+        if (nowVoteCount) nowVoteCount.textContent = String(currentCount);
+
+        if (nowVoteBtn){
+          nowVoteBtn.style.display = "flex";
+
+          const alreadySession = sessionAlreadyVoted(currentKeyNorm);
+          nowVoteBtn.style.opacity = alreadySession ? "0.55" : "1";
+          nowVoteBtn.style.cursor = alreadySession ? "not-allowed" : "pointer";
+
+          nowVoteBtn.onclick = async () => {
+            if (sessionAlreadyVoted(currentKeyNorm)){
+              alert("You already voted for this track. Come back in 24h 🙂");
+              return;
+            }
+
+            nowVoteBtn.style.opacity = "0.7";
+            nowVoteBtn.style.cursor = "wait";
+
+            const r = await apiVote(currentKeyRaw, current.artist, current.title);
+
+            if (!r.ok){
+              nowVoteBtn.style.opacity = "1";
+              nowVoteBtn.style.cursor = "pointer";
+              voteErrorToast(r);
+              return;
+            }
+
+            markSessionVoted(currentKeyNorm);
+
+            const newCount = (r.count != null) ? r.count : (Number(currentCount || 0) + 1);
+            if (nowVoteCount) nowVoteCount.textContent = String(newCount);
+
+            // bust cache quickly + re-render
+            const k = votesCacheKey();
+            if (window.__abfVotesCache?.[k]) window.__abfVotesCache[k].exp = 0;
+
+            nowVoteBtn.style.opacity = "0.55";
+            nowVoteBtn.style.cursor = "not-allowed";
+            renderHistory();
+          };
+        }
+
+        const cache = loadCoverCache();
+
+        // LAST PLAYED
+        listEl.innerHTML = history
+          .slice(1)
+          .map((entry) => {
+            const t = splitTrack(entry.t);
+            const prettyArtist = upperArtist(t.artist || "—");
+            const prettyTitle = titleCaseEN(t.title || "—");
+
+            const kNorm = normKey(t.artist, t.title);
+            const kRaw  = rawKey(t.artist, t.title);
+            const time = fmtTime(entry.ts);
+
+            return `
+              <li class="flex items-center justify-between gap-3 border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                  ${coverHtml(kNorm, cache)}
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-3">
+                      <div class="font-semibold text-white truncate">${esc(prettyArtist)}</div>
+                      <div class="ml-auto flex-none text-xs px-2 py-0.5 rounded-lg border border-white/10 bg-white/5 text-white/60 tabular-nums">
+                        ${time}
+                      </div>
+                    </div>
+                    <div class="text-white/60 text-sm truncate">${esc(prettyTitle)}</div>
+                  </div>
+                </div>
+                <button
+                  class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
+                  data-norm="${esc(kNorm)}"
+                  data-raw="${esc(kRaw)}"
+                  data-artist="${esc(t.artist || "")}"
+                  data-title="${esc(t.title || "")}"
+                  type="button"
+                  aria-label="Vote"
+                  title="Vote"
+                >
+                  👍 <span class="voteCount tabular-nums">0</span>
+                </button>
+              </li>
+            `;
+          })
+          .join("");
+
+        // TOP THIS WEEK (✅ deduped on front)
+        const top10 = dedupeTopEntries(votes);
+
+        if (!top10.length){
+          chartEl.innerHTML = `<li class="text-white/50">No votes yet — be the first 🙂</li>`;
+        } else {
+          const max = Math.max(...top10.map((x) => Number(x.count) || 0), 1);
+
+          chartEl.innerHTML = top10.map(({ displayKey, count }, i) => {
+            const parts = String(displayKey).split(" - ");
+            const artistRaw = parts[0] || "—";
+            const titleRaw = parts.slice(1).join(" - ") || "—";
+            const artist = upperArtist(artistRaw);
+            const title = titleCaseEN(titleRaw);
+
+            const pct = Math.round((Number(count) / max) * 100);
+            const rankBadge =
+              i === 0 ? "bg-white/10 border-white/15" :
+              i === 1 ? "bg-white/8 border-white/15" :
+              i === 2 ? "bg-white/6 border-white/15" :
+              "bg-white/5 border-white/10";
+
+            const kNorm = normKey(artistRaw, titleRaw);
+
+            return `
+              <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
+                <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadge} flex items-center justify-center text-sm font-semibold text-white/90 tabular-nums">
+                  ${i+1}
+                </div>
+                ${coverHtml(kNorm, cache, "w-14 h-14 rounded-2xl")}
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start gap-3">
+                    <div class="min-w-0">
+                      <div class="font-semibold text-white truncate">${esc(artist)}</div>
+                      <div class="text-white/65 text-sm truncate">${esc(title)}</div>
+                    </div>
+                    <div class="ml-auto flex-none text-sm text-white/90 font-semibold tabular-nums">
+                      ${count} <span class="text-white/50 font-normal">votes</span>
+                    </div>
+                  </div>
+                  <div class="mt-3 h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]" style="width:${pct}%"></div>
+                  </div>
+                </div>
+              </li>
+            `;
+          }).join("");
+        }
+
+        // Wire vote buttons (server-side)
+        listEl.querySelectorAll(".voteBtn").forEach((btn) => {
+          const kNorm = btn.dataset.norm || "";
+          const kRaw  = btn.dataset.raw || "";
+          const a     = btn.dataset.artist || "";
+          const t     = btn.dataset.title || "";
+
+          const countEl = btn.querySelector(".voteCount");
+
+          const c = (votes[kRaw] != null) ? votes[kRaw] : (votes[kNorm] || 0);
+          if (countEl) countEl.textContent = String(c);
+
+          const alreadySession = sessionAlreadyVoted(kNorm);
+          btn.style.opacity = alreadySession ? "0.55" : "1";
+          btn.style.cursor = alreadySession ? "not-allowed" : "pointer";
+
+          btn.onclick = async () => {
+            if (sessionAlreadyVoted(kNorm)){
+              alert("You already voted for this track. Come back in 24h 🙂");
+              return;
+            }
+
+            btn.style.opacity = "0.7";
+            btn.style.cursor = "wait";
+
+            const r = await apiVote(kRaw || rawKey(a, t), a, t);
+
+            if (!r.ok){
+              btn.style.opacity = "1";
+              btn.style.cursor = "pointer";
+              voteErrorToast(r);
+              return;
+            }
+
+            markSessionVoted(kNorm);
+
+            const newCount = (r.count != null) ? r.count : (Number(c || 0) + 1);
+            if (countEl) countEl.textContent = String(newCount);
+
+            const kk = votesCacheKey();
+            if (window.__abfVotesCache?.[kk]) window.__abfVotesCache[kk].exp = 0;
+
+            btn.style.opacity = "0.55";
+            btn.style.cursor = "not-allowed";
+            renderHistory();
+          };
+        });
+      }
+
+      function startMusicTimer(){
+        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+        window.__abfMusicTimer = setInterval(renderHistory, 8000);
+      }
+
+      function initMusicPage(){
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            renderHistory();
+            startMusicTimer();
+          });
+        });
+      }
+
+      initMusicPage();
+      document.addEventListener("astro:page-load", initMusicPage);
+      document.addEventListener("astro:after-swap", initMusicPage);
+
+      if (!window.__abfMusicListeners){
+        window.addEventListener("abf:history-updated", renderHistory);
+        window.addEventListener("abf:cover-cache-updated", renderHistory);
+        window.__abfMusicListeners = true;
+      }
+
+      document.addEventListener("astro:before-swap", () => {
+        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
       });
-    }
-
-    initMusicPage();
-    document.addEventListener("astro:page-load", initMusicPage);
-    document.addEventListener("astro:after-swap", initMusicPage);
-
-    if (!window.__abfMusicListeners){
-      window.addEventListener("abf:history-updated", renderHistory);
-      window.addEventListener("abf:cover-cache-updated", renderHistory);
-      window.__abfMusicListeners = true;
-    }
-
-    document.addEventListener("astro:before-swap", () => {
-      if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
-    });
-  })();
-</script>
-
+    })();
+  </script>
 </Base>
