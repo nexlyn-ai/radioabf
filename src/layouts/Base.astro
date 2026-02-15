@@ -696,7 +696,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
         S.isStopped = S.isStopped ?? true;
         const LS_KEY = "abf_stream_index";
-        const HISTORY_KEY = "abf_history";
+        const HISTORY_KEY = "abf_history"; // kept for backward compatibility (no longer written)
         const COVERS_KEY = "abf_covers_v1";
 
         S.streams = S.streams || [
@@ -742,7 +742,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           }, { once: true });
         }
 
-        // ========= LIVE TAB TITLE + FAVICON (animated) =========
         // ========= LIVE TAB TITLE + FAVICON (animated) =========
 function ensureTabFx(){
   // IMPORTANT: do not keep stale DOM refs across Astro swaps
@@ -885,7 +884,6 @@ function refreshTabFxAfterSwap(){
   const title  = document.getElementById("npTitle")?.textContent || "";
   fx.update(isLiveNow(), artist, title);
 }
-
 
         // On route changes, keep base title from SSR but stop animation if needed
         function resetTabOnNav(){
@@ -1100,19 +1098,7 @@ function refreshTabFxAfterSwap(){
           requestAnimationFrame(tick);
         }
 
-        // ========= HISTORY / COVER =========
-        function addToHistory(full) {
-          if (!full) return;
-          let history = [];
-          try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch {}
-          const now = Date.now();
-          if (history?.[0]?.t === full) return;
-          history.unshift({ t: full, ts: now });
-          history = history.slice(0, 50);
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-          try { window.dispatchEvent(new CustomEvent("abf:history-updated", { detail: { title: full, ts: now } })); } catch {}
-        }
-
+        // ========= COVERS =========
         function splitTrack(entry) {
           const parts = String(entry || "").split(" - ");
           const artist = (parts[0] || "").trim();
@@ -1211,27 +1197,29 @@ function refreshTabFxAfterSwap(){
           }
         }
 
-        function statusUrlFor(index) {
-          const safe = Math.max(0, Math.min(S.streams.length - 1, index));
-          const u = new URL(S.streams[safe].url);
-          return `${u.origin}/status-json.xsl`;
+        // ========= SERVER NOW PLAYING (NO localStorage history) =========
+        async function fetchServerNowPlaying(limit = 12){
+          try{
+            const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
+            const data = await res.json().catch(()=> ({}));
+            if (!data?.ok) return { now: null, history: [] };
+
+            const now = data?.now || null;
+            const history = Array.isArray(data?.history) ? data.history : [];
+            return { now, history };
+          }catch{
+            return { now: null, history: [] };
+          }
         }
 
         async function fetchNowPlaying() {
           try {
-            const idx = (typeof S.currentStreamIndex === "number")
-              ? S.currentStreamIndex
-              : (Number(localStorage.getItem(LS_KEY) || 0) || 0);
+            const { now, history } = await fetchServerNowPlaying(12);
 
-            const res = await fetch(statusUrlFor(idx), { cache: "no-store" });
-            const data = await res.json();
-            let src = data?.icestats?.source;
-            if (Array.isArray(src)) src = src[0];
-            const full = (src?.title || src?.yp_currently_playing || "").trim();
+            const artist = String(now?.artist || "").trim();
+            const title = String(now?.title || "").trim();
+            const full = String(now?.raw || "").trim() || (artist || title ? `${artist} - ${title}`.trim() : "");
 
-            if (full) addToHistory(full);
-
-            const { artist, title } = splitTrack(full);
             const a = $("npArtist");
             const t = $("npTitle");
 
@@ -1240,6 +1228,7 @@ function refreshTabFxAfterSwap(){
 
             fmtApply();
 
+            // cover (keeps local cache)
             if (artist && title) {
               const key = normKey(artist, title);
               const cache = loadCoverCache();
@@ -1253,7 +1242,37 @@ function refreshTabFxAfterSwap(){
               setPlayerCover("");
             }
 
+            // keep fullscreen cover synced
             if (S.__fs?.active) syncFullscreenUI();
+
+            // share history to pages (home/music) without localStorage
+            const played_at_ms_now =
+              Number(now?.played_at_ms) || (now?.played_at ? new Date(now.played_at).getTime() : Date.now());
+
+            const payload = {
+              ok: true,
+              now: {
+                raw: full,
+                artist,
+                title,
+                track_key: now?.track_key || "",
+                played_at: now?.played_at || "",
+                played_at_ms: played_at_ms_now
+              },
+              history: (history || []).map((row) => ({
+                raw: row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim(),
+                artist: row?.artist || "",
+                title: row?.title || "",
+                track_key: row?.track_key || "",
+                played_at: row?.played_at || "",
+                played_at_ms: Number(row?.played_at_ms) || (row?.played_at ? new Date(row.played_at).getTime() : 0)
+              }))
+            };
+
+            S.__nowplaying = payload;
+            try { window.dispatchEvent(new CustomEvent("abf:nowplaying-updated", { detail: payload })); } catch {}
+            // compatibility event name (some pages still listen to it)
+            try { window.dispatchEvent(new CustomEvent("abf:history-updated", { detail: payload })); } catch {}
 
             // update tab title + favicon LIVE
             const fx = ensureTabFx();
@@ -1520,17 +1539,11 @@ function refreshTabFxAfterSwap(){
         };
 
         document.addEventListener("astro:page-load", onAstroNav);
-document.addEventListener("astro:after-swap", onAstroNav);
+        document.addEventListener("astro:after-swap", onAstroNav);
 
-// ✅ Astro swaps the <head> => rebind favicon/title effect after each swap
-document.addEventListener("astro:page-load", refreshTabFxAfterSwap);
-document.addEventListener("astro:after-swap", refreshTabFxAfterSwap);
-
-// ❌ DO NOT stop the tab FX before swap, otherwise pulse disappears
-// document.addEventListener("astro:before-swap", () => {
-//   resetTabOnNav();
-// });
-
+        // ✅ Astro swaps the <head> => rebind favicon/title effect after each swap
+        document.addEventListener("astro:page-load", refreshTabFxAfterSwap);
+        document.addEventListener("astro:after-swap", refreshTabFxAfterSwap);
 
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible" && !audio.paused) ensureVisualizerReady();
