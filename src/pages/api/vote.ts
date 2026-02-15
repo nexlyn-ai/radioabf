@@ -1,14 +1,11 @@
-// src/pages/api/vote.ts
 import type { APIRoute } from "astro";
 
 export const prerender = false;
 
 const DIRECTUS_URL =
   import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
-
 const TOKEN =
   import.meta.env.DIRECTUS_VOTES_TOKEN || process.env.DIRECTUS_VOTES_TOKEN || "";
-
 const COLLECTION = "votes";
 
 function json(body: any, status = 200) {
@@ -104,44 +101,33 @@ function getClientIp(request: Request) {
 export const GET: APIRoute = async ({ url }) => {
   try {
     const week = pickWeek(url.searchParams.get("week"));
-
     // Align with your schema: week, track_key, count
     const fields = ["week", "track_key", "count"].join(",");
-
     const res = await dFetch(
       `/items/${COLLECTION}?fields=${encodeURIComponent(
         fields
       )}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
     );
-
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       return bad(res.status, `Directus GET failed: ${txt}`);
     }
-
     const data = (await res.json()) as { data?: any[] };
     const rows = Array.isArray(data?.data) ? data.data : [];
-
     // Sum counts per NORMALIZED track_key (prevents duplicates in top)
     // Keep one "display" track_key (first seen raw) so the front can still show a readable key.
     const map = new Map<string, { track_key: string; count: number }>();
-
     for (const r of rows) {
       const raw = String(r?.track_key || "").trim();
       if (!raw) continue;
-
       const nk = normTrackKey(raw);
       if (!nk) continue;
-
       const c = Number(r?.count ?? 1) || 1;
-
       const prev = map.get(nk);
       if (!prev) map.set(nk, { track_key: raw, count: c });
       else prev.count += c;
     }
-
     const top = Array.from(map.values()).sort((a, b) => b.count - a.count);
-
     return json({ ok: true, week, top });
   } catch (e: any) {
     return bad(500, e?.message || "Server error");
@@ -149,33 +135,31 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 // -------- POST /api/vote (week optional) --------
-// Body: { week?, track_key }
+// Body: { week?, track_key, artist?, title? }
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json().catch(() => null);
-
     const week = pickWeek(body?.week);
-
     const track_key_raw = String(body?.track_key || "").trim();
     if (!track_key_raw) return bad(400, "Missing track_key");
 
-    // ✅ normalize before storing/checking to prevent duplicates
+    // Normaliser avant stockage/vérification
     const track_key = normTrackKey(track_key_raw);
     if (!track_key) return bad(400, "Invalid track_key");
 
-    // 1 vote / day / IP
+    // Rate limiting : 1 vote par piste par jour par IP
     const ip = getClientIp(request);
     const iph = await ipHash(ip);
     const vote_day = todayISO();
 
-    // Check existing vote for this ip_hash + vote_day + week
-    // (If you want "1 vote per track/day" instead, add filter[track_key][_eq]=track_key)
+    // Vérification d'un vote existant pour cette IP + jour + semaine + piste
     const checkFields = ["id"].join(",");
     const checkRes = await dFetch(
       `/items/${COLLECTION}?fields=${encodeURIComponent(checkFields)}` +
         `&filter[week][_eq]=${encodeURIComponent(week)}` +
         `&filter[vote_day][_eq]=${encodeURIComponent(vote_day)}` +
         `&filter[ip_hash][_eq]=${encodeURIComponent(iph)}` +
+        `&filter[track_key][_eq]=${encodeURIComponent(track_key)}` + // ← Filtre ajouté
         `&limit=1`
     );
 
@@ -185,20 +169,26 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const checkJson = (await checkRes.json().catch(() => ({}))) as any;
-    const already =
-      Array.isArray(checkJson?.data) && checkJson.data.length > 0;
+    const already = Array.isArray(checkJson?.data) && checkJson.data.length > 0;
 
     if (already) {
-      return bad(429, "Already voted today (this device/IP).");
+      return json(
+        {
+          ok: false,
+          error: "You already voted for this track today.",
+          reason: "cooldown",
+        },
+        409
+      );
     }
 
-    // Insert vote row
+    // Insertion du vote
     const res = await dFetch(`/items/${COLLECTION}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         week,
-        track_key, // ✅ stored normalized
+        track_key, // stocké normalisé
         ip_hash: iph,
         vote_day,
         count: 1,
