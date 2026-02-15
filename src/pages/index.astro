@@ -561,6 +561,13 @@ const fmtDate = (iso?: string | null) => {
         }
       }
 
+      // ✅ NEW: Home reads the new nowplaying state (no localStorage history)
+      function getNowplayingPayload(){
+        const p = window.__abf?.__nowplaying;
+        if (p?.ok) return p;
+        return null;
+      }
+
       // ---------- Votes API (Directus via /api/vote) ----------
       async function apiGetTopWeek(week){
         const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
@@ -626,44 +633,48 @@ const fmtDate = (iso?: string | null) => {
         box.classList.remove("hidden");
       }
 
+      // ✅ UPDATED: Now playing from __abf.__nowplaying
       function renderNowPlaying(){
         const artistEl = document.getElementById("homeArtist");
         const titleEl = document.getElementById("homeTitle");
         if (!artistEl || !titleEl) return;
 
-        let history = [];
-        try { history = JSON.parse(localStorage.getItem("abf_history") || "[]"); } catch {}
-        const currentEntry = history[0];
-        const current = currentEntry?.t || "";
+        const payload = getNowplayingPayload();
+        const now = payload?.now || null;
 
-        if (!current){
+        const artist = String(now?.artist || "").trim();
+        const title  = String(now?.title || "").trim();
+
+        if (!artist && !title){
           artistEl.textContent = "—";
           titleEl.textContent = "—";
           setCover("");
           return;
         }
 
-        const t = splitTrack(current);
-        artistEl.textContent = upperArtist(t.artist || "—");
-        titleEl.textContent = titleCaseEN(t.title || "—");
+        artistEl.textContent = upperArtist(artist || "—");
+        titleEl.textContent  = titleCaseEN(title || "—");
 
         try{
           const covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}");
-          const key = normKey(t.artist, t.title);
+          const key = normKey(artist, title);
           setCover(covers[key] || "");
         } catch {
           setCover("");
         }
       }
 
+      // ✅ UPDATED: Last played from __abf.__nowplaying.history
       function renderLastPlayedCarousel(){
         const host = document.getElementById("homeLastCarousel");
         if (!host) return;
 
-        let history = [];
-        try { history = JSON.parse(localStorage.getItem("abf_history") || "[]"); } catch {}
+        const payload = getNowplayingPayload();
+        const history = Array.isArray(payload?.history) ? payload.history : [];
 
-        const items = history.slice(1, 4).filter(e => e?.t);
+        const items = history
+          .filter(row => (row?.artist || row?.title || row?.raw))
+          .slice(0, 3);
 
         if (!items.length){
           host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
@@ -673,10 +684,10 @@ const fmtDate = (iso?: string | null) => {
         let covers = {};
         try { covers = JSON.parse(localStorage.getItem("abf_covers_v1") || "{}"); } catch {}
 
-        host.innerHTML = items.map((entry) => {
-          const full = entry?.t || "";
-          const t = splitTrack(full);
-          const key = normKey(t.artist, t.title);
+        host.innerHTML = items.map((row) => {
+          const artist = String(row?.artist || "").trim();
+          const title  = String(row?.title || "").trim();
+          const key = normKey(artist, title);
           const img = covers[key] || "";
 
           return `
@@ -691,8 +702,8 @@ const fmtDate = (iso?: string | null) => {
                 </div>
               </div>
               <div class="min-w-0">
-                <div class="font-semibold text-white truncate">${esc(upperArtist(t.artist || "—"))}</div>
-                <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(t.title || "—"))}</div>
+                <div class="font-semibold text-white truncate">${esc(upperArtist(artist || "—"))}</div>
+                <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(title || "—"))}</div>
               </div>
             </a>
           `;
@@ -1098,6 +1109,12 @@ const fmtDate = (iso?: string | null) => {
             filter: blur(18px);
             opacity: .55;
           }
+          .line-clamp-2{
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+          }
         `;
         document.head.appendChild(st);
       }
@@ -1183,6 +1200,12 @@ const fmtDate = (iso?: string | null) => {
 
         await renderTop();
         await renderHeroTop1();
+
+        // Ensure a quick refresh after player pushed nowplaying (first load)
+        requestAnimationFrame(() => {
+          renderNowPlaying();
+          renderLastPlayedCarousel();
+        });
 
         const jump = document.getElementById("jumpToPlayer");
         if (jump){
