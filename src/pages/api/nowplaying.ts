@@ -12,9 +12,8 @@ const DIRECTUS_URL =
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
 
-// 🔎 active le debug via env si tu veux (optionnel)
-const DEBUG =
-  (import.meta.env.DIRECTUS_DEBUG || process.env.DIRECTUS_DEBUG || "") === "1";
+// 🔎 DEBUG FORCÉ (temporaire)
+const DEBUG = true;
 
 function cleanNowText(s: string) {
   let out = String(s || "").trim();
@@ -73,7 +72,7 @@ async function getLastPlayDebug() {
   return {
     ok: r.ok,
     status: r.status,
-    body: DEBUG ? (json || text) : undefined,
+    body: json || text,
     last: json?.data?.[0] || null,
   };
 }
@@ -91,7 +90,7 @@ async function insertPlayDebug(payload: any) {
   return {
     ok: r.ok,
     status: r.status,
-    body: DEBUG ? (json || text) : undefined,
+    body: json || text,
   };
 }
 
@@ -108,7 +107,7 @@ async function getHistoryDebug(limit: number) {
   return {
     ok: r.ok,
     status: r.status,
-    body: DEBUG ? (json || text) : undefined,
+    body: json || text,
     history: Array.isArray(json?.data) ? json.data : [],
   };
 }
@@ -122,12 +121,14 @@ export const GET: APIRoute = async ({ request }) => {
 
   if (!ICECAST_STATUS_URL) {
     return new Response(JSON.stringify({ ok: false, error: "ICECAST_STATUS_URL missing" }), {
-      status: 500, headers: { "content-type": "application/json; charset=utf-8" },
+      status: 500,
+      headers: { "content-type": "application/json; charset=utf-8" },
     });
   }
   if (!DIRECTUS_URL || !DIRECTUS_TOKEN) {
     return new Response(JSON.stringify({ ok: false, error: "DIRECTUS_URL/DIRECTUS_TOKEN missing" }), {
-      status: 500, headers: { "content-type": "application/json; charset=utf-8" },
+      status: 500,
+      headers: { "content-type": "application/json; charset=utf-8" },
     });
   }
 
@@ -137,14 +138,16 @@ export const GET: APIRoute = async ({ request }) => {
     const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
     if (!r.ok) {
       return new Response(JSON.stringify({ ok: false, error: `Upstream HTTP ${r.status}` }), {
-        status: 502, headers: { "content-type": "application/json; charset=utf-8" },
+        status: 502,
+        headers: { "content-type": "application/json; charset=utf-8" },
       });
     }
     const json = await r.json().catch(() => ({}));
     nowText = cleanNowText(extractNowPlaying(json));
   } catch (e: any) {
     return new Response(JSON.stringify({ ok: false, error: e?.message || "Icecast fetch failed" }), {
-      status: 500, headers: { "content-type": "application/json; charset=utf-8" },
+      status: 500,
+      headers: { "content-type": "application/json; charset=utf-8" },
     });
   }
 
@@ -154,11 +157,11 @@ export const GET: APIRoute = async ({ request }) => {
 
   const directusDebug: any = {};
 
-  // 2) Insert Directus (si track change)
+  // 2) Insert Directus
   if (artist && track_key && artist.toLowerCase() !== "undefined") {
     try {
       const lastRes = await getLastPlayDebug();
-      directusDebug.last = { ok: lastRes.ok, status: lastRes.status, body: lastRes.body };
+      directusDebug.last = lastRes;
 
       const lastKey = String(lastRes.last?.track_key || "");
       if (!lastKey || lastKey !== track_key) {
@@ -181,11 +184,11 @@ export const GET: APIRoute = async ({ request }) => {
     directusDebug.insert = { ok: false, skipped: true, reason: "bad artist/title" };
   }
 
-  // 3) Read history Directus
+  // 3) Read history
   let history: any[] = [];
   try {
     const histRes = await getHistoryDebug(limit);
-    directusDebug.read = { ok: histRes.ok, status: histRes.status, body: histRes.body };
+    directusDebug.read = histRes;
     history = histRes.history;
   } catch (e: any) {
     directusDebug.read = { ok: false, error: e?.message || "read failed" };
@@ -196,8 +199,7 @@ export const GET: APIRoute = async ({ request }) => {
       ok: true,
       now: { raw: nowText, artist, title, track_key, played_at },
       history,
-      // ✅ visible uniquement si DEBUG=1, sinon ça reste minimal
-      ...(DEBUG ? { directus: directusDebug } : {}),
+      directus: directusDebug,
     }),
     {
       headers: {
