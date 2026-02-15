@@ -1,4 +1,10 @@
-const BASE = import.meta.env.PUBLIC_DIRECTUS_URL;
+// src/lib/directus.ts
+
+const BASE =
+  import.meta.env.DIRECTUS_URL ||
+  import.meta.env.PUBLIC_DIRECTUS_URL ||
+  (typeof process !== "undefined" ? (process.env.DIRECTUS_URL as string | undefined) : undefined) ||
+  "";
 
 // ------------------------
 // Micro-cache (best-effort) for Vercel SSR
@@ -22,7 +28,7 @@ export async function directusGet<T>(
   init?: RequestInit,
   cache?: { ttlMs?: number; swrMs?: number }
 ): Promise<T> {
-  if (!BASE) throw new Error("PUBLIC_DIRECTUS_URL is not set");
+  if (!BASE) throw new Error("DIRECTUS_URL / PUBLIC_DIRECTUS_URL is not set");
 
   const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   const ttlMs = cache?.ttlMs ?? DEFAULT_TTL_MS;
@@ -46,16 +52,15 @@ export async function directusGet<T>(
   }
 
   // Key includes URL + headers (so auth/locale changes don't collide)
-  const headerKey =
-    init?.headers
-      ? JSON.stringify(
-          Array.from(new Headers(init.headers as HeadersInit).entries()).sort((a, b) =>
-            a[0].localeCompare(b[0])
-          )
+  const headerKey = init?.headers
+    ? JSON.stringify(
+        Array.from(new Headers(init.headers as HeadersInit).entries()).sort((a, b) =>
+          a[0].localeCompare(b[0])
         )
-      : "";
-  const key = `GET:${url}:${headerKey}`;
+      )
+    : "";
 
+  const key = `GET:${url}:${headerKey}`;
   const now = Date.now();
   const hit = _cache.get(key);
 
@@ -99,6 +104,7 @@ export async function directusGet<T>(
     const txt = await res.text().catch(() => "");
     throw new Error(`Directus GET ${res.status}: ${txt}`);
   }
+
   const v = (await res.json()) as T;
   _cache.set(key, { exp: now + ttlMs, swr: now + swrMs, value: v });
   return v;
@@ -110,11 +116,13 @@ export function directusAsset(
 ) {
   if (!fileId) return "";
   if (!BASE) return "";
+
   const q = new URLSearchParams();
   if (opts?.w) q.set("width", String(opts.w));
   if (opts?.h) q.set("height", String(opts.h));
   if (opts?.fit) q.set("fit", opts.fit);
   if (opts?.quality) q.set("quality", String(opts.quality));
+
   const qs = q.toString();
   return `${BASE}/assets/${fileId}${qs ? `?${qs}` : ""}`;
 }
