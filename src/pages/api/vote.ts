@@ -1,12 +1,14 @@
 // src/pages/api/vote.ts
+import type { APIRoute } from "astro";
+
 export const prerender = false;
 
 const DIRECTUS_URL =
-  import.meta.env.DIRECTUS_URL || import.meta.env.PUBLIC_DIRECTUS_URL;
+  import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
 
-const TOKEN = import.meta.env.DIRECTUS_VOTES_TOKEN;
+const TOKEN =
+  import.meta.env.DIRECTUS_VOTES_TOKEN || process.env.DIRECTUS_VOTES_TOKEN || "";
 
-// ⚠️ nom de ta collection Directus
 const COLLECTION = "votes";
 
 function json(body: any, status = 200) {
@@ -18,20 +20,16 @@ function json(body: any, status = 200) {
     },
   });
 }
-
 function bad(status: number, message: string) {
   return json({ ok: false, error: message }, status);
 }
-
 function assertEnv() {
   if (!DIRECTUS_URL) throw new Error("DIRECTUS_URL is missing");
   if (!TOKEN) throw new Error("DIRECTUS_VOTES_TOKEN is missing");
 }
-
 function dUrl(path: string) {
   return `${DIRECTUS_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
-
 async function dFetch(path: string, init?: RequestInit) {
   assertEnv();
   const res = await fetch(dUrl(path), {
@@ -45,21 +43,56 @@ async function dFetch(path: string, init?: RequestInit) {
   return res;
 }
 
-// -------- GET /api/vote?week=2026-W07 --------
-// Returns aggregated votes per track_key for a week
-export async function GET({ url }: { url: URL }) {
-  try {
-    const week = (url.searchParams.get("week") || "").trim();
-    if (!week) return bad(400, "Missing week");
+// --- ISO week id: "YYYY-W07"
+function isoWeekId(d = new Date()) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
 
-    // We fetch items and aggregate in API (simple + works without DB views)
-    // Fields expected: week, track_key, artist, title, created_at (optional)
-    const fields = ["week", "track_key", "artist", "title"].join(",");
+function pickWeek(input?: string | null) {
+  const w = String(input || "").trim();
+  return w || isoWeekId();
+}
+
+function todayISO() {
+  // format YYYY-MM-DD
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Simple deterministic IP hash without external deps (NOT cryptographic)
+// Good enough for rate limiting / dedupe.
+async function ipHash(ip: string) {
+  const enc = new TextEncoder().encode(ip || "0.0.0.0");
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  const arr = Array.from(new Uint8Array(buf));
+  return arr.map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+}
+
+function getClientIp(request: Request) {
+  // Vercel / proxies
+  const xff = request.headers.get("x-forwarded-for") || "";
+  const first = xff.split(",")[0]?.trim();
+  return first || request.headers.get("x-real-ip") || "0.0.0.0";
+}
+
+// -------- GET /api/vote?week=YYYY-WNN (week optional) --------
+export const GET: APIRoute = async ({ url }) => {
+  try {
+    const week = pickWeek(url.searchParams.get("week"));
+
+    // Align with your schema: week, track_key, count
+    const fields = ["week", "track_key", "count"].join(",");
 
     const res = await dFetch(
-      `/items/${COLLECTION}?fields=${encodeURIComponent(
-        fields
-      )}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
+      `/items/${COLLECTION}?fields=${encodeURIComponent(fields)}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
     );
 
     if (!res.ok) {
@@ -70,56 +103,71 @@ export async function GET({ url }: { url: URL }) {
     const data = (await res.json()) as { data?: any[] };
     const rows = Array.isArray(data?.data) ? data.data : [];
 
-    // aggregate by track_key
-    const map = new Map<
-      string,
-      { track_key: string; artist: string; title: string; count: number }
-    >();
-
+    // Sum counts per track_key
+    const map = new Map<string, number>();
     for (const r of rows) {
       const k = String(r.track_key || "").trim();
       if (!k) continue;
-      const cur = map.get(k);
-      if (cur) cur.count += 1;
-      else
-        map.set(k, {
-          track_key: k,
-          artist: String(r.artist || "").trim(),
-          title: String(r.title || "").trim(),
-          count: 1,
-        });
+      const c = Number(r.count ?? 1) || 1;
+      map.set(k, (map.get(k) || 0) + c);
     }
 
-    const top = Array.from(map.values()).sort((a, b) => b.count - a.count);
+    const top = Array.from(map.entries())
+      .map(([track_key, count]) => ({ track_key, count }))
+      .sort((a, b) => b.count - a.count);
 
     return json({ ok: true, week, top });
   } catch (e: any) {
     return bad(500, e?.message || "Server error");
   }
-}
+};
 
-// -------- POST /api/vote --------
-// Body: { week, track_key, artist, title }
-export async function POST({ request }: { request: Request }) {
+// -------- POST /api/vote (week optional) --------
+// Body: { week?, track_key }
+export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json().catch(() => null);
-    const week = String(body?.week || "").trim();
-    const track_key = String(body?.track_key || "").trim();
-    const artist = String(body?.artist || "").trim();
-    const title = String(body?.title || "").trim();
 
-    if (!week) return bad(400, "Missing week");
+    const week = pickWeek(body?.week);
+    const track_key = String(body?.track_key || "").trim();
     if (!track_key) return bad(400, "Missing track_key");
 
-    // Create a vote row
+    // 1 vote / day / IP
+    const ip = getClientIp(request);
+    const iph = await ipHash(ip);
+    const vote_day = todayISO();
+
+    // Check existing vote for this ip_hash + vote_day + week
+    const checkFields = ["id"].join(",");
+    const checkRes = await dFetch(
+      `/items/${COLLECTION}?fields=${encodeURIComponent(checkFields)}`
+      + `&filter[week][_eq]=${encodeURIComponent(week)}`
+      + `&filter[vote_day][_eq]=${encodeURIComponent(vote_day)}`
+      + `&filter[ip_hash][_eq]=${encodeURIComponent(iph)}`
+      + `&limit=1`
+    );
+
+    if (!checkRes.ok) {
+      const txt = await checkRes.text().catch(() => "");
+      return bad(checkRes.status, `Directus check failed: ${txt}`);
+    }
+
+    const checkJson = (await checkRes.json().catch(() => ({}))) as any;
+    const already = Array.isArray(checkJson?.data) && checkJson.data.length > 0;
+    if (already) {
+      return bad(429, "Already voted today (this device/IP).");
+    }
+
+    // Insert vote row
     const res = await dFetch(`/items/${COLLECTION}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         week,
         track_key,
-        artist,
-        title,
+        ip_hash: iph,
+        vote_day,
+        count: 1,
       }),
     });
 
@@ -128,8 +176,8 @@ export async function POST({ request }: { request: Request }) {
       return bad(res.status, `Directus POST failed: ${txt}`);
     }
 
-    return json({ ok: true });
+    return json({ ok: true, week });
   } catch (e: any) {
     return bad(500, e?.message || "Server error");
   }
-}
+};
