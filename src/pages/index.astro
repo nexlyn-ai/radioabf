@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import { directusGet, directusAsset } from "../lib/directus";
+
 export const prerender = false;
 
 type NewsItem = {
@@ -13,6 +14,7 @@ type NewsItem = {
   published_at?: string | null;
   date_created?: string | null;
 };
+
 type DirectusResp = { data: NewsItem[] };
 
 // Dernières news (3)
@@ -44,17 +46,20 @@ const fmtDate = (iso?: string | null) => {
   });
 };
 ---
+
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
   <!-- BIG NOW PLAYING HERO -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
     <!-- Background glow -->
     <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
     <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+
     <div class="relative z-10">
       <div class="flex items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
         Now Playing
       </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
         <!-- LEFT: Cover + Text -->
         <div class="lg:col-span-2 min-w-0">
@@ -69,10 +74,12 @@ const fmtDate = (iso?: string | null) => {
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
               </div>
             </div>
+
             <!-- Text -->
             <div class="min-w-0">
               <div id="homeArtist" data-abf-artist class="text-2xl md:text-4xl font-extrabold leading-tight truncate">—</div>
               <div id="homeTitle" data-abf-title class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
+
               <div class="mt-4 flex gap-3 flex-wrap md:flex-nowrap">
                 <button
                   id="jumpToPlayer"
@@ -84,6 +91,7 @@ const fmtDate = (iso?: string | null) => {
                 >
                   Open player ↓
                 </button>
+
                 <a
                   href="/music"
                   class="border border-white/20 px-5 py-2.5 rounded-xl
@@ -91,6 +99,7 @@ const fmtDate = (iso?: string | null) => {
                 >
                   Vote & charts
                 </a>
+
                 <a
                   href="/programs"
                   class="border border-white/20 px-5 py-2.5 rounded-xl
@@ -99,22 +108,26 @@ const fmtDate = (iso?: string | null) => {
                   Programs
                 </a>
               </div>
+
               <div class="mt-3 text-sm text-white/50">
                 The player stays pinned at the bottom of the screen.
               </div>
             </div>
           </div>
         </div>
+
         <!-- RIGHT: Weekly minimal block (with #1) -->
         <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
           <div class="text-sm text-white/50 uppercase tracking-wider mb-3">
             This week
           </div>
+
           <div class="space-y-3">
             <div class="flex items-center justify-between border-b border-white/5 pb-3">
               <div class="text-white/70 text-sm">Top voted tracks</div>
               <a class="text-cyan-300 hover:text-cyan-200 text-sm" href="/music">See →</a>
             </div>
+
             <!-- #1 dynamic -->
             <div id="heroTop1" class="rounded-2xl border border-white/10 bg-white/5 p-3 hidden">
               <div class="flex items-center gap-3">
@@ -127,6 +140,7 @@ const fmtDate = (iso?: string | null) => {
                     <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
                   </div>
                 </div>
+
                 <div class="min-w-0 flex-1">
                   <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
                   <div id="heroTop1Artist" data-abf-artist class="font-semibold text-sm truncate">—</div>
@@ -134,12 +148,15 @@ const fmtDate = (iso?: string | null) => {
                 </div>
               </div>
             </div>
+
             <div id="heroTop1Empty" class="text-white/60 text-sm hidden">
               No votes yet — be the first 🙂
             </div>
+
             <div class="text-white/70 text-sm">
               Vote on tracks you love and shape the weekly chart.
             </div>
+
             <a
               href="/music"
               class="inline-flex items-center justify-center w-full
@@ -166,6 +183,7 @@ const fmtDate = (iso?: string | null) => {
         Full history →
       </a>
     </div>
+
     <!-- horizontal carousel -->
     <div
       id="homeLastCarousel"
@@ -173,6 +191,7 @@ const fmtDate = (iso?: string | null) => {
              snap-x snap-mandatory
              [-ms-overflow-style:none] [scrollbar-width:none]"
     ></div>
+
     <style is:inline>
       #homeLastCarousel::-webkit-scrollbar{ display:none; }
     </style>
@@ -186,7 +205,7 @@ const fmtDate = (iso?: string | null) => {
       </div>
       <a href="/programs" class="text-cyan-300 hover:text-cyan-200 text-sm">Full schedule →</a>
     </div>
-    <div id="onAirTonight" class="text-white-white/70"></div>
+    <div id="onAirTonight" class="text-white/70"></div>
   </section>
 
   <!-- LATEST NEWS -->
@@ -199,6 +218,7 @@ const fmtDate = (iso?: string | null) => {
         All news →
       </a>
     </div>
+
     {latestNews?.length ? (
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         {latestNews.map((post) => {
@@ -248,6 +268,7 @@ const fmtDate = (iso?: string | null) => {
         No news yet — check back soon.
       </div>
     )}
+
     <style is:inline>
       .line-clamp-2{
         display:-webkit-box;
@@ -269,6 +290,7 @@ const fmtDate = (iso?: string | null) => {
         Vote & charts →
       </a>
     </div>
+
     <div class="border-t border-white/10 p-4">
       <div id="topWeekGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
@@ -293,6 +315,7 @@ const fmtDate = (iso?: string | null) => {
           </article>
         ))}
       </div>
+
       <div id="topWeekEmpty" class="mt-4 text-white/50 text-sm hidden">
         No votes yet this week — go vote on
         <a class="text-cyan-200 hover:text-cyan-100 transition" href="/music">/music</a> 🙂
@@ -306,7 +329,7 @@ const fmtDate = (iso?: string | null) => {
     <div class="rounded-2xl border border-white/10 p-4 overflow-hidden relative
                 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14]">
       <div class="absolute -top-24 -right-24 w-[240px] h-[240px] bg-cyan-500/20 rounded-full blur-[80px]"></div>
-  <div class="relative">
+      <div class="relative">
         <div class="text-xs text-white/50 uppercase tracking-wider">New</div>
         <div class="font-extrabold text-lg">ABF Live in UHD &amp; HD</div>
         <p class="text-sm text-white/70 mt-1">
@@ -329,6 +352,7 @@ const fmtDate = (iso?: string | null) => {
         </div>
       </div>
     </div>
+
     <!-- Card 2 (medium / FLAC) -->
     <div class="rounded-2xl border border-white/10 p-4
                 bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220]">
@@ -355,6 +379,7 @@ const fmtDate = (iso?: string | null) => {
         </button>
       </div>
     </div>
+
     <!-- Card 3 (lighter / Shows) -->
     <div class="rounded-2xl border border-white/10 p-4
                 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540]">
@@ -445,739 +470,860 @@ const fmtDate = (iso?: string | null) => {
     </div>
   </div>
 
+  <!-- SCRIPT -->
   <script is:inline data-astro-rerun>
-  (() => {
-    const HISTORY_KEY = "abf_history";
-    const PROGRAMS_DIR = "/images/programs/";
+(() => {
+  // ✅ on autorise le re-render sur astro swaps, mais on évite de re-binder les listeners globaux
+  const PROGRAMS_DIR = "/images/programs/";
+  const HISTORY_KEY = "abf_history"; // fallback legacy (lecture seulement)
 
-    // ==== WEEK ID ====
-    function getISOWeekId(d = new Date()){
-      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-      const dayNum = date.getUTCDay() || 7;
-      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-      return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  // -------------------------
+  // WEEK ID (same as music)
+  // -------------------------
+  function getISOWeekId(d = new Date()){
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
+  }
+
+  // -------------------------
+  // Helpers
+  // -------------------------
+  function splitTrack(entry){
+    const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
+    const idx = s.indexOf(" - ");
+    if (idx === -1) return { artist: s, title: "" };
+    return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+  }
+
+  function normKey(a,t){
+    return (a + " - " + t)
+      .toLowerCase()
+      .replace(/\s+/g," ")
+      .replace(/[“”"']/g,"")
+      .trim();
+  }
+
+  function esc(s){
+    return String(s || "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  // Cover HTML helper (server url only)
+  function coverHtmlByUrl(url, sizeClass = "w-14 h-14 rounded-2xl") {
+    const u = String(url || "").trim();
+    return `
+      <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
+        <img src="${u ? esc(u) : ""}" alt="" class="${u ? "" : "hidden"}" loading="lazy" decoding="async" />
+        <div class="abfCoverFallback">
+          <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    `;
+  }
+
+  function setCover(url){
+    const img = document.getElementById("homeCover");
+    if (!img) return;
+    const u = String(url || "").trim();
+    if (u){
+      img.src = u;
+      img.classList.remove("hidden");
+    } else {
+      img.removeAttribute("src");
+      img.classList.add("hidden");
+    }
+  }
+
+  function setHeroTop1Cover(url){
+    const img = document.getElementById("heroTop1Cover");
+    if (!img) return;
+    const u = String(url || "").trim();
+    if (u){
+      img.src = u;
+      img.classList.remove("hidden");
+    } else {
+      img.removeAttribute("src");
+      img.classList.add("hidden");
+    }
+  }
+
+  // -------------------------
+  // History fallback (legacy, read-only)
+  // -------------------------
+  function loadHistoryLocal(){
+    let raw = [];
+    try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+    catch{ raw = []; }
+    return (raw || []).map((x) => {
+      if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
+      if (x && typeof x === "object" && typeof x.t === "string"){
+        return { t: x.t, ts: Number(x.ts) || 0, cover_url: String(x.cover_url || "") };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+
+  // -------------------------
+  // ✅ Server nowplaying (expects cover_url)
+  // -------------------------
+  async function fetchServerNowPlaying(limit = 12){
+    try{
+      const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
+      const data = await res.json().catch(()=> ({}));
+      if (!data?.ok) return [];
+
+      const out = [];
+
+      if (data?.now){
+        const rawNow = String(data?.now?.raw || "").trim();
+        const a = String(data?.now?.artist || "").trim();
+        const t = String(data?.now?.title || "").trim();
+        const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
+        if (raw){
+          out.push({
+            t: raw,
+            ts: Number(data?.now?.played_at_ms) ||
+                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+            cover_url: String(data?.now?.cover_url || "")
+          });
+        }
+      }
+
+      if (Array.isArray(data?.history)){
+        for (const row of data.history){
+          const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
+          if (!raw) continue;
+          out.push({
+            t: raw,
+            ts: Number(row?.played_at_ms) ||
+                (row?.played_at ? new Date(row.played_at).getTime() : 0),
+            cover_url: String(row?.cover_url || "")
+          });
+        }
+      }
+
+      // dedupe (case-insensitive)
+      const seen = new Set();
+      const deduped = [];
+      for (const item of out){
+        const k = String(item.t || "").toLowerCase();
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        deduped.push(item);
+      }
+
+      return deduped.slice(0, limit);
+    }catch{
+      return [];
+    }
+  }
+
+  // -------------------------
+  // ✅ Votes (robuste: week côté serveur + fallback route)
+  // -------------------------
+  async function apiGetTopWeek(week){
+    const qs = week ? `?week=${encodeURIComponent(week)}` : "";
+    const urls = [
+      `/api/vote${qs}`,
+      `/api/votes${qs}`,
+      `/api/vote`,
+      `/api/votes`,
+    ];
+
+    for (const url of urls){
+      try{
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) continue;
+        const j = await r.json().catch(() => ({}));
+        const top = Array.isArray(j?.top) ? j.top : [];
+        const wk = String(j?.week || week || "").trim();
+        if (top.length || wk) return { week: wk || week || "", top };
+      }catch{}
     }
 
-    // ==== Helpers ====
-    function splitTrack(entry){
-      const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
-      const idx = s.indexOf(" - ");
-      if (idx === -1) return { artist: s, title: "" };
-      return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+    return { week: week || "", top: [] };
+  }
+
+  let __homeVotesCache = window.__abfHomeVotesCache || { week: "", ts: 0, top: [] };
+  window.__abfHomeVotesCache = __homeVotesCache;
+
+  async function getTopWeekCached(){
+    const now = Date.now();
+
+    // si on a déjà du top récent, on garde
+    if (__homeVotesCache.top?.length && (now - __homeVotesCache.ts) < 8000) {
+      return __homeVotesCache.top || [];
     }
-    function normKey(a, t){
-      return (a + " - " + t)
-        .toLowerCase()
-        .replace(/\s+/g," ")
-        .replace(/[“”"']/g,"")
-        .trim();
+
+    // 1) demande sans week -> l’API doit renvoyer la bonne week + top
+    const data = await apiGetTopWeek("");
+    __homeVotesCache = {
+      week: data.week || "",
+      ts: now,
+      top: data.top || []
+    };
+    window.__abfHomeVotesCache = __homeVotesCache;
+
+    // 2) si vide, fallback: on tente explicitement la week locale
+    if (!__homeVotesCache.top?.length){
+      const wk = getISOWeekId();
+      const data2 = await apiGetTopWeek(wk);
+      __homeVotesCache = {
+        week: data2.week || wk,
+        ts: now,
+        top: data2.top || []
+      };
+      window.__abfHomeVotesCache = __homeVotesCache;
     }
-    function esc(s){
-      return String(s || "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
+
+    return __homeVotesCache.top || [];
+  }
+
+  // -------------------------
+  // ✅ NOW PLAYING + LAST PLAYED (server cover_url, no cover cache)
+  // -------------------------
+  async function renderNowPlayingAndLast(){
+    const artistEl = document.getElementById("homeArtist");
+    const titleEl = document.getElementById("homeTitle");
+    const host = document.getElementById("homeLastCarousel");
+    if (!artistEl || !titleEl || !host) return;
+
+    let history = await fetchServerNowPlaying(12);
+    if (!history.length) history = loadHistoryLocal(); // fallback legacy only
+
+    if (!history.length){
+      artistEl.textContent = "—";
+      titleEl.textContent = "—";
+      setCover("");
+      host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
+      window.__abfHomeCoverByNorm = {};
+      return;
     }
-    function coverHtmlByUrl(url, sizeClass = "w-14 h-14 rounded-2xl") {
-      const u = String(url || "").trim();
+
+    // Build cover map from server payload (Top can reuse)
+    const coverByNorm = {};
+    for (const entry of history){
+      const t = splitTrack(entry.t);
+      const n = normKey(t.artist, t.title);
+      const u = String(entry.cover_url || "").trim();
+      if (n && u) coverByNorm[n] = u;
+    }
+    window.__abfHomeCoverByNorm = coverByNorm;
+
+    // NOW
+    const currentEntry = history[0];
+    const current = splitTrack(currentEntry.t);
+    const artist = String(current.artist || "").trim();
+    const title  = String(current.title || "").trim();
+
+    // on laisse Base faire le formatage global via data-abf-*
+    artistEl.textContent = artist || "—";
+    titleEl.textContent  = title || "—";
+
+    setCover(String(currentEntry.cover_url || "").trim() || coverByNorm[normKey(artist, title)] || "");
+
+    // LAST PLAYED carousel: 3 items
+    const items = history.slice(1, 4);
+    if (!items.length){
+      host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
+      return;
+    }
+
+    host.innerHTML = items.map((entry) => {
+      const t = splitTrack(entry.t);
+      const a = String(t.artist || "").trim();
+      const ti = String(t.title || "").trim();
+      const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
+
       return `
-        <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
-          <img src="${u ? esc(u) : ""}" alt="" class="${u ? "" : "hidden"}" loading="lazy" decoding="async" />
-          <div class="abfCoverFallback">
-            <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+        <a href="/music"
+           class="snap-start flex-none w-[260px] md:w-[300px]
+                  rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
+                  transition p-4 flex items-center gap-4">
+          ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
+          <div class="min-w-0">
+            <div class="font-semibold text-white truncate" data-abf-artist>${esc(a || "—")}</div>
+            <div class="text-white/60 text-sm truncate" data-abf-title>${esc(ti || "—")}</div>
           </div>
+        </a>
+      `;
+    }).join("");
+
+    // applique le formatter global après injection HTML
+    try { window.ABF_FMT?.apply(document); } catch {}
+  }
+
+  // -------------------------
+  // ✅ HERO #1 (robuste week + route)
+  // -------------------------
+  async function renderHeroTop1(){
+    const box = document.getElementById("heroTop1");
+    const empty = document.getElementById("heroTop1Empty");
+    const aEl = document.getElementById("heroTop1Artist");
+    const tEl = document.getElementById("heroTop1Title");
+    if (!box || !empty || !aEl || !tEl) return;
+
+    const top = await getTopWeekCached();
+    const first = top?.[0];
+
+    if (!first || !first.track_key){
+      box.classList.add("hidden");
+      empty.classList.remove("hidden");
+      setHeroTop1Cover("");
+      return;
+    }
+
+    const artistRaw = String(first.artist || "").trim() || "—";
+    const titleRaw = String(first.title || "").trim() || "—";
+
+    aEl.textContent = artistRaw;
+    tEl.textContent = titleRaw;
+
+    const coverByNorm = window.__abfHomeCoverByNorm || {};
+    const url = coverByNorm[normKey(artistRaw, titleRaw)] || "";
+    setHeroTop1Cover(url);
+
+    empty.classList.add("hidden");
+    box.classList.remove("hidden");
+
+    try { window.ABF_FMT?.apply(document); } catch {}
+  }
+
+  // -------------------------
+  // ✅ TOP 8 GRID (robuste week + route)
+  // -------------------------
+  async function renderTop(){
+    const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
+    const empty = document.getElementById("topWeekEmpty");
+    if (!cards.length) return;
+
+    const top = await getTopWeekCached();
+    const coverByNorm = window.__abfHomeCoverByNorm || {};
+
+    if (!top.length){
+      if (empty) empty.classList.remove("hidden");
+      cards.forEach((card, i) => {
+        const rankEl = card.querySelector("[data-rank]");
+        const aEl = card.querySelector("[data-artist]");
+        const tEl = card.querySelector("[data-title]");
+        const cEl = card.querySelector("[data-count]");
+        const img = card.querySelector("img");
+        if (rankEl) rankEl.textContent = `#${i+1}`;
+        if (aEl) aEl.textContent = "—";
+        if (tEl) tEl.textContent = "Vote on /music to build this chart";
+        if (cEl) cEl.textContent = "";
+        if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
+      });
+      return;
+    }
+
+    if (empty) empty.classList.add("hidden");
+
+    cards.forEach((card, i) => {
+      const rankEl = card.querySelector("[data-rank]");
+      const aEl = card.querySelector("[data-artist]");
+      const tEl = card.querySelector("[data-title]");
+      const cEl = card.querySelector("[data-count]");
+      const img = card.querySelector("img");
+      if (rankEl) rankEl.textContent = `#${i+1}`;
+
+      const row = top[i];
+      if (!row){
+        if (aEl) aEl.textContent = "—";
+        if (tEl) tEl.textContent = "—";
+        if (cEl) cEl.textContent = "";
+        if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
+        return;
+      }
+
+      const artistRaw = String(row.artist || "").trim() || "—";
+      const titleRaw = String(row.title || "").trim() || "—";
+      const count = Number(row.count) || 0;
+
+      const coverUrl = coverByNorm[normKey(artistRaw, titleRaw)] || "";
+
+      if (img){
+        if (coverUrl){
+          img.src = coverUrl;
+          img.classList.remove("hidden");
+        } else {
+          img.removeAttribute("src");
+          img.classList.add("hidden");
+        }
+      }
+
+      if (aEl){ aEl.textContent = artistRaw; aEl.setAttribute("data-abf-artist",""); }
+      if (tEl){ tEl.textContent = titleRaw; tEl.setAttribute("data-abf-title",""); }
+      if (cEl) cEl.textContent = `${count}`;
+    });
+
+    try { window.ABF_FMT?.apply(document); } catch {}
+  }
+
+  // -------------------------
+  // ON AIR (inchangé)
+  // -------------------------
+  const SCHEDULE = {
+    mon: [
+      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"22h00", img:"1768507170_24ed82d807a1c66d30e0.jpg", title:"ABF CLUB - JNOES", desc:"Groovy drum'n'bass & commercial house master with big room builds and festival energy." },
+      { time:"23h00", img:"1768507185_5cc0873ee591d1b570eb.jpg", title:"ABF CLUB - DEGIANNY", desc:"Melodic techno & progressive specialist delivering emotional, keyboard-live journeys." }
+    ],
+    tue: [
+      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"22h00", img:"1768507231_488e50db2ea8cda46b2f.jpg", title:"ABF CLUB - TECKROAD", desc:"Veteran blending psy-trance, tech house, funky classics, and warm vinyl grooves." },
+      { time:"23h00", img:"1768507251_046f763d818c022f3c69.jpg", title:"ABF CLUB - THE SPYMBOYS", desc:"Alpine party king with eclectic funky/jackin' house and high-energy vibes." }
+    ],
+    wed: [
+      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"22h00", img:"1768507297_9c576120fcbd38219aa9.jpg", title:"ABF CLUB - JEAN-JEROME", desc:"Paris house veteran serving authentic groovy roots and soulful club feels." },
+      { time:"23h00", img:"1768507316_1261bdc48106c8579a39.jpg", title:"ABF CLUB - WILLIAM FOREST", desc:"Melodic deep/prog producer with emotional tracks and creative mashups." }
+    ],
+    thu: [
+      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"22h00", img:"1770803145_3590fecff4df25a42558.jpg", title:"ABF CLUB - PIERRE DE PARIS", desc:"Real mix for real mix lovers..." },
+      { time:"23h00", img:"1768507375_9f458c45cbf3edbcce4d.jpg", title:"ABF CLUB - C-DRYK", desc:"Versatile jackin' house expert with nu-d-security, funky, and scratch flair." }
+    ],
+    fri: [
+      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"18h00", img:"1770136551_b9cc44e800f0124bbab4.png", title:"ABF WARMUP EXTENDED", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"22h00", img:"1768507456_050c7b9177cfce665c11.jpg", title:"ABF CLUB - BETTY MIX", desc:"Feel-good queen of sunny remixes, uplifting house, psy-trance and positive energy." },
+      { time:"23h00", img:"1768507483_b656d4c2f50a3652be6f.jpg", title:"ABF CLUB - DJ JOEE", desc:"Australian house traveler with melodic deep/prog and seamless journeys." }
+    ],
+    sat: [
+      { time:"00h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"20h00", img:"1770577445_c2959a4650239906609a.jpg", title:"ABF CLUB - GUEST MIX 1", desc:"Rotating international guest delivering fresh, surprising house/techno vibes to kick off the prime time." },
+      { time:"21h00", img:"1770577532_f7aae5eb0902593ac1cb.jpg", title:"ABF CLUB - GUEST MIX 2", desc:"Second rotating guest slot packed with high-energy club heat and exclusive selections." },
+      { time:"22h00", img:"1768507536_07beeacfd28b4fc86c30.jpg", title:"ABF CLUB - LAURENT SCHARK", desc:"Vocal/funky house pillar bringing groovy, timeless London-Paris vibes." },
+      { time:"23h00", img:"1768677347_b8fc41f1805e109d4d66.png", title:"ABF CLUB - TONY JAY", desc:"Paris club selector with energetic house, tech, and dancefloor fire." }
+    ],
+    sun: [
+      { time:"00h00", img:"1769976420_3b4d78bf20f028487165.png", title:"ABF AFTER", desc:"Deep, driving hypnotic techno to fuel the afterhours and keep the energy high till dawn." },
+      { time:"07h00", img:"1770128309_dc9e7e2e6b3e22de821f.png", title:"ABF CHILL", desc:"Lounge, chill-out & downtempo grooves — smooth beats and dreamy melodies to relax." },
+      { time:"10h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
+      { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
+      { time:"20h00", img:"1768155428_bf272625d4798bd3d3f5.jpg", title:"ABF CLUB [MADE IN JAPAN] - ZEPHYR", desc:"Elegant deep/melodic house from Japan with atmospheric Ibiza touches." },
+      { time:"21h00", img:"1768155467_5ed42c9a2e258587b90c.jpg", title:"ABF CLUB [MADE IN JAPAN] - HIDEKI", desc:"Funky big beat legend mixing game-soundtrack energy and club heat." },
+      { time:"22h00", img:"1768155500_86865e0936bc69837bc6.jpg", title:"ABF CLUB [MADE IN JAPAN] - TAMIO YAMASHITA", desc:"Innovative house/trance producer fusing tech and emotional melodies." },
+      { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
+    ]
+  };
+
+  function dayKey(){
+    const d = new Date().getDay();
+    if (d === 0) return "sun";
+    if (d === 1) return "mon";
+    if (d === 2) return "tue";
+    if (d === 3) return "wed";
+    if (d === 4) return "thu";
+    if (d === 5) return "fri";
+    return "sat";
+  }
+
+  function parseTimeToMinutes(t){
+    const m = String(t || "").match(/^(\d{1,2})h(\d{2})$/i);
+    if (!m) return null;
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+
+  function fmtCountdown(ms){
+    if (ms <= 0) return "Starting now";
+    const totalMin = Math.floor(ms / 60000);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (h <= 0) return `Starts in ${m}m`;
+    return `Starts in ${h}h ${String(m).padStart(2,"0")}m`;
+  }
+
+  function injectOnAirStylesOnce(){
+    if (document.getElementById("abfHomeOnAirStyles")) return;
+    const st = document.createElement("style");
+    st.id = "abfHomeOnAirStyles";
+    st.textContent = `
+      .onAirCard{
+        border-color: rgba(248,113,113,.35) !important;
+        background: radial-gradient(1200px 220px at 20% 0%,
+          rgba(239,68,68,0.22),
+          rgba(255,255,255,0.05) 45%,
+          rgba(255,255,255,0.03) 100%);
+        box-shadow:
+          0 0 0 1px rgba(239,68,68,0.15) inset,
+          0 20px 70px rgba(239,68,68,0.14),
+          0 10px 35px rgba(0,0,0,0.35);
+        position: relative;
+      }
+      .onAirCard::before{
+        content:"";
+        position:absolute;
+        inset:-1px;
+        border-radius: 1rem;
+        pointer-events:none;
+        background: linear-gradient(90deg,
+          rgba(239,68,68,0.22),
+          rgba(239,68,68,0.10),
+          rgba(239,68,68,0.22));
+        filter: blur(18px);
+        opacity: .55;
+      }
+      .line-clamp-2{
+        display:-webkit-box;
+        -webkit-line-clamp:2;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function renderOnAirTonight(){
+    const host = document.getElementById("onAirTonight");
+    if (!host) return;
+
+    const day = dayKey();
+    const items = (SCHEDULE[day] || [])
+      .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
+      .filter(x => x.min !== null)
+      .sort((a,b) => a.min - b.min);
+
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+
+    let liveIndex = -1;
+    for (let i=0;i<items.length;i++){
+      const startMin = items[i].min;
+      const endMin = (i < items.length - 1) ? items[i+1].min : 24*60;
+      if (startMin <= nowMin && nowMin < endMin){
+        liveIndex = i;
+        break;
+      }
+    }
+
+    let selected = [];
+    let mode = "next";
+    let subline = "";
+
+    if (liveIndex >= 0){
+      mode = "live";
+      selected = items.slice(liveIndex, liveIndex + 3);
+
+      const endMin = (liveIndex < items.length - 1) ? items[liveIndex+1].min : 24*60;
+      const end = new Date(now);
+      end.setHours(Math.floor(endMin/60), endMin%60, 0, 0);
+
+      const msLeft = (end ? end.getTime() : 0) - now.getTime();
+      const totalMin = Math.max(0, Math.floor(msLeft/60000));
+      const h = Math.floor(totalMin/60);
+      const m = totalMin%60;
+      subline = (h <= 0) ? `Ends in ${m}m` : `Ends in ${h}h ${String(m).padStart(2,"0")}m`;
+    } else {
+      selected = items.filter(x => x.min >= nowMin).slice(0, 3);
+      if (selected[0]){
+        const start = new Date(now);
+        start.setHours(Math.floor(selected[0].min/60), selected[0].min%60, 0, 0);
+        subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
+      }
+    }
+
+    if (!selected.length){
+      host.innerHTML = `
+        <div class="text-white/70">
+          No more shows today — check the full schedule.
+        </div>
+        <div class="mt-4">
+          <a href="/programs"
+             class="inline-flex items-center justify-center
+                    bg-white/5 hover:bg-white/10 border border-white/10
+                    rounded-xl px-5 py-3 text-white/85 transition">
+            Open schedule →
+          </a>
         </div>
       `;
-    }
-    function setCover(url){
-      const img = document.getElementById("homeCover");
-      if (!img) return;
-      const u = String(url || "").trim();
-      if (u){
-        img.src = u;
-        img.classList.remove("hidden");
-      } else {
-        img.removeAttribute("src");
-        img.classList.add("hidden");
-      }
-    }
-    function setHeroTop1Cover(url){
-      const img = document.getElementById("heroTop1Cover");
-      if (!img) return;
-      const u = String(url || "").trim();
-      if (u){
-        img.src = u;
-        img.classList.remove("hidden");
-      } else {
-        img.removeAttribute("src");
-        img.classList.add("hidden");
-      }
+      return;
     }
 
-    // ==== Blocked show ====
-    function isBlockedShow(artist){
-      return /^abf\s*club\b/i.test(String(artist || "").trim());
+    const first = selected[0];
+    const others = selected.slice(1);
+
+    const badge = (mode === "live")
+      ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider">
+           <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+           LIVE NOW
+         </span>`
+      : `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-semibold tracking-wider">
+           NEXT
+         </span>`;
+
+    const liveWrapClass = (mode === "live") ? "onAirCard" : "";
+
+    let firstDisplayTitle = first.title;
+    if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
+      const parts = firstDisplayTitle.split(" - ", 2);
+      firstDisplayTitle = parts[0] + " - " + parts[1].toUpperCase();
     }
 
-    // ==== Votes (same as /music) ====
-    const VOTES_TTL_MS = 10000;
-    window.__abfVotesCache = window.__abfVotesCache || {};
-    function votesCacheKey(week = getISOWeekId()){
-      return `votes:${week}`;
-    }
-    async function apiGetVotes(){
-      const week = getISOWeekId();
-      const k = votesCacheKey(week);
-      const now = Date.now();
-      const c = window.__abfVotesCache[k];
-      if (c && now < c.exp) return c.votes || {};
-
-      try {
-        const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        const votes = {};
-        const top = Array.isArray(data?.top) ? data.top : [];
-        for (const row of top){
-          const key = String(row?.track_key || "").trim();
-          if (key) votes[key] = Number(row?.count || 0);
-        }
-        window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
-        return votes;
-      } catch {
-        return c?.votes || {};
-      }
-    }
-
-    function dedupeTopEntries(votesObj){
-      const bestByNorm = new Map();
-      for (const [key, count] of Object.entries(votesObj || {})){
-        const parts = String(key).split(" - ");
-        const aRaw = (parts[0] || "").trim();
-        const tRaw = (parts.slice(1).join(" - ") || "").trim();
-        if (!aRaw || !tRaw) continue;
-        if (isBlockedShow(aRaw)) continue;
-        const n = normKey(aRaw, tRaw);
-        const c = Number(count) || 0;
-        const prev = bestByNorm.get(n);
-        if (!prev || c > prev.count){
-          bestByNorm.set(n, { artist: aRaw, title: tRaw, count: c });
-        }
-      }
-      return Array.from(bestByNorm.values());
-    }
-
-    async function getTopList(){
-      const votes = await apiGetVotes();
-      const deduped = dedupeTopEntries(votes);
-      return deduped
-        .filter(x => x.count > 0)
-        .sort((a, b) => b.count - a.count);
-    }
-
-    // ==== Server nowplaying ====
-    async function fetchServerNowPlaying(limit = 12){
-      try{
-        const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
-        const data = await res.json().catch(()=> ({}));
-        if (!data?.ok) return [];
-        const out = [];
-        if (data?.now){
-          const raw = String(data?.now?.raw || `${data?.now?.artist || ""} - ${data?.now?.title || ""}`.trim());
-          if (raw){
-            out.push({
-              t: raw,
-              ts: Date.now(),
-              cover_url: String(data?.now?.cover_url || "")
-            });
-          }
-        }
-        if (Array.isArray(data?.history)){
-          for (const row of data.history){
-            const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim());
-            if (!raw) continue;
-            out.push({
-              t: raw,
-              ts: Number(row?.played_at_ms) || 0,
-              cover_url: String(row?.cover_url || "")
-            });
-          }
-        }
-        const seen = new Set();
-        const deduped = [];
-        for (const item of out){
-          const k = String(item.t || "").toLowerCase();
-          if (!k || seen.has(k)) continue;
-          seen.add(k);
-          deduped.push(item);
-        }
-        return deduped.slice(0, limit);
-      }catch{
-        return [];
-      }
-    }
-
-    // ==== Render functions ====
-    async function renderNowPlayingAndLast(){
-      const artistEl = document.getElementById("homeArtist");
-      const titleEl = document.getElementById("homeTitle");
-      const host = document.getElementById("homeLastCarousel");
-      if (!artistEl || !titleEl || !host) return;
-
-      let history = await fetchServerNowPlaying(12);
-      if (!history.length){
-        artistEl.textContent = "—";
-        titleEl.textContent = "—";
-        setCover("");
-        host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
-        window.__abfHomeCoverByNorm = {};
-        return;
-      }
-
-      const coverByNorm = {};
-      for (const entry of history){
-        const t = splitTrack(entry.t);
-        const n = normKey(t.artist, t.title);
-        const u = String(entry.cover_url || "").trim();
-        if (n && u) coverByNorm[n] = u;
-      }
-      window.__abfHomeCoverByNorm = coverByNorm;
-
-      const currentEntry = history[0];
-      const current = splitTrack(currentEntry.t);
-      artistEl.textContent = current.artist || iget "—";
-      titleEl.textContent = current.title || "—";
-      setCover(currentEntry.cover_url || coverByNorm[normKey(current.artist, current.title)] || "");
-
-      const items = history.slice(1, 4);
-      if (!items.length){
-        host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
-        return;
-      }
-      host.innerHTML = items.map((entry) => {
-        const t = splitTrack(entry.t);
-        const a = String(t.artist || "").trim();
-        const ti = String(t.title || "").trim();
-        const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
-        return `
-          <a href="/music"
-             class="snap-start flex-none w-[260px] md:w-[300px]
-                    rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
-                    transition p-4 flex items-center gap-4">
-            ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
-            <div class="min-w-0">
-              <div class="font-semibold text-white truncate" data-abf-artist>${esc(a || "—")}</div>
-              <div class="text-white/60 text-sm truncate" data-abf-title>${esc(ti || "—")}</div>
-            </div>
-          </a>
-        `;
-      }).join("");
-
-      try { window.ABF_FMT?.apply(document); } catch {}
-    }
-
-    async function renderHeroTop1(){
-      const box = document.getElementById("heroTop1");
-      const empty = document.getElementById("heroTop1Empty");
-      const aEl = document.getElementById("heroTop1Artist");
-      const tEl = document.getElementById("heroTop1Title");
-      if (!box || !empty || !aEl || !tEl) return;
-
-      const topList = await getTopList();
-      const first = topList[0];
-
-      if (!first){
-        box.classList.add("hidden");
-        empty.classList.remove("hidden");
-        setHeroTop1Cover("");
-        return;
-      }
-
-      const artistRaw = first.artist || "—";
-      const titleRaw = first.title || "—";
-      aEl.textContent = artistRaw;
-      tEl.textContent = titleRaw;
-
-      const n = normKey(artistRaw, titleRaw);
-      const coverUrl = window.__abfHomeCoverByNorm?.[n] || "";
-      setHeroTop1Cover(coverUrl);
-
-      empty.classList.add("hidden");
-      box.classList.remove("hidden");
-
-      try { window.ABF_FMT?.apply(document); } catch {}
-    }
-
-    async function renderTop(){
-      const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
-      const empty = document.getElementById("topWeekEmpty");
-      if (!cards.length) return;
-
-      const topList = await getTopList();
-
-      if (topList.length === 0){
-        if (empty) empty.classList.remove("hidden");
-        cards.forEach((card, i) => {
-          const rankEl = card.querySelector("[data-rank]");
-          const aEl = card.querySelector("[data-artist]");
-          const tEl = card.querySelector("[data-title]");
-          const cEl = card.querySelector("[data-count]");
-          const img = card.querySelector("img");
-          if (rankEl) rankEl.textContent = `#${i+1}`;
-          if (aEl) aEl.textContent = "—";
-          if (tEl) tEl.textContent = "Vote on /music to build this chart";
-          if (cEl) cEl.textContent = "";
-          if (img ){ img.removeAttribute("src"); img.classList.add("hidden"); }
-        });
-      } else {
-        if (empty) empty.classList.add("hidden");
-        cards.forEach((card, i) => {
-          const rankEl = card.querySelector("[data-rank]");
-          const aEl = card.querySelector("[data-artist]");
-          const tEl = card.querySelector("[data-title]");
-          const cEl = card.querySelector("[data-count]");
-          const img = card.querySelector("img");
-
-          if (rankEl) rankEl.textContent = `#${i+1}`;
-
-          const row = topList[i];
-          if (!row){
-            if (aEl) aEl.textContent = "—";
-            if (tEl) tEl.textContent = "—";
-            if (cEl) cEl.textContent = "";
-            if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
-            return;
-          }
-
-          const artistRaw = row.artist || "—";
-          const titleRaw = row.title || "—";
-          const count = row.count;
-          const n = normKey(artistRaw, titleRaw);
-          const coverUrl = window.__abfHomeCoverByNorm?.[n] || "";
-
-          if (img){
-            if (coverUrl){
-              img.src = coverUrl;
-              img.classList.remove("hidden");
-            } else {
-              img.removeAttribute("src");
-              img.classList.add("hidden");
-            }
-          }
-          if (aEl){
-            aEl.textContent = artistRaw;
-            aEl.setAttribute("data-abf-artist", "");
-          }
-          if (tEl){
-            tEl.textContent = titleRaw;
-            tEl.setAttribute("data-abf-title", "");
-          }
-          if (cEl) cEl.textContent = count;
-        });
-      }
-
-      try { window.ABF_FMT?.apply(document); } catch {}
-    }
-
-    // ==== ON AIR (full original code) ====
-    const SCHEDULE = {
-      mon: [
-        { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"22h00", img:"1768507170_24ed82d807a1c66d30e0.jpg", title:"ABF CLUB - JNOES", desc:"Groovy drum'n'bass & commercial house master with big room builds and festival energy." },
-        { time:"23h00", img:"1768507185_5cc0873ee591d1b570eb.jpg", title:"ABF CLUB - DEGIANNY", desc:"Melodic techno & progressive specialist delivering emotional, keyboard-live journeys." }
-      ],
-      tue: [
-        { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"22h00", img:"1768507231_488e50db2ea8cda46b2f.jpg", title:"ABF CLUB - TECKROAD", desc:"Veteran blending psy-trance, tech house, funky classics, and warm vinyl grooves." },
-        { time:"23h00", img:"1768507251_046f763d818c022f3c69.jpg", title:"ABF CLUB - THE SPYMBOYS", desc:"Alpine party king with eclectic funky/jackin' house and high-energy vibes." }
-      ],
-      wed: [
-        { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"22h00", img:"1768507297_9c576120fcbd38219aa9.jpg", title:"ABF CLUB - JEAN-JEROME", desc:"Paris house veteran serving authentic groovy roots and soulful club feels." },
-        { time:"23h00", img:"1768507316_1261bdc48106c8579a39.jpg", title:"ABF CLUB - WILLIAM FOREST", desc:"Melodic deep/prog producer with emotional tracks and creative mashups." }
-      ],
-      thu: [
-        { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"22h00", img:"1770803145_3590fecff4df25a42558.jpg", title:"ABF CLUB - PIERRE DE PARIS", desc:"Real mix for real mix lovers..." },
-        { time:"23h00", img:"1768507375_9f458c45cbf3edbcce4d.jpg", title:"ABF CLUB - C-DRYK", desc:"Versatile jackin' house expert with nu-d-security, funky, and scratch flair." }
-      ],
-      fri: [
-        { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"18h00", img:"1770136551_b9cc44e800f0124bbab4.png", title:"ABF WARMUP EXTENDED", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"22h00", img:"1768507456_050c7b9177cfce665c11.jpg", title:"ABF CLUB - BETTY MIX", desc:"Feel-good queen of sunny remixes, uplifting house, psy-trance and positive energy." },
-        { time:"23h00", img:"1768507483_b656d4c2f50a3652be6f.jpg", title:"ABF CLUB - DJ JOEE", desc:"Australian house traveler with melodic deep/prog and seamless journeys." }
-      ],
-      sat: [
-        { time:"00h00", img:"1769976420_3b4d78bf20f028487165.png", title:"ABF AFTER", desc:"Deep, driving hypnotic techno to fuel the afterhours and keep the energy high till dawn." },
-        { time:"07h00", img:"1770128309_dc9e7e2e6b3e22de821f.png", title:"ABF CHILL", desc:"Lounge, chill-out & downtempo grooves — smooth beats and dreamy melodies to relax." },
-        { time:"10h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"20h00", img:"1770577445_c2959a4650239906609a.jpg", title:"ABF CLUB - GUEST MIX 1", desc:"Rotating international guest delivering fresh, surprising house/techno vibes to kick off the prime time." },
-        { time:"21h00", img:"1770577532_f7aae5eb0902593ac1cb.jpg", title:"ABF CLUB - GUEST MIX 2", desc:"Second rotating guest slot packed with high-energy club heat and exclusive selections." },
-        { time:"22h00", img:"1768507536_07beeacfd28b4fc86c30.jpg", title:"ABF CLUB - LAURENT SCHARK", desc:"Vocal/funky house pillar bringing groovy, timeless London-Paris vibes." },
-        { time:"23h00", img:"1768677347_b8fc41f1805e109d4d66.png", title:"ABF CLUB - TONY JAY", desc:"Paris club selector with energetic house, tech, and dancefloor fire." }
-      ],
-      sun: [
-        { time:"00h00", img:"1769976420_3b4d78bf20f028487165.png", title:"ABF AFTER", desc:"Deep, driving hypnotic techno to fuel the afterhours and keep the energy high till dawn." },
-        { time:"07h00", img:"1770128309_dc9e7e2e6b3e22de821f.png", title:"ABF CHILL", desc:"Lounge, chill-out & downtempo grooves — smooth beats and dreamy melodies to relax." },
-        { time:"10h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-        { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-        { time:"20h00", img:"1768155428_bf272625d4798bd3d3f5.jpg", title:"ABF CLUB [MADE IN JAPAN] - ZEPHYR", desc:"Elegant deep/melodic house from Japan with atmospheric Ibiza touches." },
-        { time:"21h00", img:"1768155467_5ed42c9a2e258587b90c.jpg", title:"ABF CLUB [MADE IN JAPAN] - HIDEKI", desc:"Funky big beat legend mixing game-soundtrack energy and club heat." },
-        { time:"22h00", img:"1768155500_86865e0936bc69837bc6.jpg", title:"ABF CLUB [MADE IN JAPAN] - TAMIO YAMASHITA", desc:"Innovative house/trance producer fusing tech and emotional melodies." },
-        { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
-      ]
-    };
-
-    function dayKey(){
-      const d = new Date().getDay();
-      if (d === 0) return "sun";
-      if (d === 1) return "mon";
-      if (d === 2) return "tue";
-      if (d === 3) return "wed";
-      if (d === 4) return "thu";
-      if (d === 5) return "fri";
-      return "sat";
-    }
-    function parseTimeToMinutes(t){
-      const m = String(t || "").match(/^(\d{1,2})h(\d{2})$/i);
-      if (!m) return null;
-      return Number(m[1]) * 60 + Number(m[2]);
-    }
-    function fmtCountdown(ms){
-      if (ms <= 0) return "Starting now";
-      const totalMin = Math.floor(ms / 60000);
-      const h = Math.floor(totalMin / 60);
-      const m = totalMin % 60;
-      if (h <= 0) return `Starts in ${m}m`;
-      return `Starts in ${h}h ${String(m).padStart(2,"0")}m`;
-    }
-    function injectOnAirStylesOnce(){
-      if (document.getElementById("abfHomeOnAirStyles")) return;
-      const st = document.createElement("style");
-      st.id = "abfHomeOnAirStyles";
-      st.textContent = `
-        .onAirCard{
-          border-color: rgba(248,113,113,.35) !important;
-          background: radial-gradient(1200px 220px at 20% 0%,
-            rgba(239,68,68,0.22),
-            rgba(255,255,255,0.05) 45%,
-            rgba(255,255,255,0.03) 100%);
-          box-shadow:
-            0 0 0 1px rgba(239,68,68,0.15) inset,
-            0 20px 70px rgba(239,68,68,0.14),
-            0 10px 35px rgba(0,0,0,0.35);
-          position: relative;
-        }
-        .onAirCard::before{
-          content:"";
-          position:absolute;
-          inset:-1px;
-          border-radius: 1rem;
-          pointer-events:none;
-          background: linear-gradient(90deg,
-            rgba(239,68,68,0.22),
-            rgba(239,68,68,0.10),
-            rgba(239,68,68,0.22));
-          filter: blur(18px);
-          opacity: .55;
-        }
-        .line-clamp-2{
-          display:-webkit-box;
-          -webkit-line-clamp:2;
-          -webkit-box-orient:vertical;
-          overflow:hidden;
-        }
-      `;
-      document.head.appendChild(st);
-    }
-    function renderOnAirTonight(){
-      const host = document.getElementById("onAirTonight");
-      if (!host) return;
-      const day = dayKey();
-      const items = (SCHEDULE[day] || [])
-        .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
-        .filter(x => x.min !== null)
-        .sort((a,b) => a.min - b.min);
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      let liveIndex = -1;
-      for (let i=0;i<items.length;i++){
-        const startMin = items[i].min;
-        const endMin = (i < items.length - 1) ? items[i+1].min : 24*60;
-        if (startMin <= nowMin && nowMin < endMin){
-          liveIndex = i;
-          break;
-        }
-      }
-      let selected = [];
-      let mode = "next";
-      let subline = "";
-      if (liveIndex >= 0){
-        mode = "live";
-        selected = items.slice(liveIndex, liveIndex + 3);
-        const endMin = (liveIndex < items.length - 1) ? items[liveIndex+1].min : 24*60;
-        const end = new Date(now);
-        end.setHours(Math.floor(endMin/60), endMin%60, 0, 0);
-        const msLeft = (end ? end.getTime() : 0) - now.getTime();
-        const totalMin = Math.max(0, Math.floor(msLeft/60000));
-        const h = Math.floor(totalMin/60);
-        const m = totalMin%60;
-        subline = (h <= 0) ? `Ends in ${m}m` : `Ends in ${h}h ${String(m).padStart(2,"0")}m`;
-      } else {
-        selected = items.filter(x => x.min >= nowMin).slice(0, 3);
-        if (selected[0]){
-          const start = new Date(now);
-          start.setHours(Math.floor(selected[0].min/60), selected[0].min%60, 0, 0);
-          subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
-        }
-      }
-      if (!selected.length){
-        host.innerHTML = `
-          <div class="text-white/70">
-            No more shows today — check the full schedule.
+    host.innerHTML = `
+      <div class="space-y-4">
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5 ${liveWrapClass}">
+          <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+            ${badge}
+            <div class="text-white/50 text-sm">${esc(subline || "")}</div>
           </div>
-          <div class="mt-4">
-            <a href="/programs"
-               class="inline-flex items-center justify-center
-                      bg-white/5 hover:bg-white/10 border border-white/10
-                      rounded-xl px-5 py-3 text-white/85 transition">
-              Open schedule →
-            </a>
-          </div>
-        `;
-        return;
-      }
-      const first = selected[0];
-      const others = selected.slice(1);
-      const badge = (mode === "live")
-        ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider">
-             <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
-             LIVE NOW
-           </span>`
-        : `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-semibold tracking-wider">
-             NEXT
-           </span>`;
-      const liveWrapClass = (mode === "live") ? "onAirCard" : "";
-      let firstDisplayTitle = first.title;
-      if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
-        const parts = firstDisplayTitle.split(" - ", 2);
-        firstDisplayTitle = parts[0] + " - " + parts[1].toUpperCase();
-      }
-      host.innerHTML = `
-        <div class="space-y-4">
-          <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5 ${liveWrapClass}">
-            <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-              ${badge}
-              <div class="text-white/50 text-sm">${esc(subline || "")}</div>
-            </div>
-            <div class="flex flex-col md:flex-row gap-6 items-stretch">
-              <div class="w-full md:w-56 flex-none">
-                <div class="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden flex items-center justify-center p-2">
-                  <img
-                    src="${esc(PROGRAMS_DIR + first.img)}"
-                    alt="${esc(first.title)}"
-                    class="w-full h-full object-contain"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
+
+          <div class="flex flex-col md:flex-row gap-6 items-stretch">
+            <div class="w-full md:w-56 flex-none">
+              <div class="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden flex items-center justify-center p-2">
+                <img
+                  src="${esc(PROGRAMS_DIR + first.img)}"
+                  alt="${esc(first.title)}"
+                  class="w-full h-full object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="text-cyan-300 font-bold text-xl md:text-2xl">
-                  ${esc(first.time)}
-                </div>
-                <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
-                  ${esc(firstDisplayTitle)}
-                </div>
-                <div class="mt-2 text-white/70 text-base md:text-lg leading-relaxed">
-                  ${esc(first.desc)}
-                </div>
-                <div class="mt-5 flex gap-3 flex-wrap">
-                  <a href="/programs"
-                     class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
-                            px-6 py-3 rounded-xl font-semibold shadow-lg shadow-cyan-500/20
-                            hover:scale-[1.01] transition">
-                    View schedule
-                  </a>
-                  <button id="onAirRemindBtn"
-                          type="button"
-                          class="bg-white/5 hover:bg-white/10 border border-white/10
-                                 rounded-xl px-6 py-3 text-white/85 transition">
-                    Remind me
-                  </button>
-                </div>
-                <div id="onAirRemindNote" class="mt-3 text-white/50 text-sm hidden">
-                  Reminder saved locally (this device).
-                </div>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="text-cyan-300 font-bold text-xl md:text-2xl">
+                ${esc(first.time)}
+              </div>
+
+              <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
+                ${esc(firstDisplayTitle)}
+              </div>
+
+              <div class="mt-2 text-white/70 text-base md:text-lg leading-relaxed">
+                ${esc(first.desc)}
+              </div>
+
+              <div class="mt-5 flex gap-3 flex-wrap">
+                <a href="/programs"
+                   class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
+                          px-6 py-3 rounded-xl font-semibold shadow-lg shadow-cyan-500/20
+                          hover:scale-[1.01] transition">
+                  View schedule
+                </a>
+
+                <button id="onAirRemindBtn"
+                        type="button"
+                        class="bg-white/5 hover:bg-white/10 border border-white/10
+                               rounded-xl px-6 py-3 text-white/85 transition">
+                  Remind me
+                </button>
+              </div>
+
+              <div id="onAirRemindNote" class="mt-3 text-white/50 text-sm hidden">
+                Reminder saved locally (this device).
               </div>
             </div>
           </div>
-          ${others.length ? `
-            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5">
-              <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
-                ${mode === "live" ? "Up next" : "Later"}
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${others.map(x => {
-                  let displayTitle = x.title;
-                  if (displayTitle.startsWith("ABF CLUB - ")) {
-                    const parts = displayTitle.split(" - ", 2);
-                    displayTitle = parts[0] + " - " + parts[1].toUpperCase();
-                  }
-                  return `
-                    <div class="flex gap-4 items-center border border-white/10 rounded-xl p-3 bg-white/5 hover:bg-white/10 transition">
-                      <div class="w-24 flex-none">
-                        <div class="h-24 rounded-xl overflow-hidden border border-white/10 bg-black/20 flex items-center justify-center p-1">
-                          <img
-                            src="${esc(PROGRAMS_DIR + x.img)}"
-                            alt="${esc(x.title)}"
-                            class="w-full h-full object-contain"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </div>
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <div class="flex items-center justify-between gap-2">
-                          <div class="text-cyan-300 font-bold text-sm">
-                            ${esc(x.time)}
-                          </div>
-                        </div>
-                        <div class="mt-1 text-white font-semibold text-sm truncate">
-                          ${esc(displayTitle)}
-                        </div>
-                        <div class="mt-1 text-white/60 text-xs leading-snug line-clamp-2">
-                          ${esc(x.desc || "")}
-                        </div>
+        </div>
+
+        ${others.length ? `
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5">
+            <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
+              ${mode === "live" ? "Up next" : "Later"}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${others.map(x => {
+                let displayTitle = x.title;
+                if (displayTitle.startsWith("ABF CLUB - ")) {
+                  const parts = displayTitle.split(" - ", 2);
+                  displayTitle = parts[0] + " - " + parts[1].toUpperCase();
+                }
+                return `
+                  <div class="flex gap-4 items-center border border-white/10 rounded-xl p-3 bg-white/5 hover:bg-white/10 transition">
+                    <div class="w-24 flex-none">
+                      <div class="h-24 rounded-xl overflow-hidden border border-white/10 bg-black/20 flex items-center justify-center p-1">
+                        <img
+                          src="${esc(PROGRAMS_DIR + x.img)}"
+                          alt="${esc(x.title)}"
+                          class="w-full h-full object-contain"
+                          loading="lazy"
+                          decoding="async"
+                        />
                       </div>
                     </div>
-                  `;
-                }).join("")}
-              </div>
+
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="text-cyan-300 font-bold text-sm">
+                          ${esc(x.time)}
+                        </div>
+                      </div>
+                      <div class="mt-1 text-white font-semibold text-sm truncate">
+                        ${esc(displayTitle)}
+                      </div>
+                      <div class="mt-1 text-white/60 text-xs leading-snug line-clamp-2">
+                        ${esc(x.desc || "")}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
             </div>
-          ` : ""}
-        </div>
-      `;
-      const remindBtn = document.getElementById("onAirRemindBtn");
-      const note = document.getElementById("onAirRemindNote");
-      if (remindBtn){
-        remindBtn.onclick = () => {
-          try{
-            const target = (mode === "live" && selected[1]) ? selected[1] : selected[0];
-            const ts = (() => {
-              const d = new Date();
-              d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
-              return d ? d.getTime() : 0;
-            })();
-            localStorage.setItem("abf_remind_next_show", JSON.stringify({
-              day,
-              time: target.time,
-              title: target.title,
-              ts
-            }));
-            if (note) note.classList.remove("hidden");
-          }catch{}
-        };
-      }
+          </div>
+        ` : ""}
+      </div>
+    `;
+
+    const remindBtn = document.getElementById("onAirRemindBtn");
+    const note = document.getElementById("onAirRemindNote");
+
+    if (remindBtn){
+      remindBtn.onclick = () => {
+        try{
+          const target = (mode === "live" && selected[1]) ? selected[1] : selected[0];
+          const ts = (() => {
+            const d = new Date();
+            d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
+            return d ? d.getTime() : 0;
+          })();
+          localStorage.setItem("abf_remind_next_show", JSON.stringify({
+            day,
+            time: target.time,
+            title: target.title,
+            ts
+          }));
+          if (note) note.classList.remove("hidden");
+        }catch{}
+      };
     }
+  }
 
-    // ==== Modals (bind chaque fois) ====
-    function bindFlacModal(){
-      const modal = document.getElementById("flacModal");
-      const openBtn = document.getElementById("openFlacModal");
-      const openBtn2 = document.getElementById("openFlacModal2");
-      const closeBtn = document.getElementById("flacClose");
-      if (!modal || !openBtn || !closeBtn) return;
+  // -------------------------
+  // Modals (inchangé)
+  // -------------------------
+  function bindFlacModal(){
+    const modal = document.getElementById("flacModal");
+    const openBtn = document.getElementById("openFlacModal");
+    const openBtn2 = document.getElementById("openFlacModal2");
+    const closeBtn = document.getElementById("flacClose");
+    if (!modal || !openBtn || !closeBtn) return;
 
-      const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-      const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
-      const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
+    const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
+    const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
+    const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
+    // évite double-bind
+    if (!window.__abfHomeBindFlac){
       openBtn.addEventListener("click", open);
       if (openBtn2) openBtn2.addEventListener("click", open);
       closeBtn.addEventListener("click", close);
+
       document.addEventListener("click", (e) => {
-        if (e.target?.dataset?.close === "flac") close();
+        const t = e.target;
+        if (t?.dataset?.close === "flac") close();
       });
+
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") close();
+        if (e.key !== "Escape") return;
+        if (modal.getAttribute("aria-hidden") === "false") close();
       });
+
+      window.__abfHomeBindFlac = true;
     }
+  }
 
-    function bindStreamQualityModal(){
-      const modal = document.getElementById("streamQualityModal");
-      const openBtn = document.getElementById("openStreamQualityModal");
-      const closeBtn = document.getElementById("streamQualityClose");
-      if (!modal || !openBtn || !closeBtn) return;
+  function bindStreamQualityModal(){
+    const modal = document.getElementById("streamQualityModal");
+    const openBtn = document.getElementById("openStreamQualityModal");
+    const closeBtn = document.getElementById("streamQualityClose");
+    if (!modal || !openBtn || !closeBtn) return;
 
-      const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-      const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
-      const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
+    const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
+    const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
+    const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
+    if (!window.__abfHomeBindQual){
       openBtn.addEventListener("click", open);
       closeBtn.addEventListener("click", close);
+
       document.addEventListener("click", (e) => {
-        if (e.target?.dataset?.close === "streamquality") close();
+        const t = e.target;
+        if (t?.dataset?.close === "streamquality") close();
       });
+
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") close();
+        if (e.key !== "Escape") return;
+        if (modal.getAttribute("aria-hidden") === "false") close();
       });
+
+      window.__abfHomeBindQual = true;
+    }
+  }
+
+  // -------------------------
+  // Boot
+  // -------------------------
+  async function initHome(){
+    injectOnAirStylesOnce();
+    bindFlacModal();
+    bindStreamQualityModal();
+
+    await renderNowPlayingAndLast(); // crée coverByNorm
+    renderOnAirTonight();
+    await renderTop();
+    await renderHeroTop1();
+
+    const jump = document.getElementById("jumpToPlayer");
+    if (jump && !jump.dataset.bound){
+      jump.dataset.bound = "1";
+      jump.onclick = () => {
+        // scroll vers le bas (le player est pinned)
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      };
     }
 
-    // ==== Init ====
-    async function initHome(){
-      injectOnAirStylesOnce();
-      bindFlacModal();
-      bindStreamQualityModal();
+    // timers (nettoyage avant de re-créer)
+    if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
+    window.__abfHomeTimer = setInterval(async () => {
       await renderNowPlayingAndLast();
       renderOnAirTonight();
-      await renderTop();
-      await renderHeroTop1();
+      renderTop();
+      renderHeroTop1();
+    }, 8000);
 
-      const jump = document.getElementById("jumpToPlayer");
-      if (jump && !jump.dataset.bound){
-        jump.dataset.bound = "1";
-        jump.onclick = () => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      }
+    if (!window.__abfOnAirTimer){
+      window.__abfOnAirTimer = setInterval(renderOnAirTonight, 30000);
+    }
+  }
 
+  function initHomePage(){
+    // home only
+    if (window.location.pathname !== "/") return;
+    requestAnimationFrame(() => requestAnimationFrame(initHome));
+  }
+
+  initHomePage();
+
+  // bind listeners once
+  if (!window.__abfHomeListeners){
+    document.addEventListener("astro:page-load", initHomePage);
+    document.addEventListener("astro:after-swap", initHomePage);
+    document.addEventListener("astro:before-swap", () => {
       if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
-      window.__abfHomeTimer = setInterval(async () => {
-        await renderNowPlayingAndLast();
-        renderOnAirTonight();
-        await renderTop();
-        await renderHeroTop1();
-      }, 8000);
+    });
 
-      if (!window.__abfOnAirTimer){
-        window.__abfOnAirTimer = setInterval(renderOnAirTonight, 30000);
-      }
-    }
+    // rafraîchir dès que le player met à jour l'historique (server-side now)
+    window.addEventListener("abf:history-updated", initHomePage);
 
-    function initHomePage(){
-      if (window.location.pathname !== "/") return;
-      requestAnimationFrame(() => requestAnimationFrame(initHome));
-    }
+    window.__abfHomeListeners = true;
+  }
+})();
+</script>
 
-    initHomePage();
-
-    if (!window.__abfHomeListeners){
-      document.addEventListener("astro:page-load", initHomePage);
-      document.addEventListener("astro:after-swap", initHomePage);
-      document.addEventListener("astro:before-swap", () => {
-        if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
-      });
-      window.addEventListener("abf:history-updated", initHomePage);
-      window.__abfHomeListeners = true;
-    }
-  })();
-  </script>
 </Base>
