@@ -57,7 +57,6 @@ function extractNowPlaying(json: any): string {
 function toUTCms(v: any): number {
   const s = String(v || "").trim();
   if (!s) return 0;
-
   if (/[zZ]$/.test(s) || /[+\-]\d\d:\d\d$/.test(s)) return Date.parse(s);
   return Date.parse(s + "Z");
 }
@@ -70,7 +69,54 @@ async function directusFetch(path: string, init: RequestInit = {}) {
 }
 
 // ----------------------
-// Directus: Tracks
+// iTunes cover
+// ----------------------
+async function fetchItunesCover(artist: string, title: string): Promise<string> {
+  const term = encodeURIComponent(`${artist} ${title}`);
+  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) return "";
+    const j = await r.json().catch(() => ({}));
+    const item = j?.results?.[0];
+    const art100 = String(item?.artworkUrl100 || "");
+    if (!art100) return "";
+    return art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
+  } catch {
+    return "";
+  }
+}
+
+// upload image URL to Directus
+async function uploadCoverFromUrl(imageUrl: string): Promise<string | null> {
+  try {
+    const img = await fetch(imageUrl);
+    if (!img.ok) return null;
+
+    const buffer = await img.arrayBuffer();
+
+    const form = new FormData();
+    form.append("file", new Blob([buffer]), "cover.jpg");
+
+    const r = await fetch(`${DIRECTUS_URL}/files`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${DIRECTUS_TOKEN}`,
+      },
+      body: form,
+    });
+
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => ({}));
+    return j?.data?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+// ----------------------
+// Tracks
 // ----------------------
 type TrackRow = {
   id: string | number;
@@ -96,27 +142,24 @@ async function getTrackByKey(track_key: string): Promise<TrackRow | null> {
   return j?.data?.[0] || null;
 }
 
-async function createTrack(payload: {
-  track_key: string;
-  artist: string;
-  title: string;
-}): Promise<TrackRow | null> {
+async function createTrack(track_key: string, artist: string, title: string) {
   const r = await directusFetch(`/items/${TRACKS_COLLECTION}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      track_key: payload.track_key,
-      artist: payload.artist,
-      title: payload.title,
+      track_key,
+      artist,
+      title,
       cover_lock: false,
     }),
   });
+
   if (!r.ok) return null;
   const j = await r.json().catch(() => ({}));
   return j?.data || null;
 }
 
-async function updateTrack(id: string | number, payload: Partial<TrackRow>) {
+async function updateTrack(id: string | number, payload: any) {
   await directusFetch(`/items/${TRACKS_COLLECTION}/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -125,102 +168,11 @@ async function updateTrack(id: string | number, payload: Partial<TrackRow>) {
 }
 
 // ----------------------
-// iTunes auto cover
-// ----------------------
-async function itunesCover(artist: string, title: string): Promise<string | null> {
-  const term = encodeURIComponent(`${artist} ${title}`);
-  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
-
-  try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) return null;
-
-    const j = await r.json().catch(() => ({}));
-    const item = j?.results?.[0];
-    if (!item?.artworkUrl100) return null;
-
-    return String(item.artworkUrl100).replace("100x100bb.jpg", "600x600bb.jpg");
-  } catch {
-    return null;
-  }
-}
-
-async function uploadCoverFromUrl(imageUrl: string): Promise<string | null> {
-  try {
-    const img = await fetch(imageUrl);
-    if (!img.ok) return null;
-
-    const buffer = await img.arrayBuffer();
-
-    const r = await fetch(`${DIRECTUS_URL}/files`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${DIRECTUS_TOKEN}`,
-      },
-      body: buffer,
-    });
-
-    if (!r.ok) return null;
-    const j = await r.json().catch(() => ({}));
-    return j?.data?.id || null;
-  } catch {
-    return null;
-  }
-}
-
-async function upsertTrack(track_key: string, artist: string, title: string): Promise<TrackRow | null> {
-  const existing = await getTrackByKey(track_key);
-
-  // create if missing
-  if (!existing) {
-    const created = await createTrack({ track_key, artist, title });
-    if (!created) return null;
-
-    const coverUrl = await itunesCover(artist, title);
-    if (coverUrl) {
-      const fileId = await uploadCoverFromUrl(coverUrl);
-      if (fileId) {
-        await updateTrack(created.id, { cover_art: fileId });
-        created.cover_art = fileId;
-      }
-    }
-    return created;
-  }
-
-  // auto-cover if empty
-  if (!existing.cover_art && !existing.cover_lock) {
-    const coverUrl = await itunesCover(artist, title);
-    if (coverUrl) {
-      const fileId = await uploadCoverFromUrl(coverUrl);
-      if (fileId) {
-        await updateTrack(existing.id, { cover_art: fileId });
-        existing.cover_art = fileId;
-      }
-    }
-  }
-
-  // keep metadata in sync
-  const needsUpdate =
-    (artist && String(existing.artist || "") !== artist) ||
-    (title && String(existing.title || "") !== title);
-
-  if (needsUpdate) {
-    try {
-      await updateTrack(existing.id, { artist, title });
-      existing.artist = artist;
-      existing.title = title;
-    } catch {}
-  }
-
-  return existing;
-}
-
-// ----------------------
-// Directus: Plays
+// Plays
 // ----------------------
 async function getLastPlay() {
   const r = await directusFetch(
-    `/items/${PLAYS_COLLECTION}?fields=id,track_key,played_at,track&sort=-played_at&limit=1`,
+    `/items/${PLAYS_COLLECTION}?fields=id,track_key,played_at&sort=-played_at&limit=1`,
     { method: "GET" }
   );
   if (!r.ok) return null;
@@ -228,15 +180,7 @@ async function getLastPlay() {
   return j?.data?.[0] || null;
 }
 
-async function insertPlay(payload: {
-  track_key: string;
-  artist: string;
-  title: string;
-  played_at: string;
-  raw: string;
-  source?: string;
-  track?: string | number;
-}) {
+async function insertPlay(payload: any) {
   await directusFetch(`/items/${PLAYS_COLLECTION}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -255,9 +199,6 @@ async function getHistory(limit: number) {
     "track.id",
     "track.cover_art",
     "track.cover_lock",
-    "track.track_key",
-    "track.artist",
-    "track.title",
   ].join(",");
 
   const r = await directusFetch(
@@ -276,25 +217,9 @@ export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || "12")));
 
-  if (!ICECAST_STATUS_URL || !DIRECTUS_URL || !DIRECTUS_TOKEN) {
-    return new Response(JSON.stringify({ ok: false, error: "Missing env" }), {
-      status: 500,
-      headers: { "content-type": "application/json; charset=utf-8" },
-    });
-  }
-
-  // Icecast
-  let nowText = "";
-  try {
-    const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
-    const json = await r.json().catch(() => ({}));
-    nowText = cleanNowText(extractNowPlaying(json));
-  } catch {
-    return new Response(JSON.stringify({ ok: false, error: "Icecast fetch failed" }), {
-      status: 500,
-      headers: { "content-type": "application/json; charset=utf-8" },
-    });
-  }
+  const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
+  const json = await r.json().catch(() => ({}));
+  const nowText = cleanNowText(extractNowPlaying(json));
 
   const { artist, title } = splitTrack(nowText);
   const track_key = normKey(artist, title);
@@ -302,44 +227,50 @@ export const GET: APIRoute = async ({ request }) => {
   const played_at = new Date().toISOString();
   const played_at_ms = Date.parse(played_at);
 
-  // upsert track
-  let trackRow: TrackRow | null = null;
-  if (artist && track_key && artist.toLowerCase() !== "undefined") {
-    trackRow = await upsertTrack(track_key, artist, title);
+  let trackRow = await getTrackByKey(track_key);
+  if (!trackRow && artist) {
+    trackRow = await createTrack(track_key, artist, title);
   }
 
-  // insert play if new
-  if (artist && track_key && artist.toLowerCase() !== "undefined") {
-    const last = await getLastPlay();
-    if (!last || String(last?.track_key || "") !== track_key) {
-      await insertPlay({
-        track_key,
-        artist,
-        title,
-        played_at,
-        raw: nowText,
-        source: "icecast",
-        track: trackRow?.id,
-      });
+  // auto cover if missing and not locked
+  if (trackRow && !trackRow.cover_art && !trackRow.cover_lock) {
+    const coverUrl = await fetchItunesCover(artist, title);
+    if (coverUrl) {
+      const fileId = await uploadCoverFromUrl(coverUrl);
+      if (fileId) {
+        await updateTrack(trackRow.id, { cover_art: fileId });
+        trackRow.cover_art = fileId;
+      }
     }
+  }
+
+  // insert play
+  const last = await getLastPlay();
+  if (!last || String(last?.track_key || "") !== track_key) {
+    await insertPlay({
+      track_key,
+      artist,
+      title,
+      played_at,
+      raw: nowText,
+      source: "icecast",
+      track: trackRow?.id,
+    });
   }
 
   const historyRaw = await getHistory(limit);
 
   const history = historyRaw.map((row: any) => {
     const coverId = row?.track?.cover_art || null;
-    const cover_url = fileUrl(coverId);
-
     return {
       ...row,
       played_at_ms: toUTCms(row?.played_at),
       cover_art: coverId,
-      cover_url,
+      cover_url: fileUrl(coverId),
     };
   });
 
   const nowCoverId = trackRow?.cover_art || null;
-  const nowCoverUrl = fileUrl(nowCoverId);
 
   const now = {
     raw: nowText,
@@ -349,7 +280,7 @@ export const GET: APIRoute = async ({ request }) => {
     played_at,
     played_at_ms,
     cover_art: nowCoverId,
-    cover_url: nowCoverUrl,
+    cover_url: fileUrl(nowCoverId),
   };
 
   return new Response(JSON.stringify({ ok: true, now, history }), {
