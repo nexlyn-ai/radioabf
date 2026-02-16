@@ -28,10 +28,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
     />
 
     <!-- ===== FAVICONS ===== -->
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" id="abfFavicon">
-    <link rel="icon" href="/favicon-32.png" sizes="32x32">
-    <link rel="icon" href="/favicon-16.png" sizes="16x16">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" id="abfFavicon" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" />
+    <link rel="icon" href="/favicon-16.png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -54,21 +54,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
     <!-- Structured Data -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "RadioStation",
-      "name": "RadioABF",
-      "alternateName": "Alternative Bass Fréquence",
-      "description": "Live electronic music radio streaming on radioabf.com. Community track voting, DJ programs and high-quality audio.",
-      "url": "https://radioabf.com",
-      "logo": "https://radioabf.com/logo-abf.png",
-      "sameAs": [
-        "https://x.com/abfonair",
-        "https://www.facebook.com/abfonair",
-        "https://www.instagram.com/abfonair"
-      ],
-      "genre": "Electronic, House, Deep House, Progressive, Bass Music"
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "RadioStation",
+        "name": "RadioABF",
+        "alternateName": "Alternative Bass Fréquence",
+        "description": "Live electronic music radio streaming on radioabf.com. Community track voting, DJ programs and high-quality audio.",
+        "url": "https://radioabf.com",
+        "logo": "https://radioabf.com/logo-abf.png",
+        "sameAs": [
+          "https://x.com/abfonair",
+          "https://www.facebook.com/abfonair",
+          "https://www.instagram.com/abfonair"
+        ],
+        "genre": "Electronic, House, Deep House, Progressive, Bass Music"
+      }
     </script>
 
     <slot name="head" />
@@ -114,7 +114,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       #fsOverlay[aria-hidden="true"]{ pointer-events:none; }
       #fsOverlay[aria-hidden="false"]{ pointer-events:auto; }
 
-      /* ===================== MODALS (Build + Legal) ===================== */
+      /* ===================== MODALS (Build + Legal + Cookies) ===================== */
       .abfModal{
         position: fixed;
         inset: 0;
@@ -319,17 +319,164 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         stroke-linecap: round;
         stroke-linejoin: round;
       }
+
+      /* ===================== COOKIE BANNER ===================== */
+      .abfCookieBar{
+        position: fixed;
+        left: 0;
+        right: 0;
+        z-index: 65;
+        pointer-events: none;
+        bottom: calc(var(--abf-footer-h) + var(--abf-player-h) + 14px);
+      }
+      .abfCookieBarInner{
+        pointer-events: auto;
+        width: min(980px, 100%);
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      .abfCookieCard{
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(5,11,20,0.92);
+        backdrop-filter: blur(18px) saturate(140%);
+        box-shadow: 0 20px 80px rgba(0,0,0,0.55);
+        padding: 12px;
+        display:flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .abfCookieRow{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .abfCookieTitle{
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        font-size: 11px;
+        color: rgba(255,255,255,0.75);
+      }
+      .abfCookieTxt{
+        color: rgba(255,255,255,0.72);
+        font-size: 13px;
+        line-height: 1.35;
+        margin-top: 4px;
+        max-width: 62ch;
+      }
+      .abfCookieActions{
+        display:flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content:flex-end;
+      }
+      .abfBtn{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        padding: 9px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.86);
+        transition: .15s ease;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+      .abfBtnPrimary{
+        border-color: rgba(47,194,255,0.35);
+        background: linear-gradient(90deg, rgba(20,92,143,0.9), rgba(47,194,255,0.9));
+        color: rgba(255,255,255,0.95);
+      }
+      .abfBtnPrimary:hover{
+        filter: brightness(1.05);
+      }
+      .abfBtnGhost{
+        background: transparent;
+      }
+      .abfBtnDanger{
+        border-color: rgba(239,68,68,0.35);
+        background: rgba(239,68,68,0.10);
+        color: rgba(255,255,255,0.90);
+      }
+      .abfBtnDanger:hover{
+        background: rgba(239,68,68,0.16);
+      }
+      .abfMuted{
+        color: rgba(255,255,255,0.55);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .abfToggle{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.04);
+      }
+      .abfToggle h4{
+        margin:0;
+        font-size: 13px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.88);
+      }
+      .abfToggle p{
+        margin: 4px 0 0 0;
+        font-size: 13px;
+        color: rgba(255,255,255,0.70);
+        line-height: 1.35;
+      }
+      .abfSwitch{
+        flex:none;
+        width: 48px;
+        height: 28px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06);
+        position: relative;
+        cursor:pointer;
+        transition: .15s ease;
+      }
+      .abfSwitch::after{
+        content:"";
+        position:absolute;
+        top: 3px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.85);
+        transition: .15s ease;
+      }
+      .abfSwitch[data-on="true"]{
+        border-color: rgba(47,194,255,0.35);
+        background: rgba(47,194,255,0.18);
+      }
+      .abfSwitch[data-on="true"]::after{
+        left: 23px;
+        background: rgba(47,194,255,0.95);
+      }
     </style>
 
-    <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8KQY09E05H"></script>
-    <script>
+    <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
+    <script is:inline>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-8KQY09E05H', {
-        send_page_view: true,
-        anonymize_ip: true
+      function gtag(){ dataLayer.push(arguments); }
+      // Default deny until user explicitly accepts analytics
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'granted',
+        security_storage: 'granted'
       });
     </script>
   </head>
@@ -740,6 +887,80 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       </div>
     </div>
 
+    <!-- ================= COOKIES MODAL (RGPD) ================= -->
+    <div id="cookiesModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-close="cookies"></div>
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Cookie preferences">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">Cookie preferences</div>
+            <button class="abfModalClose" id="cookiesClose" type="button" aria-label="Close">✕</button>
+          </div>
+          <div class="abfModalBody">
+            <div class="space-y-3 text-sm text-white/75 leading-relaxed">
+              <p class="text-white/85 font-semibold">
+                We use cookies to keep the site working and (optionally) to measure audience with Google Analytics (GA4).
+              </p>
+
+              <div class="abfToggle">
+                <div class="min-w-0">
+                  <h4>Necessary cookies</h4>
+                  <p>
+                    Required for core features (player preferences, security). Always enabled.
+                  </p>
+                </div>
+                <div class="abfSwitch" data-on="true" aria-hidden="true" title="Always on"></div>
+              </div>
+
+              <div class="abfToggle">
+                <div class="min-w-0">
+                  <h4>Analytics (GA4)</h4>
+                  <p>
+                    Helps us understand traffic and improve the experience. Disabled by default until you accept.
+                  </p>
+                </div>
+                <button id="analyticsToggle" type="button" class="abfSwitch" data-on="false" aria-label="Toggle analytics"></button>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button id="cookiesAccept" type="button" class="abfBtn abfBtnPrimary">Accept analytics</button>
+                <button id="cookiesDecline" type="button" class="abfBtn">Decline</button>
+                <button id="cookiesSave" type="button" class="abfBtn abfBtnGhost">Save</button>
+              </div>
+
+              <p class="abfMuted">
+                You can change your choice any time from the footer (“Cookies”).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= COOKIE BANNER (shown until choice) ================= -->
+    <div id="cookieBar" class="abfCookieBar hidden" aria-hidden="true">
+      <div class="abfCookieBarInner">
+        <div class="abfCookieCard">
+          <div class="abfCookieRow">
+            <div>
+              <div class="abfCookieTitle">Cookies</div>
+              <div class="abfCookieTxt">
+                We use necessary cookies for core features. With your permission, we also use GA4 analytics to improve RadioABF.
+              </div>
+            </div>
+            <div class="abfCookieActions">
+              <button id="cookieManage" type="button" class="abfBtn">Manage</button>
+              <button id="cookieDecline" type="button" class="abfBtn">Decline</button>
+              <button id="cookieAccept" type="button" class="abfBtn abfBtnPrimary">Accept</button>
+            </div>
+          </div>
+          <div class="abfMuted">
+            By clicking “Accept”, you allow analytics cookies (GA4). You can change your choice anytime.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ================= PLAYER LOGIC + VISUALIZER + TAB/FAVICON LIVE ================= -->
     <script is:inline data-astro-rerun>
       (() => {
@@ -747,39 +968,24 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         window.__abf = window.__abf || {};
         const S = window.__abf;
 
-        // ✅ Hard guard: do not re-create Audio / timers / heavy systems
-        if (!S.__booted){
-          S.__booted = true;
-
-          S.isStopped = true;
-          S.currentStreamIndex = 0;
-
-          S.streams = [
-            { url: "https://play.radioabf.com:2590/stream" },
-            { url: "https://play.radioabf.com:2600/stream" },
-            { url: "https://play.radioabf.com:2610/stream" },
-            { url: "https://play.radioabf.com:2620/stream" },
-          ];
-
-          S.audio = new Audio();
-          S.audio.preload = "none";
-          S.audio.crossOrigin = "anonymous";
-
-          S.lastBeat = 0;
-          S.__beat = { ema: 0, ema2: 0, last: 0 };
-          S.__viz = { raf: 0, canvas: null, ctx: null, dpr: 1, w: 0, h: 0 };
-          S.__fs = { active: false };
-
-          S.__coverInflight = {};
-          S.__npTimer = 0;
-          S.__bound = false;
-          S.__escBound = false;
-          S.__tabFx = null;
-        }
-
+        S.isStopped = S.isStopped ?? true;
         const LS_KEY = "abf_stream_index";
-        const COVERS_KEY = "abf_covers_v1";
+        const VOL_KEY = "abf_volume";
+
+        // ✅ cookie consent id (cookie, not localStorage)
+        const CONSENT_COOKIE = "abf_consent_v1"; // value: "a1" (analytics yes) or "a0" (analytics no)
+
+        S.streams = S.streams || [
+          { url: "https://play.radioabf.com:2590/stream" },
+          { url: "https://play.radioabf.com:2600/stream" },
+          { url: "https://play.radioabf.com:2610/stream" },
+          { url: "https://play.radioabf.com:2620/stream" },
+        ];
+
+        S.audio = S.audio || new Audio();
         const audio = S.audio;
+        audio.preload = "none";
+        audio.crossOrigin = "anonymous";
 
         const $ = (id) => document.getElementById(id);
 
@@ -805,6 +1011,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             setIcon(slot, name);
           });
         }
+
+        S.lastBeat = S.lastBeat || 0;
+        S.__beat = S.__beat || { ema: 0, ema2: 0, last: 0 };
+        S.__viz = S.__viz || { raf: 0, canvas: null, ctx: null, dpr: 1, w: 0, h: 0 };
+        S.__fs = S.__fs || { active: false };
 
         function fmtApply(){
           try { window.ABF_FMT?.apply(document); } catch {}
@@ -934,7 +1145,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
             const A = (window.ABF_FMT?.artist?.(a) || a);
             const T = (window.ABF_FMT?.title?.(t) || t);
-
             const txt = `🔴 LIVE • ${A} — ${T} | RadioABF`;
 
             if (state.liveOn && state.liveText === txt) {
@@ -955,13 +1165,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         function refreshTabFxAfterSwap(){
           const fx = ensureTabFx();
           fx.state.baseTitle = document.title || fx.state.baseTitle;
-
           const artist = document.getElementById("npArtist")?.textContent || "";
           const title  = document.getElementById("npTitle")?.textContent || "";
           fx.update(isLiveNow(), artist, title);
         }
 
-        // ✅ FIX: baseTitle is inside fx.state
         function resetTabOnNav(){
           const fx = ensureTabFx();
           fx.state.baseTitle = document.title || fx.state.baseTitle;
@@ -1114,6 +1322,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           B.last = bassEnergy;
 
+          // waveform overlay
           analyser.getByteTimeDomainData(timeData);
           vctx.beginPath();
           const n = timeData.length;
@@ -1171,53 +1380,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           requestAnimationFrame(tick);
         }
 
-        // ========= COVERS =========
-        function normKey(artist, title) {
-          return (artist + " - " + title)
-            .toLowerCase()
-            .replace(/\s+/g, " ")
-            .replace(/[“”"']/g, "")
-            .trim();
-        }
-
-        function loadCoverCache() {
-          try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); } catch { return {}; }
-        }
-
-        function saveCoverCache(cache) {
-          localStorage.setItem(COVERS_KEY, JSON.stringify(cache));
-        }
-
-        async function fetchCoverITunes(artist, title) {
-          const term = encodeURIComponent(`${artist} ${title}`);
-          const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) return "";
-          const data = await res.json();
-          const item = data?.results?.[0];
-          if (!item) return "";
-          return (item.artworkUrl100 || "").replace(/100x100bb.jpg$/, "600x600bb.jpg");
-        }
-
-        async function getCover(artist, title) {
-          if (!artist || !title) return "";
-          const key = normKey(artist, title);
-          const cache = loadCoverCache();
-          if (cache[key] !== undefined) return cache[key];
-
-          if (S.__coverInflight[key]) return "";
-          S.__coverInflight[key] = true;
-
-          try {
-            const art = await fetchCoverITunes(artist, title).catch(() => "");
-            cache[key] = art || "";
-            saveCoverCache(cache);
-            return cache[key];
-          } finally {
-            S.__coverInflight[key] = false;
-          }
-        }
-
+        // ========= COVERS (SERVER SOURCE) =========
         function setPlayerCover(url) {
           const img = $("playerCover");
           const fb = $("playerCoverFallback");
@@ -1268,10 +1431,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
             const data = await res.json().catch(()=> ({}));
             if (!data?.ok) return { now: null, history: [] };
-
-            const now = data?.now || null;
-            const history = Array.isArray(data?.history) ? data.history : [];
-            return { now, history };
+            return { now: data.now || null, history: Array.isArray(data.history) ? data.history : [] };
           }catch{
             return { now: null, history: [] };
           }
@@ -1293,18 +1453,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
             fmtApply();
 
-            if (artist && title) {
-              const key = normKey(artist, title);
-              const cache = loadCoverCache();
-              if (cache[key] !== undefined) setPlayerCover(cache[key] || "");
-              else {
-                setPlayerCover("");
-                const art = await getCover(artist, title);
-                setPlayerCover(art || "");
-              }
-            } else {
-              setPlayerCover("");
-            }
+            // ✅ cover from API (Directus assets)
+            const coverUrl = String(now?.cover_url || "").trim();
+            setPlayerCover(coverUrl);
 
             if (S.__fs?.active) syncFullscreenUI();
 
@@ -1319,7 +1470,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 title,
                 track_key: now?.track_key || "",
                 played_at: now?.played_at || "",
-                played_at_ms: played_at_ms_now
+                played_at_ms: played_at_ms_now,
+                cover_url: coverUrl
               },
               history: (history || []).map((row) => ({
                 raw: row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim(),
@@ -1327,7 +1479,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 title: row?.title || "",
                 track_key: row?.track_key || "",
                 played_at: row?.played_at || "",
-                played_at_ms: Number(row?.played_at_ms) || (row?.played_at ? new Date(row.played_at).getTime() : 0)
+                played_at_ms: Number(row?.played_at_ms) || (row?.played_at ? new Date(row.played_at).getTime() : 0),
+                cover_url: String(row?.cover_url || "").trim()
               }))
             };
 
@@ -1354,7 +1507,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         function setStream(index) {
           const safe = Math.max(0, Math.min(S.streams.length - 1, index));
           S.currentStreamIndex = safe;
-          localStorage.setItem(LS_KEY, String(safe));
+          try { localStorage.setItem(LS_KEY, String(safe)); } catch {}
           audio.src = S.streams[safe].url;
           audio.load();
         }
@@ -1389,7 +1542,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           setIcon(fsMuteIc, audio.muted ? "mute" : "volume");
 
           if (fsVol) fsVol.value = String(audio.volume);
-          if (fsSel) fsSel.value = String(S.currentStreamIndex ?? Number(localStorage.getItem(LS_KEY) || 0));
+          if (fsSel) {
+            let idx = 0;
+            try { idx = Number(localStorage.getItem(LS_KEY) || 0); } catch {}
+            fsSel.value = String(S.currentStreamIndex ?? idx);
+          }
 
           const pCover = $("playerCover");
           const pSrc = pCover?.getAttribute("src") || "";
@@ -1458,17 +1615,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (!playBtn || !stopBtn || !muteBtn || !vol || !selMob) return;
 
           if (!audio.src){
-            let idx = Number(localStorage.getItem(LS_KEY) || 0);
+            let idx = 0;
+            try { idx = Number(localStorage.getItem(LS_KEY) || 0); } catch {}
             setStream(idx);
           }
 
-          const savedVol = Number(localStorage.getItem("abf_volume") || "0.8");
+          const savedVol = (() => {
+            try { return Number(localStorage.getItem(VOL_KEY) || "0.8"); } catch { return 0.8; }
+          })();
           audio.volume = Math.max(0, Math.min(1, savedVol));
           vol.value = String(audio.volume);
           if (fsVol) fsVol.value = String(audio.volume);
 
           const syncSelectValues = () => {
-            const v = String(S.currentStreamIndex ?? Number(localStorage.getItem(LS_KEY) || 0));
+            let idx = 0;
+            try { idx = Number(localStorage.getItem(LS_KEY) || 0); } catch {}
+            const v = String(S.currentStreamIndex ?? idx);
             if (selDesk) selDesk.value = v;
             if (selMob) selMob.value = v;
             if (fsSel) fsSel.value = v;
@@ -1525,7 +1687,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           vol.oninput = (e) => {
             audio.volume = Number(e.target.value);
-            localStorage.setItem("abf_volume", String(audio.volume));
+            try { localStorage.setItem(VOL_KEY, String(audio.volume)); } catch {}
             if (fsVol) fsVol.value = String(audio.volume);
             syncUI();
           };
@@ -1555,7 +1717,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           if (fsVol) fsVol.oninput = (e) => {
             audio.volume = Number(e.target.value);
-            localStorage.setItem("abf_volume", String(audio.volume));
+            try { localStorage.setItem(VOL_KEY, String(audio.volume)); } catch {}
             syncUI();
             syncFullscreenUI();
           };
@@ -1578,8 +1740,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           syncUI();
         }
 
-        function bootOrRebind(){
-          ensureTabFx();
+        ensureTabFx();
+        bindUI();
+
+        const onAstroNav = () => {
+          S.__fs.active = false;
+          closeFullscreen();
+          resetTabOnNav();
+
           bindUI();
           fetchNowPlaying();
           window.__abfUpdateLayout?.();
@@ -1592,23 +1760,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           syncUI();
           fmtApply();
-        }
-
-        // init
-        bootOrRebind();
-
-        const onAstroNav = () => {
-          S.__fs.active = false;
-          closeFullscreen();
-
-          resetTabOnNav();
-
-          bootOrRebind();
         };
 
         document.addEventListener("astro:page-load", onAstroNav);
         document.addEventListener("astro:after-swap", onAstroNav);
-
         document.addEventListener("astro:page-load", refreshTabFxAfterSwap);
         document.addEventListener("astro:after-swap", refreshTabFxAfterSwap);
 
@@ -1623,6 +1778,36 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         window.addEventListener("resize", () => {
           if (!audio.paused) ensureVisualizerReady();
         });
+
+        // ========= PURGE OPTION (clears old local keys + consent) =========
+        function purgeClientStorage(){
+          try {
+            const keys = [
+              "abf_covers_v1",         // legacy
+              "abf_history",           // legacy
+              "abf_stream_index",
+              "abf_volume",
+              "abf_remind_next_show"   // home reminder
+            ];
+            for (const k of keys) localStorage.removeItem(k);
+          } catch {}
+
+          // remove consent cookie
+          try {
+            document.cookie = `${CONSENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+          } catch {}
+
+          // best-effort: stop GA if loaded (doesn't fully unload script, but stops new config)
+          try {
+            gtag('consent', 'update', { analytics_storage: 'denied', ad_storage: 'denied' });
+          } catch {}
+
+          // UI refresh
+          try { window.location.reload(); } catch {}
+        }
+
+        // expose for other scripts/buttons
+        window.__abfPurge = purgeClientStorage;
       })();
     </script>
 
@@ -1641,6 +1826,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           <a id="openLegal" href="/legal" class="abfFooterLinkBtn" aria-label="Open legal notices" title="Legal notices">
             Legal
           </a>
+
+          <button id="openCookies" type="button" class="abfFooterLinkBtn" aria-label="Cookie preferences" title="Cookies">
+            Cookies
+          </button>
+
+          <button id="purgeBtn" type="button" class="abfFooterLinkBtn" aria-label="Purge local data" title="Purge local data">
+            Purge
+          </button>
 
           <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
 
@@ -1677,19 +1870,28 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       </div>
     </footer>
 
-    <!-- ================= MODALS + BUILD DATA (STABLE) ================= -->
+    <!-- ================= MODALS + BUILD DATA + PURGE + COOKIE CONSENT ================= -->
     <script is:inline data-astro-rerun>
       (() => {
         const buildModal = document.getElementById("buildModal");
         const legalModal = document.getElementById("legalModal");
+        const cookiesModal = document.getElementById("cookiesModal");
+
         const openBuild = document.getElementById("openBuild");
         const openLegal = document.getElementById("openLegal");
+        const openCookies = document.getElementById("openCookies");
+        const purgeBtn = document.getElementById("purgeBtn");
+
         const buildClose = document.getElementById("buildClose");
         const legalClose = document.getElementById("legalClose");
+        const cookiesClose = document.getElementById("cookiesClose");
+
         const buildList = document.getElementById("buildList");
         const buildVersion = document.getElementById("buildVersion");
-        if (!buildModal || !legalModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
 
+        if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
+
+        // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
           {
             v: "3.2.0",
@@ -1769,19 +1971,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           </div>
         `).join("");
 
-        const lockScroll = (on) => {
-          document.documentElement.style.overflow = on ? "hidden" : "";
-        };
-
-        const open = (modal) => {
-          modal.setAttribute("aria-hidden","false");
-          lockScroll(true);
-        };
-
-        const close = (modal) => {
-          modal.setAttribute("aria-hidden","true");
-          lockScroll(false);
-        };
+        const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
+        const open = (modal) => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
+        const close = (modal) => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
         openBuild.onclick = () => open(buildModal);
 
@@ -1792,22 +1984,207 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           });
         }
 
+        if (openCookies){
+          openCookies.addEventListener("click", (e) => {
+            e.preventDefault();
+            open(cookiesModal);
+          });
+        }
+
+        if (purgeBtn){
+          purgeBtn.onclick = () => {
+            if (confirm("Purge local data on this device? (volume, stream quality, reminders, consent)")) {
+              window.__abfPurge?.();
+            }
+          };
+        }
+
         buildClose.onclick = () => close(buildModal);
         if (legalClose) legalClose.onclick = () => close(legalModal);
+        if (cookiesClose) cookiesClose.onclick = () => close(cookiesModal);
 
         document.addEventListener("click", (e) => {
           const t = e.target;
           if (t?.dataset?.close === "build") close(buildModal);
           if (t?.dataset?.close === "legal") close(legalModal);
+          if (t?.dataset?.close === "cookies") close(cookiesModal);
         });
 
         document.addEventListener("keydown", (e) => {
           if (e.key !== "Escape") return;
           if (buildModal.getAttribute("aria-hidden") === "false") close(buildModal);
           if (legalModal.getAttribute("aria-hidden") === "false") close(legalModal);
+          if (cookiesModal.getAttribute("aria-hidden") === "false") close(cookiesModal);
+        });
+      })();
+    </script>
+
+    <!-- ================= COOKIE CONSENT LOGIC (GA4) ================= -->
+    <script is:inline data-astro-rerun>
+      (() => {
+        const GA_ID = "G-8KQY09E05H";
+        const CONSENT_COOKIE = "abf_consent_v1"; // "a1" or "a0"
+
+        const bar = document.getElementById("cookieBar");
+        const btnAccept = document.getElementById("cookieAccept");
+        const btnDecline = document.getElementById("cookieDecline");
+        const btnManage = document.getElementById("cookieManage");
+
+        const cookiesModal = document.getElementById("cookiesModal");
+        const cookiesAccept = document.getElementById("cookiesAccept");
+        const cookiesDecline = document.getElementById("cookiesDecline");
+        const cookiesSave = document.getElementById("cookiesSave");
+        const analyticsToggle = document.getElementById("analyticsToggle");
+
+        function getCookie(name){
+          const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
+          return m ? decodeURIComponent(m[1]) : "";
+        }
+
+        function setCookie(name, value, days){
+          const maxAge = Math.floor((days || 180) * 24 * 60 * 60);
+          document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+        }
+
+        function showBar(){
+          if (!bar) return;
+          bar.classList.remove("hidden");
+          bar.setAttribute("aria-hidden", "false");
+        }
+
+        function hideBar(){
+          if (!bar) return;
+          bar.classList.add("hidden");
+          bar.setAttribute("aria-hidden", "true");
+        }
+
+        function setToggle(on){
+          if (!analyticsToggle) return;
+          analyticsToggle.setAttribute("data-on", on ? "true" : "false");
+        }
+
+        function readConsent(){
+          const v = getCookie(CONSENT_COOKIE);
+          if (v === "a1") return true;
+          if (v === "a0") return false;
+          return null;
+        }
+
+        function ensureGaLoaded(){
+          if (window.__abfGaLoaded) return;
+          window.__abfGaLoaded = true;
+
+          const s = document.createElement("script");
+          s.async = true;
+          s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
+          document.head.appendChild(s);
+
+          // init when loaded
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){ dataLayer.push(arguments); }
+          window.gtag = window.gtag || gtag;
+
+          gtag('js', new Date());
+          gtag('config', GA_ID, {
+            send_page_view: true,
+            anonymize_ip: true
+          });
+        }
+
+        function applyConsent(analyticsOn){
+          try {
+            gtag('consent', 'update', {
+              ad_storage: 'denied',
+              analytics_storage: analyticsOn ? 'granted' : 'denied',
+              functionality_storage: 'granted',
+              security_storage: 'granted'
+            });
+          } catch {}
+
+          if (analyticsOn) ensureGaLoaded();
+        }
+
+        function saveConsent(analyticsOn){
+          setCookie(CONSENT_COOKIE, analyticsOn ? "a1" : "a0", 180);
+          applyConsent(analyticsOn);
+          hideBar();
+        }
+
+        // initial
+        const initial = readConsent();
+        if (initial === null){
+          showBar();
+          setToggle(false);
+          applyConsent(false); // default denied
+        } else {
+          setToggle(!!initial);
+          applyConsent(!!initial);
+          hideBar();
+        }
+
+        // banner buttons
+        if (btnAccept) btnAccept.onclick = () => saveConsent(true);
+        if (btnDecline) btnDecline.onclick = () => saveConsent(false);
+        if (btnManage && cookiesModal){
+          btnManage.onclick = () => {
+            setToggle(readConsent() === true);
+            cookiesModal.setAttribute("aria-hidden", "false");
+            document.documentElement.style.overflow = "hidden";
+          };
+        }
+
+        // modal logic (toggle + save)
+        if (analyticsToggle){
+          analyticsToggle.onclick = () => {
+            const on = analyticsToggle.getAttribute("data-on") === "true";
+            setToggle(!on);
+          };
+        }
+
+        if (cookiesAccept) cookiesAccept.onclick = () => {
+          setToggle(true);
+          saveConsent(true);
+          // close modal if open
+          if (cookiesModal){
+            cookiesModal.setAttribute("aria-hidden","true");
+            document.documentElement.style.overflow = "";
+          }
+        };
+
+        if (cookiesDecline) cookiesDecline.onclick = () => {
+          setToggle(false);
+          saveConsent(false);
+          if (cookiesModal){
+            cookiesModal.setAttribute("aria-hidden","true");
+            document.documentElement.style.overflow = "";
+          }
+        };
+
+        if (cookiesSave) cookiesSave.onclick = () => {
+          const on = analyticsToggle?.getAttribute("data-on") === "true";
+          saveConsent(!!on);
+          if (cookiesModal){
+            cookiesModal.setAttribute("aria-hidden","true");
+            document.documentElement.style.overflow = "";
+          }
+        };
+
+        // When user clicks footer “Cookies”, modal is opened by other script;
+        // keep toggle in sync:
+        document.addEventListener("click", (e) => {
+          const t = e.target;
+          if (!t) return;
+          if (t.id === "openCookies"){
+            setToggle(readConsent() === true);
+          }
         });
 
-        window.__abfBuildVersion = latest;
+        // allow purge to re-show banner
+        window.__abfConsentReset = () => {
+          try { document.cookie = `${CONSENT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`; } catch {}
+          applyConsent(false);
+          showBar();
+        };
       })();
     </script>
 

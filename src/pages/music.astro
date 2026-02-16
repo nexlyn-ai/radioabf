@@ -129,16 +129,14 @@ import Base from "../layouts/Base.astro";
     .tabular-nums { font-variant-numeric: tabular-nums; }
   </style>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
   (() => {
-    // ✅ Prevent double-boot on Astro view transitions / re-entry
-    if (window.__abfMusicBooted) return;
-    window.__abfMusicBooted = true;
-
-    const HISTORY_KEY = "abf_history";
-    // Legacy local covers fallback ONLY (read-only, no writes)
-    const LEGACY_COVERS_KEY = "abf_covers_v1";
+    const HISTORY_KEY = "abf_history"; // legacy fallback (lecture seule)
     const DAY = 24 * 60 * 60 * 1000;
+
+    function isMusicRoute(){
+      return window.location.pathname === "/music";
+    }
 
     // ====== WEEK ID ======
     function getISOWeekId(d = new Date()){
@@ -168,7 +166,7 @@ import Base from "../layouts/Base.astro";
       alert("Voting is disabled for ABF CLUB shows. Please vote for tracks only 🙂");
     }
 
-    // NORM key for caches/session
+    // NORM key for session
     function normKey(artist, title){
       return (artist + " - " + title)
         .toLowerCase()
@@ -177,7 +175,7 @@ import Base from "../layouts/Base.astro";
         .trim();
     }
 
-    // RAW key for server (keeps original casing)
+    // RAW key for server
     function rawKey(artist, title){
       const a = String(artist || "").trim();
       const t = String(title || "").trim();
@@ -230,7 +228,7 @@ import Base from "../layouts/Base.astro";
       }).join("");
     }
 
-    // ===== History fallback (local) =====
+    // ===== History fallback (local) — lecture seule =====
     function loadHistory(){
       let raw = [];
       try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
@@ -244,12 +242,6 @@ import Base from "../layouts/Base.astro";
       }).filter(Boolean);
     }
 
-    // ===== Legacy local cover cache fallback (read-only) =====
-    function loadLegacyCoverCache(){
-      try { return JSON.parse(localStorage.getItem(LEGACY_COVERS_KEY) || "{}"); }
-      catch { return {}; }
-    }
-
     // ===== Server nowplaying (expects cover_url in now + history) =====
     async function fetchServerNowPlaying(limit = 12){
       try{
@@ -260,22 +252,28 @@ import Base from "../layouts/Base.astro";
         const out = [];
 
         // now
-        if (data?.now?.raw){
-          out.push({
-            t: String(data.now.raw),
-            ts: Number(data?.now?.played_at_ms) ||
-                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
-            cover_url: String(data?.now?.cover_url || "")
-          });
+        if (data?.now){
+          const rawNow = String(data?.now?.raw || "").trim();
+          const a = String(data?.now?.artist || "").trim();
+          const t = String(data?.now?.title || "").trim();
+          const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
+          if (raw){
+            out.push({
+              t: raw,
+              ts: Number(data?.now?.played_at_ms) ||
+                  (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+              cover_url: String(data?.now?.cover_url || "")
+            });
+          }
         }
 
         // history
         if (Array.isArray(data?.history)){
           for (const row of data.history){
-            const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
+            const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
             if (!raw) continue;
             out.push({
-              t: String(raw),
+              t: raw,
               ts: Number(row?.played_at_ms) ||
                   (row?.played_at ? new Date(row.played_at).getTime() : 0),
               cover_url: String(row?.cover_url || "")
@@ -283,7 +281,7 @@ import Base from "../layouts/Base.astro";
           }
         }
 
-        // dedupe now + first history duplicates
+        // dedupe
         const seen = new Set();
         const deduped = [];
         for (const item of out){
@@ -302,10 +300,12 @@ import Base from "../layouts/Base.astro";
     function setCover(url){
       const img = document.getElementById("musicCover");
       if (!img) return;
-      if (url){
-        img.src = url;
+      const u = String(url || "").trim();
+      if (u){
+        img.src = u;
         img.classList.remove("hidden");
       } else {
+        img.removeAttribute("src");
         img.classList.add("hidden");
       }
     }
@@ -355,7 +355,7 @@ import Base from "../layouts/Base.astro";
       }
     }
 
-    // Session UX anti-spam (24h per device session) — uses NORM key
+    // Session UX anti-spam (24h) — uses NORM key
     function markSessionVoted(norm){
       window.__abfVotedSession = window.__abfVotedSession || {};
       window.__abfVotedSession[norm] = nowTs();
@@ -423,6 +423,8 @@ import Base from "../layouts/Base.astro";
     }
 
     async function renderHistory(){
+      if (!isMusicRoute()) return;
+
       const artistEl = document.getElementById("musicArtist");
       const titleEl = document.getElementById("musicTitle");
       const timeEl = document.getElementById("musicTime");
@@ -449,9 +451,7 @@ import Base from "../layouts/Base.astro";
         return;
       }
 
-      const legacy = loadLegacyCoverCache();
-
-      // Build cover map from server payload
+      // Build cover map from server payload only (✅ no abf_covers_v1)
       const coverByNorm = {};
       for (const entry of history){
         const t = splitTrack(entry.t);
@@ -462,7 +462,7 @@ import Base from "../layouts/Base.astro";
 
       function getCoverUrl(artist, title){
         const n = normKey(artist, title);
-        return coverByNorm[n] || legacy[n] || "";
+        return coverByNorm[n] || "";
       }
 
       const votes = await apiGetVotes();
@@ -585,7 +585,7 @@ import Base from "../layouts/Base.astro";
         })
         .join("");
 
-      // TOP THIS WEEK (covers from server map if exists, else legacy)
+      // TOP THIS WEEK (covers from server map only)
       const deduped = dedupeTopEntries(votes)
         .filter((x) => Number(x.count) > 0)
         .sort((a,b) => Number(b.count) - Number(a.count))
@@ -612,7 +612,7 @@ import Base from "../layouts/Base.astro";
             "bg-white/5 border-white/10";
 
           const n = normKey(artistRaw, titleRaw);
-          const coverUrl = coverByNorm[n] || legacy[n] || "";
+          const coverUrl = coverByNorm[n] || "";
 
           return `
             <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
@@ -700,6 +700,7 @@ import Base from "../layouts/Base.astro";
     }
 
     function initMusicPage(){
+      if (!isMusicRoute()) return;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           renderHistory();
@@ -709,19 +710,23 @@ import Base from "../layouts/Base.astro";
     }
 
     initMusicPage();
-    document.addEventListener("astro:page-load", initMusicPage);
-    document.addEventListener("astro:after-swap", initMusicPage);
 
+    // bind listeners once globally
     if (!window.__abfMusicListeners){
-      window.addEventListener("abf:history-updated", renderHistory);
-      // keep if something dispatches it elsewhere; covers are server-side now
-      window.addEventListener("abf:cover-cache-updated", renderHistory);
+      document.addEventListener("astro:page-load", initMusicPage);
+      document.addEventListener("astro:after-swap", initMusicPage);
+
+      window.addEventListener("abf:history-updated", () => {
+        if (!isMusicRoute()) return;
+        renderHistory();
+      });
+
+      document.addEventListener("astro:before-swap", () => {
+        if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
+      });
+
       window.__abfMusicListeners = true;
     }
-
-    document.addEventListener("astro:before-swap", () => {
-      if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
-    });
   })();
   </script>
 </Base>

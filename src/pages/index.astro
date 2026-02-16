@@ -77,8 +77,8 @@ const fmtDate = (iso?: string | null) => {
 
             <!-- Text -->
             <div class="min-w-0">
-              <div id="homeArtist" class="text-2xl md:text-4xl font-extrabold leading-tight truncate">—</div>
-              <div id="homeTitle" class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
+              <div id="homeArtist" data-abf-artist class="text-2xl md:text-4xl font-extrabold leading-tight truncate">—</div>
+              <div id="homeTitle" data-abf-title class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
 
               <div class="mt-4 flex gap-3 flex-wrap md:flex-nowrap">
                 <button
@@ -143,8 +143,8 @@ const fmtDate = (iso?: string | null) => {
 
                 <div class="min-w-0 flex-1">
                   <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
-                  <div id="heroTop1Artist" class="font-semibold text-sm truncate">—</div>
-                  <div id="heroTop1Title" class="text-xs text-white/70 truncate">—</div>
+                  <div id="heroTop1Artist" data-abf-artist class="font-semibold text-sm truncate">—</div>
+                  <div id="heroTop1Title" data-abf-title class="text-xs text-white/70 truncate">—</div>
                 </div>
               </div>
             </div>
@@ -471,14 +471,11 @@ const fmtDate = (iso?: string | null) => {
   </div>
 
   <!-- SCRIPT -->
-  <script is:inline>
+  <script is:inline data-astro-rerun>
 (() => {
-  // ✅ Prevent double-boot on Astro view transitions / re-entry
-  if (window.__abfHomeBooted) return;
-  window.__abfHomeBooted = true;
-
+  // ✅ on autorise le re-render sur astro swaps, mais on évite de re-binder les listeners globaux
   const PROGRAMS_DIR = "/images/programs/";
-  const HISTORY_KEY = "abf_history";
+  const HISTORY_KEY = "abf_history"; // fallback legacy (lecture seulement)
 
   // -------------------------
   // WEEK ID (same as music)
@@ -519,59 +516,6 @@ const fmtDate = (iso?: string | null) => {
       .replace(/'/g,"&#039;");
   }
 
-  function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
-
-  function titleCaseEN(input){
-    const s = String(input || "").trim();
-    if (!s) return "—";
-    const lowerWords = new Set([
-      "a","an","the","and","but","or","nor","for","so","yet",
-      "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
-    ]);
-    const parts = s.split(/(\s+)/);
-    return parts.map((chunk, idx) => {
-      if (/^\s+$/.test(chunk)) return chunk;
-      const word = chunk;
-      if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
-      const hyParts = word.split("-");
-      const rebuilt = hyParts.map((w, hIdx) => {
-        const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
-        const lower = cleaned.toLowerCase();
-        const isFirst = idx === 0 && hIdx === 0;
-        const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
-        if (!cleaned) return w;
-        if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
-        const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
-        return w.replace(cleaned, cap);
-      });
-      return rebuilt.join("-");
-    }).join("");
-  }
-
-  function setCover(url){
-    const img = document.getElementById("homeCover");
-    if (!img) return;
-    const u = String(url || "").trim();
-    if (u){
-      img.src = u;
-      img.classList.remove("hidden");
-    } else {
-      img.classList.add("hidden");
-    }
-  }
-
-  function setHeroTop1Cover(url){
-    const img = document.getElementById("heroTop1Cover");
-    if (!img) return;
-    const u = String(url || "").trim();
-    if (u){
-      img.src = u;
-      img.classList.remove("hidden");
-    } else {
-      img.classList.add("hidden");
-    }
-  }
-
   // Cover HTML helper (server url only)
   function coverHtmlByUrl(url, sizeClass = "w-14 h-14 rounded-2xl") {
     const u = String(url || "").trim();
@@ -585,8 +529,34 @@ const fmtDate = (iso?: string | null) => {
     `;
   }
 
+  function setCover(url){
+    const img = document.getElementById("homeCover");
+    if (!img) return;
+    const u = String(url || "").trim();
+    if (u){
+      img.src = u;
+      img.classList.remove("hidden");
+    } else {
+      img.removeAttribute("src");
+      img.classList.add("hidden");
+    }
+  }
+
+  function setHeroTop1Cover(url){
+    const img = document.getElementById("heroTop1Cover");
+    if (!img) return;
+    const u = String(url || "").trim();
+    if (u){
+      img.src = u;
+      img.classList.remove("hidden");
+    } else {
+      img.removeAttribute("src");
+      img.classList.add("hidden");
+    }
+  }
+
   // -------------------------
-  // History fallback (local, read-only)
+  // History fallback (legacy, read-only)
   // -------------------------
   function loadHistoryLocal(){
     let raw = [];
@@ -602,7 +572,7 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // ✅ Server nowplaying (same as /music, expects cover_url)
+  // ✅ Server nowplaying (expects cover_url)
   // -------------------------
   async function fetchServerNowPlaying(limit = 12){
     try{
@@ -612,23 +582,27 @@ const fmtDate = (iso?: string | null) => {
 
       const out = [];
 
-      // now
-      if (data?.now?.raw){
-        out.push({
-          t: String(data.now.raw),
-          ts: Number(data?.now?.played_at_ms) ||
-              (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
-          cover_url: String(data?.now?.cover_url || "")
-        });
+      if (data?.now){
+        const rawNow = String(data?.now?.raw || "").trim();
+        const a = String(data?.now?.artist || "").trim();
+        const t = String(data?.now?.title || "").trim();
+        const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
+        if (raw){
+          out.push({
+            t: raw,
+            ts: Number(data?.now?.played_at_ms) ||
+                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+            cover_url: String(data?.now?.cover_url || "")
+          });
+        }
       }
 
-      // history
       if (Array.isArray(data?.history)){
         for (const row of data.history){
-          const raw = row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim();
+          const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
           if (!raw) continue;
           out.push({
-            t: String(raw),
+            t: raw,
             ts: Number(row?.played_at_ms) ||
                 (row?.played_at ? new Date(row.played_at).getTime() : 0),
             cover_url: String(row?.cover_url || "")
@@ -653,7 +627,7 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // Votes (same as your home)
+  // Votes
   // -------------------------
   async function apiGetTopWeek(week){
     const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
@@ -662,7 +636,9 @@ const fmtDate = (iso?: string | null) => {
     return { week: j?.week || week, top: Array.isArray(j?.top) ? j.top : [] };
   }
 
-  let __homeVotesCache = { week: "", ts: 0, top: [] };
+  let __homeVotesCache = window.__abfHomeVotesCache || { week: "", ts: 0, top: [] };
+  window.__abfHomeVotesCache = __homeVotesCache;
+
   async function getTopWeekCached(week){
     const now = Date.now();
     if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 8000) {
@@ -670,11 +646,12 @@ const fmtDate = (iso?: string | null) => {
     }
     const data = await apiGetTopWeek(week);
     __homeVotesCache = { week, ts: now, top: data.top || [] };
+    window.__abfHomeVotesCache = __homeVotesCache;
     return __homeVotesCache.top || [];
   }
 
   // -------------------------
-  // ✅ NOW PLAYING + LAST PLAYED (server cover_url, no local cover cache)
+  // ✅ NOW PLAYING + LAST PLAYED (server cover_url, no cover cache)
   // -------------------------
   async function renderNowPlayingAndLast(){
     const artistEl = document.getElementById("homeArtist");
@@ -690,10 +667,11 @@ const fmtDate = (iso?: string | null) => {
       titleEl.textContent = "—";
       setCover("");
       host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
+      window.__abfHomeCoverByNorm = {};
       return;
     }
 
-    // Build cover map from server payload (so Top can reuse)
+    // Build cover map from server payload (Top can reuse)
     const coverByNorm = {};
     for (const entry of history){
       const t = splitTrack(entry.t);
@@ -701,8 +679,6 @@ const fmtDate = (iso?: string | null) => {
       const u = String(entry.cover_url || "").trim();
       if (n && u) coverByNorm[n] = u;
     }
-
-    // store on window for other renders
     window.__abfHomeCoverByNorm = coverByNorm;
 
     // NOW
@@ -711,8 +687,9 @@ const fmtDate = (iso?: string | null) => {
     const artist = String(current.artist || "").trim();
     const title  = String(current.title || "").trim();
 
-    artistEl.textContent = upperArtist(artist || "—");
-    titleEl.textContent  = titleCaseEN(title || "—");
+    // on laisse Base faire le formatage global via data-abf-*
+    artistEl.textContent = artist || "—";
+    titleEl.textContent  = title || "—";
 
     setCover(String(currentEntry.cover_url || "").trim() || coverByNorm[normKey(artist, title)] || "");
 
@@ -736,16 +713,19 @@ const fmtDate = (iso?: string | null) => {
                   transition p-4 flex items-center gap-4">
           ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
           <div class="min-w-0">
-            <div class="font-semibold text-white truncate">${esc(upperArtist(a || "—"))}</div>
-            <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(ti || "—"))}</div>
+            <div class="font-semibold text-white truncate" data-abf-artist>${esc(a || "—")}</div>
+            <div class="text-white/60 text-sm truncate" data-abf-title>${esc(ti || "—")}</div>
           </div>
         </a>
       `;
     }).join("");
+
+    // applique le formatter global après injection HTML
+    try { window.ABF_FMT?.apply(document); } catch {}
   }
 
   // -------------------------
-  // ✅ HERO #1 (uses coverByNorm from history; no local storage)
+  // ✅ HERO #1 (uses coverByNorm from history; no local cover cache)
   // -------------------------
   async function renderHeroTop1(){
     const box = document.getElementById("heroTop1");
@@ -765,13 +745,11 @@ const fmtDate = (iso?: string | null) => {
       return;
     }
 
-    const tk = String(first.track_key || "");
-    const parts = tk.split(" - ");
-    const artistRaw = String(first.artist || "").trim() || (parts[0] || "—").trim();
-    const titleRaw = String(first.title || "").trim() || (parts.slice(1).join(" - ") || "—").trim();
+    const artistRaw = String(first.artist || "").trim() || "—";
+    const titleRaw = String(first.title || "").trim() || "—";
 
-    aEl.textContent = upperArtist(artistRaw);
-    tEl.textContent = titleCaseEN(titleRaw);
+    aEl.textContent = artistRaw;
+    tEl.textContent = titleRaw;
 
     const coverByNorm = window.__abfHomeCoverByNorm || {};
     const url = coverByNorm[normKey(artistRaw, titleRaw)] || "";
@@ -779,10 +757,12 @@ const fmtDate = (iso?: string | null) => {
 
     empty.classList.add("hidden");
     box.classList.remove("hidden");
+
+    try { window.ABF_FMT?.apply(document); } catch {}
   }
 
   // -------------------------
-  // ✅ TOP 8 GRID (uses coverByNorm from history; no local storage)
+  // ✅ TOP 8 GRID (uses coverByNorm from history; no local cover cache)
   // -------------------------
   async function renderTop(){
     const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
@@ -792,7 +772,6 @@ const fmtDate = (iso?: string | null) => {
     const week = getISOWeekId();
     const top = await getTopWeekCached(week);
 
-    // cover map from history
     const coverByNorm = window.__abfHomeCoverByNorm || {};
 
     if (!top.length){
@@ -807,8 +786,7 @@ const fmtDate = (iso?: string | null) => {
         if (aEl) aEl.textContent = "—";
         if (tEl) tEl.textContent = "Vote on /music to build this chart";
         if (cEl) cEl.textContent = "";
-        if (img) img.classList.add("hidden");
-        card.classList.remove("bg-white/7");
+        if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
       });
       return;
     }
@@ -828,15 +806,12 @@ const fmtDate = (iso?: string | null) => {
         if (aEl) aEl.textContent = "—";
         if (tEl) tEl.textContent = "—";
         if (cEl) cEl.textContent = "";
-        if (img) img.classList.add("hidden");
-        card.classList.remove("bg-white/7");
+        if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
         return;
       }
 
-      const tk = String(row.track_key || "");
-      const parts = tk.split(" - ");
-      const artistRaw = String(row.artist || "").trim() || (parts[0] || "—").trim();
-      const titleRaw = String(row.title || "").trim() || (parts.slice(1).join(" - ") || "—").trim();
+      const artistRaw = String(row.artist || "").trim() || "—";
+      const titleRaw = String(row.title || "").trim() || "—";
       const count = Number(row.count) || 0;
 
       const coverUrl = coverByNorm[normKey(artistRaw, titleRaw)] || "";
@@ -846,21 +821,21 @@ const fmtDate = (iso?: string | null) => {
           img.src = coverUrl;
           img.classList.remove("hidden");
         } else {
+          img.removeAttribute("src");
           img.classList.add("hidden");
         }
       }
 
-      if (aEl) aEl.textContent = upperArtist(artistRaw);
-      if (tEl) tEl.textContent = titleCaseEN(titleRaw);
+      if (aEl){ aEl.textContent = artistRaw; aEl.setAttribute("data-abf-artist",""); }
+      if (tEl){ tEl.textContent = titleRaw; tEl.setAttribute("data-abf-title",""); }
       if (cEl) cEl.textContent = `${count}`;
-
-      if (i === 0) card.classList.add("bg-white/7");
-      else card.classList.remove("bg-white/7");
     });
+
+    try { window.ABF_FMT?.apply(document); } catch {}
   }
 
   // -------------------------
-  // ON AIR (ton code existant – inchangé)
+  // ON AIR (inchangé)
   // -------------------------
   const SCHEDULE = {
     mon: [
@@ -1196,7 +1171,7 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // Modals (ton code existant – inchangé)
+  // Modals (inchangé)
   // -------------------------
   function bindFlacModal(){
     const modal = document.getElementById("flacModal");
@@ -1209,19 +1184,24 @@ const fmtDate = (iso?: string | null) => {
     const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
     const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
-    openBtn.addEventListener("click", open);
-    if (openBtn2) openBtn2.addEventListener("click", open);
-    closeBtn.addEventListener("click", close);
+    // évite double-bind
+    if (!window.__abfHomeBindFlac){
+      openBtn.addEventListener("click", open);
+      if (openBtn2) openBtn2.addEventListener("click", open);
+      closeBtn.addEventListener("click", close);
 
-    document.addEventListener("click", (e) => {
-      const t = e.target;
-      if (t?.dataset?.close === "flac") close();
-    });
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t?.dataset?.close === "flac") close();
+      });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      if (modal.getAttribute("aria-hidden") === "false") close();
-    });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (modal.getAttribute("aria-hidden") === "false") close();
+      });
+
+      window.__abfHomeBindFlac = true;
+    }
   }
 
   function bindStreamQualityModal(){
@@ -1234,18 +1214,22 @@ const fmtDate = (iso?: string | null) => {
     const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
     const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
-    openBtn.addEventListener("click", open);
-    closeBtn.addEventListener("click", close);
+    if (!window.__abfHomeBindQual){
+      openBtn.addEventListener("click", open);
+      closeBtn.addEventListener("click", close);
 
-    document.addEventListener("click", (e) => {
-      const t = e.target;
-      if (t?.dataset?.close === "streamquality") close();
-    });
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t?.dataset?.close === "streamquality") close();
+      });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      if (modal.getAttribute("aria-hidden") === "false") close();
-    });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (modal.getAttribute("aria-hidden") === "false") close();
+      });
+
+      window.__abfHomeBindQual = true;
+    }
   }
 
   // -------------------------
@@ -1256,21 +1240,21 @@ const fmtDate = (iso?: string | null) => {
     bindFlacModal();
     bindStreamQualityModal();
 
-    // IMPORTANT: ensure covers map exists before top renders
-    await renderNowPlayingAndLast();
+    await renderNowPlayingAndLast(); // crée coverByNorm
     renderOnAirTonight();
-
     await renderTop();
     await renderHeroTop1();
 
     const jump = document.getElementById("jumpToPlayer");
-    if (jump){
+    if (jump && !jump.dataset.bound){
+      jump.dataset.bound = "1";
       jump.onclick = () => {
+        // scroll vers le bas (le player est pinned)
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
       };
     }
 
-    // timers (same rhythm as before)
+    // timers (nettoyage avant de re-créer)
     if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
     window.__abfHomeTimer = setInterval(async () => {
       await renderNowPlayingAndLast();
@@ -1285,27 +1269,26 @@ const fmtDate = (iso?: string | null) => {
   }
 
   function initHomePage(){
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        initHome();
-      });
-    });
+    // home only
+    if (window.location.pathname !== "/") return;
+    requestAnimationFrame(() => requestAnimationFrame(initHome));
   }
 
   initHomePage();
-  document.addEventListener("astro:page-load", initHomePage);
-  document.addEventListener("astro:after-swap", initHomePage);
 
+  // bind listeners once
   if (!window.__abfHomeListeners){
+    document.addEventListener("astro:page-load", initHomePage);
+    document.addEventListener("astro:after-swap", initHomePage);
+    document.addEventListener("astro:before-swap", () => {
+      if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
+    });
+
+    // rafraîchir dès que le player met à jour l'historique (server-side now)
     window.addEventListener("abf:history-updated", initHomePage);
-    // keep if something dispatches it elsewhere; covers are server-side now
-    window.addEventListener("abf:cover-cache-updated", initHomePage);
+
     window.__abfHomeListeners = true;
   }
-
-  document.addEventListener("astro:before-swap", () => {
-    if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
-  });
 })();
 </script>
 
