@@ -11,7 +11,7 @@ import artists from "../../data/artists.json";
   <!-- HERO -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
     <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[, h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
     <div class="relative z-10">
       <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
@@ -26,87 +26,90 @@ import artists from "../../data/artists.json";
     </div>
   </section>
 
-  <!-- Filters -->
-  <section class="mb-6">
-    <div class="flex flex-wrap gap-2">
-      <button class="abfFilterBtn active" data-filter="all" type="button">All</button>
-      <button class="abfFilterBtn" data-filter="resident" type="button">Resident</button>
-      <button class="abfFilterBtn" data-filter="guest" type="button">Guest</button>
-      <button class="abfFilterBtn" data-filter="team" type="button">Team</button>
-    </div>
-  </section>
-
-  <!-- Grande carte contenant toutes les cartes artistes -->
+  <!-- Grande carte contenant filtres + grille -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
     <!-- Glows -->
     <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
     <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-    <div id="artistsGrid" class="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {
-        artists.map((a) => (
-          <a
-            href={`/artists/${a.slug}`}
-            class="group relative rounded-3xl border border-white/15
-                   bg-gradient-to-br
-                   from-white/[0.14] via-white/[0.09] to-white/[0.05]
-                   backdrop-blur-xl
-                   hover:from-white/[0.20] hover:via-white/[0.12] hover:to-white/[0.07]
-                   transition-all duration-300
-                   p-5 flex gap-4 items-center
-                   overflow-hidden
-                   shadow-xl shadow-black/40"
-            data-cats={(a.categories || []).join(",")}
-          >
-            <!-- Cyan tech glow -->
-            <div class="  class="pointer-events-none absolute inset-0 rounded-3xl
-                        bg-gradient-to-tr
-                        from-cyan-400/15 via-transparent to-blue-400/15
-                        opacity-60 group-hover:opacity-100
-                        transition duration-500">
-            </div>
-            <!-- Portrait -->
-            <div class="relative w-20 h-20 rounded-2xl
-                        border border-white/20
-                        bg-gradient-to-br from-[#1F7DB8] to-[#2FC2FF]
-                        overflow-hidden flex-none
-                        shadow-lg shadow-cyan-500/30
-                        group-hover:scale-105 transition duration-300">
-              {a.portrait ? (
-                <img
-                  src={a.portrait}
-                  alt={a.name}
-                  class="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : null}
-            </div>
-            <!-- Info -->
-            <div class="min-w-0 flex-1 relative z-10">
-              <div class="font-semibold text-white truncate
-                          group-hover:text-cyan-200
-                          transition duration-200 text-lg">
-                {a.name}
+    <div class="relative z-10">
+      <!-- Filtres (maintenant à l'intérieur de la grande carte) -->
+      <div class="mb-8">
+        <div class="flex flex-wrap gap-2">
+          <button class="abfFilterBtn active" data-filter="all" type="button">All</button>
+          <button class="abfFilterBtn" data-filter="resident" type="button">Resident</button>
+          <button class="abfFilterBtn" data-filter="guest" type="button">Guest</button>
+          <button class="abfFilterBtn" data-filter="team" type="button">Team</button>
+        </div>
+      </div>
+
+      <!-- Grille des artistes -->
+      <div id="artistsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {
+          artists.map((a) => (
+            <a
+              href={`/artists/${a.slug}`}
+              class="group relative rounded-3xl border border-white/15
+                     bg-gradient-to-br
+                     from-white/[0.14] via-white/[0.09] to-white/[0.05]
+                     backdrop-blur-xl
+                     hover:from-white/[0.20] hover:via-white/[0.12] hover:to-white/[0.07]
+                     transition-all duration-300
+                     p-5 flex gap-4 items-center
+                     overflow-hidden
+                     shadow-xl shadow-black/40"
+              data-cats={(a.categories || []).join(",")}
+            >
+              <!-- Cyan tech glow -->
+              <div class="pointer-events-none absolute inset-0 rounded-3xl
+                          bg-gradient-to-tr
+                          from-cyan-400/15 via-transparent to-blue-400/15
+                          opacity-60 group-hover:opacity-100
+                          transition duration-500">
               </div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                {(a.categories || []).map((c) => (
-                  <span class="px-2.5 py-1 rounded-xl text-[10px]
-                               border border-white/15
-                               bg-white/10 text-white/80
-                               uppercase tracking-wider backdrop-blur-md">
-                    {c}
-                  </span>
-                ))}
+              <!-- Portrait -->
+              <div class="relative w-20 h-20 rounded-2xl
+                          border border-white/20
+                          bg-gradient-to-br from-[#1F7DB8] to-[#2FC2FF]
+                          overflow-hidden flex-none
+                          shadow-lg shadow-cyan-500/30
+                          group-hover:scale-105 transition duration-300">
+                {a.portrait ? (
+                  <img
+                    src={a.portrait}
+                    alt={a.name}
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : null}
               </div>
-            </div>
-            <!-- Arrow -->
-            <div class="relative z-10 text-white/50 group-hover:text-white transition text-xl">
-              →
-            </div>
-          </a>
-        ))
-      }
+              <!-- Info -->
+              <div class="min-w-0 flex-1 relative z-10">
+                <div class="font-semibold text-white truncate
+                            group-hover:text-cyan-200
+                            transition duration-200 text-lg">
+                  {a.name}
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  {(a.categories || []).map((c) => (
+                    <span class="px-2.5 py-1 rounded-xl text-[10px]
+                                 border border-white/15
+                                 bg-white/10 text-white/80
+                                 uppercase tracking-wider backdrop-blur-md">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <!-- Arrow -->
+              <div class="relative z-10 text-white/50 group-hover:text-white transition text-xl">
+                →
+              </div>
+            </a>
+          ))
+        }
+      </div>
     </div>
   </section>
 
