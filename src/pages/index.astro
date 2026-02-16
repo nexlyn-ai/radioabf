@@ -627,26 +627,63 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // Votes
+  // ✅ Votes (robuste: week côté serveur + fallback route)
   // -------------------------
   async function apiGetTopWeek(week){
-    const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
-    if (!r.ok) return { week, top: [] };
-    const j = await r.json().catch(() => ({}));
-    return { week: j?.week || week, top: Array.isArray(j?.top) ? j.top : [] };
+    const qs = week ? `?week=${encodeURIComponent(week)}` : "";
+    const urls = [
+      `/api/vote${qs}`,
+      `/api/votes${qs}`,
+      `/api/vote`,
+      `/api/votes`,
+    ];
+
+    for (const url of urls){
+      try{
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) continue;
+        const j = await r.json().catch(() => ({}));
+        const top = Array.isArray(j?.top) ? j.top : [];
+        const wk = String(j?.week || week || "").trim();
+        if (top.length || wk) return { week: wk || week || "", top };
+      }catch{}
+    }
+
+    return { week: week || "", top: [] };
   }
 
   let __homeVotesCache = window.__abfHomeVotesCache || { week: "", ts: 0, top: [] };
   window.__abfHomeVotesCache = __homeVotesCache;
 
-  async function getTopWeekCached(week){
+  async function getTopWeekCached(){
     const now = Date.now();
-    if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 8000) {
+
+    // si on a déjà du top récent, on garde
+    if (__homeVotesCache.top?.length && (now - __homeVotesCache.ts) < 8000) {
       return __homeVotesCache.top || [];
     }
-    const data = await apiGetTopWeek(week);
-    __homeVotesCache = { week, ts: now, top: data.top || [] };
+
+    // 1) demande sans week -> l’API doit renvoyer la bonne week + top
+    const data = await apiGetTopWeek("");
+    __homeVotesCache = {
+      week: data.week || "",
+      ts: now,
+      top: data.top || []
+    };
     window.__abfHomeVotesCache = __homeVotesCache;
+
+    // 2) si vide, fallback: on tente explicitement la week locale
+    if (!__homeVotesCache.top?.length){
+      const wk = getISOWeekId();
+      const data2 = await apiGetTopWeek(wk);
+      __homeVotesCache = {
+        week: data2.week || wk,
+        ts: now,
+        top: data2.top || []
+      };
+      window.__abfHomeVotesCache = __homeVotesCache;
+    }
+
     return __homeVotesCache.top || [];
   }
 
@@ -725,7 +762,7 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // ✅ HERO #1 (uses coverByNorm from history; no local cover cache)
+  // ✅ HERO #1 (robuste week + route)
   // -------------------------
   async function renderHeroTop1(){
     const box = document.getElementById("heroTop1");
@@ -734,8 +771,7 @@ const fmtDate = (iso?: string | null) => {
     const tEl = document.getElementById("heroTop1Title");
     if (!box || !empty || !aEl || !tEl) return;
 
-    const week = getISOWeekId();
-    const top = await getTopWeekCached(week);
+    const top = await getTopWeekCached();
     const first = top?.[0];
 
     if (!first || !first.track_key){
@@ -762,16 +798,14 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // ✅ TOP 8 GRID (uses coverByNorm from history; no local cover cache)
+  // ✅ TOP 8 GRID (robuste week + route)
   // -------------------------
   async function renderTop(){
     const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
     const empty = document.getElementById("topWeekEmpty");
     if (!cards.length) return;
 
-    const week = getISOWeekId();
-    const top = await getTopWeekCached(week);
-
+    const top = await getTopWeekCached();
     const coverByNorm = window.__abfHomeCoverByNorm || {};
 
     if (!top.length){
