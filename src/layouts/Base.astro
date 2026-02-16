@@ -27,11 +27,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       content="radioabf, radio abf, alternative bass fréquence, electronic music radio, live dj streaming, radioabf.com, house music, deep house, progressive, track voting"
     />
 
-<!-- ===== FAVICONS ===== -->
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" id="abfFavicon">
-<link rel="icon" href="/favicon-32.png" sizes="32x32">
-<link rel="icon" href="/favicon-16.png" sizes="16x16">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <!-- ===== FAVICONS ===== -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" id="abfFavicon">
+    <link rel="icon" href="/favicon-32.png" sizes="32x32">
+    <link rel="icon" href="/favicon-16.png" sizes="16x16">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -51,10 +51,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
     <meta name="twitter:image" content="https://radioabf.com/og-image.jpg" />
     <meta name="twitter:site" content="@abfonair" />
     <meta name="twitter:domain" content="radioabf.com" />
-
-    <!-- Favicon (we will animate via JS when LIVE) -->
-    <link id="abfFavicon" rel="icon" href="/favicon.ico" type="image/x-icon" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -324,8 +320,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         stroke-linejoin: round;
       }
     </style>
-	
-<!-- Google Analytics (GA4) -->
+
+    <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-8KQY09E05H"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -335,8 +331,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         send_page_view: true,
         anonymize_ip: true
       });
-    </script>	
-	
+    </script>
   </head>
 
   <body
@@ -542,7 +537,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                   <option value="3">FLAC 728</option>
                 </select>
 
-                               <button id="playBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hound:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]" aria-label="Play/Pause" title="Play/Pause">
+                <button id="playBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]" aria-label="Play/Pause" title="Play/Pause">
                   <span class="abf-ic" data-ic="play"></span>
                 </button>
                 <button id="stopBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Stop" title="Stop">
@@ -614,7 +609,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               <div id="fsTitle" data-abf-title class="mt-2 text-white/70 text-base sm:text-lg truncate">—</div>
 
               <div class="mt-6 flex flex-wrap items-center gap-2">
-                                <button id="fsPlay" type="button" class="flex items-center justify-center px-5 py-3 rounded-2xl font-semibold bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition" aria-label="Play/Pause">
+                <button id="fsPlay" type="button" class="flex items-center justify-center px-5 py-3 rounded-2xl font-semibold bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition" aria-label="Play/Pause">
                   <span class="abf-ic" data-ic="play"></span>
                 </button>
                 <button id="fsStop" type="button" class="flex items-center justify-center px-5 py-3 rounded-2xl font-semibold border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Stop">
@@ -644,7 +639,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             </div>
           </div>
 
-          <!-- (removed fullscreen visualizer to avoid blank block on route changes) -->
           <div class="h-[1px]"></div>
         </div>
       </div>
@@ -753,22 +747,39 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         window.__abf = window.__abf || {};
         const S = window.__abf;
 
-        S.isStopped = S.isStopped ?? true;
+        // ✅ Hard guard: do not re-create Audio / timers / heavy systems
+        if (!S.__booted){
+          S.__booted = true;
+
+          S.isStopped = true;
+          S.currentStreamIndex = 0;
+
+          S.streams = [
+            { url: "https://play.radioabf.com:2590/stream" },
+            { url: "https://play.radioabf.com:2600/stream" },
+            { url: "https://play.radioabf.com:2610/stream" },
+            { url: "https://play.radioabf.com:2620/stream" },
+          ];
+
+          S.audio = new Audio();
+          S.audio.preload = "none";
+          S.audio.crossOrigin = "anonymous";
+
+          S.lastBeat = 0;
+          S.__beat = { ema: 0, ema2: 0, last: 0 };
+          S.__viz = { raf: 0, canvas: null, ctx: null, dpr: 1, w: 0, h: 0 };
+          S.__fs = { active: false };
+
+          S.__coverInflight = {};
+          S.__npTimer = 0;
+          S.__bound = false;
+          S.__escBound = false;
+          S.__tabFx = null;
+        }
+
         const LS_KEY = "abf_stream_index";
-        const HISTORY_KEY = "abf_history"; // kept for backward compatibility (no longer written)
         const COVERS_KEY = "abf_covers_v1";
-
-        S.streams = S.streams || [
-          { url: "https://play.radioabf.com:2590/stream" },
-          { url: "https://play.radioabf.com:2600/stream" },
-          { url: "https://play.radioabf.com:2610/stream" },
-          { url: "https://play.radioabf.com:2620/stream" },
-        ];
-
-        S.audio = S.audio || new Audio();
         const audio = S.audio;
-        audio.preload = "none";
-        audio.crossOrigin = "anonymous";
 
         const $ = (id) => document.getElementById(id);
 
@@ -795,11 +806,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           });
         }
 
-        S.lastBeat = S.lastBeat || 0;
-        S.__beat = S.__beat || { ema: 0, ema2: 0, last: 0 };
-        S.__viz = S.__viz || { raf: 0, canvas: null, ctx: null, dpr: 1, w: 0, h: 0 };
-        S.__fs = S.__fs || { active: false };
-
         function fmtApply(){
           try { window.ABF_FMT?.apply(document); } catch {}
         }
@@ -825,153 +831,140 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         }
 
         // ========= LIVE TAB TITLE + FAVICON (animated) =========
-function ensureTabFx(){
-  // IMPORTANT: do not keep stale DOM refs across Astro swaps
-  if (S.__tabFx) return S.__tabFx;
+        function ensureTabFx(){
+          if (S.__tabFx) return S.__tabFx;
 
-  const state = {
-    baseTitle: document.title || "RadioABF",
-    titleTimer: 0,
-    favTimer: 0,
-    favFlip: false,
-    liveText: "",
-    liveOn: false,
-    // keep last applied href to reduce useless relinks
-    lastFavHref: ""
-  };
+          const state = {
+            baseTitle: document.title || "RadioABF",
+            titleTimer: 0,
+            favTimer: 0,
+            favFlip: false,
+            liveText: "",
+            liveOn: false,
+            lastFavHref: ""
+          };
 
-  const svgNormal =
-    "data:image/svg+xml," +
-    encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
-        <defs>
-          <radialGradient id="g" cx="30%" cy="25%" r="75%">
-            <stop offset="0" stop-color="#2FC2FF" stop-opacity="0.9"/>
-            <stop offset="1" stop-color="#050B14" stop-opacity="1"/>
-          </radialGradient>
-        </defs>
-        <rect width="64" height="64" rx="16" fill="url(#g)"/>
-        <path d="M18 39c7-13 12-15 28-14" fill="none" stroke="white" stroke-opacity="0.95" stroke-width="5" stroke-linecap="round"/>
-      </svg>
-    `);
+          const svgNormal =
+            "data:image/svg+xml," +
+            encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+                <defs>
+                  <radialGradient id="g" cx="30%" cy="25%" r="75%">
+                    <stop offset="0" stop-color="#2FC2FF" stop-opacity="0.9"/>
+                    <stop offset="1" stop-color="#050B14" stop-opacity="1"/>
+                  </radialGradient>
+                </defs>
+                <rect width="64" height="64" rx="16" fill="url(#g)"/>
+                <path d="M18 39c7-13 12-15 28-14" fill="none" stroke="white" stroke-opacity="0.95" stroke-width="5" stroke-linecap="round"/>
+              </svg>
+            `);
 
-  const svgLive =
-    "data:image/svg+xml," +
-    encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
-        <defs>
-          <radialGradient id="g" cx="30%" cy="25%" r="75%">
-            <stop offset="0" stop-color="#2FC2FF" stop-opacity="0.9"/>
-            <stop offset="1" stop-color="#050B14" stop-opacity="1"/>
-          </radialGradient>
-        </defs>
-        <rect width="64" height="64" rx="16" fill="url(#g)"/>
-        <path d="M18 39c7-13 12-15 28-14" fill="none" stroke="white" stroke-opacity="0.95" stroke-width="5" stroke-linecap="round"/>
-        <circle cx="50" cy="14" r="7" fill="#EF4444"/>
-      </svg>
-    `);
+          const svgLive =
+            "data:image/svg+xml," +
+            encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+                <defs>
+                  <radialGradient id="g" cx="30%" cy="25%" r="75%">
+                    <stop offset="0" stop-color="#2FC2FF" stop-opacity="0.9"/>
+                    <stop offset="1" stop-color="#050B14" stop-opacity="1"/>
+                  </radialGradient>
+                </defs>
+                <rect width="64" height="64" rx="16" fill="url(#g)"/>
+                <path d="M18 39c7-13 12-15 28-14" fill="none" stroke="white" stroke-opacity="0.95" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="50" cy="14" r="7" fill="#EF4444"/>
+              </svg>
+            `);
 
-  function getFaviconEl(){
-    // Astro swaps head => element is recreated
-    return document.getElementById("abfFavicon");
-  }
+          function getFaviconEl(){
+            return document.getElementById("abfFavicon");
+          }
 
-  function setFavicon(href){
-    const el = getFaviconEl();
-    if (!el) return;
-    if (state.lastFavHref === href) return;
+          function setFavicon(href){
+            const el = getFaviconEl();
+            if (!el) return;
+            if (state.lastFavHref === href) return;
+            el.setAttribute("href", href);
+            state.lastFavHref = href;
+          }
 
-    // Force refresh even if same data URI was set before
-    el.setAttribute("href", href);
-    state.lastFavHref = href;
-  }
+          function stopAll(){
+            state.liveOn = false;
+            state.liveText = "";
+            if (state.titleTimer){ clearInterval(state.titleTimer); state.titleTimer = 0; }
+            if (state.favTimer){ clearInterval(state.favTimer); state.favTimer = 0; }
+            document.title = state.baseTitle;
+            setFavicon(svgNormal);
+          }
 
-  function stopAll(){
-    state.liveOn = false;
-    state.liveText = "";
-    if (state.titleTimer){ clearInterval(state.titleTimer); state.titleTimer = 0; }
-    if (state.favTimer){ clearInterval(state.favTimer); state.favTimer = 0; }
-    document.title = state.baseTitle;
-    setFavicon(svgNormal);
-  }
+          function startAll(text){
+            state.liveOn = true;
+            state.liveText = String(text || "").trim();
+            if (!state.liveText) return stopAll();
 
-  function startAll(text){
-    state.liveOn = true;
-    state.liveText = String(text || "").trim();
-    if (!state.liveText) return stopAll();
+            const pad = "   •   ";
+            const s = state.liveText + pad;
+            let i = 0;
 
-    // Title marquee
-    const pad = "   •   ";
-    const s = state.liveText + pad;
-    let i = 0;
+            if (!state.titleTimer){
+              state.titleTimer = setInterval(() => {
+                const view = s.slice(i) + s.slice(0, i);
+                document.title = view;
+                i = (i + 1) % s.length;
+              }, 220);
+            }
 
-    if (!state.titleTimer){
-      state.titleTimer = setInterval(() => {
-        const view = s.slice(i) + s.slice(0, i);
-        document.title = view;
-        i = (i + 1) % s.length;
-      }, 220);
-    }
+            if (!state.favTimer){
+              state.favFlip = false;
+              setFavicon(svgLive);
+              state.favTimer = setInterval(() => {
+                state.favFlip = !state.favFlip;
+                setFavicon(state.favFlip ? svgLive : svgNormal);
+              }, 520);
+            }
+          }
 
-    // Favicon pulse
-    if (!state.favTimer){
-      state.favFlip = false;
-      setFavicon(svgLive);
-      state.favTimer = setInterval(() => {
-        state.favFlip = !state.favFlip;
-        setFavicon(state.favFlip ? svgLive : svgNormal);
-      }, 520);
-    }
-  }
+          function update(isLive, artist, title){
+            const a = String(artist || "").trim();
+            const t = String(title || "").trim();
 
-  function update(isLive, artist, title){
-    const a = String(artist || "").trim();
-    const t = String(title || "").trim();
+            if (!isLive || !a || !t){
+              stopAll();
+              return;
+            }
 
-    if (!isLive || !a || !t){
-      stopAll();
-      return;
-    }
+            const A = (window.ABF_FMT?.artist?.(a) || a);
+            const T = (window.ABF_FMT?.title?.(t) || t);
 
-    const A = (window.ABF_FMT?.artist?.(a) || a);
-    const T = (window.ABF_FMT?.title?.(t) || t);
+            const txt = `🔴 LIVE • ${A} — ${T} | RadioABF`;
 
-    const txt = `🔴 LIVE • ${A} — ${T} | RadioABF`;
+            if (state.liveOn && state.liveText === txt) {
+              setFavicon(state.favFlip ? svgLive : svgNormal);
+              return;
+            }
 
-    if (state.liveOn && state.liveText === txt) {
-      // still re-assert favicon on swap (head replaced)
-      setFavicon(state.favFlip ? svgLive : svgNormal);
-      return;
-    }
+            stopAll();
+            startAll(txt);
+          }
 
-    stopAll();
-    startAll(txt);
-  }
+          setFavicon(svgNormal);
 
-  // initialize normal
-  setFavicon(svgNormal);
+          S.__tabFx = { update, stopAll, state };
+          return S.__tabFx;
+        }
 
-  S.__tabFx = { update, stopAll, state };
-  return S.__tabFx;
-}
+        function refreshTabFxAfterSwap(){
+          const fx = ensureTabFx();
+          fx.state.baseTitle = document.title || fx.state.baseTitle;
 
-function refreshTabFxAfterSwap(){
-  const fx = ensureTabFx();
+          const artist = document.getElementById("npArtist")?.textContent || "";
+          const title  = document.getElementById("npTitle")?.textContent || "";
+          fx.update(isLiveNow(), artist, title);
+        }
 
-  // on swap, SSR title changes => update baseTitle
-  fx.state.baseTitle = document.title || fx.state.baseTitle;
-
-  // if we are still live, restart the effect immediately
-  const artist = document.getElementById("npArtist")?.textContent || "";
-  const title  = document.getElementById("npTitle")?.textContent || "";
-  fx.update(isLiveNow(), artist, title);
-}
-
-        // On route changes, keep base title from SSR but stop animation if needed
+        // ✅ FIX: baseTitle is inside fx.state
         function resetTabOnNav(){
           const fx = ensureTabFx();
-          // refresh baseTitle to whatever current page SSR title is
-          fx.baseTitle = document.title || fx.baseTitle;
+          fx.state.baseTitle = document.title || fx.state.baseTitle;
           fx.stopAll();
         }
 
@@ -1087,7 +1080,6 @@ function refreshTabFxAfterSwap(){
             vctx.fillRect(Math.floor(x), y, Math.ceil(realBarWidth), hh);
           }
 
-          // right edge
           vctx.fillStyle = "rgba(20,92,143,0.85)";
           vctx.fillRect(W - 1, 0, 1, H);
 
@@ -1122,7 +1114,6 @@ function refreshTabFxAfterSwap(){
 
           B.last = bassEnergy;
 
-          // waveform overlay
           analyser.getByteTimeDomainData(timeData);
           vctx.beginPath();
           const n = timeData.length;
@@ -1181,13 +1172,6 @@ function refreshTabFxAfterSwap(){
         }
 
         // ========= COVERS =========
-        function splitTrack(entry) {
-          const parts = String(entry || "").split(" - ");
-          const artist = (parts[0] || "").trim();
-          const title = (parts.slice(1).join(" - ") || "").trim();
-          return { artist, title };
-        }
-
         function normKey(artist, title) {
           return (artist + " - " + title)
             .toLowerCase()
@@ -1221,7 +1205,6 @@ function refreshTabFxAfterSwap(){
           const cache = loadCoverCache();
           if (cache[key] !== undefined) return cache[key];
 
-          S.__coverInflight = S.__coverInflight || {};
           if (S.__coverInflight[key]) return "";
           S.__coverInflight[key] = true;
 
@@ -1279,7 +1262,7 @@ function refreshTabFxAfterSwap(){
           }
         }
 
-        // ========= SERVER NOW PLAYING (NO localStorage history) =========
+        // ========= SERVER NOW PLAYING =========
         async function fetchServerNowPlaying(limit = 12){
           try{
             const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -1310,7 +1293,6 @@ function refreshTabFxAfterSwap(){
 
             fmtApply();
 
-            // cover (keeps local cache)
             if (artist && title) {
               const key = normKey(artist, title);
               const cache = loadCoverCache();
@@ -1324,10 +1306,8 @@ function refreshTabFxAfterSwap(){
               setPlayerCover("");
             }
 
-            // keep fullscreen cover synced
             if (S.__fs?.active) syncFullscreenUI();
 
-            // share history to pages (home/music) without localStorage
             const played_at_ms_now =
               Number(now?.played_at_ms) || (now?.played_at ? new Date(now.played_at).getTime() : Date.now());
 
@@ -1353,10 +1333,8 @@ function refreshTabFxAfterSwap(){
 
             S.__nowplaying = payload;
             try { window.dispatchEvent(new CustomEvent("abf:nowplaying-updated", { detail: payload })); } catch {}
-            // compatibility event name (some pages still listen to it)
             try { window.dispatchEvent(new CustomEvent("abf:history-updated", { detail: payload })); } catch {}
 
-            // update tab title + favicon LIVE
             const fx = ensureTabFx();
             fx.update(isLiveNow(), artist, title);
           } catch {
@@ -1382,7 +1360,6 @@ function refreshTabFxAfterSwap(){
         }
 
         function isLiveNow(){
-          // LIVE = playing and not stopped (mute doesn't cancel LIVE)
           return !S.isStopped && !audio.paused;
         }
 
@@ -1453,7 +1430,6 @@ function refreshTabFxAfterSwap(){
 
           setStatus(computeStatus());
 
-          // update live tab title + favicon based on current values
           const fx = ensureTabFx();
           const artist = $("npArtist")?.textContent || "";
           const title = $("npTitle")?.textContent || "";
@@ -1463,7 +1439,6 @@ function refreshTabFxAfterSwap(){
         }
 
         function bindUI(){
-          // re-hydrate icons after Astro swaps
           initIcons();
 
           const playBtn = $("playBtn");
@@ -1603,18 +1578,8 @@ function refreshTabFxAfterSwap(){
           syncUI();
         }
 
-        // init
-        ensureTabFx(); // prepare live tab system
-        bindUI();
-
-        const onAstroNav = () => {
-          // stop fullscreen on route swaps
-          S.__fs.active = false;
-          closeFullscreen();
-
-          // reset title to page SSR title, then re-apply LIVE if playing
-          resetTabOnNav();
-
+        function bootOrRebind(){
+          ensureTabFx();
           bindUI();
           fetchNowPlaying();
           window.__abfUpdateLayout?.();
@@ -1627,12 +1592,23 @@ function refreshTabFxAfterSwap(){
 
           syncUI();
           fmtApply();
+        }
+
+        // init
+        bootOrRebind();
+
+        const onAstroNav = () => {
+          S.__fs.active = false;
+          closeFullscreen();
+
+          resetTabOnNav();
+
+          bootOrRebind();
         };
 
         document.addEventListener("astro:page-load", onAstroNav);
         document.addEventListener("astro:after-swap", onAstroNav);
 
-        // ✅ Astro swaps the <head> => rebind favicon/title effect after each swap
         document.addEventListener("astro:page-load", refreshTabFxAfterSwap);
         document.addEventListener("astro:after-swap", refreshTabFxAfterSwap);
 
@@ -1714,76 +1690,67 @@ function refreshTabFxAfterSwap(){
         const buildVersion = document.getElementById("buildVersion");
         if (!buildModal || !legalModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
 
-       // Build / Updates (latest first) — Feb 2026
-const BUILDS = [
-  // 3.2.0 — Deployment & data layer stabilization
-  {
-    v: "3.2.0",
-    d: "Feb 16, 2026",
-    t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
-  },
+        const BUILDS = [
+          {
+            v: "3.2.0",
+            d: "Feb 16, 2026",
+            t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
+          },
+          {
+            v: "3.1.0",
+            d: "Feb 15, 2026",
+            t: "Home + player stability milestone: Latest News now uses Directus SSR with Vercel cache headers, dates switched to English (US), improved On Air live detection + countdowns + stronger live highlight, Hero Top #1 weekly card added, and safer rebind after Astro page swaps (fullscreen/listeners). Minor UI polish across sections."
+          },
+          {
+            v: "3.0.8",
+            d: "Feb 14, 2026",
+            t: "UI & stability fixes: fixed cover fallbacks (no broken-image square after navigation), adjusted ABF logo sizing in fallback blocks, reduced visual glitches during page swaps (player + covers), and improved card image ratio handling/centering."
+          },
+          {
+            v: "3.0.7",
+            d: "Feb 14, 2026",
+            t: "Programs & On Air improvements: ensured Programs lands on the correct current day, restored On Air cues and improved current show highlight styling, tightened schedule cards while preserving artwork ratios, and reduced excess spacing under the pinned player / footer."
+          },
+          {
+            v: "3.0.6",
+            d: "Feb 13, 2026",
+            t: "Fullscreen + view transitions fix: fullscreen now remains usable after navigation (re-initialized listeners after Astro swaps), improved player control stability across pages, and refined floating 'Back to top' button placement."
+          },
+          {
+            v: "3.0.5",
+            d: "Feb 13, 2026",
+            t: "News routing + SEO: stabilized SSR dynamic news routes, added year filtering and cleaner /news listing grid, improved OG preview logic, and tuned Directus micro-cache + Vercel caching behavior."
+          },
+          {
+            v: "3.0.4",
+            d: "Feb 12, 2026",
+            t: "Player UI refinement: made the bottom player more compact, restored missing controls (incl. volume) with clearer play/pause states, upgraded the visualizer to a thinner modern full-width style, and improved header pulse behavior consistency."
+          },
+          {
+            v: "3.0.3",
+            d: "Feb 12, 2026",
+            t: "Music + charts UX: restored title-casing rules for readability, improved Last Played rendering consistency, and hardened weekly vote aggregation + cover usage."
+          },
+          {
+            v: "3.0.2",
+            d: "Feb 11, 2026",
+            t: "Build system + modals: Build/Updates modal cleanup (dates aligned, better spacing), footer build version now reads dynamically from latest entry, and added/normalized Stream Quality + FLAC info modals."
+          },
+          {
+            v: "3.0.1",
+            d: "Feb 11, 2026",
+            t: "Directus integration stabilization: safer handling of optional published_at, reduced unnecessary fallbacks where local assets exist, and general cleanup for deployment readiness."
+          },
+          {
+            v: "3.0.0",
+            d: "Feb 08, 2026",
+            t: "Major redesign: new ABF UI system (modern cards, gradients, spacing), persistent pinned player architecture foundations, refreshed layout/navigation, and the first Home structure (Now Playing hero, Last Played carousel, schedule preview)."
+          }
+        ];
 
-  // 3.1.0 — Home + player stability milestone
-  {
-    v: "3.1.0",
-    d: "Feb 15, 2026",
-    t: "Home + player stability milestone: Latest News now uses Directus SSR with Vercel cache headers, dates switched to English (US), improved On Air live detection + countdowns + stronger live highlight, Hero Top #1 weekly card added, and safer rebind after Astro page swaps (fullscreen/listeners). Minor UI polish across sections."
-  },
-
-  // 3.0.x — UI & stability fixes
-  {
-    v: "3.0.8",
-    d: "Feb 14, 2026",
-    t: "UI & stability fixes: fixed cover fallbacks (no broken-image square after navigation), adjusted ABF logo sizing in fallback blocks, reduced visual glitches during page swaps (player + covers), and improved card image ratio handling/centering."
-  },
-  {
-    v: "3.0.7",
-    d: "Feb 14, 2026",
-    t: "Programs & On Air improvements: ensured Programs lands on the correct current day, restored On Air cues and improved current show highlight styling, tightened schedule cards while preserving artwork ratios, and reduced excess spacing under the pinned player / footer."
-  },
-  {
-    v: "3.0.6",
-    d: "Feb 13, 2026",
-    t: "Fullscreen + view transitions fix: fullscreen now remains usable after navigation (re-initialized listeners after Astro swaps), improved player control stability across pages, and refined floating 'Back to top' button placement."
-  },
-  {
-    v: "3.0.5",
-    d: "Feb 13, 2026",
-    t: "News routing + SEO: stabilized SSR dynamic news routes, added year filtering and cleaner /news listing grid, improved OG preview logic, and tuned Directus micro-cache + Vercel caching behavior."
-  },
-  {
-    v: "3.0.4",
-    d: "Feb 12, 2026",
-    t: "Player UI refinement: made the bottom player more compact, restored missing controls (incl. volume) with clearer play/pause states, upgraded the visualizer to a thinner modern full-width style, and improved header pulse behavior consistency."
-  },
-  {
-    v: "3.0.3",
-    d: "Feb 12, 2026",
-    t: "Music + charts UX: restored title-casing rules for readability, improved Last Played rendering consistency, and hardened weekly vote aggregation + cover usage."
-  },
-  {
-    v: "3.0.2",
-    d: "Feb 11, 2026",
-    t: "Build system + modals: Build/Updates modal cleanup (dates aligned, better spacing), footer build version now reads dynamically from latest entry, and added/normalized Stream Quality + FLAC info modals."
-  },
-  {
-    v: "3.0.1",
-    d: "Feb 11, 2026",
-    t: "Directus integration stabilization: safer handling of optional published_at, reduced unnecessary fallbacks where local assets exist, and general cleanup for deployment readiness."
-  },
-  {
-    v: "3.0.0",
-    d: "Feb 08, 2026",
-    t: "Major redesign: new ABF UI system (modern cards, gradients, spacing), persistent pinned player architecture foundations, refreshed layout/navigation, and the first Home structure (Now Playing hero, Last Played carousel, schedule preview)."
-  }
-];
-
-
-// Footer dynamic version (same as before)
-const latest = BUILDS[0]?.v || "—";
-buildVersion.textContent = latest;
-window.__abfBuildVersion = latest;
-
+        const latest = BUILDS[0]?.v || "—";
+        buildVersion.textContent = latest;
+        window.__abfBuildVersion = latest;
 
         const esc = (s) => String(s || "")
           .replace(/&/g,"&amp;")
