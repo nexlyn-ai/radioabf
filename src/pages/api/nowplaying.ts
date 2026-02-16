@@ -12,9 +12,13 @@ const DIRECTUS_URL =
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
 
+// Collections
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
 
+// ----------------------
+// Helpers
+// ----------------------
 function cleanNowText(s: string) {
   let out = String(s || "").trim();
   out = out.replace(/^undefined\s*-\s*/i, "");
@@ -53,16 +57,13 @@ function extractNowPlaying(json: any): string {
 /**
  * ✅ Normalize Directus datetime strings.
  * If Directus returns "2026-02-15T18:12:00" (no TZ),
- * we assume it's UTC and force "Z" to avoid 1h offset in Paris (UTC+1 in Feb).
+ * we assume it's UTC and force "Z".
  */
 function toUTCms(v: any): number {
   const s = String(v || "").trim();
   if (!s) return 0;
 
-  // already has timezone -> parse as-is
   if (/[zZ]$/.test(s) || /[+\-]\d\d:\d\d$/.test(s)) return Date.parse(s);
-
-  // no timezone -> treat as UTC and force Z
   return Date.parse(s + "Z");
 }
 
@@ -74,9 +75,95 @@ async function directusFetch(path: string, init: RequestInit = {}) {
   return fetch(url, { ...init, headers });
 }
 
+// ----------------------
+// Directus: Tracks
+// ----------------------
+type TrackRow = {
+  id: string | number;
+  track_key: string;
+  artist?: string;
+  title?: string;
+  cover_art?: string | null;   // directus file id
+  cover_lock?: boolean | null;
+};
+
+function fileUrl(fileId?: string | null) {
+  if (!fileId) return "";
+  // directus assets URL (public)
+  return `${DIRECTUS_URL}/assets/${fileId}`;
+}
+
+async function getTrackByKey(track_key: string): Promise<TrackRow | null> {
+  const r = await directusFetch(
+    `/items/${TRACKS_COLLECTION}?fields=id,track_key,artist,title,cover_art,cover_lock&filter[track_key][_eq]=${encodeURIComponent(track_key)}&limit=1`,
+    { method: "GET" }
+  );
+  if (!r.ok) return null;
+  const j = await r.json().catch(() => ({}));
+  return j?.data?.[0] || null;
+}
+
+async function createTrack(payload: {
+  track_key: string;
+  artist: string;
+  title: string;
+}) : Promise<TrackRow | null> {
+  const r = await directusFetch(`/items/${TRACKS_COLLECTION}`, {
+    method: "POST",
+    body: JSON.stringify({
+      track_key: payload.track_key,
+      artist: payload.artist,
+      title: payload.title,
+      cover_lock: false,
+      // cover_art: null (optionnel)
+    }),
+  });
+  if (!r.ok) return null;
+  const j = await r.json().catch(() => ({}));
+  return j?.data || null;
+}
+
+async function updateTrack(id: string | number, payload: Partial<TrackRow>) {
+  await directusFetch(`/items/${TRACKS_COLLECTION}/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Upsert minimal:
+ * - create if missing
+ * - update artist/title if changed AND not locked (cover_lock is about cover, but we can still keep metadata in sync)
+ */
+async function upsertTrack(track_key: string, artist: string, title: string): Promise<TrackRow | null> {
+  const existing = await getTrackByKey(track_key);
+  if (!existing) {
+    return await createTrack({ track_key, artist, title });
+  }
+
+  // keep metadata in sync if needed
+  const needsUpdate =
+    (artist && String(existing.artist || "") !== artist) ||
+    (title && String(existing.title || "") !== title);
+
+  if (needsUpdate) {
+    try {
+      await updateTrack(existing.id, { artist, title });
+      return { ...existing, artist, title };
+    } catch {
+      return existing;
+    }
+  }
+
+  return existing;
+}
+
+// ----------------------
+// Directus: Plays
+// ----------------------
 async function getLastPlay() {
   const r = await directusFetch(
-    `/items/${PLAYS_COLLECTION}?fields=track_key,played_at&sort=-played_at&limit=1`,
+    `/items/${PLAYS_COLLECTION}?fields=id,track_key,played_at,track&sort=-played_at&limit=1`,
     { method: "GET" }
   );
   if (!r.ok) return null;
@@ -91,8 +178,7 @@ async function insertPlay(payload: {
   played_at: string;
   raw: string;
   source?: string;
-  // Optional relation field (if exists in plays)
-  track?: string | number;
+  track?: string | number; // relation to tracks
 }) {
   await directusFetch(`/items/${PLAYS_COLLECTION}`, {
     method: "POST",
@@ -101,8 +187,24 @@ async function insertPlay(payload: {
 }
 
 async function getHistory(limit: number) {
+  // include related track cover_art
+  const fields = [
+    "id",
+    "track_key",
+    "artist",
+    "title",
+    "played_at",
+    "raw",
+    "track.id",
+    "track.cover_art",
+    "track.cover_lock",
+    "track.track_key",
+    "track.artist",
+    "track.title",
+  ].join(",");
+
   const r = await directusFetch(
-    `/items/${PLAYS_COLLECTION}?fields=track_key,artist,title,played_at,raw&sort=-played_at&limit=${limit}`,
+    `/items/${PLAYS_COLLECTION}?fields=${encodeURIComponent(fields)}&sort=-played_at&limit=${limit}`,
     { method: "GET" }
   );
   if (!r.ok) return [];
@@ -110,137 +212,9 @@ async function getHistory(limit: number) {
   return Array.isArray(j?.data) ? j.data : [];
 }
 
-/* ---------------------------
-   TRACKS (covers centralized)
----------------------------- */
-
-type TrackRow = {
-  id: string | number;
-  track_key: string;
-  artist?: string | null;
-  title?: string | null;
-  cover_url?: string | null;
-  cover_override?: boolean | null;
-};
-
-async function itunesCover(artist: string, title: string) {
-  const a = String(artist || "").trim();
-  const t = String(title || "").trim();
-  if (!a || !t) return "";
-
-  const term = encodeURIComponent(`${a} ${t}`);
-  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
-
-  try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) return "";
-    const j = await r.json().catch(() => ({}));
-    const item = j?.results?.[0];
-    if (!item) return "";
-    const art100 = String(item?.artworkUrl100 || "").trim();
-    if (!art100) return "";
-    return art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
-  } catch {
-    return "";
-  }
-}
-
-async function getTracksMapByKeys(keys: string[]) {
-  const uniq = Array.from(new Set(keys.filter(Boolean)));
-  if (!uniq.length) return new Map<string, TrackRow>();
-
-  // Directus filter _in expects comma-separated list
-  const inList = uniq.map((k) => encodeURIComponent(k)).join(",");
-
-  const r = await directusFetch(
-    `/items/${TRACKS_COLLECTION}?fields=id,track_key,artist,title,cover_url,cover_override&filter[track_key][_in]=${inList}&limit=${uniq.length}`,
-    { method: "GET" }
-  );
-
-  if (!r.ok) return new Map<string, TrackRow>();
-  const j = await r.json().catch(() => ({}));
-  const rows: TrackRow[] = Array.isArray(j?.data) ? j.data : [];
-
-  const map = new Map<string, TrackRow>();
-  for (const row of rows) {
-    if (row?.track_key) map.set(String(row.track_key), row);
-  }
-  return map;
-}
-
-async function createTrack(payload: {
-  track_key: string;
-  artist: string;
-  title: string;
-  cover_url?: string;
-  cover_override?: boolean;
-}) {
-  const r = await directusFetch(`/items/${TRACKS_COLLECTION}`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-
-  if (!r.ok) return null;
-  const j = await r.json().catch(() => ({}));
-  return j?.data || null;
-}
-
-async function updateTrack(id: string | number, payload: Partial<TrackRow>) {
-  const r = await directusFetch(`/items/${TRACKS_COLLECTION}/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
-  if (!r.ok) return null;
-  const j = await r.json().catch(() => ({}));
-  return j?.data || null;
-}
-
-/**
- * Ensure track exists in Directus and returns { id, cover_url }.
- * - If track exists and cover_override=true: do NOT change cover_url.
- * - If missing cover_url: try iTunes and update.
- * - If not existing: create with iTunes cover (if found).
- */
-async function ensureTrack(artist: string, title: string, track_key: string, existing?: TrackRow | null) {
-  const a = String(artist || "").trim();
-  const t = String(title || "").trim();
-  if (!track_key || !a) return { id: null as any, cover_url: "" };
-
-  // if exists
-  if (existing?.id != null) {
-    const override = Boolean(existing.cover_override);
-    const currentCover = String(existing.cover_url || "").trim();
-
-    if (override) {
-      return { id: existing.id, cover_url: currentCover };
-    }
-
-    if (currentCover) {
-      return { id: existing.id, cover_url: currentCover };
-    }
-
-    // try fill missing cover
-    const found = await itunesCover(a, t);
-    if (found) {
-      await updateTrack(existing.id, { cover_url: found, artist: existing.artist || a, title: existing.title || t });
-      return { id: existing.id, cover_url: found };
-    }
-    return { id: existing.id, cover_url: "" };
-  }
-
-  // create new
-  const found = await itunesCover(a, t);
-  const created = await createTrack({
-    track_key,
-    artist: a,
-    title: t,
-    cover_url: found || "",
-    cover_override: false,
-  });
-
-  return { id: created?.id ?? null, cover_url: String(created?.cover_url || found || "").trim() };
-}
-
+// ----------------------
+// API Route
+// ----------------------
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || "12")));
@@ -258,7 +232,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  // Icecast
+  // 1) Icecast -> now playing text
   let nowText = "";
   try {
     const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
@@ -284,62 +258,53 @@ export const GET: APIRoute = async ({ request }) => {
   const played_at = new Date().toISOString();
   const played_at_ms = Date.parse(played_at);
 
-  // 1) Insert play if new track_key
-  let inserted = false;
-  let insertedTrackId: string | number | null = null;
+  // 2) Upsert track (for cover_art centralization)
+  let trackRow: TrackRow | null = null;
+  if (artist && track_key && artist.toLowerCase() !== "undefined") {
+    try {
+      trackRow = await upsertTrack(track_key, artist, title);
+    } catch {
+      trackRow = null;
+    }
+  }
 
+  // 3) Insert play only if new track_key
   if (artist && track_key && artist.toLowerCase() !== "undefined") {
     try {
       const last = await getLastPlay();
       if (!last || String(last?.track_key || "") !== track_key) {
-        // Ensure track exists (and maybe fill cover)
-        const existingMap = await getTracksMapByKeys([track_key]);
-        const existing = existingMap.get(track_key) || null;
-        const ensured = await ensureTrack(artist, title, track_key, existing);
-        insertedTrackId = ensured.id;
-
-        // Insert play (with optional relation)
-        const payload: any = { track_key, artist, title, played_at, raw: nowText, source: "icecast" };
-        if (ensured.id != null) payload.track = ensured.id; // works only if plays has field "track"
-        await insertPlay(payload);
-
-        inserted = true;
+        await insertPlay({
+          track_key,
+          artist,
+          title,
+          played_at,
+          raw: nowText,
+          source: "icecast",
+          track: trackRow?.id, // ✅ link play -> track
+        });
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  // 2) Load history from plays
+  // 4) History with track.cover_art
   const historyRaw = await getHistory(limit);
 
-  // 3) Collect keys (now + history)
-  const keys = [track_key, ...historyRaw.map((r: any) => String(r?.track_key || "").trim())].filter(Boolean);
-  const tracksMap = await getTracksMapByKeys(keys);
-
-  // 4) Ensure NOW has track + cover (in case not inserted because same track)
-  let nowCoverUrl = "";
-  try {
-    const existing = tracksMap.get(track_key) || null;
-    const ensured = await ensureTrack(artist, title, track_key, existing);
-    nowCoverUrl = ensured.cover_url || "";
-    if (ensured.id != null && !tracksMap.get(track_key)) {
-      // not strictly needed; map refresh is optional
-    }
-  } catch {
-    nowCoverUrl = "";
-  }
-
-  // ✅ add played_at_ms (normalized) + cover_url for perfect client display
   const history = historyRaw.map((row: any) => {
-    const k = String(row?.track_key || "").trim();
-    const tr = k ? tracksMap.get(k) : null;
+    const coverId = row?.track?.cover_art || null;
+    const cover_url = fileUrl(coverId);
+
     return {
       ...row,
       played_at_ms: toUTCms(row?.played_at),
-      cover_url: String(tr?.cover_url || "").trim(),
+      // normalized cover fields for frontend
+      cover_art: coverId,
+      cover_url,
     };
   });
+
+  // now payload includes cover
+  const nowCoverId = trackRow?.cover_art || null;
+  const nowCoverUrl = fileUrl(nowCoverId);
 
   const now = {
     raw: nowText,
@@ -348,10 +313,11 @@ export const GET: APIRoute = async ({ request }) => {
     track_key,
     played_at,
     played_at_ms,
+    cover_art: nowCoverId,
     cover_url: nowCoverUrl,
   };
 
-  return new Response(JSON.stringify({ ok: true, now, history, inserted, inserted_track_id: insertedTrackId }), {
+  return new Response(JSON.stringify({ ok: true, now, history }), {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "s-maxage=5, stale-while-revalidate=25",

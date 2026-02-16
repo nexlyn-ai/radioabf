@@ -136,7 +136,7 @@ import Base from "../layouts/Base.astro";
     window.__abfMusicBooted = true;
 
     const HISTORY_KEY = "abf_history";
-    // Legacy local covers fallback ONLY (no iTunes fetch anymore)
+    // Legacy local covers fallback ONLY (read-only, no writes)
     const LEGACY_COVERS_KEY = "abf_covers_v1";
     const DAY = 24 * 60 * 60 * 1000;
 
@@ -244,18 +244,18 @@ import Base from "../layouts/Base.astro";
       }).filter(Boolean);
     }
 
-    // ===== Legacy local cover cache fallback (no writes) =====
+    // ===== Legacy local cover cache fallback (read-only) =====
     function loadLegacyCoverCache(){
       try { return JSON.parse(localStorage.getItem(LEGACY_COVERS_KEY) || "{}"); }
       catch { return {}; }
     }
 
-    // ===== Server nowplaying (with cover_url if available) =====
+    // ===== Server nowplaying (expects cover_url in now + history) =====
     async function fetchServerNowPlaying(limit = 12){
       try{
         const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
         const data = await res.json().catch(()=> ({}));
-        if (!data?.ok) return { history: [] };
+        if (!data?.ok) return [];
 
         const out = [];
 
@@ -265,7 +265,7 @@ import Base from "../layouts/Base.astro";
             t: String(data.now.raw),
             ts: Number(data?.now?.played_at_ms) ||
                 (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
-            cover_url: String(data?.now?.cover_url || data?.now?.cover || "")
+            cover_url: String(data?.now?.cover_url || "")
           });
         }
 
@@ -278,7 +278,7 @@ import Base from "../layouts/Base.astro";
               t: String(raw),
               ts: Number(row?.played_at_ms) ||
                   (row?.played_at ? new Date(row.played_at).getTime() : 0),
-              cover_url: String(row?.cover_url || row?.cover || "")
+              cover_url: String(row?.cover_url || "")
             });
           }
         }
@@ -293,9 +293,9 @@ import Base from "../layouts/Base.astro";
           deduped.push(item);
         }
 
-        return { history: deduped.slice(0, limit) };
+        return deduped.slice(0, limit);
       }catch{
-        return { history: [] };
+        return [];
       }
     }
 
@@ -308,6 +308,19 @@ import Base from "../layouts/Base.astro";
       } else {
         img.classList.add("hidden");
       }
+    }
+
+    // Helper cover HTML
+    function coverHtmlByUrl(url, sizeClass = "w-12 h-12 rounded-xl") {
+      const u = String(url || "").trim();
+      return `
+        <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
+          <img src="${u ? esc(u) : ""}" alt="" class="${u ? "" : "hidden"}" loading="lazy" decoding="async" />
+          <div class="abfCoverFallback">
+            <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+          </div>
+        </div>
+      `;
     }
 
     // ===== Votes API (server-side) =====
@@ -388,20 +401,7 @@ import Base from "../layouts/Base.astro";
       alert(`Vote failed: ${r?.error || "Unknown error"}`);
     }
 
-    // Helper cover HTML
-    function coverHtmlByUrl(url, sizeClass = "w-12 h-12 rounded-xl") {
-      const u = String(url || "").trim();
-      return `
-        <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
-          <img src="${u ? esc(u) : ""}" alt="" class="${u ? "" : "hidden"}" loading="lazy" decoding="async" />
-          <div class="abfCoverFallback">
-            <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-          </div>
-        </div>
-      `;
-    }
-
-    // ✅ Dedupe TOP by normalized key (hides duplicates) and filters ABF CLUB from Top.
+    // ✅ Dedupe TOP by normalized key and filters ABF CLUB from Top.
     function dedupeTopEntries(votesObj){
       const bestByNorm = new Map(); // norm -> { key, count }
       for (const [key, count] of Object.entries(votesObj || {})){
@@ -435,8 +435,7 @@ import Base from "../layouts/Base.astro";
       if (weekEl) weekEl.textContent = weekLabel();
       if (!artistEl || !titleEl || !listEl || !chartEl) return;
 
-      // --- get server history (preferred) ---
-      let history = (await fetchServerNowPlaying(12)).history || [];
+      let history = await fetchServerNowPlaying(12);
       if (!history.length) history = loadHistory();
 
       if (!history.length){
@@ -450,7 +449,9 @@ import Base from "../layouts/Base.astro";
         return;
       }
 
-      // Build cover map from server payload (now + history)
+      const legacy = loadLegacyCoverCache();
+
+      // Build cover map from server payload
       const coverByNorm = {};
       for (const entry of history){
         const t = splitTrack(entry.t);
@@ -458,9 +459,6 @@ import Base from "../layouts/Base.astro";
         const u = String(entry.cover_url || "").trim();
         if (n && u) coverByNorm[n] = u;
       }
-
-      // Legacy fallback (read-only)
-      const legacy = loadLegacyCoverCache();
 
       function getCoverUrl(artist, title){
         const n = normKey(artist, title);
@@ -480,7 +478,7 @@ import Base from "../layouts/Base.astro";
       titleEl.textContent = prettyNowTitle;
       if (timeEl) timeEl.textContent = fmtTime(currentEntry.ts);
 
-      setCover(getCoverUrl(current.artist, current.title));
+      setCover(String(currentEntry.cover_url || "").trim() || getCoverUrl(current.artist, current.title));
 
       const currentKeyNorm = normKey(current.artist, current.title);
       const currentKeyRaw  = rawKey(current.artist, current.title);
@@ -491,7 +489,6 @@ import Base from "../layouts/Base.astro";
 
       if (nowVoteCount) nowVoteCount.textContent = String(currentCount);
 
-      // ✅ Block voting for ABF CLUB "artist"
       const blockedNow = isBlockedShow(current.artist);
 
       if (nowVoteBtn){
@@ -588,7 +585,7 @@ import Base from "../layouts/Base.astro";
         })
         .join("");
 
-      // TOP THIS WEEK (deduped + tracks only)
+      // TOP THIS WEEK (covers from server map if exists, else legacy)
       const deduped = dedupeTopEntries(votes)
         .filter((x) => Number(x.count) > 0)
         .sort((a,b) => Number(b.count) - Number(a.count))
@@ -717,7 +714,7 @@ import Base from "../layouts/Base.astro";
 
     if (!window.__abfMusicListeners){
       window.addEventListener("abf:history-updated", renderHistory);
-      // cover updates are now server-side; keep listener if something dispatches it elsewhere
+      // keep if something dispatches it elsewhere; covers are server-side now
       window.addEventListener("abf:cover-cache-updated", renderHistory);
       window.__abfMusicListeners = true;
     }
@@ -726,5 +723,5 @@ import Base from "../layouts/Base.astro";
       if (window.__abfMusicTimer) clearInterval(window.__abfMusicTimer);
     });
   })();
-</script>
+  </script>
 </Base>
