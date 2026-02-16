@@ -8,10 +8,10 @@ import artists from "../../data/artists.json";
   canonical="/artists"
   image="/og-image.jpg"
 >
-  <!-- HERO -->
+  <!-- HERO avec filtres en bas -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
     <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[, h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
     <div class="relative z-10">
       <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
@@ -23,18 +23,9 @@ import artists from "../../data/artists.json";
       <p class="text-white/65 mt-3 max-w-2xl">
         Residents, guests and the ABF team — explore each profile.
       </p>
-    </div>
-  </section>
 
-  <!-- Grande carte contenant filtres + grille -->
-  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
-    <!-- Glows -->
-    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
-
-    <div class="relative z-10">
-      <!-- Filtres (maintenant à l'intérieur de la grande carte) -->
-      <div class="mb-8">
+      <!-- Filtres placés en bas de la hero -->
+      <div class="mt-8">
         <div class="flex flex-wrap gap-2">
           <button class="abfFilterBtn active" data-filter="all" type="button">All</button>
           <button class="abfFilterBtn" data-filter="resident" type="button">Resident</button>
@@ -42,8 +33,16 @@ import artists from "../../data/artists.json";
           <button class="abfFilterBtn" data-filter="team" type="button">Team</button>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- Grille des artistes -->
+  <!-- Grande carte contenant uniquement la grille des artistes -->
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
+    <!-- Glows -->
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+    <div class="relative z-10">
       <div id="artistsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {
           artists.map((a) => (
