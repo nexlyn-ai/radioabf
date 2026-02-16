@@ -116,7 +116,7 @@ const canonicalPath = `/news/${item.slug}`;
         <div class="text-white/70">No content.</div>
       )}
 
-      <!-- Share buttons - centered at bottom -->
+      <!-- Share section - centered at bottom -->
       <div class="shareSection">
         <div class="shareTitle">Share this article</div>
         <div class="shareButtons">
@@ -127,29 +127,29 @@ const canonicalPath = `/news/${item.slug}`;
             class="shareBtn"
             title="Share on X"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
           </a>
           <a
-            href={`https://www.facebook.com/sharer/sharer.php?u=${Astro.url}&quote=${encodeURIComponent(item.title + " — RadioABF")}`}
+            href={`https://www.facebook.com/sharer/sharer.php?u=${Astro.url}&quote=${encodeURIComponent(item.title + " — RadioABF")}&hashtag=%23RadioABF`}
             target="_blank"
             rel="noopener noreferrer"
             class="shareBtn"
             title="Share on Facebook"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
             </svg>
           </a>
           <a
-            href={`https://www.linkedin.com/shareArticle?mini=true&url=${Astro.url}&title=${encodeURIComponent(item.title + " — RadioABF")}`}
+            href={`https://www.linkedin.com/shareArticle?mini=true&url=${Astro.url}&title=${encodeURIComponent(item.title + " — RadioABF")}&summary=${encodeURIComponent(item.excerpt || metaDesc)}&source=RadioABF`}
             target="_blank"
             rel="noopener noreferrer"
             class="shareBtn"
             title="Share on LinkedIn"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
             </svg>
           </a>
@@ -160,7 +160,7 @@ const canonicalPath = `/news/${item.slug}`;
             class="shareBtn"
             title="Share on WhatsApp"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004c-2.377 0-4.708-.608-6.75-1.758l-.484-.288-4.875.974 1.002-4.603-.235-.486c-1.194-2.47-1.823-5.314-1.82-8.227.003-6.653 5.42-12.071 12.074-12.071 3.226 0 6.263 1.258 8.544 3.541 2.281 2.282 3.536 5.314 3.536 8.542 0 6.652-5.42 12.07-12.072 12.07m10.5-19.875c-2.737-2.737-6.367-4.25-10.23-4.25-7.963 0-14.444 6.48-14.444 14.445 0 2.547.668 5.046 1.938 7.232l-2.048 7.48 7.653-2.01c2.104 1.148 4.465 1.756 6.905 1.756 7.963 0 14.444-6.48 14.444-14.445 0-3.863-1.512-7.492-4.25-10.23"/>
             </svg>
           </a>
@@ -170,12 +170,12 @@ const canonicalPath = `/news/${item.slug}`;
               navigator.clipboard.writeText('${item.title} — RadioABF\n${Astro.url}');
               const btn = this;
               const original = btn.innerHTML;
-              btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+              btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
               setTimeout(() => btn.innerHTML = original, 2000);
             `}
-            title="Copy link (for Instagram, etc.)"
+            title="Copy link (Instagram, etc.)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
@@ -201,7 +201,7 @@ const canonicalPath = `/news/${item.slug}`;
       border:1px solid rgba(255,255,255,.10);
       background:#0A1F33;
       padding:18px;
-      margin-bottom:28px; /* plus d'air */
+      margin-bottom:28px;
       box-shadow:0 24px 70px rgba(0,0,0,.35);
     }
     @media (min-width: 640px){
@@ -218,7 +218,7 @@ const canonicalPath = `/news/${item.slug}`;
       pointer-events:none;
     }
     .heroGlow.a{ top:-220px; left:-220px; background: rgba(34,211,238,.35); }
-    .heroGlow.b{ bottom:-220px; right:-220px; background: rgba(59,130,246,.35); }
+    .heroGlow.b{ bottom:-220px; right:-220px; background:8 rgba(59,130,246,.35); }
 
     /* GRID */
     .heroGrid{
@@ -293,12 +293,12 @@ const canonicalPath = `/news/${item.slug}`;
 
     .pillCat.radio{
       border-color:rgba(34,211,238,.35);
-      background:rgba(34,211,238,.10);
+      background:rgba(11,37,64,.10);
       color:rgba(165,243,252,.95);
     }
     .pillCat.music{
       border-color:rgba(96,165,250,.35);
-      background:rgba(96,165,250,.10);
+      background:rgba(11,37,64,.10);
       color:rgba(191,219,254,.95);
     }
 
@@ -397,21 +397,21 @@ const canonicalPath = `/news/${item.slug}`;
       border:1px solid rgba(255,255,255,.10);
       background:rgba(255,255,255,.05);
       padding:32px;
-      padding-bottom:48px; /* plus d'air pour les boutons */
+      padding-bottom:56px;
     }
 
     .proseWrap{
-      color:rgba(255,255,255,.80);
-      font-size:15px;
-      line-height:1.8;
-      margin-bottom:40px;
+      color:rgba(255,255,255,.82);
+      font-size:15.5px;
+      line-height:1.85;
+      margin-bottom:48px;
     }
     .proseWrap img{
       max-width:100%;
       border-radius:18px;
-      margin:24px 0;
+      margin:28px 0;
       border:1px solid rgba(255,255,255,.10);
-      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+      box-shadow: 0 14px 45px rgba(0,0,0,.35);
     }
     .proseWrap a{
       color:rgba(165,243,252,.95);
@@ -422,50 +422,49 @@ const canonicalPath = `/news/${item.slug}`;
       text-decoration-color: rgba(165,243,252,.85);
     }
 
-    /* Share section at bottom - centered */
+    /* Share section - centered, lighter */
     .shareSection{
       text-align:center;
-      margin-top:40px;
-      padding-top:32px;
+      margin-top:48px;
+      padding-top:36px;
       border-top:1px solid rgba(255,255,255,.08);
     }
     .shareTitle{
       font-size:13px;
       text-transform:uppercase;
-      letter-spacing:.12em;
-      color:rgba(255,255,255,.55);
-      margin-bottom:16px;
+      letter-spacing:.14em;
+      color:rgba(255,255,255,.68);
+      margin-bottom:18px;
       font-weight:700;
     }
     .shareButtons{
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      background: rgba(10,31,51,0.65);
-      backdrop-blur-xl;
-      padding: 16px 24px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 30px rgba(34,211,238,0.12);
       display: inline-flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: rgba(10,31,51,0.45);
+      backdrop-blur-xl;
+      padding: 14px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 10px 35px rgba(0,0,0,0.3), 0 0 25px rgba(34,211,238,0.1);
     }
     .shareBtn{
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.10);
-      color: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.88);
       transition: all 0.3s ease;
     }
     .shareBtn:hover{
-      background: rgba(34,211,238,0.25);
+      background: rgba(34,211,238,0.22);
       color: white;
-      transform: translateY(-4px) scale(1.1);
-      box-shadow: 0 12px 28px rgba(34,211,238,0.35);
+      transform: translateY(-3px) scale(1.06);
+      box-shadow: 0 10px 25px rgba(34,211,238,0.28);
     }
   </style>
 </Base>
