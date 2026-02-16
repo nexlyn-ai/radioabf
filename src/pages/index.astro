@@ -479,7 +479,6 @@ const fmtDate = (iso?: string | null) => {
 
   const PROGRAMS_DIR = "/images/programs/";
   const HISTORY_KEY = "abf_history";
-  const COVERS_KEY = "abf_covers_v1";
 
   // -------------------------
   // WEEK ID (same as music)
@@ -494,7 +493,7 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // Helpers (same style as home)
+  // Helpers
   // -------------------------
   function splitTrack(entry){
     const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
@@ -552,28 +551,59 @@ const fmtDate = (iso?: string | null) => {
   function setCover(url){
     const img = document.getElementById("homeCover");
     if (!img) return;
-    if (url){
-      img.src = url;
+    const u = String(url || "").trim();
+    if (u){
+      img.src = u;
       img.classList.remove("hidden");
     } else {
       img.classList.add("hidden");
     }
   }
 
+  function setHeroTop1Cover(url){
+    const img = document.getElementById("heroTop1Cover");
+    if (!img) return;
+    const u = String(url || "").trim();
+    if (u){
+      img.src = u;
+      img.classList.remove("hidden");
+    } else {
+      img.classList.add("hidden");
+    }
+  }
+
+  // Cover HTML helper (server url only)
+  function coverHtmlByUrl(url, sizeClass = "w-14 h-14 rounded-2xl") {
+    const u = String(url || "").trim();
+    return `
+      <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none">
+        <img src="${u ? esc(u) : ""}" alt="" class="${u ? "" : "hidden"}" loading="lazy" decoding="async" />
+        <div class="abfCoverFallback">
+          <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    `;
+  }
+
   // -------------------------
-  // Same fetch format as /music
+  // History fallback (local, read-only)
   // -------------------------
   function loadHistoryLocal(){
     let raw = [];
     try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
     catch{ raw = []; }
     return (raw || []).map((x) => {
-      if (typeof x === "string") return { t: x, ts: 0 };
-      if (x && typeof x === "object" && typeof x.t === "string") return { t: x.t, ts: Number(x.ts) || 0 };
+      if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
+      if (x && typeof x === "object" && typeof x.t === "string"){
+        return { t: x.t, ts: Number(x.ts) || 0, cover_url: String(x.cover_url || "") };
+      }
       return null;
     }).filter(Boolean);
   }
 
+  // -------------------------
+  // ✅ Server nowplaying (same as /music, expects cover_url)
+  // -------------------------
   async function fetchServerNowPlaying(limit = 12){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -587,7 +617,8 @@ const fmtDate = (iso?: string | null) => {
         out.push({
           t: String(data.now.raw),
           ts: Number(data?.now?.played_at_ms) ||
-              (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now())
+              (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+          cover_url: String(data?.now?.cover_url || "")
         });
       }
 
@@ -599,7 +630,8 @@ const fmtDate = (iso?: string | null) => {
           out.push({
             t: String(raw),
             ts: Number(row?.played_at_ms) ||
-                (row?.played_at ? new Date(row.played_at).getTime() : 0)
+                (row?.played_at ? new Date(row.played_at).getTime() : 0),
+            cover_url: String(row?.cover_url || "")
           });
         }
       }
@@ -618,11 +650,6 @@ const fmtDate = (iso?: string | null) => {
     }catch{
       return [];
     }
-  }
-
-  function loadCoverCache(){
-    try { return JSON.parse(localStorage.getItem(COVERS_KEY) || "{}"); }
-    catch { return {}; }
   }
 
   // -------------------------
@@ -646,12 +673,85 @@ const fmtDate = (iso?: string | null) => {
     return __homeVotesCache.top || [];
   }
 
+  // -------------------------
+  // ✅ NOW PLAYING + LAST PLAYED (server cover_url, no local cover cache)
+  // -------------------------
+  async function renderNowPlayingAndLast(){
+    const artistEl = document.getElementById("homeArtist");
+    const titleEl = document.getElementById("homeTitle");
+    const host = document.getElementById("homeLastCarousel");
+    if (!artistEl || !titleEl || !host) return;
+
+    let history = await fetchServerNowPlaying(12);
+    if (!history.length) history = loadHistoryLocal(); // fallback legacy only
+
+    if (!history.length){
+      artistEl.textContent = "—";
+      titleEl.textContent = "—";
+      setCover("");
+      host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
+      return;
+    }
+
+    // Build cover map from server payload (so Top can reuse)
+    const coverByNorm = {};
+    for (const entry of history){
+      const t = splitTrack(entry.t);
+      const n = normKey(t.artist, t.title);
+      const u = String(entry.cover_url || "").trim();
+      if (n && u) coverByNorm[n] = u;
+    }
+
+    // store on window for other renders
+    window.__abfHomeCoverByNorm = coverByNorm;
+
+    // NOW
+    const currentEntry = history[0];
+    const current = splitTrack(currentEntry.t);
+    const artist = String(current.artist || "").trim();
+    const title  = String(current.title || "").trim();
+
+    artistEl.textContent = upperArtist(artist || "—");
+    titleEl.textContent  = titleCaseEN(title || "—");
+
+    setCover(String(currentEntry.cover_url || "").trim() || coverByNorm[normKey(artist, title)] || "");
+
+    // LAST PLAYED carousel: 3 items
+    const items = history.slice(1, 4);
+    if (!items.length){
+      host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
+      return;
+    }
+
+    host.innerHTML = items.map((entry) => {
+      const t = splitTrack(entry.t);
+      const a = String(t.artist || "").trim();
+      const ti = String(t.title || "").trim();
+      const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
+
+      return `
+        <a href="/music"
+           class="snap-start flex-none w-[260px] md:w-[300px]
+                  rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
+                  transition p-4 flex items-center gap-4">
+          ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
+          <div class="min-w-0">
+            <div class="font-semibold text-white truncate">${esc(upperArtist(a || "—"))}</div>
+            <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(ti || "—"))}</div>
+          </div>
+        </a>
+      `;
+    }).join("");
+  }
+
+  // -------------------------
+  // ✅ HERO #1 (uses coverByNorm from history; no local storage)
+  // -------------------------
   async function renderHeroTop1(){
     const box = document.getElementById("heroTop1");
     const empty = document.getElementById("heroTop1Empty");
     const aEl = document.getElementById("heroTop1Artist");
     const tEl = document.getElementById("heroTop1Title");
-    const coverImg = document.getElementById("heroTop1Cover");
     if (!box || !empty || !aEl || !tEl) return;
 
     const week = getISOWeekId();
@@ -661,6 +761,7 @@ const fmtDate = (iso?: string | null) => {
     if (!first || !first.track_key){
       box.classList.add("hidden");
       empty.classList.remove("hidden");
+      setHeroTop1Cover("");
       return;
     }
 
@@ -672,32 +773,27 @@ const fmtDate = (iso?: string | null) => {
     aEl.textContent = upperArtist(artistRaw);
     tEl.textContent = titleCaseEN(titleRaw);
 
-    try {
-      const covers = loadCoverCache();
-      const ck = normKey(artistRaw, titleRaw);
-      const url = covers[ck] || "";
-      if (coverImg){
-        if (url){
-          coverImg.src = url;
-          coverImg.classList.remove("hidden");
-        } else {
-          coverImg.classList.add("hidden");
-        }
-      }
-    } catch {}
+    const coverByNorm = window.__abfHomeCoverByNorm || {};
+    const url = coverByNorm[normKey(artistRaw, titleRaw)] || "";
+    setHeroTop1Cover(url);
 
     empty.classList.add("hidden");
     box.classList.remove("hidden");
   }
 
+  // -------------------------
+  // ✅ TOP 8 GRID (uses coverByNorm from history; no local storage)
+  // -------------------------
   async function renderTop(){
     const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
     const empty = document.getElementById("topWeekEmpty");
     if (!cards.length) return;
 
-    const covers = loadCoverCache();
     const week = getISOWeekId();
     const top = await getTopWeekCached(week);
+
+    // cover map from history
+    const coverByNorm = window.__abfHomeCoverByNorm || {};
 
     if (!top.length){
       if (empty) empty.classList.remove("hidden");
@@ -743,8 +839,7 @@ const fmtDate = (iso?: string | null) => {
       const titleRaw = String(row.title || "").trim() || (parts.slice(1).join(" - ") || "—").trim();
       const count = Number(row.count) || 0;
 
-      const coverKey = normKey(artistRaw, titleRaw);
-      const coverUrl = covers[coverKey] || "";
+      const coverUrl = coverByNorm[normKey(artistRaw, titleRaw)] || "";
 
       if (img){
         if (coverUrl){
@@ -762,75 +857,6 @@ const fmtDate = (iso?: string | null) => {
       if (i === 0) card.classList.add("bg-white/7");
       else card.classList.remove("bg-white/7");
     });
-  }
-
-  // -------------------------
-  // ✅ NOW PLAYING + LAST PLAYED (same source as /music)
-  // -------------------------
-  async function renderNowPlayingAndLast(){
-    const artistEl = document.getElementById("homeArtist");
-    const titleEl = document.getElementById("homeTitle");
-    const host = document.getElementById("homeLastCarousel");
-    if (!artistEl || !titleEl || !host) return;
-
-    let history = await fetchServerNowPlaying(12);
-    if (!history.length) history = loadHistoryLocal();
-
-    if (!history.length){
-      artistEl.textContent = "—";
-      titleEl.textContent = "—";
-      setCover("");
-      host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
-      return;
-    }
-
-    const covers = loadCoverCache();
-
-    // NOW
-    const currentEntry = history[0];
-    const current = splitTrack(currentEntry.t);
-    const artist = String(current.artist || "").trim();
-    const title  = String(current.title || "").trim();
-
-    artistEl.textContent = upperArtist(artist || "—");
-    titleEl.textContent  = titleCaseEN(title || "—");
-
-    // cover: home utilise le cache local abf_covers_v1 (comme avant)
-    const ck = normKey(artist, title);
-    setCover(covers[ck] || "");
-
-    // LAST PLAYED carousel: 3 items (comme avant)
-    const items = history.slice(1, 4);
-    if (!items.length){
-      host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
-      return;
-    }
-
-    host.innerHTML = items.map((entry) => {
-      const t = splitTrack(entry.t);
-      const a = String(t.artist || "").trim();
-      const ti = String(t.title || "").trim();
-      const key = normKey(a, ti);
-      const img = covers[key] || "";
-
-      return `
-        <a href="/music"
-           class="snap-start flex-none w-[260px] md:w-[300px]
-                  rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
-                  transition p-4 flex items-center gap-4">
-          <div class="abfCover w-14 h-14 rounded-2xl border border-white/10 overflow-hidden flex-none">
-            <img src="${img ? esc(img) : ''}" alt="" class="${img ? '' : 'hidden'}" loading="lazy" decoding="async" />
-            <div class="abfCoverFallback">
-              <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-            </div>
-          </div>
-          <div class="min-w-0">
-            <div class="font-semibold text-white truncate">${esc(upperArtist(a || "—"))}</div>
-            <div class="text-white/60 text-sm truncate">${esc(titleCaseEN(ti || "—"))}</div>
-          </div>
-        </a>
-      `;
-    }).join("");
   }
 
   // -------------------------
@@ -1230,8 +1256,10 @@ const fmtDate = (iso?: string | null) => {
     bindFlacModal();
     bindStreamQualityModal();
 
+    // IMPORTANT: ensure covers map exists before top renders
     await renderNowPlayingAndLast();
     renderOnAirTonight();
+
     await renderTop();
     await renderHeroTop1();
 
@@ -1270,6 +1298,7 @@ const fmtDate = (iso?: string | null) => {
 
   if (!window.__abfHomeListeners){
     window.addEventListener("abf:history-updated", initHomePage);
+    // keep if something dispatches it elsewhere; covers are server-side now
     window.addEventListener("abf:cover-cache-updated", initHomePage);
     window.__abfHomeListeners = true;
   }
