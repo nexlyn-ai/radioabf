@@ -1893,17 +1893,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
-          {
-            v: "3.2.0",
-            d: "Feb 16, 2026",
-            t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
-          },
 		  {
 		  v: "3.3.0",
 		  d: "Feb 16, 2026",
 		  t: "UI & UX refinements: fixed vote display and modal persistence on homepage (server-only covers, no local fallbacks), redesigned Artists page with all artist cards unified in a single large container card, moved filter buttons to hero section for cleaner layout and improved visual flow."
 		  },
           {
+            v: "3.2.0",
+            d: "Feb 16, 2026",
+            t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
+          },
+		  {
             v: "3.1.0",
             d: "Feb 15, 2026",
             t: "Home + player stability milestone: Latest News now uses Directus SSR with Vercel cache headers, dates switched to English (US), improved On Air live detection + countdowns + stronger live highlight, Hero Top #1 weekly card added, and safer rebind after Astro page swaps (fullscreen/listeners). Minor UI polish across sections."
