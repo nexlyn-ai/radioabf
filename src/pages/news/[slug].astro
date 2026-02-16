@@ -71,6 +71,42 @@ const canonicalPath = `/news/${item.slug}`;
       <div class="heroGlow a"></div>
       <div class="heroGlow b"></div>
 
+      <!-- Boutons de partage en haut à droite -->
+      <div class="shareButtons">
+        <a
+          href={`https://x.com/intent/post?url=${Astro.url}&text=${encodeURIComponent(item.title + " — RadioABF")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="shareBtn"
+          aria-label="Share on X"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>
+        <a
+          href={`https://www.facebook.com/sharer/sharer.php?u=${Astro.url}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="shareBtn"
+          aria-label="Share on Facebook"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        </a>
+        <button
+          class="shareBtn"
+          onclick={`navigator.clipboard.writeText('${Astro.url}').then(() => alert('Link copied to clipboard!'))`}
+          aria-label="Copy link"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+
       <div class="heroGrid">
         <!-- LEFT -->
         <div class="heroLeft">
@@ -121,7 +157,7 @@ const canonicalPath = `/news/${item.slug}`;
   <style is:inline>
     .abfPageWrap{
       width:100%;
-      max-width:72rem; /* like other pages */
+      max-width:72rem;
       margin-left:auto;
       margin-right:auto;
     }
@@ -153,6 +189,41 @@ const canonicalPath = `/news/${item.slug}`;
     .heroGlow.a{ top:-220px; left:-220px; background: rgba(34,211,238,.35); }
     .heroGlow.b{ bottom:-220px; right:-220px; background: rgba(59,130,246,.35); }
 
+    /* Share buttons - haut à droite */
+    .shareButtons{
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 20;
+      display: flex;
+      gap: 10px;
+      background: rgba(255,255,255,0.08);
+      backdrop-blur-md;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    }
+    @media (min-width: 640px){
+      .shareButtons{ top: 22px; right: 22px; }
+    }
+    .shareBtn{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.85);
+      transition: all 0.2s ease;
+    }
+    .shareBtn:hover{
+      background: rgba(255,255,255,0.20);
+      color: white;
+      transform: translateY(-2px);
+    }
+
     /* GRID (make image a bit narrower) */
     .heroGrid{
       position:relative;
@@ -164,9 +235,9 @@ const canonicalPath = `/news/${item.slug}`;
     }
     @media (min-width: 900px){
       .heroGrid{
-        grid-template-columns: 1.35fr .65fr; /* narrower image column */
+        grid-template-columns: 1.35fr .65fr;
         gap:18px;
-        align-items:start; /* we align image to title baseline via margin-top */
+        align-items:start;
       }
     }
 
@@ -235,7 +306,6 @@ const canonicalPath = `/news/${item.slug}`;
       color:rgba(191,219,254,.95);
     }
 
-    /* title slightly smaller so long headlines fit */
     .heroTitle{
       margin:0;
       font-weight:900;
@@ -266,7 +336,6 @@ const canonicalPath = `/news/${item.slug}`;
       overflow:hidden;
     }
 
-    /* MEDIA (rectangle 16:9) - narrower + baseline aligned + cyan glow */
     .heroMedia{
       position:relative;
       border-radius:22px;
@@ -274,23 +343,20 @@ const canonicalPath = `/news/${item.slug}`;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.06);
       box-shadow: 0 18px 55px rgba(0,0,0,.30);
-
       aspect-ratio: 16 / 9;
-      max-height: 250px;     /* a bit smaller */
+      max-height: 250px;
       width: 100%;
-      max-width: 520px;      /* limits size */
-      justify-self: end;     /* keeps it on the right */
+      max-width: 520px;
+      justify-self: end;
     }
 
-    /* Align image with title baseline (not with kicker/pills) */
     @media (min-width: 900px){
       .heroMedia{
-        margin-top: 54px;    /* aligns top of image ~ title block */
+        margin-top: 54px;
         max-height: 230px;
       }
     }
 
-    /* subtle cyan glow behind the media card */
     .heroMedia::before{
       content:"";
       position:absolute;
@@ -308,7 +374,7 @@ const canonicalPath = `/news/${item.slug}`;
       width:100%;
       height:100%;
       object-fit:cover;
-      transform: scale(1.10); /* light dezoom */
+      transform: scale(1.10);
       opacity:.95;
       transition: transform .4s ease;
       z-index:1;
