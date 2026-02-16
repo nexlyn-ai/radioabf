@@ -27,7 +27,7 @@ const fields = "id,status,title,slug,excerpt,content,cover,category,published_at
 let item: NewsItem | null = null;
 
 try {
-  const resp = await directusGet<DirectABBListResp>(
+  const resp = await directusGet<DirectusListResp>(
     `/items/news?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
       `&filter[slug][_eq]=${encodeURIComponent(safeSlug)}` +
@@ -116,7 +116,7 @@ const canonicalPath = `/news/${item.slug}`;
         <div class="text-white/70">No content.</div>
       )}
 
-      <!-- Share section - centered at bottom -->
+      <!-- Share section - centered at bottom, ultra compact -->
       <div class="shareSection">
         <div class="shareTitle">Share this article</div>
         <div class="shareButtons">
@@ -127,7 +127,7 @@ const canonicalPath = `/news/${item.slug}`;
             class="shareBtn"
             title="Share on X"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
           </a>
@@ -138,8 +138,8 @@ const canonicalPath = `/news/${item.slug}`;
             class="shareBtn"
             title="Share on Facebook"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25 antiserum h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2v-1.5c0-2.5 1.5-3.88 3.75-3.88h1.75v3h-1.25c-.69 0-1.25.56-1.25 1.25V12h2.5l-.5 3h-2v6.8c4.56-.93 8-4.96 8-9.8z"/>
             </svg>
           </a>
           <a
@@ -149,7 +149,7 @@ const canonicalPath = `/news/${item.slug}`;
             class="shareBtn"
             title="Share on LinkedIn"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
             </svg>
           </a>
@@ -160,8 +160,8 @@ const canonicalPath = `/news/${item.slug}`;
             class="shareBtn"
             title="Share on WhatsApp"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709. 306 1.262.489 1.694.626.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004c-2.377 0-4.708-.608-6.75-1.758l-.484-.288-4.875.974 1.002-4.603-.235-.486c-1.194-2.47-1.823-5.314-1.82-8.227.003-6.653 5.42-12.071 12.074-12.071 3.226 0 6.263 1.258 8.544 3.541 2.281 2.282 3.536 5.314 3.536 8.542 0 6.652-5.42 12.07-12.072 12.07m10.5-19.875c-2.737-2.737-6.367-4.25-10.23-4.25-7.963 0-14.444 6.48-14.444 14.445 0 2.547.668 5.046 1.938 7.232l-2.048 7.48 7.653-2.01c2.104 1.148 4.465 1.756 6.905 1.756 7.963 0 14.444-6.48 14.444-14.445 0-3.863-1.512-7.492-4.25-10.23"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01C17.18 3.03 14.69 2 12.04 2M12.04 3.67c4.66 0 8.47 3.81 8.47 8.47 0 4.66-3.81 8.47-8.47 8.47-.92 0-1.82-.15-2.68-.42l-.28-.17c-.34-.21-.71-.41-1.1-.58l-3.72.97 1-.96c-.16-.39-.3-.79-.41-1.21-.27-.66-.42-1.36-.42-2.1 0-4.66 3.81-8.47 8.47-8.47M8.53 7.33c-.16 0-.43.06-.66.31-.2.22-.43.57-.43.97 0 .43.13.81.39 1.18.25.37.59.74.96 1.1.38.35.85.66 1.4.93.56.27 1.18.45 1.85.58.67.13 1.3.04 1.86-.18.56-.22 1.04-.61 1.39-1.08.35-.47.55-.99.55-1.55 0-.43-.09-.82-.27-1.16-.18-.34-.43-.61-.75-.81-.32-.2-.7-.3-1.13-.3-.43 0-.83.1-1.19.3-.36.19-.65.46-.86.8l-.29.34c-.14.17-.33.29-.54.29-.21 0-.39-.12-.54-.29l-.27-.3c-.21-.34-.5-.61-.86-.8-.36-.19-.76-.3-1.19-.3"/>
             </svg>
           </a>
           <button
@@ -170,12 +170,12 @@ const canonicalPath = `/news/${item.slug}`;
               navigator.clipboard.writeText('${item.title} — RadioABF\n${Astro.url}');
               const btn = this;
               const original = btn.innerHTML;
-              btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+              btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
               setTimeout(() => btn.innerHTML = original, 2000);
             `}
             title="Copy link (Instagram, etc.)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
@@ -422,7 +422,7 @@ const canonicalPath = `/news/${item.slug}`;
       text-decoration-color: rgba(165,243,252,.85);
     }
 
-    /* Share section - centered, lighter, buttons smaller */
+    /* Share section - ultra compact */
     .shareSection{
       text-align:center;
       margin-top:48px;
@@ -430,41 +430,41 @@ const canonicalPath = `/news/${item.slug}`;
       border-top:1px solid rgba(255,255,255,.08);
     }
     .shareTitle{
-      font-size:13px;
+      font-size:12px;
       text-transform:uppercase;
       letter-spacing:.14em;
-      color:rgba(255,255,255,.68);
-      margin-bottom:18px;
+      color:rgba(255,255,255,.65);
+      margin-bottom:14px;
       font-weight:700;
     }
     .shareButtons{
       display: inline-flex;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       background: rgba(10,31,51,0.45);
       backdrop-blur-xl;
-      padding: 10px 16px;
+      padding: 8px 12px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25), 0 0 20px rgba(34,211,238,0.08);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.25), 0 0 18px rgba(34,211,238,0.08);
     }
     .shareBtn{
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.82);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.80);
       transition: all 0.3s ease;
     }
     .shareBtn:hover{
-      background: rgba(34,211,238,0.18);
+      background: rgba(34,211,238,0.16);
       color: white;
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 8px 20px rgba(34,211,238,0.22);
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 6px 18px rgba(34,211,238,0.20);
     }
   </style>
 </Base>
