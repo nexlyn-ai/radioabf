@@ -573,25 +573,77 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       </script>
     </header>
 
-<!-- Dedications scrolling card – sticky like header, card style, aligned like home sections, small gap below header -->
-<section class="sticky top-[var(--header-height)] z-30 mt-2 mb-6"> <!-- mt-2 = petit décalage du header ; ajuste si besoin -->
-  <div class="mx-auto max-w-6xl px-4 sm:px-6">
-    <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 shadow-xl shadow-black/40">
-      <!-- Glows like home cards -->
-      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+<!-- Ultra-fine dedications marquee – premium, fixed below header, with Send modal -->
+<div class="sticky z-40 bg-[#0A1F33]/60 backdrop-blur-md border-b border-white/4 shadow-[0_1px_4px_rgba(0,0,0,0.12)]" style="top: var(--header-height, 80px);"> <!-- remplace 80px par la vraie hauteur de ton header -->
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 flex items-center justify-between gap-4 py-1 text-[10px] text-cyan-200/70 font-medium tracking-wider overflow-hidden whitespace-nowrap">
+    <!-- Left: Fixed label -->
+    <div class="flex-shrink-0 uppercase font-semibold text-cyan-300/85 pr-2">
+      DEDICATIONS:
+    </div>
 
-      <!-- Scrolling content -->
-      <div class="relative z-10">
-        <div id="dedicationsMarquee" class="overflow-hidden text-sm text-cyan-200/90 font-medium tracking-wide">
-          <div class="whitespace-nowrap inline-flex animate-marquee">
-            <!-- Messages will be dynamically injected here -->
-          </div>
-        </div>
+    <!-- Center: Scrolling messages -->
+    <div class="flex-1 overflow-hidden">
+      <div class="inline-flex animate-marquee gap-6">
+        <!-- Messages injected here -->
+      </div>
+      <div class="inline-flex animate-marquee gap-6" aria-hidden="true">
+        <!-- Duplication for seamless loop -->
       </div>
     </div>
+
+    <!-- Right: Send button -->
+    <button
+      id="openDedicationModal"
+      type="button"
+      class="flex-shrink-0 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-600/70 to-cyan-500/70 text-white text-[10px] font-semibold tracking-wide hover:from-cyan-500 hover:to-cyan-400 transition shadow-[0_1px_4px_rgba(34,211,238,0.2)] hover:shadow-[0_2px_8px_rgba(34,211,238,0.35)]"
+    >
+      Send yours! 🎤
+    </button>
   </div>
-</section>
+</div>
+
+<!-- Modal d’envoi de dédicace -->
+<div id="dedicationModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#0A1F33]/95 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+    <div class="p-5 border-b border-white/10 flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-white">Send your dedication</h3>
+      <button id="closeDedicationModal" class="text-white/70 hover:text-white text-xl">&times;</button>
+    </div>
+
+    <form id="dedicationForm" class="p-5 space-y-4">
+      <div>
+        <label for="dedName" class="block text-sm text-cyan-200/80 mb-1">Your name / pseudo</label>
+        <input
+          type="text"
+          id="dedName"
+          required
+          placeholder="Your name"
+          class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50"
+        />
+      </div>
+
+      <div>
+        <label for="dedMessage" class="block text-sm text-cyan-200/80 mb-1">Your message</label>
+        <textarea
+          id="dedMessage"
+          required
+          rows="4"
+          placeholder="Your dedication..."
+          class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50 resize-none"
+        ></textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-500 text-white font-semibold rounded-lg hover:from-cyan-500 hover:to-cyan-400 transition shadow-lg"
+      >
+        Send Dedication
+      </button>
+    </form>
+
+    <div id="dedicationFeedback" class="p-5 text-center text-sm hidden"></div>
+  </div>
+</div>
 
 <style is:inline>
   @keyframes marquee {
@@ -599,7 +651,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
     100% { transform: translateX(-50%); }
   }
   .animate-marquee {
-    animation: marquee 60s linear infinite;
+    animation: marquee 90s linear infinite;
   }
   .animate-marquee:hover {
     animation-play-state: paused;
@@ -608,9 +660,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
 <script is:inline data-astro-rerun>
   (() => {
-    const marqueeContainer = document.querySelector("#dedicationsMarquee .animate-marquee");
-    if (!marqueeContainer) return;
-
+    // Scrolling marquee
+    const containers = document.querySelectorAll(".animate-marquee");
     async function loadDedications() {
       try {
         const res = await fetch(
@@ -623,26 +674,99 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         const data = await res.json();
         const items = data?.data || [];
 
+        let html = "";
         if (items.length === 0) {
-          marqueeContainer.innerHTML = "<span class='mx-8'>No dedications yet... Send yours! 🎤</span>";
-          return;
+          html = "<span>No dedications yet...</span>";
+        } else {
+          html = items.map(item => 
+            `<span>
+              <strong>${item.name || "Anonymous Listener"}</strong> : ${item.message}
+            </span>`
+          ).join(" • ");
         }
 
-        const messagesHtml = items.map(item => 
-          `<span class="mx-8 inline-flex items-center gap-2">
-            <strong>${item.name || "Anonymous Listener"}</strong> : ${item.message}
-          </span>`
-        ).join("");
-
-        marqueeContainer.innerHTML = messagesHtml + messagesHtml; // duplicate for seamless loop
+        containers.forEach(c => c.innerHTML = html + " • " + html);
       } catch (err) {
         console.error("Error loading dedications:", err);
-        marqueeContainer.innerHTML = "<span class='mx-8'>Loading dedications...</span>";
+        containers.forEach(c => c.innerHTML = "<span>Loading...</span>");
       }
     }
-
     loadDedications();
-    setInterval(loadDedications, 60000); // refresh every 60 seconds
+    setInterval(loadDedications, 60000);
+
+    // Modal logic
+    const modal = document.getElementById("dedicationModal");
+    const openBtn = document.getElementById("openDedicationModal");
+    const closeBtn = document.getElementById("closeDedicationModal");
+    const form = document.getElementById("dedicationForm");
+    const feedback = document.getElementById("dedicationFeedback");
+
+    if (openBtn) openBtn.onclick = () => {
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    };
+
+    if (closeBtn) closeBtn.onclick = () => {
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+      document.body.style.overflow = "";
+      feedback.classList.add("hidden");
+      feedback.innerHTML = "";
+      form.reset();
+    };
+
+    if (form) form.onsubmit = async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("dedName").value.trim();
+      const message = document.getElementById("dedMessage").value.trim();
+
+      if (!name || !message) {
+        feedback.innerHTML = "Please fill in both fields.";
+        feedback.classList.remove("hidden", "text-green-400");
+        feedback.classList.add("text-red-400");
+        return;
+      }
+
+      feedback.innerHTML = "Sending...";
+      feedback.classList.remove("hidden", "text-red-400");
+      feedback.classList.add("text-cyan-200");
+
+      try {
+        const res = await fetch("https://cms.radioabf.com/items/dedications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            message,
+            status: "draft" // pour modération
+          }),
+        });
+
+        if (res.ok) {
+          feedback.innerHTML = "Thank you! Your dedication has been sent and is pending moderation. 🎧";
+          feedback.classList.remove("text-cyan-200");
+          feedback.classList.add("text-green-400");
+          form.reset();
+          setTimeout(() => {
+            modal.classList.add("hidden");
+            modal.style.display = "none";
+            document.body.style.overflow = "";
+            feedback.classList.add("hidden");
+          }, 3000);
+        } else {
+          feedback.innerHTML = "Error sending. Please try again.";
+          feedback.classList.remove("text-cyan-200");
+          feedback.classList.add("text-red-400");
+        }
+      } catch (err) {
+        feedback.innerHTML = "Network error. Please try again.";
+        feedback.classList.remove("text-cyan-200");
+        feedback.classList.add("text-red-400");
+      }
+    };
   })();
 </script>
 
