@@ -573,12 +573,25 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       </script>
     </header>
 
-<!-- Scrolling Dedications Marquee (just below header) -->
-<div id="dedicationsMarquee" class="bg-gradient-to-r from-[#0A1F33] via-[#0B2540] to-[#0A1F33] border-b border-cyan-500/20 overflow-hidden py-2.5 text-sm text-cyan-200/90 font-medium tracking-wide">
-  <div class="whitespace-nowrap inline-flex animate-marquee">
-    <!-- Messages will be dynamically injected here -->
+<!-- Dedications scrolling card (aligned like home cards) -->
+<section class="relative mb-6">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 shadow-xl shadow-black/40">
+      <!-- Subtle glows like home cards -->
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+      <!-- Scrolling content -->
+      <div class="relative z-10">
+        <div id="dedicationsMarquee" class="overflow-hidden text-sm text-cyan-200/90 font-medium tracking-wide">
+          <div class="whitespace-nowrap inline-flex animate-marquee">
+            <!-- Messages will be dynamically injected here -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</section>
 
 <style is:inline>
   @keyframes marquee {
@@ -600,7 +613,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
     async function loadDedications() {
       try {
-        // Fetch from your Directus instance - published dedications only, newest first
         const res = await fetch(
           "https://cms.radioabf.com/items/dedications?" +
           "fields=name,message" +
@@ -612,27 +624,25 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         const items = data?.data || [];
 
         if (items.length === 0) {
-          marqueeContainer.innerHTML = "<span>No dedications yet... Send yours! 🎤</span>";
+          marqueeContainer.innerHTML = "<span class='mx-8'>No dedications yet... Send yours! 🎤</span>";
           return;
         }
 
-        // Build messages + duplicate for seamless infinite loop
-        const messagesHtml = items.map(item => `
-          <span class="mx-8 inline-flex items-center gap-2">
+        const messagesHtml = items.map(item => 
+          `<span class="mx-8 inline-flex items-center gap-2">
             <strong>${item.name || "Anonymous Listener"}</strong> : ${item.message}
-          </span>
-        `).join("");
+          </span>`
+        ).join("");
 
-        marqueeContainer.innerHTML = messagesHtml + messagesHtml; // duplicate for smooth loop
+        marqueeContainer.innerHTML = messagesHtml + messagesHtml; // duplicate for seamless loop
       } catch (err) {
         console.error("Error loading dedications:", err);
-        marqueeContainer.innerHTML = "<span>Loading dedications...</span>";
+        marqueeContainer.innerHTML = "<span class='mx-8'>Loading dedications...</span>";
       }
     }
 
-    // Load immediately + refresh every 60 seconds
     loadDedications();
-    setInterval(loadDedications, 60000);
+    setInterval(loadDedications, 60000); // refresh every 60 seconds
   })();
 </script>
 
