@@ -1902,67 +1902,72 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
-		  {
-		  v: "3.3.0",
-		  d: "Feb 16, 2026",
-		  t: "UI & UX refinements: fixed vote display and modal persistence on homepage (server-only covers, no local fallbacks), redesigned Artists page with all artist cards unified in a single large container card, moved filter buttons to hero section for cleaner layout and improved visual flow."
-		  },
-          {
-            v: "3.2.0",
-            d: "Feb 16, 2026",
-            t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
-          },
-		  {
-            v: "3.1.0",
-            d: "Feb 15, 2026",
-            t: "Home + player stability milestone: Latest News now uses Directus SSR with Vercel cache headers, dates switched to English (US), improved On Air live detection + countdowns + stronger live highlight, Hero Top #1 weekly card added, and safer rebind after Astro page swaps (fullscreen/listeners). Minor UI polish across sections."
-          },
-          {
-            v: "3.0.8",
-            d: "Feb 14, 2026",
-            t: "UI & stability fixes: fixed cover fallbacks (no broken-image square after navigation), adjusted ABF logo sizing in fallback blocks, reduced visual glitches during page swaps (player + covers), and improved card image ratio handling/centering."
-          },
-          {
-            v: "3.0.7",
-            d: "Feb 14, 2026",
-            t: "Programs & On Air improvements: ensured Programs lands on the correct current day, restored On Air cues and improved current show highlight styling, tightened schedule cards while preserving artwork ratios, and reduced excess spacing under the pinned player / footer."
-          },
-          {
-            v: "3.0.6",
-            d: "Feb 13, 2026",
-            t: "Fullscreen + view transitions fix: fullscreen now remains usable after navigation (re-initialized listeners after Astro swaps), improved player control stability across pages, and refined floating 'Back to top' button placement."
-          },
-          {
-            v: "3.0.5",
-            d: "Feb 13, 2026",
-            t: "News routing + SEO: stabilized SSR dynamic news routes, added year filtering and cleaner /news listing grid, improved OG preview logic, and tuned Directus micro-cache + Vercel caching behavior."
-          },
-          {
-            v: "3.0.4",
-            d: "Feb 12, 2026",
-            t: "Player UI refinement: made the bottom player more compact, restored missing controls (incl. volume) with clearer play/pause states, upgraded the visualizer to a thinner modern full-width style, and improved header pulse behavior consistency."
-          },
-          {
-            v: "3.0.3",
-            d: "Feb 12, 2026",
-            t: "Music + charts UX: restored title-casing rules for readability, improved Last Played rendering consistency, and hardened weekly vote aggregation + cover usage."
-          },
-          {
-            v: "3.0.2",
-            d: "Feb 11, 2026",
-            t: "Build system + modals: Build/Updates modal cleanup (dates aligned, better spacing), footer build version now reads dynamically from latest entry, and added/normalized Stream Quality + FLAC info modals."
-          },
-          {
-            v: "3.0.1",
-            d: "Feb 11, 2026",
-            t: "Directus integration stabilization: safer handling of optional published_at, reduced unnecessary fallbacks where local assets exist, and general cleanup for deployment readiness."
-          },
-          {
-            v: "3.0.0",
-            d: "Feb 08, 2026",
-            t: "Major redesign: new ABF UI system (modern cards, gradients, spacing), persistent pinned player architecture foundations, refreshed layout/navigation, and the first Home structure (Now Playing hero, Last Played carousel, schedule preview)."
-          }
-        ];
+  {
+    v: "3.3.1",
+    d: "Feb 17, 2026",
+    t: "HTTPS Proxy Streams rollout: stable fixed HTTPS endpoints for all qualities (UHD FLAC, HD 320k MP3, SD 128k MP3, Low 32k AAC+). Bypass firewalls/corporate networks. Updated left mini-card with proxy info and \"Details & URLs\" button. Enhanced Stream Qualities modal with detailed explanations, external player instructions (VLC etc. per OS), and direct copy-paste URLs."
+  },
+  {
+    v: "3.3.0",
+    d: "Feb 16, 2026",
+    t: "UI & UX refinements: fixed vote display and modal persistence on homepage (server-only covers, no local fallbacks), redesigned Artists page with all artist cards unified in a single large container card, moved filter buttons to hero section for cleaner layout and improved visual flow."
+  },
+  {
+    v: "3.2.0",
+    d: "Feb 16, 2026",
+    t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
+  },
+  {
+    v: "3.1.0",
+    d: "Feb 15, 2026",
+    t: "Home + player stability milestone: Latest News now uses Directus SSR with Vercel cache headers, dates switched to English (US), improved On Air live detection + countdowns + stronger live highlight, Hero Top #1 weekly card added, and safer rebind after Astro page swaps (fullscreen/listeners). Minor UI polish across sections."
+  },
+  {
+    v: "3.0.8",
+    d: "Feb 14, 2026",
+    t: "UI & stability fixes: fixed cover fallbacks (no broken-image square after navigation), adjusted ABF logo sizing in fallback blocks, reduced visual glitches during page swaps (player + covers), and improved card image ratio handling/centering."
+  },
+  {
+    v: "3.0.7",
+    d: "Feb 14, 2026",
+    t: "Programs & On Air improvements: ensured Programs lands on the correct current day, restored On Air cues and improved current show highlight styling, tightened schedule cards while preserving artwork ratios, and reduced excess spacing under the pinned player / footer."
+  },
+  {
+    v: "3.0.6",
+    d: "Feb 13, 2026",
+    t: "Fullscreen + view transitions fix: fullscreen now remains usable after navigation (re-initialized listeners after Astro swaps), improved player control stability across pages, and refined floating 'Back to top' button placement."
+  },
+  {
+    v: "3.0.5",
+    d: "Feb 13, 2026",
+    t: "News routing + SEO: stabilized SSR dynamic news routes, added year filtering and cleaner /news listing grid, improved OG preview logic, and tuned Directus micro-cache + Vercel caching behavior."
+  },
+  {
+    v: "3.0.4",
+    d: "Feb 12, 2026",
+    t: "Player UI refinement: made the bottom player more compact, restored missing controls (incl. volume) with clearer play/pause states, upgraded the visualizer to a thinner modern full-width style, and improved header pulse behavior consistency."
+  },
+  {
+    v: "3.0.3",
+    d: "Feb 12, 2026",
+    t: "Music + charts UX: restored title-casing rules for readability, improved Last Played rendering consistency, and hardened weekly vote aggregation + cover usage."
+  },
+  {
+    v: "3.0.2",
+    d: "Feb 11, 2026",
+    t: "Build system + modals: Build/Updates modal cleanup (dates aligned, better spacing), footer build version now reads dynamically from latest entry, and added/normalized Stream Quality + FLAC info modals."
+  },
+  {
+    v: "3.0.1",
+    d: "Feb 11, 2026",
+    t: "Directus integration stabilization: safer handling of optional published_at, reduced unnecessary fallbacks where local assets exist, and general cleanup for deployment readiness."
+  },
+  {
+    v: "3.0.0",
+    d: "Feb 08, 2026",
+    t: "Major redesign: new ABF UI system (modern cards, gradients, spacing), persistent pinned player architecture foundations, refreshed layout/navigation, and the first Home structure (Now Playing hero, Last Played carousel, schedule preview)."
+  }
+];
 
         const latest = BUILDS[0]?.v || "—";
         buildVersion.textContent = latest;
