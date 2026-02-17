@@ -678,10 +678,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                   class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
                   title="Stream quality"
                 >
-                  <option value="0">MP3 320</option>
-                  <option value="1">MP3 128</option>
-                  <option value="2">AAC+ 32</option>
-                  <option value="3">FLAC 728</option>
+                  <option value="0">MP3 • 320 kbps</option>
+                  <option value="1">MP3 • 128 kbps</option>
+                  <option value="2">AAC+ • 32 kbps</option>
+                  <option value="3">FLAC • 728 kbps</option>
                 </select>
 
                 <button id="playBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]" aria-label="Play/Pause" title="Play/Pause">
@@ -707,10 +707,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               </div>
 
               <select id="streamSelectMobile" class="bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl" title="Stream quality">
-                <option value="0">MP3 320</option>
-                <option value="1">MP3 128</option>
-                <option value="2">AAC+ 32</option>
-                <option value="3">FLAC 728</option>
+                  <option value="0">MP3 • 320 kbps</option>
+                  <option value="1">MP3 • 128 kbps</option>
+                  <option value="2">AAC+ • 32 kbps</option>
+                  <option value="3">FLAC • 728 kbps</option>
               </select>
             </div>
           </div>
@@ -773,10 +773,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 </div>
 
                 <select id="fsStreamSelect" class="bg-[#050B14]/60 border border-white/15 text-white rounded-2xl px-4 py-3 text-sm backdrop-blur-xl" title="Stream quality">
-                  <option value="0">MP3 320</option>
-                  <option value="1">MP3 128</option>
-                  <option value="2">AAC+ 32</option>
-                  <option value="3">FLAC 728</option>
+                  <option value="0">MP3 • 320 kbps</option>
+                  <option value="1">MP3 • 128 kbps</option>
+                  <option value="2">AAC+ • 32 kbps</option>
+                  <option value="3">FLAC • 728 kbps</option>
                 </select>
               </div>
 
@@ -977,10 +977,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         const CONSENT_COOKIE = "abf_consent_v1"; // value: "a1" (analytics yes) or "a0" (analytics no)
 
         S.streams = S.streams || [
-          { url: "https://play.radioabf.com:2590/stream" },
-          { url: "https://play.radioabf.com:2600/stream" },
-          { url: "https://play.radioabf.com:2610/stream" },
-          { url: "https://play.radioabf.com:2620/stream" },
+          { url: "https://stream.radioabf.com/abf-hd.mp3" },
+          { url: "https://stream.radioabf.com/abf-sd.mp3" },
+          { url: "https://stream.radioabf.com/abf-low.aac" },
+          { url: "https://stream.radioabf.com/abf-uhd.flac" },
         ];
 
         S.audio = S.audio || new Audio();
@@ -1615,9 +1615,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           if (!playBtn || !stopBtn || !muteBtn || !vol || !selMob) return;
 
-          if (!audio.src){
+            if (!audio.src){
             let idx = 0;
             try { idx = Number(localStorage.getItem(LS_KEY) || 0); } catch {}
+            
+            // Détection mobile : force Low Data (index 2 = AAC+ 32kbps) au premier lancement
+
+            const isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
+            if (isMobile && localStorage.getItem(LS_KEY) === null) {
+              idx = 2; // Low Data en premier sur mobile
+            }
+            
             setStream(idx);
           }
 
