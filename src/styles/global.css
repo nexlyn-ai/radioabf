@@ -7,6 +7,9 @@
 
 :root{
   color-scheme: dark;
+
+  /* Dedications bar height (keep in sync with .dedications-inner height) */
+  --dedications-h: 28px;
 }
 
 html{
@@ -138,18 +141,25 @@ html, body{
 #playerContainer button:hover{
   box-shadow: 0 0 0 1px rgba(255,255,255,0.10) inset;
 }
-/* Bandeau dédicaces ultra-fin – premium, classe, style d'écriture et défilement conservé */
-.dedications-bar {
-  position: sticky;
-  top: var(--header-height, 80px); /* ajuste à la vraie hauteur de ton header */
-  z-index: 40;
+
+/* =========================================================
+   DEDICATIONS BAR — FIXED under header
+   ========================================================= */
+
+/* Dedications bar fixed under header */
+.dedications-bar{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--header-height, 96px);
+  z-index: 45; /* under header (z-50), above page content */
   background: rgba(10, 31, 51, 0.65);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
 }
 
-.dedications-inner {
+.dedications-inner{
   max-width: 1152px; /* max-w-6xl */
   margin: 0 auto;
   padding: 0 1rem;
@@ -157,12 +167,12 @@ html, body{
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  height: 28px; /* ultra-fin */
+  height: var(--dedications-h, 28px); /* ultra-fin */
   overflow: hidden;
   white-space: nowrap;
 }
 
-.dedications-label {
+.dedications-label{
   flex-shrink: 0;
   padding: 0.125rem 0.75rem;
   border-radius: 0.375rem; /* rectangulaire doux */
@@ -176,36 +186,36 @@ html, body{
   box-shadow: 0 1px 4px rgba(34, 211, 238, 0.1);
 }
 
-.dedications-scroll {
+.dedications-scroll{
   flex: 1;
   overflow: hidden;
 }
-
-.dedications-scroll-inner {
+.dedications-scroll-inner{
   display: inline-flex;
-  animation: marquee 90s linear infinite;
-  gap: 1.5rem; /* espace entre messages */
+  align-items: center;
+  gap: 1.5rem;
+
+  font-size: 12px; /* Réglage de la taille du texte des dédicaces */
+  line-height: 1;
+  letter-spacing: .02em;
+
+  white-space: nowrap;     /* IMPORTANT */
+  will-change: transform;  /* IMPORTANT */
+  transform: translate3d(0,0,0);
 }
 
-.dedications-scroll-inner span {
-  color: rgba(165, 243, 252, 0.9); /* cyan clair */
+.dedications-scroll-inner span{
+  color: rgba(165, 243, 252, 0.88);
+  font-weight: 500;
 }
 
-.dedications-scroll-inner span strong {
-  color: white;
+.dedications-scroll-inner span strong{
+  color: rgba(255,255,255,0.92);
   font-weight: 700;
 }
 
-.dedications-scroll-inner:hover {
-  animation-play-state: paused;
-}
 
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.dedications-send-btn {
+.dedications-send-btn{
   flex-shrink: 0;
   padding: 0.125rem 0.75rem;
   border-radius: 0.375rem;
@@ -218,8 +228,41 @@ html, body{
   box-shadow: 0 1px 4px rgba(34, 211, 238, 0.2);
 }
 
-.dedications-send-btn:hover {
+.dedications-send-btn:hover{
   background: linear-gradient(to right, rgba(34, 211, 238, 0.85), rgba(59, 130, 246, 0.85));
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(34, 211, 238, 0.35);
+}
+
+.dedications-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left: 8px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  color: rgba(255,255,255,0.95);
+  background: rgba(239,68,68,0.95); /* rouge */
+  box-shadow: 0 6px 18px rgba(239,68,68,0.25);
+  transform: translateY(-1px);
+}
+
+.dedications-badge.hidden{
+  display:none;
+}
+
+
+/* =========================================================
+   PAGE OFFSET (so fixed bar doesn't overlap content)
+   ========================================================= */
+
+/* If your main has id="mainContent" (it does in Base.astro),
+   we add spacing so content starts BELOW the dedications bar. */
+main#mainContent{
+  padding-top: calc(var(--dedications-h, 28px) + 16px);
 }
