@@ -573,6 +573,69 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       </script>
     </header>
 
+<!-- Scrolling Dedications Marquee (just below header) -->
+<div id="dedicationsMarquee" class="bg-gradient-to-r from-[#0A1F33] via-[#0B2540] to-[#0A1F33] border-b border-cyan-500/20 overflow-hidden py-2.5 text-sm text-cyan-200/90 font-medium tracking-wide">
+  <div class="whitespace-nowrap inline-flex animate-marquee">
+    <!-- Messages will be dynamically injected here -->
+  </div>
+</div>
+
+<style is:inline>
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee 60s linear infinite;
+  }
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+</style>
+
+<script is:inline data-astro-rerun>
+  (() => {
+    const marqueeContainer = document.querySelector("#dedicationsMarquee .animate-marquee");
+    if (!marqueeContainer) return;
+
+    async function loadDedications() {
+      try {
+        // Fetch from your Directus instance - published dedications only, newest first
+        const res = await fetch(
+          "https://cms.radioabf.com/items/dedications?" +
+          "fields=name,message" +
+          "&filter[status][_eq]=published" +
+          "&sort=-date_created" +
+          "&limit=20"
+        );
+        const data = await res.json();
+        const items = data?.data || [];
+
+        if (items.length === 0) {
+          marqueeContainer.innerHTML = "<span>No dedications yet... Send yours! 🎤</span>";
+          return;
+        }
+
+        // Build messages + duplicate for seamless infinite loop
+        const messagesHtml = items.map(item => `
+          <span class="mx-8 inline-flex items-center gap-2">
+            <strong>${item.name || "Anonymous Listener"}</strong> : ${item.message}
+          </span>
+        `).join("");
+
+        marqueeContainer.innerHTML = messagesHtml + messagesHtml; // duplicate for smooth loop
+      } catch (err) {
+        console.error("Error loading dedications:", err);
+        marqueeContainer.innerHTML = "<span>Loading dedications...</span>";
+      }
+    }
+
+    // Load immediately + refresh every 60 seconds
+    loadDedications();
+    setInterval(loadDedications, 60000);
+  })();
+</script>
+
     <!-- ================= GLOBAL FORMATTER (ARTIST/TITLE) ================= -->
     <script is:inline data-astro-rerun>
       (() => {
