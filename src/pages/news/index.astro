@@ -1,7 +1,6 @@
 ---
 import Base from "../../layouts/Base.astro";
 import { directusGet, directusAsset } from "../../lib/directus";
-
 export const prerender = false;
 
 type NewsItem = {
@@ -13,29 +12,23 @@ type NewsItem = {
   cover?: string | null;
   published_at?: string | null;
   date_created?: string | null;
-  category?: string | null; // ✅ NEW
+  category?: string | null;
 };
 
 type DirectusListResp = { data: NewsItem[] };
 
 const url = new URL(Astro.request.url);
 
-// ------------------------
 // CATEGORY FILTER
-// ------------------------
 const catParamRaw = (url.searchParams.get("cat") || "").toLowerCase();
 const selectedCat = catParamRaw === "radio" || catParamRaw === "music" ? catParamRaw : null;
 
-// ------------------------
 // YEAR FILTER
-// ------------------------
 const yearParam = url.searchParams.get("year");
 const selectedYear = yearParam && yearParam !== "all" ? Number(yearParam) : null;
-
 const yearStart = selectedYear
   ? new Date(Date.UTC(selectedYear, 0, 1, 0, 0, 0)).toISOString()
   : null;
-
 const yearEnd = selectedYear
   ? new Date(Date.UTC(selectedYear + 1, 0, 1, 0, 0, 0)).toISOString()
   : null;
@@ -55,13 +48,10 @@ const catFilterParams = selectedCat ? `filter[category][_eq]=${encodeURIComponen
 function linkWithParams(nextPage: number) {
   const u = new URL(Astro.request.url);
   u.searchParams.set("page", String(nextPage));
-
   if (selectedYear) u.searchParams.set("year", String(selectedYear));
   else u.searchParams.delete("year");
-
   if (selectedCat) u.searchParams.set("cat", selectedCat);
   else u.searchParams.delete("cat");
-
   return u.pathname + "?" + u.searchParams.toString();
 }
 
@@ -70,38 +60,28 @@ function linkWithYear(nextYear: string) {
   u.searchParams.set("page", "1");
   if (nextYear === "all") u.searchParams.delete("year");
   else u.searchParams.set("year", nextYear);
-
   if (selectedCat) u.searchParams.set("cat", selectedCat);
   else u.searchParams.delete("cat");
-
   return u.pathname + "?" + u.searchParams.toString();
 }
 
 function linkWithCat(nextCat: string) {
   const u = new URL(Astro.request.url);
   u.searchParams.set("page", "1");
-
   if (selectedYear) u.searchParams.set("year", String(selectedYear));
   else u.searchParams.delete("year");
-
   if (nextCat === "all") u.searchParams.delete("cat");
   else u.searchParams.set("cat", nextCat);
-
   return u.pathname + "?" + u.searchParams.toString();
 }
 
-// ------------------------
 // PAGINATION
-// ------------------------
 const page = Math.max(1, Number(url.searchParams.get("page") || "1") || 1);
 const PER_PAGE = 9;
 const offset = (page - 1) * PER_PAGE;
 
-// ------------------------
 // FETCH LIST
-// ------------------------
 const fields = "id,status,title,slug,excerpt,cover,published_at,date_created,category";
-
 const listQuery =
   `/items/news?fields=${encodeURIComponent(fields)}` +
   `&filter[status][_eq]=published` +
@@ -117,7 +97,6 @@ const totalQuery =
   (yearFilterParams ? `&${yearFilterParams}` : "") +
   (catFilterParams ? `&${catFilterParams}` : "");
 
-// NOTE: Directus aggregate shape can vary (number/string/object)
 const totalResp = await directusGet<{ data: any[] }>(totalQuery);
 
 function normalizeAggregateCount(v: any): number {
@@ -145,13 +124,10 @@ function normalizeAggregateCount(v: any): number {
 
 const total = normalizeAggregateCount(totalResp?.data?.[0]?.count);
 const pageCount = Math.max(1, Math.ceil(total / PER_PAGE));
-
 const prev = page > 1 ? page - 1 : null;
 const next = page < pageCount ? page + 1 : null;
 
-// ------------------------
-// YEARS LIST (dropdown)
-// ------------------------
+// YEARS LIST
 const yearsResp = await directusGet<{ data: Pick<NewsItem, "published_at" | "date_created">[] }>(
   `/items/news?fields=${encodeURIComponent("published_at,date_created")}` +
     `&filter[status][_eq]=published&sort=-published_at,-date_created&limit=250`
@@ -173,9 +149,7 @@ const years = Array.from(
   )
 ).sort((a, b) => b - a);
 
-// ------------------------
-// DATE FORMAT (ENGLISH)
-// ------------------------
+// DATE FORMAT
 const fmtDate = (iso?: string | null) => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -183,24 +157,17 @@ const fmtDate = (iso?: string | null) => {
   return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
 };
 
-// ------------------------
-// VERCEL CDN CACHE (SSR)
-// ------------------------
+// CACHE
 Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
 
-// ------------------------
-// META (clean + stable)
-// ------------------------
+// META
 const metaTitle = "News — RadioABF";
 const metaDesc = "Latest updates from RadioABF: releases, programs, events, and station news.";
-
 let canonicalPath = "/news";
 const canonParams: string[] = [];
 if (selectedYear) canonParams.push(`year=${selectedYear}`);
 if (selectedCat) canonParams.push(`cat=${selectedCat}`);
 if (canonParams.length) canonicalPath += `?${canonParams.join("&")}`;
-
-// og/twitter image (absolute URL recommended)
 const ogSvgPath = `/og/news.svg?title=${encodeURIComponent("News — RadioABF")}`;
 const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toString();
 ---
@@ -212,7 +179,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     <meta property="og:description" content={metaDesc} />
     <meta property="og:url" content={new URL(Astro.request.url).toString()} />
     <meta property="og:image" content={ogImageAbs} />
-
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={metaTitle} />
     <meta name="twitter:description" content={metaDesc} />
@@ -220,11 +186,10 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
   </Fragment>
 
   <div class="abfPageWrap">
-    <!-- HERO -->
+    <!-- HERO – inchangé -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-7 sm:p-10 mb-10 shadow-2xl">
       <div class="absolute -top-40 -left-40 w-[520px] h-[520px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
       <div class="absolute -bottom-40 -right-40 w-[520px] h-[520px] bg-blue-600/20 rounded-full blur-[120px]"></div>
-
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
           <div class="min-w-0">
@@ -232,14 +197,12 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
               <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
               News
             </div>
-
             <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight">
               Latest updates from <span class="text-cyan-200">RadioABF</span>
             </h1>
             <p class="text-white/65 mt-3 max-w-2xl">
               Releases, programs, events, and everything happening on The DJs’ Frequency.
             </p>
-
             <!-- CATEGORY TABS -->
             <div class="mt-5 flex items-center gap-2 flex-wrap">
               <a class={`catPill ${!selectedCat ? "active" : ""}`} href={linkWithCat("all")}>All</a>
@@ -247,7 +210,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
               <a class={`catPill ${selectedCat === "music" ? "active" : ""}`} href={linkWithCat("music")}>Music</a>
             </div>
           </div>
-
           <!-- YEAR FILTER -->
           <div class="flex items-center gap-2 flex-none">
             <span class="text-xs text-white/55 uppercase tracking-wider">Year</span>
@@ -264,19 +226,21 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       </div>
     </section>
 
-    <section class="space-y-6">
+    <!-- GRANDE CARD UNIQUE pour les news + pagination -->
+    <section class="bigCard">
+      <div class="glow a"></div>
+      <div class="glow b"></div>
+
       {resp.data?.length ? (
         <div class="newsGrid">
           {resp.data.map((post) => {
             const dateLabel = fmtDate(post.published_at || post.date_created);
             const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
-
             return (
               <a href={`/news/${post.slug}`} class="newsCard group">
                 <div class="newsMedia">
                   {cover ? <img src={cover} alt="" class="newsImg" loading="lazy" decoding="async" /> : null}
                   <div class="newsShade"></div>
-
                   <div class="newsMeta">
                     {post.category ? (
                       <div class={`newsCategory ${post.category}`}>
@@ -286,10 +250,8 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
                     <div class="newsDate">{dateLabel || ""}</div>
                     <div class="newsTitle">{post.title}</div>
                   </div>
-
                   <div class="newsArrow">→</div>
                 </div>
-
                 <div class="newsBody">
                   <p class="newsExcerpt">{post.excerpt ?? ""}</p>
                 </div>
@@ -298,12 +260,12 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
           })}
         </div>
       ) : (
-        <div class="rounded-3xl border border-white/10 bg-white/5 p-6 text-white/70">
+        <div class="noNews">
           No news yet.
         </div>
       )}
 
-      <!-- ✅ PAGINATION (merged + centered + safe space for floating button) -->
+      <!-- PAGINATION -->
       <div class="pagerWrap">
         <div class="pagerBar" id="pagerBar">
           <div class="pagerInfo">
@@ -311,14 +273,12 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
             {selectedYear ? ` • ${selectedYear}` : ""}
             {selectedCat ? ` • ${selectedCat}` : ""}
           </div>
-
           <div class="pagerBtns">
             {prev ? (
               <a class="pagerBtn" href={linkWithParams(prev)}>← Prev</a>
             ) : (
               <span class="pagerBtn disabled">← Prev</span>
             )}
-
             {next ? (
               <a class="pagerBtn" href={linkWithParams(next)}>Next →</a>
             ) : (
@@ -339,47 +299,67 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
         if (v) window.location.href = v;
       });
     }
-
-    // push floating back-to-top button up if it overlaps pager
-    // (works if Base.astro button has id="backToTopBtn")
+    // back-to-top bump
     const btt = document.getElementById("backToTopBtn");
     const pager = document.getElementById("pagerBar");
-
     function bumpBtt(){
       if (!btt || !pager) return;
       const r = pager.getBoundingClientRect();
       const vh = window.innerHeight;
-
-      // if pager is near bottom, move button up
-      const overlapZone = 120; // px
+      const overlapZone = 120;
       const distFromBottom = vh - r.bottom;
-
       if (distFromBottom < overlapZone) {
         btt.style.transform = "translateY(-78px)";
       } else {
         btt.style.transform = "";
       }
     }
-
     bumpBtt();
     window.addEventListener("scroll", bumpBtt, { passive: true });
     window.addEventListener("resize", bumpBtt);
   </script>
 
   <style is:inline>
-    .abfPageWrap{
+    .abfPageWrap {
       width: 100%;
-      max-width: 72rem; /* same as max-w-6xl */
+      max-width: 72rem;
       margin-left: auto;
       margin-right: auto;
     }
 
+    /* ── GRANDE CARD ── */
+    .bigCard {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(10,31,51,0.4);
+      backdrop-filter: blur(8px);
+      padding: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.38);
+    }
+
+    @media (min-width: 640px) {
+      .bigCard { padding: 36px; }
+    }
+
+    .glow {
+      position: absolute;
+      width: 520px;
+      height: 520px;
+      border-radius: 999px;
+      filter: blur(120px);
+      opacity: .45;
+      pointer-events: none;
+    }
+    .glow.a { top: -220px; left: -220px; background: rgba(34,211,238,.28); }
+    .glow.b { bottom: -220px; right: -220px; background: rgba(59,130,246,.28); }
+
+    /* Le reste de tes styles reste identique */
     #yearSelect option{
       background: #050B14;
       color: #fff;
     }
-
-    /* category pills */
     .catPill{
       display:inline-flex;
       align-items:center;
@@ -406,8 +386,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       color: rgba(165,243,252,.95);
       box-shadow: 0 0 0 1px rgba(34,211,238,.12) inset;
     }
-
-    /* responsive grid */
     .newsGrid{
       display:grid;
       gap:16px;
@@ -419,8 +397,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     @media (min-width: 1024px){
       .newsGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-
-    /* card */
     .newsCard{
       display:flex;
       flex-direction:column;
@@ -436,8 +412,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       background: rgba(255,255,255,.10);
       transform: translateY(-1px);
     }
-
-    /* media */
     .newsMedia{
       position:relative;
       aspect-ratio:16/9;
@@ -462,7 +436,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       inset:0;
       background: linear-gradient(to top, rgba(5,11,20,.78), rgba(5,11,20,.12), transparent);
     }
-
     .newsMeta{
       position:absolute;
       left:16px;
@@ -470,8 +443,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       bottom:14px;
       min-width:0;
     }
-
-    /* category badge */
     .newsCategory{
       display:inline-flex;
       align-items:center;
@@ -498,7 +469,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       color: rgba(191,219,254,.95);
       background: rgba(96,165,250,.10);
     }
-
     .newsDate{
       font-size:11px;
       color: rgba(255,255,255,.65);
@@ -515,7 +485,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       overflow:hidden;
       text-overflow:ellipsis;
     }
-
     .newsArrow{
       position:absolute;
       right:14px;
@@ -529,8 +498,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       place-items:center;
       color: rgba(165, 243, 252, .92);
     }
-
-    /* body equal height */
     .newsBody{
       padding:16px 18px 18px;
       flex:1;
@@ -546,14 +513,12 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
-
-    /* ✅ pager: centered + merged */
     .pagerWrap{
       display:flex;
       justify-content:center;
-      padding-bottom: 84px; /* reserve space for floating button */
+      padding-bottom: 84px;
+      margin-top: 2rem;
     }
-
     .pagerBar{
       width: min(820px, 100%);
       display:flex;
@@ -566,7 +531,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       background: rgba(255,255,255,.06);
       backdrop-filter: blur(8px);
     }
-
     .pagerInfo{
       font-size:12px;
       color: rgba(255,255,255,.55);
@@ -574,13 +538,11 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       overflow:hidden;
       text-overflow:ellipsis;
     }
-
     .pagerBtns{
       display:flex;
       gap:10px;
       flex: none;
     }
-
     .pagerBtn{
       display:inline-flex;
       align-items:center;
@@ -603,7 +565,15 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       opacity:.35;
       pointer-events:none;
     }
-
+    .noNews {
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: rgba(255,255,255,.70);
+      font-size: 1.1rem;
+    }
     @media (max-width: 560px){
       .pagerWrap{ padding-bottom: 96px; }
       .pagerBar{
