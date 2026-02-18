@@ -107,7 +107,7 @@ function inject(html) {
         let repeated = joined;
 
 if (items.length > 3) {
-  repeated = `${joined} • ${joined} • ${joined}`;  // 3 passages complets
+  repeated = Array(10).fill(joined).join(" • ");
   // Si tu veux encore plus de marge avec des messages très longs, décommente :
   // repeated = `${joined} • ${joined} • ${joined} • ${joined}`; // 4 passages
 }
