@@ -61,16 +61,17 @@
     inner.style.transform = `translate3d(${tx}px,0,0)`;
   }
 
-  function inject(html) {
-    const el = getInnerEl();
-    if (!el) return;
+function inject(html) {
+  const el = getInnerEl();
+  if (!el) return;
 
-    // inject only if empty to avoid flicker on swaps
-    if ((el.innerHTML || "").trim().length === 0) {
-      el.innerHTML = html || "";
-    }
-    applyTransform();
-  }
+  el.innerHTML = html || "";           // On injecte toujours pour rafraîchir le contenu
+
+  // Force le navigateur à recalculer les dimensions immédiatement
+  void el.offsetHeight;                // Le "void" évite des warnings inutiles
+
+  applyTransform();
+}
 
   function setBadge(on) {
     const b = $("#dedicationsBadge");
@@ -103,7 +104,15 @@
           return `<span><strong class="text-cyan-300">${name}</strong> : ${msg}</span>`;
         });
         const joined = parts.join(" • ");
-        html = items.length <= 3 ? joined : `${joined} • ${joined}`; // duplicate for loop
+        let repeated = joined;
+
+if (items.length > 3) {
+  repeated = `${joined} • ${joined} • ${joined}`;  // 3 passages complets
+  // Si tu veux encore plus de marge avec des messages très longs, décommente :
+  // repeated = `${joined} • ${joined} • ${joined} • ${joined}`; // 4 passages
+}
+
+html = repeated;
       }
 
       S.html = html;
