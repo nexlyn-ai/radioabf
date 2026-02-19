@@ -490,89 +490,132 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       --abf-gap: 1px;
     "
   >
-    <!-- ================= HEADER ================= -->
-    <header id="siteHeader" class="sticky top-0 z-50">
-      <div class="bg-[#050B14]/80 backdrop-blur-xl border-b border-white/10">
-        <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4">
-          <div class="flex items-center justify-between gap-4">
-            <!-- Brand -->
-            <a href="/" class="flex items-center gap-3 min-w-0 group">
-              <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center flex-none">
-                <div class="absolute inset-0 rounded-full bg-cyan-400/20 blur-2xl opacity-80"></div>
-                <div class="absolute inset-0 rounded-full border border-cyan-400/25"></div>
-                <img
-                  id="abfBrandLogo"
-                  src="/logo-abf.png"
-                  alt="ABF"
-                  class="relative w-full h-full object-contain
-                         drop-shadow-[0_0_18px_rgba(47,194,255,0.55)]
-                         transition duration-500
-                         group-hover:drop-shadow-[0_0_28px_rgba(47,194,255,0.9)]"
-                  loading="eager"
-                  decoding="async"
-                />
+
+<!-- ================= HEADER ================= -->
+<header id="siteHeader" class="sticky top-0 z-50">
+  <div class="bg-[#050B14]/80 backdrop-blur-xl border-b border-white/10">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4">
+      <!-- ✅ important: parent en relative pour ancrer le dropdown -->
+      <div class="relative">
+        <div class="flex items-center justify-between gap-4">
+          <!-- Brand -->
+          <a href="/" class="flex items-center gap-3 min-w-0 group">
+            <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center flex-none">
+              <div class="absolute inset-0 rounded-full bg-cyan-400/20 blur-2xl opacity-80"></div>
+              <div class="absolute inset-0 rounded-full border border-cyan-400/25"></div>
+              <img
+                id="abfBrandLogo"
+                src="/logo-abf.png"
+                alt="ABF"
+                class="relative w-full h-full object-contain
+                       drop-shadow-[0_0_18px_rgba(47,194,255,0.55)]
+                       transition duration-500
+                       group-hover:drop-shadow-[0_0_28px_rgba(47,194,255,0.9)]"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+
+            <div class="min-w-0 leading-tight">
+              <div class="font-extrabold text-white tracking-wide truncate">RadioABF</div>
+              <div class="text-xs text-white/60 truncate">Alternative Bass Fréquence</div>
+              <div
+                class="text-[11px] tracking-wider uppercase
+                       bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300
+                       bg-clip-text text-transparent
+                       drop-shadow-[0_0_6px_rgba(47,194,255,0.35)]
+                       truncate"
+              >
+                The DJs' Frequency
               </div>
-              <div class="min-w-0 leading-tight">
-                <div class="font-extrabold text-white tracking-wide truncate">RadioABF</div>
-                <div class="text-xs text-white/60 truncate">Alternative Bass Fréquence</div>
-                <div
-                  class="text-[11px] tracking-wider uppercase
-                         bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300
-                         bg-clip-text text-transparent
-                         drop-shadow-[0_0_6px_rgba(47,194,255,0.35)]
-                         truncate"
-                >
-                  The DJs' Frequency
-                </div>
-              </div>
-            </a>
+            </div>
+          </a>
 
-            <!-- Desktop nav -->
-            <nav class="hidden md:flex items-center gap-2">
-              <a href="/" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Home</a>
-              <a href="/news" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
-              <a href="/music" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Music</a>
-              <a href="/programs" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Programs</a>
-              <a href="/artists" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Artists</a>
-            </nav>
-
-            <!-- Mobile button -->
-            <button
-              id="navBtn"
-              type="button"
-              class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
-              aria-label="Open menu"
-              aria-expanded="false"
-              aria-controls="mobileNav"
-            >
-              ☰
-            </button>
-          </div>
-
-          <!-- Mobile nav -->
-          <nav id="mobileNav" class="md:hidden hidden mt-3 p-3 rounded-2xl border border-white/10 bg-white/5">
-            <a href="/" class="block px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Home</a>
-            <a href="/news" class="block px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
-            <a href="/music" class="block px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Music</a>
-            <a href="/programs" class="block px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Programs</a>
-            <a href="/artists" class="block px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Artists</a>
+          <!-- Desktop nav -->
+          <nav class="hidden md:flex items-center gap-2">
+            <a href="/" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Home</a>
+            <a href="/news" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
+            <a href="/music" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Music</a>
+            <a href="/programs" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Programs</a>
+            <a href="/artists" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Artists</a>
           </nav>
-        </div>
-      </div>
 
-      <script is:inline data-astro-rerun>
-        (() => {
-          const btn = document.getElementById("navBtn");
-          const nav = document.getElementById("mobileNav");
-          if (!btn || !nav) return;
-          btn.onclick = () => {
-            const isOpen = !nav.classList.contains("hidden");
-            nav.classList.toggle("hidden", isOpen);
-            btn.setAttribute("aria-expanded", String(!isOpen));
-          };
-        })();
-      </script>
-    </header>
+          <!-- Mobile button -->
+          <button
+            id="navBtn"
+            type="button"
+            class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="mobileNav"
+          >
+            ☰
+          </button>
+        </div>
+
+        <!-- ✅ Mobile nav: ABSOLUTE dropdown (ne pousse plus la page) -->
+        <nav
+          id="mobileNav"
+          class="md:hidden hidden absolute left-0 right-0 top-full mt-3 p-3 rounded-2xl border border-white/10 bg-[#050B14]/95 backdrop-blur-xl shadow-2xl"
+        >
+          <div class="grid gap-1">
+            <a href="/" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Home</a>
+            <a href="/news" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
+            <a href="/music" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
+            <a href="/programs" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Programs</a>
+            <a href="/artists" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Artists</a>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      const btn = document.getElementById("navBtn");
+      const nav = document.getElementById("mobileNav");
+      if (!btn || !nav) return;
+
+      const close = () => {
+        nav.classList.add("hidden");
+        btn.setAttribute("aria-expanded", "false");
+      };
+
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const isOpen = !nav.classList.contains("hidden");
+        if (isOpen) close();
+        else {
+          nav.classList.remove("hidden");
+          btn.setAttribute("aria-expanded", "true");
+        }
+      };
+
+      // ✅ ferme quand on clique un lien
+      nav.addEventListener("click", (e) => {
+        const a = e.target?.closest?.("a");
+        if (a) close();
+      });
+
+      // ✅ ferme si clic ailleurs
+      document.addEventListener("click", (e) => {
+        if (!nav.classList.contains("hidden")) {
+          const t = e.target;
+          if (!nav.contains(t) && t !== btn) close();
+        }
+      });
+
+      // ✅ ferme avec ESC
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") close();
+      });
+
+      // ✅ sur navigation Astro, on ferme
+      document.addEventListener("astro:after-swap", close);
+      document.addEventListener("astro:page-load", close);
+    })();
+  </script>
+</header>
 
 <!-- DEDICATIONS BAR (global) -->
 <div class="dedications-bar" transition:persist="dedications">
