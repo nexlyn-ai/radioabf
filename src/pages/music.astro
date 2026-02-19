@@ -327,33 +327,42 @@ import Base from "../layouts/Base.astro";
     const VOTES_TTL_MS = 10_000; // 10s
     function votesCacheKey(){ return `votes:${getISOWeekId()}`; }
 
-    async function apiGetVotes(){
-      const week = getISOWeekId();
-      const k = votesCacheKey();
+async function apiGetVotes(){
+  const week = getISOWeekId();
+  const k = votesCacheKey();
 
-      window.__abfVotesCache = window.__abfVotesCache || {};
-      const c = window.__abfVotesCache[k];
-      const now = nowTs();
-      if (c && now < c.exp) return c.votes || {};
+  window.__abfVotesCache = window.__abfVotesCache || {};
+  const c = window.__abfVotesCache[k];
+  const now = nowTs();
+  if (c && now < c.exp) return c.payload || { votes: {}, covers: {} };
 
-      try {
-        const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
-        const data = await res.json().catch(() => ({}));
+  try {
+    const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
 
-        const votes = {};
-        const top = Array.isArray(data?.top) ? data.top : [];
-        for (const row of top){
-          const key = String(row?.track_key || "").trim();
-          const count = Number(row?.count || 0);
-          if (key) votes[key] = count;
-        }
+    const votes = {};
+    const covers = {}; // ✅ track_key -> cover_url
+    const top = Array.isArray(data?.top) ? data.top : [];
 
-        window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, votes };
-        return votes;
-      } catch {
-        return {};
-      }
+    for (const row of top){
+      const key = String(row?.track_key || "").trim();
+      const count = Number(row?.count || 0);
+      if (!key) continue;
+
+      votes[key] = count;
+
+      const cu = String(row?.cover_url || "").trim();
+      if (cu) covers[key] = cu;
     }
+
+    const payload = { votes, covers };
+    window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, payload };
+    return payload;
+  } catch {
+    return { votes: {}, covers: {} };
+  }
+}
+
 
     // Session UX anti-spam (24h) — uses NORM key
     function markSessionVoted(norm){
@@ -465,7 +474,7 @@ import Base from "../layouts/Base.astro";
         return coverByNorm[n] || "";
       }
 
-      const votes = await apiGetVotes();
+      const { votes, covers: coverByKey } = await apiGetVotes();
 
       // NOW PLAYING
       const currentEntry = history[0];
@@ -612,7 +621,7 @@ import Base from "../layouts/Base.astro";
             "bg-white/5 border-white/10";
 
           const n = normKey(artistRaw, titleRaw);
-          const coverUrl = coverByNorm[n] || "";
+          const coverUrl = coverByKey[key] || coverByNorm[n] || "";
 
           return `
             <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition">
