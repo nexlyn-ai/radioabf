@@ -1179,74 +1179,84 @@ const fmtDate = (iso?: string | null) => {
   }
 
   // -------------------------
-  // Modals (inchangé)
+  // ✅ Modals (FIX Astro swap) — event delegation
   // -------------------------
-  function bindFlacModal(){
-    const modal = document.getElementById("flacModal");
-    const openBtn = document.getElementById("openFlacModal");
-    const openBtn2 = document.getElementById("openFlacModal2");
-    const closeBtn = document.getElementById("flacClose");
-    if (!modal || !openBtn || !closeBtn) return;
+  function bindHomeModalsOnce(){
+    if (window.__abfHomeModalsBound) return;
 
     const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-    const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
-    const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
 
-    // évite double-bind
-    if (!window.__abfHomeBindFlac){
-      openBtn.addEventListener("click", open);
-      if (openBtn2) openBtn2.addEventListener("click", open);
-      closeBtn.addEventListener("click", close);
+    const openModal = (id) => {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.setAttribute("aria-hidden", "false");
+      lockScroll(true);
+    };
 
-      document.addEventListener("click", (e) => {
-        const t = e.target;
-        if (t?.dataset?.close === "flac") close();
-      });
+    const closeModal = (id) => {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.setAttribute("aria-hidden", "true");
+      lockScroll(false);
+    };
 
-      document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (modal.getAttribute("aria-hidden") === "false") close();
-      });
+    // Click delegation (works after astro swaps)
+    document.addEventListener("click", (e) => {
+      const t = e.target;
 
-      window.__abfHomeBindFlac = true;
-    }
+      // OPEN buttons
+      if (t?.closest?.("#openFlacModal") || t?.closest?.("#openFlacModal2")) {
+        openModal("flacModal");
+        return;
+      }
+      if (t?.closest?.("#openStreamQualityModal")) {
+        openModal("streamQualityModal");
+        return;
+      }
+
+      // CLOSE buttons
+      if (t?.closest?.("#flacClose")) {
+        closeModal("flacModal");
+        return;
+      }
+      if (t?.closest?.("#streamQualityClose")) {
+        closeModal("streamQualityModal");
+        return;
+      }
+
+      // Backdrop click close (data-close="flac" / "streamquality")
+      const closeKey = t?.dataset?.close;
+      if (closeKey === "flac") {
+        closeModal("flacModal");
+        return;
+      }
+      if (closeKey === "streamquality") {
+        closeModal("streamQualityModal");
+        return;
+      }
+    });
+
+    // ESC close
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+
+      const flac = document.getElementById("flacModal");
+      if (flac && flac.getAttribute("aria-hidden") === "false") closeModal("flacModal");
+
+      const qual = document.getElementById("streamQualityModal");
+      if (qual && qual.getAttribute("aria-hidden") === "false") closeModal("streamQualityModal");
+    });
+
+    window.__abfHomeModalsBound = true;
   }
 
-  function bindStreamQualityModal(){
-    const modal = document.getElementById("streamQualityModal");
-    const openBtn = document.getElementById("openStreamQualityModal");
-    const closeBtn = document.getElementById("streamQualityClose");
-    if (!modal || !openBtn || !closeBtn) return;
-
-    const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-    const open = () => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
-    const close = () => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
-
-    if (!window.__abfHomeBindQual){
-      openBtn.addEventListener("click", open);
-      closeBtn.addEventListener("click", close);
-
-      document.addEventListener("click", (e) => {
-        const t = e.target;
-        if (t?.dataset?.close === "streamquality") close();
-      });
-
-      document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (modal.getAttribute("aria-hidden") === "false") close();
-      });
-
-      window.__abfHomeBindQual = true;
-    }
-  }
 
   // -------------------------
   // Boot
   // -------------------------
   async function initHome(){
     injectOnAirStylesOnce();
-    bindFlacModal();
-    bindStreamQualityModal();
+    bindHomeModalsOnce();
 
     await renderNowPlayingAndLast(); // crée coverByNorm
     renderOnAirTonight();
