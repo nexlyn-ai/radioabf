@@ -12,13 +12,11 @@ const DIRECTUS_URL =
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
 
-// Collections
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
 
-// ----------------------
-// Helpers
-// ----------------------
+/* -------------------- Helpers -------------------- */
+
 function cleanNowText(s: string) {
   let out = String(s || "").trim();
   out = out.replace(/^undefined\s*-\s*/i, "");
@@ -37,7 +35,6 @@ function splitTrack(entry: string) {
   };
 }
 
-// stable key used everywhere (tracks, votes, etc.)
 function normKey(artist: string, title: string) {
   return (artist + " - " + title)
     .toLowerCase()
@@ -47,17 +44,22 @@ function normKey(artist: string, title: string) {
     .trim();
 }
 
+function stripMixSuffix(title: string) {
+  return title
+    .replace(/\((original|extended|radio|club|edit|mix)[^)]+\)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function extractNowPlaying(json: any): string {
   const src = json?.icestats?.source;
   const s = Array.isArray(src) ? src[0] : src;
-
-  const t =
+  return (
     (s?.title && String(s.title)) ||
     (s?.yp_currently_playing && String(s.yp_currently_playing)) ||
     (s?.streamtitle && String(s.streamtitle)) ||
-    "";
-
-  return t.trim();
+    ""
+  ).trim();
 }
 
 function toUTCms(v: any): number {
@@ -68,18 +70,21 @@ function toUTCms(v: any): number {
 }
 
 function assertEnv() {
-  if (!ICECAST_STATUS_URL) throw new Error("ICECAST_STATUS_URL is missing");
-  if (!DIRECTUS_URL) throw new Error("DIRECTUS_URL is missing");
-  if (!DIRECTUS_TOKEN) throw new Error("DIRECTUS_TOKEN is missing");
+  if (!ICECAST_STATUS_URL) throw new Error("ICECAST_STATUS_URL missing");
+  if (!DIRECTUS_URL) throw new Error("DIRECTUS_URL missing");
+  if (!DIRECTUS_TOKEN) throw new Error("DIRECTUS_TOKEN missing");
 }
 
 async function directusFetch(path: string, init: RequestInit = {}) {
   assertEnv();
-  const url = `${DIRECTUS_URL}${path}`;
-  const headers = new Headers(init.headers || {});
-  headers.set("Authorization", `Bearer ${DIRECTUS_TOKEN}`);
-  headers.set("Accept", "application/json");
-  return fetch(url, { ...init, headers });
+  return fetch(`${DIRECTUS_URL}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${DIRECTUS_TOKEN}`,
+      Accept: "application/json",
+      ...(init.headers || {}),
+    },
+  });
 }
 
 function fileUrl(fileId?: string | null) {
@@ -87,181 +92,67 @@ function fileUrl(fileId?: string | null) {
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
-// ----------------------
-// iTunes cover (memory micro-cache only)
-// ----------------------
+/* -------------------- iTunes (NO UPLOAD) -------------------- */
+
 type ItunesCacheEntry = { url: string; exp: number };
-const ITUNES_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
-const itunesMemCache: Map<string, ItunesCacheEntry> =
-  (globalThis as any).__abfItunesCache || new Map();
-(globalThis as any).__abfItunesCache = itunesMemCache;
+const CACHE_TTL = 6 * 60 * 60 * 1000;
+const memCache: Map<string, ItunesCacheEntry> =
+  (globalThis as any).__itunesCache || new Map();
+(globalThis as any).__itunesCache = memCache;
 
-async function fetchItunesCover(artist: string, title: string): Promise<string> {
-  const key = normKey(artist, title);
-  const now = Date.now();
-  const hit = itunesMemCache.get(key);
-  if (hit && hit.exp > now) return hit.url || "";
-
-  const term = encodeURIComponent(`${artist} ${title}`);
-  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+async function searchItunes(term: string): Promise<string> {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
+    term
+  )}&entity=song&limit=1`;
 
   try {
     const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) {
-      itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
-      return "";
-    }
-    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return "";
+    const j = await r.json();
     const item = j?.results?.[0];
-    const art100 = String(item?.artworkUrl100 || "");
-    const art600 = art100 ? art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg") : "";
-
-    itunesMemCache.set(key, { url: art600 || "", exp: now + ITUNES_CACHE_TTL_MS });
-    return art600 || "";
+    const art100 = item?.artworkUrl100;
+    if (!art100) return "";
+    return art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
   } catch {
-    itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
     return "";
   }
 }
 
-// ----------------------
-// Tracks
-// ----------------------
-type TrackRow = {
-  id: string | number;
-  track_key: string;
-  artist?: string;
-  title?: string;
-  cover_art?: string | null;
-  cover_url?: string | null;        // optional if you use it
-  cover_override?: boolean | null;  // optional if you use it
-  cover_lock?: boolean | null;
-};
+async function fetchItunesCover(artist: string, title: string): Promise<string> {
+  const key = normKey(artist, title);
+  const now = Date.now();
 
-async function getTrackByKey(track_key: string): Promise<TrackRow | null> {
-  const fields = [
-    "id",
-    "track_key",
-    "artist",
-    "title",
-    "cover_art",
-    "cover_url",
-    "cover_override",
-    "cover_lock",
-  ].join(",");
+  const hit = memCache.get(key);
+  if (hit && hit.exp > now) return hit.url;
 
-  const r = await directusFetch(
-    `/items/${TRACKS_COLLECTION}?fields=${encodeURIComponent(
-      fields
-    )}&filter[track_key][_eq]=${encodeURIComponent(track_key)}&limit=1`,
-    { method: "GET" }
-  );
-  if (!r.ok) return null;
-  const j = await r.json().catch(() => ({}));
-  return j?.data?.[0] || null;
+  // 1️⃣ Recherche complète
+  let cover = await searchItunes(`${artist} ${title}`);
+
+  // 2️⃣ Si rien → nettoyer suffixes remix
+  if (!cover) {
+    const cleanTitle = stripMixSuffix(title);
+    if (cleanTitle && cleanTitle !== title) {
+      cover = await searchItunes(`${artist} ${cleanTitle}`);
+    }
+  }
+
+  memCache.set(key, { url: cover || "", exp: now + CACHE_TTL });
+  return cover || "";
 }
 
-async function createTrack(track_key: string, artist: string, title: string) {
-  const r = await directusFetch(`/items/${TRACKS_COLLECTION}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      track_key,
-      artist,
-      title,
-      cover_lock: false,
-    }),
-  });
+/* -------------------- API -------------------- */
 
-  if (!r.ok) return null;
-  const j = await r.json().catch(() => ({}));
-  return j?.data || null;
-}
-
-// ----------------------
-// Plays
-// ----------------------
-async function getLastPlay() {
-  const r = await directusFetch(
-    `/items/${PLAYS_COLLECTION}?fields=id,track_key,played_at&sort=-played_at&limit=1`,
-    { method: "GET" }
-  );
-  if (!r.ok) return null;
-  const j = await r.json().catch(() => ({}));
-  return j?.data?.[0] || null;
-}
-
-async function insertPlay(payload: any) {
-  await directusFetch(`/items/${PLAYS_COLLECTION}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-async function getHistory(limit: number) {
-  const fields = [
-    "id",
-    "track_key",
-    "artist",
-    "title",
-    "played_at",
-    "raw",
-    "track.id",
-    "track.cover_art",
-    "track.cover_url",
-    "track.cover_override",
-    "track.cover_lock",
-  ].join(",");
-
-  const r = await directusFetch(
-    `/items/${PLAYS_COLLECTION}?fields=${encodeURIComponent(fields)}&sort=-played_at&limit=${limit}`,
-    { method: "GET" }
-  );
-  if (!r.ok) return [];
-  const j = await r.json().catch(() => ({}));
-  return Array.isArray(j?.data) ? j.data : [];
-}
-
-// ----------------------
-// Cover resolution (OPTION 1: NO UPLOAD)
-// Priority:
-// 1) Directus cover_art (file)
-// 2) Directus cover_url (if you use it)
-// 3) iTunes URL (no upload, just return url)
-// ----------------------
-async function resolveCoverUrlForTrack(
-  trackRow: TrackRow | null,
-  artist: string,
-  title: string
-): Promise<string> {
-  // 1) directus file
-  const coverId = trackRow?.cover_art || null;
-  if (coverId) return fileUrl(coverId);
-
-  // 2) direct URL fields (optional)
-  const overrideOn = Boolean(trackRow?.cover_override);
-  const directUrl = String(trackRow?.cover_url || "").trim();
-  if (overrideOn && directUrl) return directUrl;
-  if (directUrl) return directUrl;
-
-  // 3) itunes (no upload)
-  if (artist && title) return await fetchItunesCover(artist, title);
-  return "";
-}
-
-// ----------------------
-// API Route
-// ----------------------
 export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
-    const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || "12")));
+    const limit = Math.min(
+      30,
+      Math.max(1, Number(url.searchParams.get("limit") || "12"))
+    );
 
-    // Icecast
-    const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
-    const json = await r.json().catch(() => ({}));
-    const nowText = cleanNowText(extractNowPlaying(json));
+    const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
+    const iceJson = await ice.json();
+    const nowText = cleanNowText(extractNowPlaying(iceJson));
 
     const { artist, title } = splitTrack(nowText);
     const track_key = normKey(artist, title);
@@ -269,98 +160,61 @@ export const GET: APIRoute = async ({ request }) => {
     const played_at = new Date().toISOString();
     const played_at_ms = Date.parse(played_at);
 
-    // Track row (create if missing)
-    let trackRow = await getTrackByKey(track_key);
-    if (!trackRow && artist) trackRow = await createTrack(track_key, artist, title);
+    // History from Directus
+    const histRes = await directusFetch(
+      `/items/${PLAYS_COLLECTION}?fields=id,track_key,artist,title,played_at,raw&sort=-played_at&limit=${limit}`
+    );
 
-    // Insert play if track changed
-    const last = await getLastPlay();
-    if (!last || String(last?.track_key || "") !== track_key) {
-      await insertPlay({
-        track_key,
-        artist,
-        title,
-        played_at,
-        raw: nowText,
-        source: "icecast",
-        track: trackRow?.id,
-      });
-    }
-
-    // History
-    const historyRaw = await getHistory(limit);
-
-    // Build a quick cache for itunes resolves within this request
-    const itunesReqCache = new Map<string, string>();
-
-    async function resolveRowCover(rowTrack: any, a: string, t: string) {
-      const fakeRow: TrackRow | null = rowTrack
-        ? {
-            id: rowTrack?.id,
-            track_key: "",
-            cover_art: rowTrack?.cover_art ?? null,
-            cover_url: rowTrack?.cover_url ?? null,
-            cover_override: rowTrack?.cover_override ?? null,
-            cover_lock: rowTrack?.cover_lock ?? null,
-          }
-        : null;
-
-      const k = normKey(a, t);
-      if (itunesReqCache.has(k) && !fakeRow?.cover_art && !String(fakeRow?.cover_url || "").trim()) {
-        return itunesReqCache.get(k) || "";
-      }
-      const u = await resolveCoverUrlForTrack(fakeRow, a, t);
-      if (u && !fakeRow?.cover_art && !String(fakeRow?.cover_url || "").trim()) itunesReqCache.set(k, u);
-      return u;
-    }
+    const histJson = await histRes.json();
+    const historyRaw = histJson?.data || [];
 
     const history = [];
     for (const row of historyRaw) {
-      const a = String(row?.artist || "").trim();
-      const t = String(row?.title || "").trim();
-      const coverUrl = await resolveRowCover(row?.track, a, t);
+      const a = String(row.artist || "");
+      const t = String(row.title || "");
+      const cover = await fetchItunesCover(a, t);
 
       history.push({
-        id: row?.id,
-        raw: String(row?.raw || `${a} - ${t}`.trim()).trim(),
+        id: row.id,
+        raw: row.raw,
         artist: a,
         title: t,
-        track_key: String(row?.track_key || "").trim(),
-        played_at: row?.played_at || "",
-        played_at_ms: toUTCms(row?.played_at),
-        cover_art: row?.track?.cover_art ?? null,
-        cover_url: coverUrl || "",
+        track_key: row.track_key,
+        played_at: row.played_at,
+        played_at_ms: toUTCms(row.played_at),
+        cover_art: null,
+        cover_url: cover,
       });
     }
 
-    // Now payload
-    const nowCoverUrl = await resolveCoverUrlForTrack(trackRow, artist, title);
-    const nowCoverId = trackRow?.cover_art || null;
+    const nowCover = await fetchItunesCover(artist, title);
 
-    const nowPayload = {
-      raw: nowText,
-      artist,
-      title,
-      track_key,
-      played_at,
-      played_at_ms,
-      cover_art: nowCoverId,
-      cover_url: nowCoverUrl || "",
-    };
-
-    return new Response(JSON.stringify({ ok: true, now: nowPayload, history }), {
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "cache-control": "s-maxage=5, stale-while-revalidate=25",
-      },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        now: {
+          raw: nowText,
+          artist,
+          title,
+          track_key,
+          played_at,
+          played_at_ms,
+          cover_art: null,
+          cover_url: nowCover,
+        },
+        history,
+      }),
+      {
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "s-maxage=5, stale-while-revalidate=20",
+        },
+      }
+    );
   } catch (e: any) {
     return new Response(
       JSON.stringify({ ok: false, error: e?.message || "Server error" }),
-      {
-        status: 500,
-        headers: { "content-type": "application/json; charset=utf-8" },
-      }
+      { status: 500 }
     );
   }
 };
