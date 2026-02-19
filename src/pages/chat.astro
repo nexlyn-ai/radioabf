@@ -1,0 +1,78 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="Chat — RadioABF"
+  description="Chat with the RadioABF team."
+  canonical="/chat"
+>
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 mb-3 text-sm tracking-widest text-white/60 uppercase">
+        <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+        Live chat
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+        Chat with <span class="text-cyan-200">RadioABF</span>
+      </h1>
+
+      <p class="text-white/65 mt-3 max-w-2xl">
+        A team member will reply as soon as possible. You can keep listening while you chat 🙂
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button
+          id="openChatBtn"
+          type="button"
+          class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
+                 px-5 py-3 rounded-xl text-sm font-semibold
+                 shadow-lg shadow-cyan-500/25 hover:scale-[1.01] transition"
+        >
+          Open chat
+        </button>
+
+        <a
+          href="/"
+          class="border border-white/20 px-5 py-3 rounded-xl text-sm text-white/80 hover:bg-white/5 transition"
+        >
+          Back home
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      const isChatRoute = () => window.location.pathname === "/chat";
+
+      function tryOpen(){
+        // Crisp est async: on push dans la queue, c’est OK même si Crisp n’est pas encore prêt
+        window.$crisp = window.$crisp || [];
+        if (!isChatRoute()) return;
+
+        // show + open
+        window.$crisp.push(["do", "chat:show"]);
+        window.$crisp.push(["do", "chat:open"]);
+      }
+
+      function bind(){
+        const btn = document.getElementById("openChatBtn");
+        if (btn && !btn.dataset.bound){
+          btn.dataset.bound = "1";
+          btn.addEventListener("click", tryOpen);
+        }
+        // auto-open à l’arrivée
+        tryOpen();
+      }
+
+      bind();
+      document.addEventListener("astro:page-load", bind);
+      document.addEventListener("astro:after-swap", bind);
+    })();
+  </script>
+</Base>
