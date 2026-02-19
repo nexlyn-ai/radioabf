@@ -12,13 +12,12 @@ const DIRECTUS_TOKEN =
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
 
-// Champs côté tracks
+// ✅ ton schéma Directus
 const TRACKS_KEY_FIELD = "track_key";
-const TRACKS_COVER_FIELD = "cover";
+const TRACKS_COVER_FIELD = "cover_art";
 
-// ⚠️ iTunes fallback: OFF par défaut (sinon tu reverras iTunes)
-const ENABLE_ITUNES_FALLBACK =
-  (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "false") === "true";
+// ✅ iTunes OFF (pour être sûr que rien ne vienne d'iTunes)
+const ENABLE_ITUNES_FALLBACK = false;
 
 /* -------------------- Helpers -------------------- */
 
@@ -34,7 +33,10 @@ function splitTrack(entry: string) {
   const cleaned = cleanNowText(entry);
   const idx = cleaned.indexOf(" - ");
   if (idx === -1) return { artist: cleaned.trim(), title: "" };
-  return { artist: cleaned.slice(0, idx).trim(), title: cleaned.slice(idx + 3).trim() };
+  return {
+    artist: cleaned.slice(0, idx).trim(),
+    title: cleaned.slice(idx + 3).trim(),
+  };
 }
 
 function normKey(artist: string, title: string) {
@@ -90,7 +92,9 @@ async function directusFetch(path: string, init: RequestInit = {}) {
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`Directus ${path} failed: ${res.status} ${res.statusText}${txt ? ` — ${txt}` : ""}`);
+    throw new Error(
+      `Directus ${path} failed: ${res.status} ${res.statusText}${txt ? ` — ${txt}` : ""}`
+    );
   }
   return res;
 }
@@ -99,7 +103,7 @@ function directusAssetUrl(fileId: string) {
   return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
 }
 
-/* -------------------- Cover lookup via tracks (cache) -------------------- */
+/* -------------------- Cover lookup (tracks.cover_art) -------------------- */
 
 const __coverCache: Map<string, { url: string; exp: number }> =
   ((globalThis as any).__coverCache as Map<string, { url: string; exp: number }>) || new Map();
@@ -112,9 +116,10 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
   if (hit && hit.exp > now) return hit.url;
 
   let coverUrl = "";
+
   try {
+    // ✅ robuste: cover_art peut être string (id) OU objet { id }
     const params = new URLSearchParams({
-      // plus robuste : cover,cover.id
       fields: `${TRACKS_COVER_FIELD},${TRACKS_COVER_FIELD}.id`,
       limit: "1",
       [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
@@ -135,54 +140,17 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
     coverUrl = "";
   }
 
-  __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 });
+  __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 }); // 30 min
   (globalThis as any).__coverCache = __coverCache;
   return coverUrl;
 }
 
-/* -------------------- iTunes fallback (optionnel) -------------------- */
+/* -------------------- iTunes cover (désactivé) -------------------- */
 
-const __itunesCache: Map<string, { url: string; exp: number }> =
-  ((globalThis as any).__itunesCache as Map<string, { url: string; exp: number }>) || new Map();
-
-async function fetchItunesCover(artist: string, title: string): Promise<string> {
+async function fetchItunesCover(_artist: string, _title: string): Promise<string> {
   if (!ENABLE_ITUNES_FALLBACK) return "";
-  if (!artist || !title) return "";
-
-  const key = normKey(artist, title);
-  const now = Date.now();
-  const hit = __itunesCache.get(key);
-  if (hit && hit.exp > now) return hit.url;
-
-  let cover = "";
-  try {
-    let term = `${artist} ${title}`;
-    let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
-    let r = await fetch(url, { cache: "no-store" });
-    if (r.ok) {
-      const j = await r.json();
-      const art = j?.results?.[0]?.artworkUrl100;
-      if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
-    }
-
-    if (!cover) {
-      const cleanTitle = stripMixSuffix(title);
-      if (cleanTitle && cleanTitle !== title) {
-        term = `${artist} ${cleanTitle}`;
-        url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
-        r = await fetch(url, { cache: "no-store" });
-        if (r.ok) {
-          const j = await r.json();
-          const art = j?.results?.[0]?.artworkUrl100;
-          if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
-        }
-      }
-    }
-  } catch {}
-
-  __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
-  (globalThis as any).__itunesCache = __itunesCache;
-  return cover;
+  // (garde la fonction au cas où tu veux réactiver via env plus tard)
+  return "";
 }
 
 /* -------------------- API -------------------- */
@@ -227,7 +195,8 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // Historique (sans champs cover pour éviter 400 si inexistants)
+    // Historique → EXCLURE le titre actuel pour éviter le doublon visuel
+    // ✅ IMPORTANT: fields ne demande que des champs existants dans plays
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
@@ -245,7 +214,10 @@ export const GET: APIRoute = async ({ request }) => {
         const t = String(row.title || "");
         const tk = String(row.track_key || "");
 
+        // ✅ 100% Directus via tracks.cover_art
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
+
+        // (fallback iTunes désactivé)
         if (!cover_url) cover_url = await fetchItunesCover(a, t);
 
         return {
@@ -261,6 +233,7 @@ export const GET: APIRoute = async ({ request }) => {
       })
     );
 
+    // Now cover
     let nowCover = await fetchDirectusCoverByTrackKey(track_key);
     if (!nowCover) nowCover = await fetchItunesCover(artist, title);
 
@@ -268,7 +241,15 @@ export const GET: APIRoute = async ({ request }) => {
       JSON.stringify({
         ok: true,
         inserted,
-        now: { raw: nowText, artist, title, track_key, played_at, played_at_ms, cover_url: nowCover },
+        now: {
+          raw: nowText,
+          artist,
+          title,
+          track_key,
+          played_at,
+          played_at_ms,
+          cover_url: nowCover,
+        },
         history,
       }),
       {
@@ -279,10 +260,12 @@ export const GET: APIRoute = async ({ request }) => {
       }
     );
   } catch (e: any) {
-    // ✅ renvoie aussi l'erreur détaillée (hyper utile en prod)
     return new Response(JSON.stringify({ ok: false, error: e?.message || "Server error" }), {
       status: 500,
-      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      },
     });
   }
 };
