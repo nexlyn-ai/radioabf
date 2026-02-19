@@ -6,11 +6,15 @@ export const prerender = false;
 const ICECAST_STATUS_URL =
   import.meta.env.ICECAST_STATUS_URL || process.env.ICECAST_STATUS_URL || "";
 
-const DIRECTUS_URL =
+// ⚠️ IMPORTANT : mets ici l'URL du CMS (ex: https://cms.radioabf.com)
+const DIRECTUS_URL_RAW =
   import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
 
+// ⚠️ IMPORTANT : ce token doit être celui qui a accès à plays + tracks + directus_files (api_writer)
 const DIRECTUS_TOKEN =
-  import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
+  import.meta.env.DIRECTUS_TOKEN ||
+  process.env.DIRECTUS_TOKEN ||
+  "";
 
 // Collections
 const PLAYS_COLLECTION = "plays";
@@ -61,8 +65,19 @@ function toUTCms(v: any): number {
   return Date.parse(s + "Z");
 }
 
+function stripTrailingSlash(u: string) {
+  return String(u || "").replace(/\/+$/, "");
+}
+
+const DIRECTUS_URL = stripTrailingSlash(DIRECTUS_URL_RAW);
+
 async function directusFetch(path: string, init: RequestInit = {}) {
-  const url = `${DIRECTUS_URL}${path}`;
+  if (!DIRECTUS_URL || !DIRECTUS_TOKEN) {
+    // on renvoie une Response "fake" pour éviter de throw partout
+    return new Response(null, { status: 599, statusText: "DIRECTUS_NOT_CONFIGURED" }) as any;
+  }
+
+  const url = `${DIRECTUS_URL}${path.startsWith("/") ? path : `/${path}`}`;
   const headers = new Headers(init.headers || {});
   headers.set("Authorization", `Bearer ${DIRECTUS_TOKEN}`);
   return fetch(url, { ...init, headers });
@@ -105,24 +120,17 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
   }
 }
 
-// upload image URL to Directus
+// Upload image URL to Directus (best effort)
 async function uploadCoverFromUrl(imageUrl: string): Promise<string | null> {
+  if (!DIRECTUS_URL || !DIRECTUS_TOKEN) return null;
+
   try {
-    const img = await fetch(imageUrl);
+    const img = await fetch(imageUrl, { cache: "no-store" });
     if (!img.ok) return null;
 
     const buffer = await img.arrayBuffer();
-
     const form = new FormData();
-    // ✅ conserve le content-type si possible
-    const contentType = img.headers.get("content-type") || "image/jpeg";
-    const ext =
-      contentType.includes("png") ? "png" :
-      contentType.includes("webp") ? "webp" :
-      contentType.includes("gif") ? "gif" :
-      "jpg";
-
-    form.append("file", new Blob([buffer], { type: contentType }), `cover.${ext}`);
+    form.append("file", new Blob([buffer], { type: "image/jpeg" }), "cover.jpg");
 
     const r = await fetch(`${DIRECTUS_URL}/files`, {
       method: "POST",
@@ -146,19 +154,18 @@ type TrackRow = {
   track_key: string;
   artist?: string;
   title?: string;
-  cover_art?: string | null;     // directus_files id
-  cover_url?: string | null;     // string fallback (iTunes, etc.)
+  cover_art?: string | null;
   cover_lock?: boolean | null;
 };
 
 function fileUrl(fileId?: string | null) {
-  if (!fileId) return "";
+  if (!fileId || !DIRECTUS_URL) return "";
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
 async function getTrackByKey(track_key: string): Promise<TrackRow | null> {
   const r = await directusFetch(
-    `/items/${TRACKS_COLLECTION}?fields=id,track_key,artist,title,cover_art,cover_url,cover_lock&filter[track_key][_eq]=${encodeURIComponent(
+    `/items/${TRACKS_COLLECTION}?fields=id,track_key,artist,title,cover_art,cover_lock&filter[track_key][_eq]=${encodeURIComponent(
       track_key
     )}&limit=1`,
     { method: "GET" }
@@ -172,16 +179,7 @@ async function createTrack(track_key: string, artist: string, title: string) {
   const r = await directusFetch(`/items/${TRACKS_COLLECTION}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      track_key,
-      artist,
-      title,
-      cover_lock: false,
-      cover_url: null,
-      cover_art: null,
-      cover_source: null,
-      cover_updated_at: null,
-    }),
+    body: JSON.stringify({ track_key, artist, title, cover_lock: false }),
   });
 
   if (!r.ok) return null;
@@ -190,11 +188,12 @@ async function createTrack(track_key: string, artist: string, title: string) {
 }
 
 async function updateTrack(id: string | number, payload: any) {
-  await directusFetch(`/items/${TRACKS_COLLECTION}/${id}`, {
+  const r = await directusFetch(`/items/${TRACKS_COLLECTION}/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  return r.ok;
 }
 
 // ----------------------
@@ -211,11 +210,12 @@ async function getLastPlay() {
 }
 
 async function insertPlay(payload: any) {
-  await directusFetch(`/items/${PLAYS_COLLECTION}`, {
+  const r = await directusFetch(`/items/${PLAYS_COLLECTION}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  return r.ok;
 }
 
 async function getHistory(limit: number) {
@@ -228,7 +228,6 @@ async function getHistory(limit: number) {
     "raw",
     "track.id",
     "track.cover_art",
-    "track.cover_url",
     "track.cover_lock",
   ].join(",");
 
@@ -236,6 +235,7 @@ async function getHistory(limit: number) {
     `/items/${PLAYS_COLLECTION}?fields=${encodeURIComponent(fields)}&sort=-played_at&limit=${limit}`,
     { method: "GET" }
   );
+
   if (!r.ok) return [];
   const j = await r.json().catch(() => ({}));
   return Array.isArray(j?.data) ? j.data : [];
@@ -248,19 +248,15 @@ export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || "12")));
 
-  if (!ICECAST_STATUS_URL || !DIRECTUS_URL || !DIRECTUS_TOKEN) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        error: "Missing env vars (ICECAST_STATUS_URL / DIRECTUS_URL / DIRECTUS_TOKEN)",
-      }),
-      { status: 500, headers: { "content-type": "application/json; charset=utf-8" } }
-    );
+  // 1) Icecast now
+  let nowText = "";
+  try {
+    const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
+    const json = await r.json().catch(() => ({}));
+    nowText = cleanNowText(extractNowPlaying(json));
+  } catch {
+    nowText = "";
   }
-
-  const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
-  const json = await r.json().catch(() => ({}));
-  const nowText = cleanNowText(extractNowPlaying(json));
 
   const { artist, title } = splitTrack(nowText);
   const track_key = normKey(artist, title);
@@ -268,83 +264,84 @@ export const GET: APIRoute = async ({ request }) => {
   const played_at = new Date().toISOString();
   const played_at_ms = Date.parse(played_at);
 
-  let trackRow = await getTrackByKey(track_key);
-  if (!trackRow && artist) trackRow = await createTrack(track_key, artist, title);
+  // 2) Directus track (best effort)
+  let trackRow: TrackRow | null = null;
+  if (track_key) {
+    trackRow = await getTrackByKey(track_key);
+    if (!trackRow && artist) trackRow = await createTrack(track_key, artist, title);
+  }
 
-  // -------------------------------------------------
-  // ✅ Auto cover strategy:
-  // 1) Store at least a string URL (tracks.cover_url) for immediate display
-  // 2) Optionally upload to Directus files (tracks.cover_art) as durable cache
-  // -------------------------------------------------
-  if (trackRow && !trackRow.cover_lock && artist && title) {
-    const itunesUrl = await fetchItunesCover(artist, title);
+  // 3) Cover resolution strategy:
+  //    - If we already have cover_art -> use directus asset URL
+  //    - Else -> use iTunes cover_url right now (display immediate)
+  //    - And try to upload+patch cover_art (best effort) so future requests use Directus
+  let nowCoverId: string | null = (trackRow?.cover_art as any) || null;
+  let nowCoverUrl = fileUrl(nowCoverId);
 
-    // ✅ (A) Save string URL immediately (fast win)
-    if (itunesUrl && !String(trackRow.cover_url || "").trim() && !trackRow.cover_art) {
-      await updateTrack(trackRow.id, {
-        cover_url: itunesUrl,
-        cover_source: "itunes",
-        cover_updated_at: new Date().toISOString(),
-      });
-      trackRow.cover_url = itunesUrl;
-    }
+  if (!nowCoverUrl && artist && title) {
+    const it = await fetchItunesCover(artist, title);
+    if (it) nowCoverUrl = it;
 
-    // ✅ (B) Try uploading to Directus only if cover_art missing
-    // (if it fails, you still have cover_url)
-    if (itunesUrl && !trackRow.cover_art) {
-      const fileId = await uploadCoverFromUrl(itunesUrl);
+    // best effort persist in Directus if not locked and we have a trackRow
+    if (it && trackRow && !trackRow.cover_lock && !trackRow.cover_art) {
+      const fileId = await uploadCoverFromUrl(it);
       if (fileId) {
-        await updateTrack(trackRow.id, {
-          cover_art: fileId,
-          // optionnel : tu peux garder cover_url, mais ici on met null pour privilégier /assets
-          cover_url: null,
-          cover_source: "directus",
-          cover_updated_at: new Date().toISOString(),
-        });
-        trackRow.cover_art = fileId;
-        trackRow.cover_url = null;
+        const ok = await updateTrack(trackRow.id, { cover_art: fileId });
+        if (ok) {
+          nowCoverId = fileId;
+          // on peut choisir de retourner l'asset Directus, ou garder iTunes
+          // Directus asset => stable et cache long
+          nowCoverUrl = fileUrl(fileId) || it;
+        }
       }
     }
   }
 
-  // insert play if track changed
-  const last = await getLastPlay();
-  if (!last || String(last?.track_key || "") !== track_key) {
-    await insertPlay({
-      track_key,
-      artist,
-      title,
-      played_at,
-      raw: nowText,
-      source: "icecast",
-      track: trackRow?.id,
-    });
+  // 4) Insert play when track changes (best effort)
+  if (track_key && artist) {
+    const last = await getLastPlay();
+    if (!last || String(last?.track_key || "") !== track_key) {
+      await insertPlay({
+        track_key,
+        artist,
+        title,
+        played_at,
+        raw: nowText,
+        source: "icecast",
+        track: trackRow?.id ?? null,
+      });
+    }
   }
 
+  // 5) History (best effort)
   const historyRaw = await getHistory(limit);
 
-  // Normalize history payload (front needs: raw/artist/title/track_key/played_at(_ms)/cover_url)
-  const history = historyRaw.map((row: any) => {
+  // Normalize history payload
+  // IMPORTANT: si cover_art null => on met iTunes cover_url pour affichage immédiat
+  const history = [];
+  for (const row of historyRaw) {
+    const a = String(row?.artist || "").trim();
+    const t = String(row?.title || "").trim();
     const coverId = row?.track?.cover_art || null;
-    const urlFromFile = fileUrl(coverId);
-    const urlFromString = String(row?.track?.cover_url || "").trim();
 
-    return {
+    let cover_url = fileUrl(coverId);
+    if (!cover_url && a && t) {
+      // fallback iTunes (pas besoin d'uploader ici)
+      cover_url = await fetchItunesCover(a, t);
+    }
+
+    history.push({
       id: row?.id,
-      raw: String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim()).trim(),
-      artist: String(row?.artist || "").trim(),
-      title: String(row?.title || "").trim(),
+      raw: String(row?.raw || `${a} - ${t}`.trim()).trim(),
+      artist: a,
+      title: t,
       track_key: String(row?.track_key || "").trim(),
       played_at: row?.played_at || "",
       played_at_ms: toUTCms(row?.played_at),
       cover_art: coverId,
-      cover_url: urlFromFile || urlFromString || "",
-    };
-  });
-
-  const nowCoverId = trackRow?.cover_art || null;
-  const nowUrl =
-    fileUrl(nowCoverId) || String(trackRow?.cover_url || "").trim() || "";
+      cover_url,
+    });
+  }
 
   const nowPayload = {
     raw: nowText,
@@ -354,7 +351,7 @@ export const GET: APIRoute = async ({ request }) => {
     played_at,
     played_at_ms,
     cover_art: nowCoverId,
-    cover_url: nowUrl,
+    cover_url: nowCoverUrl || "",
   };
 
   return new Response(JSON.stringify({ ok: true, now: nowPayload, history }), {
