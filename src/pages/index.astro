@@ -380,19 +380,27 @@ const fmtDate = (iso?: string | null) => {
       </div>
     </div>
 
-    <!-- Card 3 (lighter / Shows) -->
-    <div class="rounded-2xl border border-white/10 p-4
-                bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540]">
-      <div class="text-xs text-white/50 uppercase tracking-wider">Shows</div>
-      <div class="font-extrabold text-lg">Top Week Sets</div>
-      <p class="text-sm text-white/70 mt-1">
-        Best moments selected from the week — updated regularly.
-      </p>
-      <a href="/programs" class="inline-flex mt-3 text-sm text-cyan-200 hover:text-cyan-100 transition">
-        Browse programs →
-      </a>
-    </div>
+    <!-- Card 3 – Support / Donation call -->
+<div class="rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] relative overflow-hidden">
+  <div class="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+  
+  <div class="relative z-10">
+    <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Independent & Ad-Free</div>
+    <div class="font-extrabold text-lg leading-tight">Buy us a coffee? ☕</div>
+    <p class="text-sm text-white/70 mt-2">
+      Radio ABF stays 100% independent thanks to you.<br class="hidden sm:block">
+      A small donation helps cover servers, streaming, and music rights.
+    </p>
+    
+    <button 
+      id="openSupportModal" 
+      type="button" 
+      class="inline-flex mt-4 items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] font-semibold text-sm shadow-md shadow-cyan-500/25 hover:scale-[1.02] transition"
+    >
+      Support us →
+    </button>
   </div>
+</div>
   
 <!-- STREAM QUALITY MODAL -->
 <div id="streamQualityModal" class="abfModal" aria-hidden="true">
@@ -479,13 +487,67 @@ const fmtDate = (iso?: string | null) => {
     </div>
   </div>
 
+<!-- SUPPORT / DONATION MODAL -->
+<div id="supportModal" class="abfModal" aria-hidden="true">
+  <div class="abfModalBackdrop" data-close="support"></div>
+  <div class="abfModalWrap">
+    <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Support Radio ABF">
+      
+      <!-- Header -->
+      <div class="abfModalTop">
+        <div class="abfModalTitle">Buy us a coffee to keep ABF alive? ☕</div>
+        <button class="abfModalClose" id="supportClose" type="button" aria-label="Close">✕</button>
+      </div>
+      
+      <!-- Body -->
+      <div class="abfModalBody p-6 space-y-6 text-center sm:text-left">
+        
+        <div class="text-white/80 leading-relaxed">
+          <p class="text-lg font-semibold mb-3">Radio ABF is:</p>
+          <ul class="space-y-2 text-sm text-white/75 list-disc list-inside mx-auto sm:mx-0 max-w-md">
+            <li>24/7 high-quality sound, no ads</li>
+            <li>Exclusive mixes and passionate residents</li>
+            <li>100% independent (no big labels or corporations)</li>
+            <li>Servers, streaming costs and music rights to cover</li>
+          </ul>
+        </div>
+
+        <p class="text-white/90 font-medium">
+          Even <strong>€3</strong> makes a real difference. Thank you so much ♥
+        </p>
+
+        <!-- Buy Me a Coffee – Option A: Simple stylish button (recommended – lightweight) -->
+        <a 
+          href="https://www.buymeacoffee.com/radioabf" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-[#FFDD00] text-black font-bold text-base shadow-lg hover:bg-[#FFDD00]/90 transition transform hover:scale-105"
+        >
+          <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy Me a Coffee" class="h-6 w-6">
+          Buy us a coffee (or more!)
+        </a>
+
+        <!-- Option B: Full embed widget (uncomment if you prefer – more interactive) -->
+        <!--
+        <div class="bmc-widget" data-id="radioabf" style="max-width:420px; margin:0 auto;">
+          <script data-cfasync="false" src="https://cdn.buymeacoffee.com/widgets/v2/widget.prod.min.js"></script>
+        </div>
+        -->
+
+        <p class="text-xs text-white/50 pt-4">
+          Secure payment • One-time or become a monthly supporter
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
   <!-- SCRIPT -->
-  <script is:inline data-astro-rerun>
+<script is:inline data-astro-rerun>
 (() => {
   // ✅ on autorise le re-render sur astro swaps, mais on évite de re-binder les listeners globaux
   const PROGRAMS_DIR = "/images/programs/";
   const HISTORY_KEY = "abf_history"; // fallback legacy (lecture seulement)
-
   // -------------------------
   // WEEK ID (same as music)
   // -------------------------
@@ -497,7 +559,6 @@ const fmtDate = (iso?: string | null) => {
     const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
     return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
   }
-
   // -------------------------
   // Helpers
   // -------------------------
@@ -507,7 +568,6 @@ const fmtDate = (iso?: string | null) => {
     if (idx === -1) return { artist: s, title: "" };
     return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
   }
-
   function normKey(a,t){
     return (a + " - " + t)
       .toLowerCase()
@@ -515,7 +575,6 @@ const fmtDate = (iso?: string | null) => {
       .replace(/[“”"']/g,"")
       .trim();
   }
-
   function esc(s){
     return String(s || "")
       .replace(/&/g,"&amp;")
@@ -524,7 +583,6 @@ const fmtDate = (iso?: string | null) => {
       .replace(/"/g,"&quot;")
       .replace(/'/g,"&#039;");
   }
-
   // Cover HTML helper (server url only)
   function coverHtmlByUrl(url, sizeClass = "w-14 h-14 rounded-2xl") {
     const u = String(url || "").trim();
@@ -537,7 +595,6 @@ const fmtDate = (iso?: string | null) => {
       </div>
     `;
   }
-
   function setCover(url){
     const img = document.getElementById("homeCover");
     if (!img) return;
@@ -550,7 +607,6 @@ const fmtDate = (iso?: string | null) => {
       img.classList.add("hidden");
     }
   }
-
   function setHeroTop1Cover(url){
     const img = document.getElementById("heroTop1Cover");
     if (!img) return;
@@ -563,7 +619,6 @@ const fmtDate = (iso?: string | null) => {
       img.classList.add("hidden");
     }
   }
-
   // -------------------------
   // History fallback (legacy, read-only)
   // -------------------------
@@ -579,7 +634,6 @@ const fmtDate = (iso?: string | null) => {
       return null;
     }).filter(Boolean);
   }
-
   // -------------------------
   // ✅ Server nowplaying (expects cover_url)
   // -------------------------
@@ -588,9 +642,7 @@ const fmtDate = (iso?: string | null) => {
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
       const data = await res.json().catch(()=> ({}));
       if (!data?.ok) return [];
-
       const out = [];
-
       if (data?.now){
         const rawNow = String(data?.now?.raw || "").trim();
         const a = String(data?.now?.artist || "").trim();
@@ -605,7 +657,6 @@ const fmtDate = (iso?: string | null) => {
           });
         }
       }
-
       if (Array.isArray(data?.history)){
         for (const row of data.history){
           const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
@@ -618,7 +669,6 @@ const fmtDate = (iso?: string | null) => {
           });
         }
       }
-
       // dedupe (case-insensitive)
       const seen = new Set();
       const deduped = [];
@@ -628,13 +678,11 @@ const fmtDate = (iso?: string | null) => {
         seen.add(k);
         deduped.push(item);
       }
-
       return deduped.slice(0, limit);
     }catch{
       return [];
     }
   }
-
   // -------------------------
   // Votes
   // -------------------------
@@ -644,10 +692,8 @@ const fmtDate = (iso?: string | null) => {
     const j = await r.json().catch(() => ({}));
     return { week: j?.week || week, top: Array.isArray(j?.top) ? j.top : [] };
   }
-
   let __homeVotesCache = window.__abfHomeVotesCache || { week: "", ts: 0, top: [] };
   window.__abfHomeVotesCache = __homeVotesCache;
-
   async function getTopWeekCached(week){
     const now = Date.now();
     if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 8000) {
@@ -658,7 +704,6 @@ const fmtDate = (iso?: string | null) => {
     window.__abfHomeVotesCache = __homeVotesCache;
     return __homeVotesCache.top || [];
   }
-
   // -------------------------
   // ✅ NOW PLAYING + LAST PLAYED (server cover_url, no cover cache)
   // -------------------------
@@ -667,10 +712,8 @@ const fmtDate = (iso?: string | null) => {
     const titleEl = document.getElementById("homeTitle");
     const host = document.getElementById("homeLastCarousel");
     if (!artistEl || !titleEl || !host) return;
-
     let history = await fetchServerNowPlaying(12);
     if (!history.length) history = loadHistoryLocal(); // fallback legacy only
-
     if (!history.length){
       artistEl.textContent = "—";
       titleEl.textContent = "—";
@@ -679,7 +722,6 @@ const fmtDate = (iso?: string | null) => {
       window.__abfHomeCoverByNorm = {};
       return;
     }
-
     // Build cover map from server payload (Top can reuse)
     const coverByNorm = {};
     for (const entry of history){
@@ -689,32 +731,26 @@ const fmtDate = (iso?: string | null) => {
       if (n && u) coverByNorm[n] = u;
     }
     window.__abfHomeCoverByNorm = coverByNorm;
-
     // NOW
     const currentEntry = history[0];
     const current = splitTrack(currentEntry.t);
     const artist = String(current.artist || "").trim();
-    const title  = String(current.title || "").trim();
-
+    const title = String(current.title || "").trim();
     // on laisse Base faire le formatage global via data-abf-*
     artistEl.textContent = artist || "—";
-    titleEl.textContent  = title || "—";
-
+    titleEl.textContent = title || "—";
     setCover(String(currentEntry.cover_url || "").trim() || coverByNorm[normKey(artist, title)] || "");
-
     // LAST PLAYED carousel: 3 items
     const items = history.slice(1, 4);
     if (!items.length){
       host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
       return;
     }
-
     host.innerHTML = items.map((entry) => {
       const t = splitTrack(entry.t);
       const a = String(t.artist || "").trim();
       const ti = String(t.title || "").trim();
       const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
-
       return `
         <a href="/music"
            class="snap-start flex-none w-[260px] md:w-[300px]
@@ -728,11 +764,9 @@ const fmtDate = (iso?: string | null) => {
         </a>
       `;
     }).join("");
-
     // applique le formatter global après injection HTML
     try { window.ABF_FMT?.apply(document); } catch {}
   }
-
   // -------------------------
   // ✅ HERO #1 (uses coverByNorm from history; no local cover cache)
   // -------------------------
@@ -742,38 +776,29 @@ const fmtDate = (iso?: string | null) => {
     const aEl = document.getElementById("heroTop1Artist");
     const tEl = document.getElementById("heroTop1Title");
     if (!box || !empty || !aEl || !tEl) return;
-
     const week = getISOWeekId();
     const top = await getTopWeekCached(week);
     const first = top?.[0];
-
     if (!first || !first.track_key){
       box.classList.add("hidden");
       empty.classList.remove("hidden");
       setHeroTop1Cover("");
       return;
     }
-
     const artistRaw = String(first.artist || "").trim() || "—";
     const titleRaw = String(first.title || "").trim() || "—";
-
     aEl.textContent = artistRaw;
     tEl.textContent = titleRaw;
-
     const coverByNorm = window.__abfHomeCoverByNorm || {};
     const url =
-  String(first.cover_url || "").trim() ||
-  coverByNorm[normKey(artistRaw, titleRaw)] ||
-  "";
-
+      String(first.cover_url || "").trim() ||
+      coverByNorm[normKey(artistRaw, titleRaw)] ||
+      "";
     setHeroTop1Cover(url);
-
     empty.classList.add("hidden");
     box.classList.remove("hidden");
-
     try { window.ABF_FMT?.apply(document); } catch {}
   }
-
   // -------------------------
   // ✅ TOP 8 GRID (uses coverByNorm from history; no local cover cache)
   // -------------------------
@@ -781,12 +806,9 @@ const fmtDate = (iso?: string | null) => {
     const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
     const empty = document.getElementById("topWeekEmpty");
     if (!cards.length) return;
-
     const week = getISOWeekId();
     const top = await getTopWeekCached(week);
-
     const coverByNorm = window.__abfHomeCoverByNorm || {};
-
     if (!top.length){
       if (empty) empty.classList.remove("hidden");
       cards.forEach((card, i) => {
@@ -803,9 +825,7 @@ const fmtDate = (iso?: string | null) => {
       });
       return;
     }
-
     if (empty) empty.classList.add("hidden");
-
     cards.forEach((card, i) => {
       const rankEl = card.querySelector("[data-rank]");
       const aEl = card.querySelector("[data-artist]");
@@ -813,7 +833,6 @@ const fmtDate = (iso?: string | null) => {
       const cEl = card.querySelector("[data-count]");
       const img = card.querySelector("img");
       if (rankEl) rankEl.textContent = `#${i+1}`;
-
       const row = top[i];
       if (!row){
         if (aEl) aEl.textContent = "—";
@@ -822,17 +841,13 @@ const fmtDate = (iso?: string | null) => {
         if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
         return;
       }
-
       const artistRaw = String(row.artist || "").trim() || "—";
       const titleRaw = String(row.title || "").trim() || "—";
       const count = Number(row.count) || 0;
-
       const coverUrl =
-  String(row.cover_url || "").trim() ||
-  coverByNorm[normKey(artistRaw, titleRaw)] ||
-  "";
-
-
+        String(row.cover_url || "").trim() ||
+        coverByNorm[normKey(artistRaw, titleRaw)] ||
+        "";
       if (img){
         if (coverUrl){
           img.src = coverUrl;
@@ -842,15 +857,12 @@ const fmtDate = (iso?: string | null) => {
           img.classList.add("hidden");
         }
       }
-
       if (aEl){ aEl.textContent = artistRaw; aEl.setAttribute("data-abf-artist",""); }
       if (tEl){ tEl.textContent = titleRaw; tEl.setAttribute("data-abf-title",""); }
       if (cEl) cEl.textContent = `${count}`;
     });
-
     try { window.ABF_FMT?.apply(document); } catch {}
   }
-
   // -------------------------
   // ON AIR (inchangé)
   // -------------------------
@@ -904,7 +916,6 @@ const fmtDate = (iso?: string | null) => {
       { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
     ]
   };
-
   function dayKey(){
     const d = new Date().getDay();
     if (d === 0) return "sun";
@@ -915,13 +926,11 @@ const fmtDate = (iso?: string | null) => {
     if (d === 5) return "fri";
     return "sat";
   }
-
   function parseTimeToMinutes(t){
     const m = String(t || "").match(/^(\d{1,2})h(\d{2})$/i);
     if (!m) return null;
     return Number(m[1]) * 60 + Number(m[2]);
   }
-
   function fmtCountdown(ms){
     if (ms <= 0) return "Starting now";
     const totalMin = Math.floor(ms / 60000);
@@ -930,7 +939,6 @@ const fmtDate = (iso?: string | null) => {
     if (h <= 0) return `Starts in ${m}m`;
     return `Starts in ${h}h ${String(m).padStart(2,"0")}m`;
   }
-
   function injectOnAirStylesOnce(){
     if (document.getElementById("abfHomeOnAirStyles")) return;
     const st = document.createElement("style");
@@ -970,20 +978,16 @@ const fmtDate = (iso?: string | null) => {
     `;
     document.head.appendChild(st);
   }
-
   function renderOnAirTonight(){
     const host = document.getElementById("onAirTonight");
     if (!host) return;
-
     const day = dayKey();
     const items = (SCHEDULE[day] || [])
       .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
       .filter(x => x.min !== null)
       .sort((a,b) => a.min - b.min);
-
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
-
     let liveIndex = -1;
     for (let i=0;i<items.length;i++){
       const startMin = items[i].min;
@@ -993,19 +997,15 @@ const fmtDate = (iso?: string | null) => {
         break;
       }
     }
-
     let selected = [];
     let mode = "next";
     let subline = "";
-
     if (liveIndex >= 0){
       mode = "live";
       selected = items.slice(liveIndex, liveIndex + 3);
-
       const endMin = (liveIndex < items.length - 1) ? items[liveIndex+1].min : 24*60;
       const end = new Date(now);
       end.setHours(Math.floor(endMin/60), endMin%60, 0, 0);
-
       const msLeft = (end ? end.getTime() : 0) - now.getTime();
       const totalMin = Math.max(0, Math.floor(msLeft/60000));
       const h = Math.floor(totalMin/60);
@@ -1019,7 +1019,6 @@ const fmtDate = (iso?: string | null) => {
         subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
       }
     }
-
     if (!selected.length){
       host.innerHTML = `
         <div class="text-white/70">
@@ -1036,10 +1035,8 @@ const fmtDate = (iso?: string | null) => {
       `;
       return;
     }
-
     const first = selected[0];
     const others = selected.slice(1);
-
     const badge = (mode === "live")
       ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider">
            <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
@@ -1048,15 +1045,12 @@ const fmtDate = (iso?: string | null) => {
       : `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-semibold tracking-wider">
            NEXT
          </span>`;
-
     const liveWrapClass = (mode === "live") ? "onAirCard" : "";
-
     let firstDisplayTitle = first.title;
     if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
       const parts = firstDisplayTitle.split(" - ", 2);
       firstDisplayTitle = parts[0] + " - " + parts[1].toUpperCase();
     }
-
     host.innerHTML = `
       <div class="space-y-4">
         <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5 ${liveWrapClass}">
@@ -1064,7 +1058,6 @@ const fmtDate = (iso?: string | null) => {
             ${badge}
             <div class="text-white/50 text-sm">${esc(subline || "")}</div>
           </div>
-
           <div class="flex flex-col md:flex-row gap-6 items-stretch">
             <div class="w-full md:w-56 flex-none">
               <div class="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden flex items-center justify-center p-2">
@@ -1077,20 +1070,16 @@ const fmtDate = (iso?: string | null) => {
                 />
               </div>
             </div>
-
             <div class="min-w-0 flex-1">
               <div class="text-cyan-300 font-bold text-xl md:text-2xl">
                 ${esc(first.time)}
               </div>
-
               <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
                 ${esc(firstDisplayTitle)}
               </div>
-
               <div class="mt-2 text-white/70 text-base md:text-lg leading-relaxed">
                 ${esc(first.desc)}
               </div>
-
               <div class="mt-5 flex gap-3 flex-wrap">
                 <a href="/programs"
                    class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
@@ -1098,7 +1087,6 @@ const fmtDate = (iso?: string | null) => {
                           hover:scale-[1.01] transition">
                   View schedule
                 </a>
-
                 <button id="onAirRemindBtn"
                         type="button"
                         class="bg-white/5 hover:bg-white/10 border border-white/10
@@ -1106,20 +1094,17 @@ const fmtDate = (iso?: string | null) => {
                   Remind me
                 </button>
               </div>
-
               <div id="onAirRemindNote" class="mt-3 text-white/50 text-sm hidden">
                 Reminder saved locally (this device).
               </div>
             </div>
           </div>
         </div>
-
         ${others.length ? `
           <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5">
             <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
               ${mode === "live" ? "Up next" : "Later"}
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               ${others.map(x => {
                 let displayTitle = x.title;
@@ -1140,7 +1125,6 @@ const fmtDate = (iso?: string | null) => {
                         />
                       </div>
                     </div>
-
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center justify-between gap-2">
                         <div class="text-cyan-300 font-bold text-sm">
@@ -1162,10 +1146,8 @@ const fmtDate = (iso?: string | null) => {
         ` : ""}
       </div>
     `;
-
     const remindBtn = document.getElementById("onAirRemindBtn");
     const note = document.getElementById("onAirRemindNote");
-
     if (remindBtn){
       remindBtn.onclick = () => {
         try{
@@ -1186,33 +1168,27 @@ const fmtDate = (iso?: string | null) => {
       };
     }
   }
-
   // -------------------------
   // ✅ Modals (FIX Astro swap) — event delegation
   // -------------------------
   function bindHomeModalsOnce(){
     if (window.__abfHomeModalsBound) return;
-
     const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
-
     const openModal = (id) => {
       const modal = document.getElementById(id);
       if (!modal) return;
       modal.setAttribute("aria-hidden", "false");
       lockScroll(true);
     };
-
     const closeModal = (id) => {
       const modal = document.getElementById(id);
       if (!modal) return;
       modal.setAttribute("aria-hidden", "true");
       lockScroll(false);
     };
-
     // Click delegation (works after astro swaps)
     document.addEventListener("click", (e) => {
       const t = e.target;
-
       // OPEN buttons
       if (t?.closest?.("#openFlacModal") || t?.closest?.("#openFlacModal2")) {
         openModal("flacModal");
@@ -1222,7 +1198,10 @@ const fmtDate = (iso?: string | null) => {
         openModal("streamQualityModal");
         return;
       }
-
+      if (t?.closest?.("#openSupportModal")) {
+        openModal("supportModal");
+        return;
+      }
       // CLOSE buttons
       if (t?.closest?.("#flacClose")) {
         closeModal("flacModal");
@@ -1232,8 +1211,11 @@ const fmtDate = (iso?: string | null) => {
         closeModal("streamQualityModal");
         return;
       }
-
-      // Backdrop click close (data-close="flac" / "streamquality")
+      if (t?.closest?.("#supportClose")) {
+        closeModal("supportModal");
+        return;
+      }
+      // Backdrop click close (data-close="...")
       const closeKey = t?.dataset?.close;
       if (closeKey === "flac") {
         closeModal("flacModal");
@@ -1243,35 +1225,33 @@ const fmtDate = (iso?: string | null) => {
         closeModal("streamQualityModal");
         return;
       }
+      if (closeKey === "support") {
+        closeModal("supportModal");
+        return;
+      }
     });
-
-    // ESC close
+    // ESC close — tous les modals
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-
       const flac = document.getElementById("flacModal");
       if (flac && flac.getAttribute("aria-hidden") === "false") closeModal("flacModal");
-
       const qual = document.getElementById("streamQualityModal");
       if (qual && qual.getAttribute("aria-hidden") === "false") closeModal("streamQualityModal");
+      const support = document.getElementById("supportModal");
+      if (support && support.getAttribute("aria-hidden") === "false") closeModal("supportModal");
     });
-
     window.__abfHomeModalsBound = true;
   }
-
-
   // -------------------------
   // Boot
   // -------------------------
   async function initHome(){
     injectOnAirStylesOnce();
     bindHomeModalsOnce();
-
     await renderNowPlayingAndLast(); // crée coverByNorm
     renderOnAirTonight();
     await renderTop();
     await renderHeroTop1();
-
     const jump = document.getElementById("jumpToPlayer");
     if (jump && !jump.dataset.bound){
       jump.dataset.bound = "1";
@@ -1280,7 +1260,6 @@ const fmtDate = (iso?: string | null) => {
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
       };
     }
-
     // timers (nettoyage avant de re-créer)
     if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
     window.__abfHomeTimer = setInterval(async () => {
@@ -1289,20 +1268,16 @@ const fmtDate = (iso?: string | null) => {
       renderTop();
       renderHeroTop1();
     }, 8000);
-
     if (!window.__abfOnAirTimer){
       window.__abfOnAirTimer = setInterval(renderOnAirTonight, 30000);
     }
   }
-
   function initHomePage(){
     // home only
     if (window.location.pathname !== "/") return;
     requestAnimationFrame(() => requestAnimationFrame(initHome));
   }
-
   initHomePage();
-
   // bind listeners once
   if (!window.__abfHomeListeners){
     document.addEventListener("astro:page-load", initHomePage);
@@ -1310,12 +1285,10 @@ const fmtDate = (iso?: string | null) => {
     document.addEventListener("astro:before-swap", () => {
       if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
     });
-
     // rafraîchir dès que le player met à jour l'historique (server-side now)
     window.addEventListener("abf:history-updated", initHomePage);
-
     window.__abfHomeListeners = true;
   }
 })();
-  </script>
+</script>
 </Base>
