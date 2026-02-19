@@ -1,13 +1,20 @@
+// src/pages/api/vote.ts
 import type { APIRoute } from "astro";
 
 export const prerender = false;
 
 const DIRECTUS_URL =
   import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
+
 const TOKEN =
   import.meta.env.DIRECTUS_VOTES_TOKEN || process.env.DIRECTUS_VOTES_TOKEN || "";
-const COLLECTION = "votes";
 
+const COLLECTION = "votes";
+const TRACKS_COLLECTION = "tracks";
+
+// ----------------------
+// Response helpers
+// ----------------------
 function json(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -44,7 +51,10 @@ async function dFetch(path: string, init?: RequestInit) {
   return res;
 }
 
-// --- ISO week id: "YYYY-W07"
+// ----------------------
+// Week helpers
+// ----------------------
+// ISO week id: "YYYY-W07"
 function isoWeekId(d = new Date()) {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = date.getUTCDay() || 7;
@@ -81,8 +91,19 @@ function normTrackKey(k: string) {
     .trim();
 }
 
-// Simple deterministic IP hash without external deps (NOT cryptographic)
-// Good enough for rate limiting / dedupe.
+function splitFromTrackKey(track_key: string) {
+  const s = String(track_key || "").trim();
+  const idx = s.indexOf(" - ");
+  if (idx === -1) return { artist: s, title: "" };
+  return {
+    artist: s.slice(0, idx).trim(),
+    title: s.slice(idx + 3).trim(),
+  };
+}
+
+// ----------------------
+// Simple deterministic IP hash (NOT cryptographic)
+// ----------------------
 async function ipHash(ip: string) {
   const enc = new TextEncoder().encode(ip || "0.0.0.0");
   const buf = await crypto.subtle.digest("SHA-256", enc);
@@ -97,37 +118,172 @@ function getClientIp(request: Request) {
   return first || request.headers.get("x-real-ip") || "0.0.0.0";
 }
 
+// ----------------------
+// Cover resolution
+// ----------------------
+function fileUrl(fileId?: string | null) {
+  if (!fileId) return "";
+  // Directus assets endpoint
+  return `${DIRECTUS_URL}/assets/${fileId}`;
+}
+
+// iTunes micro-cache (memory)
+type ItunesCacheEntry = { url: string; exp: number };
+const ITUNES_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+const itunesMemCache: Map<string, ItunesCacheEntry> =
+  (globalThis as any).__abfItunesVoteCache || new Map();
+(globalThis as any).__abfItunesVoteCache = itunesMemCache;
+
+async function fetchItunesCover(artist: string, title: string): Promise<string> {
+  const key = normTrackKey(`${artist} - ${title}`);
+  const now = Date.now();
+  const hit = itunesMemCache.get(key);
+  if (hit && hit.exp > now) return hit.url || "";
+
+  const term = encodeURIComponent(`${artist} ${title}`.trim());
+  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) {
+      itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
+      return "";
+    }
+    const j = await r.json().catch(() => ({}));
+    const item = j?.results?.[0];
+    const art100 = String(item?.artworkUrl100 || "");
+    const art600 = art100
+      ? art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg")
+      : "";
+
+    itunesMemCache.set(key, { url: art600 || "", exp: now + ITUNES_CACHE_TTL_MS });
+    return art600 || "";
+  } catch {
+    itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
+    return "";
+  }
+}
+
+type TrackRow = {
+  id: string | number;
+  track_key: string;
+  artist?: string | null;
+  title?: string | null;
+  cover_art?: string | null;
+};
+
+async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
+  const map = new Map<string, TrackRow>();
+  const clean = (keys || []).map(normTrackKey).filter(Boolean);
+
+  if (!clean.length) return map;
+
+  // Directus filter _in: comma-separated list
+  // NOTE: track_key values contain spaces/commas, so we MUST encode the whole string
+  const inList = clean.join(",");
+  const fields = ["id", "track_key", "artist", "title", "cover_art"].join(",");
+
+  const res = await dFetch(
+    `/items/${TRACKS_COLLECTION}?fields=${encodeURIComponent(fields)}&filter[track_key][_in]=${encodeURIComponent(
+      inList
+    )}&limit=${Math.min(500, clean.length)}`
+  );
+
+  if (!res.ok) return map;
+
+  const j = (await res.json().catch(() => ({}))) as any;
+  const rows = Array.isArray(j?.data) ? j.data : [];
+  for (const r of rows) {
+    const tk = normTrackKey(r?.track_key || "");
+    if (!tk) continue;
+    map.set(tk, {
+      id: r?.id,
+      track_key: String(r?.track_key || ""),
+      artist: r?.artist ?? null,
+      title: r?.title ?? null,
+      cover_art: r?.cover_art ?? null,
+    });
+  }
+  return map;
+}
+
 // -------- GET /api/vote?week=YYYY-WNN (week optional) --------
 export const GET: APIRoute = async ({ url }) => {
   try {
     const week = pickWeek(url.searchParams.get("week"));
-    // Align with your schema: week, track_key, count
+
+    // 1) Read votes rows
     const fields = ["week", "track_key", "count"].join(",");
     const res = await dFetch(
       `/items/${COLLECTION}?fields=${encodeURIComponent(
         fields
       )}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
     );
+
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       return bad(res.status, `Directus GET failed: ${txt}`);
     }
+
     const data = (await res.json()) as { data?: any[] };
     const rows = Array.isArray(data?.data) ? data.data : [];
-    // Sum counts per NORMALIZED track_key (prevents duplicates in top)
-    // Keep one "display" track_key (first seen raw) so the front can still show a readable key.
+
+    // 2) Aggregate by normalized track_key
     const map = new Map<string, { track_key: string; count: number }>();
     for (const r of rows) {
       const raw = String(r?.track_key || "").trim();
       if (!raw) continue;
+
       const nk = normTrackKey(raw);
       if (!nk) continue;
+
       const c = Number(r?.count ?? 1) || 1;
       const prev = map.get(nk);
       if (!prev) map.set(nk, { track_key: raw, count: c });
       else prev.count += c;
     }
-    const top = Array.from(map.values()).sort((a, b) => b.count - a.count);
+
+    const topRaw = Array.from(map.entries())
+      .map(([nk, v]) => ({ nk, ...v }))
+      .sort((a, b) => b.count - a.count);
+
+    // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
+    const trackKeyList = topRaw.map((x) => x.nk);
+    const tracksByKey = await getTracksByKeys(trackKeyList);
+
+    // 4) Build response items with cover_url
+    const top = await Promise.all(
+      topRaw.map(async (row) => {
+        const tkNorm = row.nk;
+        const trow = tracksByKey.get(tkNorm);
+
+        const displayTrackKey = String(row.track_key || "").trim() || tkNorm;
+
+        const split = splitFromTrackKey(displayTrackKey);
+        const artist =
+          String(trow?.artist || "").trim() || String(split.artist || "").trim();
+        const title =
+          String(trow?.title || "").trim() || String(split.title || "").trim();
+
+        const cover_art = trow?.cover_art ?? null;
+        let cover_url = cover_art ? fileUrl(cover_art) : "";
+
+        // Fallback iTunes (doesn't require Directus write permissions)
+        if (!cover_url && artist && title) {
+          cover_url = await fetchItunesCover(artist, title);
+        }
+
+        return {
+          track_key: displayTrackKey,
+          artist,
+          title,
+          count: row.count,
+          cover_art,
+          cover_url,
+        };
+      })
+    );
+
     return json({ ok: true, week, top });
   } catch (e: any) {
     return bad(500, e?.message || "Server error");
@@ -140,26 +296,27 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json().catch(() => null);
     const week = pickWeek(body?.week);
+
     const track_key_raw = String(body?.track_key || "").trim();
     if (!track_key_raw) return bad(400, "Missing track_key");
 
-    // Normaliser avant stockage/vérification
+    // Normalize before storage / check
     const track_key = normTrackKey(track_key_raw);
     if (!track_key) return bad(400, "Invalid track_key");
 
-    // Rate limiting : 1 vote par piste par jour par IP
+    // Rate limiting: 1 vote per track per day per IP
     const ip = getClientIp(request);
     const iph = await ipHash(ip);
     const vote_day = todayISO();
 
-    // Vérification d'un vote existant pour cette IP + jour + semaine + piste
+    // Check existing vote (ip + day + week + track)
     const checkFields = ["id"].join(",");
     const checkRes = await dFetch(
       `/items/${COLLECTION}?fields=${encodeURIComponent(checkFields)}` +
         `&filter[week][_eq]=${encodeURIComponent(week)}` +
         `&filter[vote_day][_eq]=${encodeURIComponent(vote_day)}` +
         `&filter[ip_hash][_eq]=${encodeURIComponent(iph)}` +
-        `&filter[track_key][_eq]=${encodeURIComponent(track_key)}` + // ← Filtre ajouté
+        `&filter[track_key][_eq]=${encodeURIComponent(track_key)}` +
         `&limit=1`
     );
 
@@ -182,13 +339,13 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Insertion du vote
+    // Insert vote
     const res = await dFetch(`/items/${COLLECTION}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         week,
-        track_key, // stocké normalisé
+        track_key, // stored normalized
         ip_hash: iph,
         vote_day,
         count: 1,

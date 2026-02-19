@@ -752,7 +752,11 @@ const fmtDate = (iso?: string | null) => {
     tEl.textContent = titleRaw;
 
     const coverByNorm = window.__abfHomeCoverByNorm || {};
-    const url = coverByNorm[normKey(artistRaw, titleRaw)] || "";
+    const url =
+  String(first.cover_url || "").trim() ||
+  coverByNorm[normKey(artistRaw, titleRaw)] ||
+  "";
+
     setHeroTop1Cover(url);
 
     empty.classList.add("hidden");
@@ -814,7 +818,11 @@ const fmtDate = (iso?: string | null) => {
       const titleRaw = String(row.title || "").trim() || "—";
       const count = Number(row.count) || 0;
 
-      const coverUrl = coverByNorm[normKey(artistRaw, titleRaw)] || "";
+      const coverUrl =
+  String(row.cover_url || "").trim() ||
+  coverByNorm[normKey(artistRaw, titleRaw)] ||
+  "";
+
 
       if (img){
         if (coverUrl){
