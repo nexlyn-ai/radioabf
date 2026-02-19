@@ -2338,40 +2338,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
   })();
 </script>
 
-<!-- Crisp Chat -->
-<script is:inline>
-  window.$crisp = window.$crisp || [];
-  window.CRISP_WEBSITE_ID = "6300ee2b-bc1d-4aaf-89bb-47ed290a5448";
-  (function () {
-    var d = document;
-    var s = d.createElement("script");
-    s.src = "https://client.crisp.chat/l.js";
-    s.async = 1;
-    d.getElementsByTagName("head")[0].appendChild(s);
-  })();
-</script>
-
-<script is:inline data-astro-rerun>
-  (() => {
-    const isChatRoute = () => window.location.pathname === "/chat";
-
-    function syncCrispVisibility(){
-      window.$crisp = window.$crisp || [];
-
-      if (isChatRoute()){
-        window.$crisp.push(["do", "chat:show"]);
-      } else {
-        window.$crisp.push(["do", "chat:hide"]);
-      }
-    }
-
-    syncCrispVisibility();
-    document.addEventListener("astro:page-load", syncCrispVisibility);
-    document.addEventListener("astro:after-swap", syncCrispVisibility);
-  })();
-</script>
-
-  </body>
+</body>
 <!-- ================= DEDICATION MODAL ================= -->
 <div
   id="dedicationModal"
