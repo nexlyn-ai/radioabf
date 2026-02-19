@@ -8,7 +8,7 @@ const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL ||
 const DIRECTUS_TOKEN = import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
 const PLAYS_COLLECTION = "plays";
 
-/* -------------------- Helpers (inchangés) -------------------- */
+/* -------------------- Helpers -------------------- */
 
 function cleanNowText(s: string) {
   let out = String(s || "").trim();
@@ -71,71 +71,72 @@ function assertEnv() {
 async function directusFetch(path: string, init: RequestInit = {}) {
   assertEnv();
   const fullUrl = `${DIRECTUS_URL}${path}`;
-  try {
-    const res = await fetch(fullUrl, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${DIRECTUS_TOKEN}`,
-        Accept: "application/json",
-        ...(init.headers || {}),
-      },
-    });
-    return res;
-  } catch (err) {
-    throw new Error(`Directus fetch failed for ${fullUrl}: ${err}`);
+  const res = await fetch(fullUrl, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${DIRECTUS_TOKEN}`,
+      Accept: "application/json",
+      ...(init.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Directus ${path} failed: ${res.status} ${res.statusText}`);
   }
+  return res;
 }
 
+/* -------------------- iTunes cover (simplifié) -------------------- */
+
 async function fetchItunesCover(artist: string, title: string): Promise<string> {
+  if (!artist || !title) return "";
+
   const key = normKey(artist, title);
+  const cache = (globalThis as any).__itunesCache || new Map();
   const now = Date.now();
-  const hit = (globalThis as any).__itunesCache?.get(key);
+  const hit = cache.get(key);
   if (hit && hit.exp > now) return hit.url;
 
   let cover = "";
   try {
-    const term = `${artist} ${title}`;
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
-    const r = await fetch(url, { cache: "no-store" });
+    let term = `${artist} ${title}`;
+    let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
+    let r = await fetch(url, { cache: "no-store" });
     if (r.ok) {
       const j = await r.json();
-      const art100 = j?.results?.[0]?.artworkUrl100;
-      if (art100) cover = art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
+      const art = j?.results?.[0]?.artworkUrl100;
+      if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
     }
+
     if (!cover) {
       const cleanTitle = stripMixSuffix(title);
       if (cleanTitle && cleanTitle !== title) {
-        const url2 = `https://itunes.apple.com/search?term=${encodeURIComponent(`${artist} ${cleanTitle}`)}&entity=song&limit=1`;
-        const r2 = await fetch(url2, { cache: "no-store" });
-        if (r2.ok) {
-          const j2 = await r2.json();
-          const art100 = j2?.results?.[0]?.artworkUrl100;
-          if (art100) cover = art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
+        term = `${artist} ${cleanTitle}`;
+        url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
+        r = await fetch(url, { cache: "no-store" });
+        if (r.ok) {
+          const j = await r.json();
+          const art = j?.results?.[0]?.artworkUrl100;
+          if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
         }
       }
     }
   } catch {}
 
-  const cache = (globalThis as any).__itunesCache || new Map();
   cache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
   (globalThis as any).__itunesCache = cache;
-
   return cover;
 }
 
 /* -------------------- API -------------------- */
 
 export const GET: APIRoute = async ({ request }) => {
-  const debug: Record<string, any> = { steps: [] };
-
   try {
     const url = new URL(request.url);
     const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || "12")));
 
-    // 1. Icecast
-    debug.steps.push("fetch_icecast");
+    // Icecast → now playing
     const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
-    if (!ice.ok) throw new Error(`Icecast status ${ice.status}`);
+    if (!ice.ok) throw new Error(`Icecast failed: ${ice.status}`);
     const iceJson = await ice.json();
     const nowText = cleanNowText(extractNowPlaying(iceJson));
     const { artist, title } = splitTrack(nowText);
@@ -143,62 +144,38 @@ export const GET: APIRoute = async ({ request }) => {
     const played_at = new Date().toISOString();
     const played_at_ms = Date.parse(played_at);
 
-    debug.now = { raw: nowText, artist, title, track_key, played_at };
-
-    // 2. Dernier play en base
-    debug.steps.push("fetch_last_play");
+    // Vérifier dernier en base + insert si changement
     const lastRes = await directusFetch(
       `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
     );
-    if (!lastRes.ok) {
-      debug.last_fetch_error = `${lastRes.status} ${lastRes.statusText}`;
-      throw new Error(`Last play fetch failed: ${lastRes.status}`);
-    }
     const lastJson = await lastRes.json();
     const last = lastJson?.data?.[0];
-    debug.last_in_db = last || null;
 
     let inserted = false;
-    let insertError = null;
-
     if (!last || last.track_key !== track_key) {
-      debug.steps.push("attempt_insert");
-      try {
-        const createRes = await directusFetch(`/items/${PLAYS_COLLECTION}`, {
-          method: "POST",
-          body: JSON.stringify({
-            track_key,
-            artist: artist || null,
-            title: title || null,
-            played_at,
-            raw: nowText || null,
-          }),
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (!createRes.ok) {
-          let errBody = "";
-          try { errBody = await createRes.text(); } catch {}
-          insertError = `${createRes.status} - ${errBody || createRes.statusText}`;
-          throw new Error(`Insert failed: ${insertError}`);
-        }
-
-        inserted = true;
-        debug.inserted = true;
-      } catch (insErr) {
-        insertError = insErr.message;
-        debug.insert_error = insertError;
-      }
-    } else {
-      debug.steps.push("skip_insert_same_track");
+      await directusFetch(`/items/${PLAYS_COLLECTION}`, {
+        method: "POST",
+        body: JSON.stringify({
+          track_key,
+          artist: artist || null,
+          title: title || null,
+          played_at,
+          raw: nowText || null,
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      inserted = true;
     }
 
-    // 3. Historique
-    debug.steps.push("fetch_history");
-    const histRes = await directusFetch(
-      `/items/${PLAYS_COLLECTION}?fields=id,track_key,artist,title,played_at,raw&sort=-played_at&limit=${limit}`
-    );
-    if (!histRes.ok) throw new Error(`History fetch ${histRes.status}`);
+    // Historique → EXCLURE le titre actuel pour éviter le doublon visuel
+    const params = new URLSearchParams({
+      fields: "id,track_key,artist,title,played_at,raw",
+      sort: "-played_at",
+      limit: limit.toString(),
+      "filter[track_key][_neq]": track_key,   // ← LA CORRECTION PRINCIPALE
+    });
+
+    const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params}`);
     const histJson = await histRes.json();
     const historyRaw = histJson?.data || [];
 
@@ -225,7 +202,6 @@ export const GET: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         ok: true,
-        debug,           // ← regarde ça dans la réponse JSON !
         inserted,
         now: {
           raw: nowText,
@@ -241,18 +217,14 @@ export const GET: APIRoute = async ({ request }) => {
       {
         headers: {
           "content-type": "application/json; charset=utf-8",
-          "cache-control": "no-cache", // ← temporaire pour debug
+          "cache-control": "s-maxage=5, stale-while-revalidate=20",
         },
       }
     );
   } catch (e: any) {
     return new Response(
-      JSON.stringify({
-        ok: false,
-        error: e?.message || "Server error",
-        debug,
-      }),
-      { status: 500, headers: { "content-type": "application/json" } }
+      JSON.stringify({ ok: false, error: e?.message || "Server error" }),
+      { status: 500 }
     );
   }
 };
