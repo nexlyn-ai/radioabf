@@ -12,9 +12,19 @@ const DIRECTUS_URL =
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
 
+// (optionnel) si tu veux absolument uploader les covers dans Directus (files)
+// sinon on stocke juste cover_url (itunes) dans tracks
+const ABF_UPLOAD_COVERS =
+  (import.meta.env.ABF_UPLOAD_COVERS || process.env.ABF_UPLOAD_COVERS || "")
+    .toString()
+    .toLowerCase() === "true";
+
 // Collections
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
+
+// Cache policy
+const COVER_TTL_DAYS = 60;
 
 // ----------------------
 // Helpers
@@ -61,11 +71,22 @@ function toUTCms(v: any): number {
   return Date.parse(s + "Z");
 }
 
+function safeStr(v: any) {
+  return String(v ?? "").trim();
+}
+
+function daysBetween(a: Date, b: Date) {
+  return Math.abs(a.getTime() - b.getTime()) / 86400000;
+}
+
 async function directusFetch(path: string, init: RequestInit = {}) {
+  if (!DIRECTUS_URL || !DIRECTUS_TOKEN) {
+    return fetch("about:blank", { method: "GET" }); // évite crash si env manquantes
+  }
   const url = `${DIRECTUS_URL}${path}`;
   const headers = new Headers(init.headers || {});
   headers.set("Authorization", `Bearer ${DIRECTUS_TOKEN}`);
-  return fetch(url, { ...init, headers });
+  return fetch(url, { ...init, headers, cache: "no-store" });
 }
 
 // ----------------------
@@ -95,7 +116,9 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
     const j = await r.json().catch(() => ({}));
     const item = j?.results?.[0];
     const art100 = String(item?.artworkUrl100 || "");
-    const art600 = art100 ? art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg") : "";
+    const art600 = art100
+      ? art100.replace(/100x100bb\.(jpg|png)$/i, "600x600bb.$1")
+      : "";
 
     itunesMemCache.set(key, { url: art600 || "", exp: now + ITUNES_CACHE_TTL_MS });
     return art600 || "";
@@ -105,8 +128,9 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
   }
 }
 
-// upload image URL to Directus
+// upload image URL to Directus (OPTIONNEL)
 async function uploadCoverFromUrl(imageUrl: string): Promise<string | null> {
+  if (!DIRECTUS_URL || !DIRECTUS_TOKEN) return null;
   try {
     const img = await fetch(imageUrl);
     if (!img.ok) return null;
@@ -138,20 +162,58 @@ type TrackRow = {
   track_key: string;
   artist?: string;
   title?: string;
+
+  // ✅ tes champs Directus existants
+  cover_url?: string | null;
+  cover_override?: string | null;
+  cover_source?: string | null;
+  cover_updated_at?: string | null;
+
+  // file field
   cover_art?: string | null;
+
+  // lock
   cover_lock?: boolean | null;
 };
 
-function fileUrl(fileId?: string | null) {
+function assetUrl(fileId?: string | null) {
   if (!fileId) return "";
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
+function resolveCoverUrlFromTrack(track?: TrackRow | null) {
+  if (!track) return "";
+  // Priorité : override > cover_url > cover_art(asset)
+  const override = safeStr(track.cover_override);
+  if (override) return override;
+
+  const url = safeStr(track.cover_url);
+  if (url) return url;
+
+  const fileId = safeStr(track.cover_art);
+  if (fileId) return assetUrl(fileId);
+
+  return "";
+}
+
 async function getTrackByKey(track_key: string): Promise<TrackRow | null> {
+  const fields = [
+    "id",
+    "track_key",
+    "artist",
+    "title",
+    "cover_url",
+    "cover_override",
+    "cover_source",
+    "cover_updated_at",
+    "cover_art",
+    "cover_lock",
+  ].join(",");
+
   const r = await directusFetch(
-    `/items/${TRACKS_COLLECTION}?fields=id,track_key,artist,title,cover_art,cover_lock&filter[track_key][_eq]=${encodeURIComponent(
-      track_key
-    )}&limit=1`,
+    `/items/${TRACKS_COLLECTION}?fields=${encodeURIComponent(
+      fields
+    )}&filter[track_key][_eq]=${encodeURIComponent(track_key)}&limit=1`,
     { method: "GET" }
   );
   if (!r.ok) return null;
@@ -163,7 +225,15 @@ async function createTrack(track_key: string, artist: string, title: string) {
   const r = await directusFetch(`/items/${TRACKS_COLLECTION}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ track_key, artist, title, cover_lock: false }),
+    body: JSON.stringify({
+      track_key,
+      artist,
+      title,
+      cover_lock: false,
+      cover_source: null,
+      cover_updated_at: null,
+      cover_url: "",
+    }),
   });
 
   if (!r.ok) return null;
@@ -177,6 +247,14 @@ async function updateTrack(id: string | number, payload: any) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+function coverIsFresh(track: TrackRow) {
+  const updated = safeStr(track.cover_updated_at);
+  if (!updated) return false;
+  const d = new Date(updated);
+  if (Number.isNaN(d.getTime())) return false;
+  return daysBetween(new Date(), d) <= COVER_TTL_DAYS;
 }
 
 // ----------------------
@@ -201,6 +279,7 @@ async function insertPlay(payload: any) {
 }
 
 async function getHistory(limit: number) {
+  // ✅ on récupère aussi les nouvelles colonnes cover_* depuis track
   const fields = [
     "id",
     "track_key",
@@ -210,7 +289,11 @@ async function getHistory(limit: number) {
     "raw",
     "track.id",
     "track.cover_art",
+    "track.cover_url",
+    "track.cover_override",
     "track.cover_lock",
+    "track.cover_updated_at",
+    "track.cover_source",
   ].join(",");
 
   const r = await directusFetch(
@@ -229,6 +312,7 @@ export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || "12")));
 
+  // 1) Icecast now
   const r = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
   const json = await r.json().catch(() => ({}));
   const nowText = cleanNowText(extractNowPlaying(json));
@@ -239,22 +323,61 @@ export const GET: APIRoute = async ({ request }) => {
   const played_at = new Date().toISOString();
   const played_at_ms = Date.parse(played_at);
 
+  // 2) Track row (Directus)
   let trackRow = await getTrackByKey(track_key);
   if (!trackRow && artist) trackRow = await createTrack(track_key, artist, title);
 
-  // auto cover if missing and not locked
-  if (trackRow && !trackRow.cover_art && !trackRow.cover_lock && artist && title) {
-    const coverUrl = await fetchItunesCover(artist, title);
-    if (coverUrl) {
-      const fileId = await uploadCoverFromUrl(coverUrl);
-      if (fileId) {
-        await updateTrack(trackRow.id, { cover_art: fileId });
-        trackRow.cover_art = fileId;
+  // 3) Auto cover (✅ solution simple : remplir cover_url)
+  //    - respecte cover_lock
+  //    - respecte cover_override
+  //    - respecte TTL
+  if (trackRow && !trackRow.cover_lock) {
+    const hasOverride = !!safeStr(trackRow.cover_override);
+    const hasCover = !!resolveCoverUrlFromTrack(trackRow);
+
+    const shouldFetch =
+      !hasOverride &&
+      (!hasCover || !coverIsFresh(trackRow)) &&
+      safeStr(artist) &&
+      safeStr(title);
+
+    if (shouldFetch) {
+      const coverUrl = await fetchItunesCover(artist, title);
+
+      if (coverUrl) {
+        // ✅ le fix principal : stocker cover_url dans tracks
+        const patch: any = {
+          cover_url: coverUrl,
+          cover_source: "itunes",
+          cover_updated_at: new Date().toISOString(),
+        };
+
+        // OPTIONNEL : upload Directus file (désactivé par défaut)
+        if (ABF_UPLOAD_COVERS) {
+          const fileId = await uploadCoverFromUrl(coverUrl);
+          if (fileId) patch.cover_art = fileId;
+        }
+
+        await updateTrack(trackRow.id, patch);
+
+        // sync local copy
+        trackRow.cover_url = patch.cover_url;
+        trackRow.cover_source = patch.cover_source;
+        trackRow.cover_updated_at = patch.cover_updated_at;
+        if (patch.cover_art) trackRow.cover_art = patch.cover_art;
+      } else {
+        // évite de spammer iTunes si introuvable
+        await updateTrack(trackRow.id, {
+          cover_source: "itunes",
+          cover_updated_at: new Date().toISOString(),
+        });
+        trackRow.cover_source = "itunes";
+        trackRow.cover_updated_at = new Date().toISOString();
       }
     }
   }
 
-  // insert play if track changed
+  // 4) Insert play if track changed
   const last = await getLastPlay();
   if (!last || String(last?.track_key || "") !== track_key) {
     await insertPlay({
@@ -268,11 +391,25 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
+  // 5) History
   const historyRaw = await getHistory(limit);
 
-  // Normalize history payload (front needs: raw/artist/title/track_key/played_at(_ms)/cover_url)
   const history = historyRaw.map((row: any) => {
-    const coverId = row?.track?.cover_art || null;
+    const t: TrackRow | null = row?.track
+      ? {
+          id: row?.track?.id,
+          track_key: row?.track_key,
+          cover_art: row?.track?.cover_art ?? null,
+          cover_url: row?.track?.cover_url ?? "",
+          cover_override: row?.track?.cover_override ?? "",
+          cover_lock: row?.track?.cover_lock ?? false,
+          cover_updated_at: row?.track?.cover_updated_at ?? null,
+          cover_source: row?.track?.cover_source ?? null,
+        }
+      : null;
+
+    const cover_url = resolveCoverUrlFromTrack(t);
+
     return {
       id: row?.id,
       raw: String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim()).trim(),
@@ -281,11 +418,13 @@ export const GET: APIRoute = async ({ request }) => {
       track_key: String(row?.track_key || "").trim(),
       played_at: row?.played_at || "",
       played_at_ms: toUTCms(row?.played_at),
-      cover_art: coverId,
-      cover_url: fileUrl(coverId),
+      cover_art: t?.cover_art ?? null,
+      cover_url,
     };
   });
 
+  // 6) Now payload
+  const nowCoverUrl = resolveCoverUrlFromTrack(trackRow || null);
   const nowCoverId = trackRow?.cover_art || null;
 
   const nowPayload = {
@@ -296,7 +435,7 @@ export const GET: APIRoute = async ({ request }) => {
     played_at,
     played_at_ms,
     cover_art: nowCoverId,
-    cover_url: fileUrl(nowCoverId),
+    cover_url: nowCoverUrl,
   };
 
   return new Response(JSON.stringify({ ok: true, now: nowPayload, history }), {
