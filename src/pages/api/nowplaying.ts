@@ -16,8 +16,9 @@ const TRACKS_COLLECTION = "tracks";
 const TRACKS_KEY_FIELD = "track_key";
 const TRACKS_COVER_FIELD = "cover_art";
 
-// ✅ iTunes OFF (pour être sûr que rien ne vienne d'iTunes)
-const ENABLE_ITUNES_FALLBACK = false;
+// ✅ iTunes fallback ON (uniquement si pas de cover Directus)
+const ENABLE_ITUNES_FALLBACK =
+  (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "true") === "true";
 
 /* -------------------- Helpers -------------------- */
 
@@ -118,8 +119,8 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
   let coverUrl = "";
 
   try {
-    // ✅ robuste: cover_art peut être string (id) OU objet { id }
     const params = new URLSearchParams({
+      // ✅ robuste: cover_art peut être string (id) OU objet { id }
       fields: `${TRACKS_COVER_FIELD},${TRACKS_COVER_FIELD}.id`,
       limit: "1",
       [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
@@ -145,12 +146,51 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
   return coverUrl;
 }
 
-/* -------------------- iTunes cover (désactivé) -------------------- */
+/* -------------------- iTunes cover (fallback) -------------------- */
 
-async function fetchItunesCover(_artist: string, _title: string): Promise<string> {
+const __itunesCache: Map<string, { url: string; exp: number }> =
+  ((globalThis as any).__itunesCache as Map<string, { url: string; exp: number }>) || new Map();
+
+async function fetchItunesCover(artist: string, title: string): Promise<string> {
   if (!ENABLE_ITUNES_FALLBACK) return "";
-  // (garde la fonction au cas où tu veux réactiver via env plus tard)
-  return "";
+  if (!artist || !title) return "";
+
+  const key = normKey(artist, title);
+  const now = Date.now();
+  const hit = __itunesCache.get(key);
+  if (hit && hit.exp > now) return hit.url;
+
+  let cover = "";
+  try {
+    // try exact
+    let term = `${artist} ${title}`;
+    let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
+    let r = await fetch(url, { cache: "no-store" });
+    if (r.ok) {
+      const j = await r.json();
+      const art = j?.results?.[0]?.artworkUrl100;
+      if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
+    }
+
+    // try cleaned title
+    if (!cover) {
+      const cleanTitle = stripMixSuffix(title);
+      if (cleanTitle && cleanTitle !== title) {
+        term = `${artist} ${cleanTitle}`;
+        url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
+        r = await fetch(url, { cache: "no-store" });
+        if (r.ok) {
+          const j = await r.json();
+          const art = j?.results?.[0]?.artworkUrl100;
+          if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
+        }
+      }
+    }
+  } catch {}
+
+  __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 }); // 6h
+  (globalThis as any).__itunesCache = __itunesCache;
+  return cover;
 }
 
 /* -------------------- API -------------------- */
@@ -195,8 +235,7 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // Historique → EXCLURE le titre actuel pour éviter le doublon visuel
-    // ✅ IMPORTANT: fields ne demande que des champs existants dans plays
+    // Historique → EXCLURE le titre actuel
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
@@ -214,10 +253,8 @@ export const GET: APIRoute = async ({ request }) => {
         const t = String(row.title || "");
         const tk = String(row.track_key || "");
 
-        // ✅ 100% Directus via tracks.cover_art
+        // ✅ priorité Directus, fallback iTunes uniquement si vide
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
-
-        // (fallback iTunes désactivé)
         if (!cover_url) cover_url = await fetchItunesCover(a, t);
 
         return {
