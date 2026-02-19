@@ -5,13 +5,10 @@ export const prerender = false;
 
 const ICECAST_STATUS_URL =
   import.meta.env.ICECAST_STATUS_URL || process.env.ICECAST_STATUS_URL || "";
-
 const DIRECTUS_URL =
   import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
-
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
-
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
 
@@ -104,7 +101,6 @@ async function searchItunes(term: string): Promise<string> {
   const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
     term
   )}&entity=song&limit=1`;
-
   try {
     const r = await fetch(url, { cache: "no-store" });
     if (!r.ok) return "";
@@ -121,13 +117,10 @@ async function searchItunes(term: string): Promise<string> {
 async function fetchItunesCover(artist: string, title: string): Promise<string> {
   const key = normKey(artist, title);
   const now = Date.now();
-
   const hit = memCache.get(key);
   if (hit && hit.exp > now) return hit.url;
-
   // 1️⃣ Recherche complète
   let cover = await searchItunes(`${artist} ${title}`);
-
   // 2️⃣ Si rien → nettoyer suffixes remix
   if (!cover) {
     const cleanTitle = stripMixSuffix(title);
@@ -135,7 +128,6 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
       cover = await searchItunes(`${artist} ${cleanTitle}`);
     }
   }
-
   memCache.set(key, { url: cover || "", exp: now + CACHE_TTL });
   return cover || "";
 }
@@ -149,31 +141,49 @@ export const GET: APIRoute = async ({ request }) => {
       30,
       Math.max(1, Number(url.searchParams.get("limit") || "12"))
     );
-
     const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
     const iceJson = await ice.json();
     const nowText = cleanNowText(extractNowPlaying(iceJson));
-
     const { artist, title } = splitTrack(nowText);
     const track_key = normKey(artist, title);
-
     const played_at = new Date().toISOString();
     const played_at_ms = Date.parse(played_at);
+
+    // Vérifier si ce track_key existe déjà en tête de l'historique
+    const lastRes = await directusFetch(
+      `/items/${PLAYS_COLLECTION}?fields=track_key,played_at&sort=-played_at&limit=1`
+    );
+    const lastJson = await lastRes.json();
+    const last = lastJson?.data?.[0];
+
+    if (!last || last.track_key !== track_key) {
+      // Nouveau titre → on insère
+      await directusFetch(`/items/${PLAYS_COLLECTION}`, {
+        method: "POST",
+        body: JSON.stringify({
+          track_key,
+          artist,
+          title,
+          played_at,
+          raw: nowText,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
 
     // History from Directus
     const histRes = await directusFetch(
       `/items/${PLAYS_COLLECTION}?fields=id,track_key,artist,title,played_at,raw&sort=-played_at&limit=${limit}`
     );
-
     const histJson = await histRes.json();
     const historyRaw = histJson?.data || [];
-
     const history = [];
     for (const row of historyRaw) {
       const a = String(row.artist || "");
       const t = String(row.title || "");
       const cover = await fetchItunesCover(a, t);
-
       history.push({
         id: row.id,
         raw: row.raw,
