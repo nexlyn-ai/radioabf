@@ -2158,12 +2158,11 @@ Legal
     document.addEventListener("astro:after-swap", apply);
     window.addEventListener("resize", apply);
   })();
-</script>
-<!-- Google Cast – version corrigée, icône inline, HTTPS forcé, logo ABF -->
+<!-- Google Cast – proxy + metadata renforcé pour Default Receiver -->
 <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
 <script is:inline data-astro-rerun>
-  console.log("[Cast] Script chargé – attente API...");
+  console.log("[Cast vFinal] Chargement...");
 
   let castCtx = null;
   let castSession = null;
@@ -2175,11 +2174,8 @@ Legal
       btn.style.opacity = active ? "1" : "0.7";
       btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
     }
-
-    const statusEls = [document.getElementById("npStatus"), document.getElementById("npStatusMobile")];
-    statusEls.forEach(el => {
-      if (el) el.textContent = active ? "Casting…" : (document.querySelector("#playBtn .abf-ic")?.getAttribute("data-ic") === "pause" ? "live" : "paused");
-    });
+    const status = document.getElementById("npStatus");
+    if (status) status.textContent = active ? "Casting…" : "live";
   }
 
   function startCastTitleSync() {
@@ -2187,20 +2183,24 @@ Legal
     castTitleTimer = setInterval(() => {
       if (!castSession) return;
       const artist = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
-      const title = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music";
+      const title = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic";
       try {
         const media = castSession.getMediaSession();
         if (media?.media) {
           const md = new chrome.cast.media.GenericMediaMetadata();
           md.title = artist;
           md.subtitle = title + " • radioabf.com";
-          md.images = [new chrome.cast.Image("https://radioabf.com/logo-abf.png")];
+          md.images = [{
+            url: "https://radioabf.com/logo-abf.png",
+            height: 512,
+            width: 512
+          }];
           media.media.metadata = md;
           const req = new chrome.cast.media.EditMediaInfoRequest(media.media);
           media.editMediaInfo(req, () => {}, () => {});
         }
       } catch (e) {}
-    }, 15000);
+    }, 12000);
   }
 
   function initCast() {
@@ -2210,28 +2210,21 @@ Legal
         receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
       });
-
-      const btn = document.getElementById("castBtn");
-      if (btn) btn.style.display = "flex";
-
-      castCtx.addEventListener(
-        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-        e => {
-          if (e.sessionState?.includes("ENDED") || e.sessionState?.includes("FAILED")) {
-            castSession = null;
-            clearInterval(castTitleTimer);
-            setCastState(false);
-          }
+      document.getElementById("castBtn").style.display = "flex";
+      castCtx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, e => {
+        if (e.sessionState?.includes("ENDED") || e.sessionState?.includes("FAILED")) {
+          castSession = null;
+          clearInterval(castTitleTimer);
+          setCastState(false);
         }
-      );
-    } catch (err) {}
+      });
+    } catch (err) { console.error("[Cast] init error", err); }
   }
 
   window["__onGCastApiAvailable"] = isAvailable => {
     if (isAvailable) initCast();
   };
 
-  // Sécurité : forcer init si callback absente
   setTimeout(() => {
     if (!castCtx && window.chrome?.cast?.media) initCast();
   }, 4000);
@@ -2240,37 +2233,28 @@ Legal
     if (!e.target.closest("#castBtn")) return;
     e.preventDefault();
 
-    const streamSelect = document.getElementById("streamSelect") || document.getElementById("streamSelectMobile") || document.getElementById("fsStreamSelect");
-    const idx = streamSelect ? Number(streamSelect.value) : 0;
-
-    const streams = [
+    const idx = Number(document.getElementById("streamSelect")?.value || 0);
+    let url = [
       "https://stream.radioabf.com/abf-hd.mp3",
       "https://stream.radioabf.com/abf-sd.mp3",
       "https://stream.radioabf.com/abf-low.aac",
       "https://stream.radioabf.com/abf-uhd.flac"
-    ];
+    ][idx];
 
-    let url = streams[idx] || streams[0];
-    // Force HTTPS (important pour le receiver Google)
-    if (url.startsWith("http://")) url = url.replace("http://", "https://");
-
-    if (!url) {
-      alert("Aucun flux disponible. Lance la radio d’abord.");
-      return;
-    }
+    // Proxy public fiable pour forcer HTTPS + contourner blocages receiver
+    url = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
 
     if (castSession) {
       castCtx?.endCurrentSession(true).then(() => {
         castSession = null;
         setCastState(false);
-      }).catch(() => {});
+      });
       return;
     }
 
     castCtx?.requestSession()
       .then(session => {
         castSession = session;
-
         const contentType = url.includes("flac") ? "audio/flac" :
                            url.includes("aac")  ? "audio/aac"  : "audio/mpeg";
 
@@ -2278,22 +2262,25 @@ Legal
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
         mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
         mediaInfo.metadata.title = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
-        mediaInfo.metadata.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live sur radioabf.com";
-        mediaInfo.metadata.images = [new chrome.cast.Image("https://radioabf.com/logo-abf.png")];
+        mediaInfo.metadata.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music";
+        mediaInfo.metadata.images = [{
+          url: "https://radioabf.com/logo-abf.png",
+          height: 512,
+          width: 512
+        }];
 
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
+        req.autoplay = true;
         return session.loadMedia(req);
       })
       .then(() => {
-        // Pause local
-        const audio = document.querySelector("audio");
-        if (audio) audio.pause();
+        document.querySelector("audio")?.pause?.();
         setCastState(true);
         startCastTitleSync();
       })
       .catch(err => {
-        console.error("[Cast] Erreur :", err);
-        alert("Échec du cast : " + (err?.description || "vérifie la console"));
+        console.error("[Cast] Erreur finale :", err);
+        alert("Échec cast : " + (err?.description || err?.message || "vérifie console"));
       });
   });
 </script>
