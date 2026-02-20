@@ -1979,6 +1979,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
   {
+  v: "3.3.4",
+  d: "Feb 20, 2026",
+  t: "Directus cover resolution fully stabilized across Now Playing, Last Played and Weekly Top charts. Track-key normalization aligned between plays, votes and tracks collections. Vote API matching fixed with strict normalized _eq lookup, ensuring manual Directus uploads always override iTunes fallback. Access Policies and token permissions refined for secure tracks + files read access. Cover fallback chain finalized: Directus → iTunes → ABF default. Cleanup of temporary debug endpoints and production-ready permission structure completed."
+  }
+  {
   v: "3.3.3",
   d: "Feb 19, 2026",
   t: "Directus-first cover system implemented. Top charts and Music page now prioritize manual cover uploads with lock support. Vote API enriched and legacy cover cache removed. Added 'Buy us a coffee' support card and dedicated modal on homepage (right card), with clean BuyMeACoffee button integration and Astro-compatible event delegation in bindHomeModalsOnce(). HTTPS Proxy Streams rollout from 3.3.1 preserved."
