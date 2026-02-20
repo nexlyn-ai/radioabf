@@ -2158,132 +2158,215 @@ Legal
     document.addEventListener("astro:after-swap", apply);
     window.addEventListener("resize", apply);
   })();
+</script>
 
-<!-- Google Cast – proxy audio live + artwork forcé -->
-<script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+<!-- Google Cast (Default Receiver) -->
+<script
+  type="text/javascript"
+  src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
+></script>
 
 <script is:inline data-astro-rerun>
-  console.log("[Cast FINAL] Chargement...");
+  (() => {
+    console.log("[Cast] init…");
 
-  let castCtx = null;
-  let castSession = null;
-  let castTitleTimer = null;
+    const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
 
-  function setCastState(active) {
-    const btn = document.getElementById("castBtn");
-    if (btn) {
-      btn.style.opacity = active ? "1" : "0.7";
-      btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
+    let castCtx = null;
+    let castSession = null;
+    let castTitleTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function setCastState(active) {
+      const btn = $("castBtn");
+      if (btn) {
+        btn.style.opacity = active ? "1" : "0.7";
+        btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
+      }
+
+      // On laisse ton status global gérer "live/paused/stopped" côté player,
+      // ici on affiche juste l'état cast si besoin.
+      const status = $("npStatus");
+      if (status) status.textContent = active ? "Casting…" : (status.textContent || "live");
     }
-    const status = document.getElementById("npStatus");
-    if (status) status.textContent = active ? "Casting…" : "live";
-  }
 
-  function startCastTitleSync() {
-    clearInterval(castTitleTimer);
-    castTitleTimer = setInterval(() => {
-      if (!castSession) return;
-      try {
-        const media = castSession.getMediaSession();
-        if (media?.media) {
+    // ✅ Compatibilité Default Receiver :
+    // - FLAC : non (sur le receiver par défaut)
+    // - AAC/AAC+ : pas fiable selon serveurs/headers
+    // => on force un MP3 (HD ou SD).
+    function getCastUrl() {
+      const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
+
+      const MP3_HD = "https://stream.radioabf.com/abf-hd.mp3";
+      const MP3_SD = "https://stream.radioabf.com/abf-sd.mp3";
+
+      // si l’utilisateur est sur 0 ou 1, on respecte (HD/SD MP3)
+      if (idx === 1) return MP3_SD;
+
+      // sinon (AAC/FLAC), on force MP3 HD pour que ça joue partout
+      return MP3_HD;
+    }
+
+    function clearTitleSync() {
+      if (castTitleTimer) {
+        clearInterval(castTitleTimer);
+        castTitleTimer = null;
+      }
+    }
+
+    function getNowPlayingMeta() {
+      const artist = $("npArtist")?.textContent?.trim() || "RadioABF";
+      const title = $("npTitle")?.textContent?.trim() || "Live Electronic Music • radioabf.com";
+      return { artist, title };
+    }
+
+    function startCastTitleSync() {
+      clearTitleSync();
+
+      castTitleTimer = setInterval(() => {
+        try {
+          const s = castCtx?.getCurrentSession?.();
+          const media = s?.getMediaSession?.();
+          if (!s || !media) return;
+
+          const { artist, title } = getNowPlayingMeta();
+
+          // On met à jour la metadata proprement
           const md = new chrome.cast.media.GenericMediaMetadata();
-          md.title = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
-          md.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music • radioabf.com";
-          md.images = [{
-            url: "https://radioabf.com/logo-abf.png",
-            height: 512,
-            width: 512
-          }];
-          media.media.metadata = md;
-          const req = new chrome.cast.media.EditMediaInfoRequest(media.media);
-          media.editMediaInfo(req, () => console.log("[Cast] Artwork + titre mis à jour"), () => {});
+          md.metadataType = chrome.cast.media.MetadataType.GENERIC;
+          md.title = artist;
+          md.subtitle = title;
+          md.images = [{ url: CAST_ARTWORK }];
+
+          const currentMediaInfo = media.media;
+          if (!currentMediaInfo) return;
+
+          currentMediaInfo.metadata = md;
+
+          const req = new chrome.cast.media.EditMediaInfoRequest(currentMediaInfo);
+          media.editMediaInfo(
+            req,
+            () => console.log("[Cast] metadata refreshed"),
+            (err) => console.warn("[Cast] metadata refresh failed", err)
+          );
+        } catch (e) {
+          console.warn("[Cast] sync error", e);
         }
-      } catch (e) { console.warn("[Cast] Erreur sync", e); }
-    }, 10000);
-  }
-
-  function initCast() {
-    try {
-      castCtx = cast.framework.CastContext.getInstance();
-      castCtx.setOptions({
-        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-      });
-      document.getElementById("castBtn").style.display = "flex";
-      castCtx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, e => {
-        if (e.sessionState?.includes("ENDED") || e.sessionState?.includes("FAILED")) {
-          castSession = null;
-          clearInterval(castTitleTimer);
-          setCastState(false);
-        }
-      });
-    } catch (err) { console.error("[Cast] init error", err); }
-  }
-
-  window["__onGCastApiAvailable"] = isAvailable => {
-    if (isAvailable) initCast();
-  };
-
-  setTimeout(() => {
-    if (!castCtx && window.chrome?.cast?.media) initCast();
-  }, 3000);
-
-  document.addEventListener("click", e => {
-    if (!e.target.closest("#castBtn")) return;
-    e.preventDefault();
-
-    const idx = Number(document.getElementById("streamSelect")?.value || 0);
-    let url = [
-      "https://stream.radioabf.com/abf-hd.mp3",
-      "https://stream.radioabf.com/abf-sd.mp3",
-      "https://stream.radioabf.com/abf-low.aac",
-      "https://stream.radioabf.com/abf-uhd.flac"
-    ][idx];
-
-       console.log("[Cast] Flux proxifié :", url);
-
-    if (castSession) {
-      castCtx?.endCurrentSession(true).then(() => {
-        castSession = null;
-        setCastState(false);
-      });
-      return;
+      }, 10000);
     }
 
-    castCtx?.requestSession()
-      .then(session => {
+    function initCast() {
+      try {
+        castCtx = cast.framework.CastContext.getInstance();
+        castCtx.setOptions({
+          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        });
+
+        const btn = $("castBtn");
+        if (btn) btn.style.display = "flex";
+
+        castCtx.addEventListener(
+          cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+          (e) => {
+            const st = e.sessionState;
+
+            if (
+              st === cast.framework.SessionState.SESSION_ENDED ||
+              st === cast.framework.SessionState.SESSION_ENDING ||
+              st === cast.framework.SessionState.SESSION_START_FAILED
+            ) {
+              castSession = null;
+              clearTitleSync();
+              setCastState(false);
+            }
+
+            if (st === cast.framework.SessionState.SESSION_STARTED) {
+              castSession = castCtx.getCurrentSession();
+            }
+          }
+        );
+
+        console.log("[Cast] ready");
+      } catch (err) {
+        console.error("[Cast] init error", err);
+      }
+    }
+
+    // API callback officiel
+    window["__onGCastApiAvailable"] = (isAvailable) => {
+      if (isAvailable) initCast();
+    };
+
+    // Fallback (au cas où)
+    setTimeout(() => {
+      if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
+    }, 2500);
+
+    // Click handler (sans toucher le reste de ton code)
+    document.addEventListener("click", async (e) => {
+      const btn = e.target?.closest?.("#castBtn");
+      if (!btn) return;
+
+      e.preventDefault();
+
+      if (!castCtx) {
+        alert("Chromecast not ready yet. Please try again in 2 seconds.");
+        return;
+      }
+
+      // Toggle : si déjà en session, on coupe
+      if (castCtx.getCurrentSession()) {
+        try {
+          await castCtx.endCurrentSession(true);
+        } catch {}
+        castSession = null;
+        clearTitleSync();
+        setCastState(false);
+        return;
+      }
+
+      const url = getCastUrl();
+      console.log("[Cast] casting url:", url);
+
+      try {
+        const session = await castCtx.requestSession();
         castSession = session;
 
-        const contentType = url.includes("flac") ? "audio/flac" :
-                           url.includes("aac")  ? "audio/aac"  : "audio/mpeg";
+        const { artist, title } = getNowPlayingMeta();
 
-        const mediaInfo = new chrome.cast.media.MediaInfo(url, contentType);
+        // ✅ On force audio/mpeg (MP3)
+        const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-        mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
-        mediaInfo.metadata.title = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
-        mediaInfo.metadata.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live sur radioabf.com";
-        mediaInfo.metadata.images = [{
-          url: "https://radioabf.com/logo-abf.png",
-          height: 512,
-          width: 512
-        }];
+
+        const md = new chrome.cast.media.GenericMediaMetadata();
+        md.metadataType = chrome.cast.media.MetadataType.GENERIC;
+        md.title = artist;
+        md.subtitle = title;
+        md.images = [{ url: CAST_ARTWORK }];
+        mediaInfo.metadata = md;
 
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
         req.currentTime = 0;
-        return session.loadMedia(req);
-      })
-      .then(() => {
-        document.querySelector("audio")?.pause?.();
+
+        await session.loadMedia(req);
+
+        // On n'essaie pas de pause un <audio> DOM (chez toi c'est un Audio() JS),
+        // donc on ne touche à rien ici.
         setCastState(true);
         startCastTitleSync();
-        console.log("[Cast] LoadMedia OK – devrait jouer maintenant");
-      })
-      .catch(err => {
-        console.error("[Cast] Erreur loadMedia :", err);
+
+        console.log("[Cast] LoadMedia OK");
+      } catch (err) {
+        console.error("[Cast] loadMedia error:", err);
+        setCastState(false);
+        clearTitleSync();
         alert("Échec cast : " + (err?.description || err?.message || "vérifie console"));
-      });
-  });
+      }
+    });
+  })();
 </script>
 
 </body>
