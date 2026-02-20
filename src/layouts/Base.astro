@@ -1009,6 +1009,50 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         ];
         S.audio = S.audio || new Audio();
         const audio = S.audio;
+
+// =========================
+// REMOTE PLAYBACK (Android "Cast → This device" / Media Router)
+// =========================
+(function bindRemotePlaybackAutoPause(){
+  // 1) API moderne (Chrome/Android)
+  const rp = audio.remotePlayback;
+  if (rp && !audio.__abfRpBound) {
+    audio.__abfRpBound = true;
+
+    rp.addEventListener("connecting", () => {
+      // Quand Android commence à router vers un device
+      try { audio.pause(); } catch {}
+    });
+
+    rp.addEventListener("connect", () => {
+      // Routage actif → coupe le local
+      try { audio.pause(); } catch {}
+      console.log("[RemotePlayback] connected → local paused");
+    });
+
+    rp.addEventListener("disconnect", () => {
+      console.log("[RemotePlayback] disconnected");
+      // Optionnel: ne pas auto-reprendre (je laisse safe)
+      // try { if (!window.__abf?.isStopped) audio.play(); } catch {}
+    });
+  }
+
+  // 2) Certains Chrome exposent aussi audio.remote (fallback)
+  if (audio.remote && !audio.__abfRemoteBound) {
+    audio.__abfRemoteBound = true;
+
+    try {
+      audio.remote.addEventListener("connect", () => {
+        try { audio.pause(); } catch {}
+        console.log("[remote] connected → local paused");
+      });
+      audio.remote.addEventListener("disconnect", () => {
+        console.log("[remote] disconnected");
+      });
+    } catch {}
+  }
+})();
+
         audio.preload = "none";
         audio.crossOrigin = "anonymous";
         const $ = (id) => document.getElementById(id);
@@ -2181,7 +2225,7 @@ Legal
   })();
 </script>
 
-<!-- Google Cast (Default Receiver) -->
+<!-- Google Cast (Stable Android + Xiaomi) -->
 <script
   type="text/javascript"
   src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
@@ -2190,12 +2234,32 @@ Legal
 <script is:inline data-astro-rerun>
 (() => {
 
-  console.log("[Cast] init…");
+  console.log("[Cast] init");
 
   const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
   let castCtx = null;
 
   const $ = (id) => document.getElementById(id);
+
+  function getLocalAudio() {
+    return window.__abf?.audio || null;
+  }
+
+  function pauseLocal() {
+    const a = getLocalAudio();
+    if (a && !a.paused) {
+      a.pause();
+      console.log("[Cast] local paused");
+    }
+  }
+
+  function resumeLocal() {
+    const a = getLocalAudio();
+    if (a && a.paused && !window.__abf?.isStopped) {
+      a.play().catch(()=>{});
+      console.log("[Cast] local resumed");
+    }
+  }
 
   function setCastState(active) {
     const btn = $("castBtn");
@@ -2211,31 +2275,50 @@ Legal
     if (s2) s2.textContent = active ? "Casting…" : "live";
   }
 
-  function getCastUrl() {
+  // 🔥 On cast DIRECTEMENT les flux stream (ultra stable Chromecast)
+  function getCastMedia() {
+
     const idx = Number(
       $("streamSelect")?.value ||
       $("streamSelectMobile")?.value ||
       0
     );
 
-    const q = (idx === 1) ? "sd" : "hd";
-    return `https://radioabf.com/api/cast.mp3?q=${q}`;
+    // 0 HD MP3 / 1 SD MP3 / 2 AAC Low
+    if (idx === 2) {
+      return {
+        url: "https://stream.radioabf.com/abf-low.aac",
+        type: "audio/aac"
+      };
+    }
+
+    if (idx === 1) {
+      return {
+        url: "https://stream.radioabf.com/abf-sd.mp3",
+        type: "audio/mpeg"
+      };
+    }
+
+    return {
+      url: "https://stream.radioabf.com/abf-hd.mp3",
+      type: "audio/mpeg"
+    };
   }
 
-  function buildFixedMetadata() {
+  function buildMetadata() {
     const md = new chrome.cast.media.MusicTrackMediaMetadata();
     md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
-
     md.title = "RadioABF • LIVE";
     md.subtitle = "radioabf.com";
     md.albumName = "Live Electronic Music • 24/7";
     md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
-
     return md;
   }
 
   function initCast() {
+
     try {
+
       castCtx = cast.framework.CastContext.getInstance();
 
       castCtx.setOptions({
@@ -2249,7 +2332,13 @@ Legal
       castCtx.addEventListener(
         cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
         (e) => {
-          console.log("[Cast] session state:", e.sessionState);
+
+          console.log("[Cast] state:", e.sessionState);
+
+          if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+            pauseLocal();
+            setCastState(true);
+          }
 
           if (
             e.sessionState === cast.framework.SessionState.SESSION_ENDED ||
@@ -2257,26 +2346,19 @@ Legal
             e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
           ) {
             setCastState(false);
+            resumeLocal();
           }
         }
       );
-
-      console.log("[Cast] ready");
 
     } catch (err) {
       console.error("[Cast] init error", err);
     }
   }
 
-  window.__onGCastApiAvailable = (isAvailable) => {
-    if (isAvailable) initCast();
+  window.__onGCastApiAvailable = (available) => {
+    if (available) initCast();
   };
-
-  setTimeout(() => {
-    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) {
-      initCast();
-    }
-  }, 2500);
 
   document.addEventListener("click", async (e) => {
 
@@ -2286,52 +2368,68 @@ Legal
     e.preventDefault();
 
     if (!castCtx) {
-      alert("Chromecast not ready yet. Please try again.");
+      alert("Chromecast not ready yet.");
       return;
     }
 
     const existing = castCtx.getCurrentSession();
+
     if (existing) {
-      try { await castCtx.endCurrentSession(true); } catch {}
-      setCastState(false);
+      await castCtx.endCurrentSession(true);
       return;
     }
 
-    const url = getCastUrl();
-    console.log("[Cast] casting url:", url);
+    const media = getCastMedia();
 
     try {
 
       await castCtx.requestSession();
 
-      const session = castCtx.getCurrentSession();
-      if (!session) throw new Error("Cast session is null");
+      pauseLocal(); // 🔥 coupe le son local immédiatement
 
-      const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
+      const session = castCtx.getCurrentSession();
+      if (!session) throw new Error("Cast session null");
+
+      const mediaInfo = new chrome.cast.media.MediaInfo(media.url, media.type);
       mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-      mediaInfo.metadata = buildFixedMetadata();
+      mediaInfo.metadata = buildMetadata();
 
       const req = new chrome.cast.media.LoadRequest(mediaInfo);
       req.autoplay = true;
-      req.currentTime = 0;
 
       await session.loadMedia(req);
 
-      setCastState(true);
+      console.log("[Cast] media loaded:", media.url);
 
-      console.log("[Cast] LoadMedia OK");
+      // Debug receiver state
+      const ms = session.getMediaSession();
+      if (ms) {
+        ms.addUpdateListener(() => {
+          console.log("[Cast] playerState:", ms.playerState, "idleReason:", ms.idleReason);
+        });
+      }
 
     } catch (err) {
-      console.error("[Cast] loadMedia error:", err);
+      console.error("[Cast] load error:", err);
+      resumeLocal();
       setCastState(false);
-      alert("Échec cast : " + (err?.description || err?.message || String(err)));
+      alert("Cast error: " + (err?.message || err));
     }
 
   });
 
+  // 🔥 Android "Cast → Sur cet appareil"
+  const audio = getLocalAudio();
+  if (audio?.remotePlayback) {
+    audio.remotePlayback.addEventListener("connect", pauseLocal);
+    audio.remotePlayback.addEventListener("connecting", pauseLocal);
+    audio.remotePlayback.addEventListener("disconnect", () => {
+      console.log("[RemotePlayback] disconnected");
+    });
+  }
+
 })();
 </script>
-
 </body>
 <!-- ================= DEDICATION MODAL ================= -->
 <div
