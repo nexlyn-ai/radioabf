@@ -2167,199 +2167,221 @@ Legal
 ></script>
 
 <script is:inline data-astro-rerun>
-  (() => {
-    console.log("[Cast] init…");
+(() => {
 
-    const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
+  console.log("[Cast] init…");
 
-    let castCtx = null;
-    let castSession = null;
-    let castTitleTimer = null;
+  const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
 
-    const $ = (id) => document.getElementById(id);
+  let castCtx = null;
+  let castTitleTimer = null;
 
-    function setCastState(active) {
-      const btn = $("castBtn");
-      if (btn) {
-        btn.style.opacity = active ? "1" : "0.7";
-        btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
-      }
-      const status = $("npStatus");
-      if (status) status.textContent = active ? "Casting…" : (status.textContent || "live");
-      const statusM = $("npStatusMobile");
-      if (statusM) statusM.textContent = active ? "Casting…" : (statusM.textContent || "live");
+  const $ = (id) => document.getElementById(id);
+
+  function setCastState(active) {
+    const btn = $("castBtn");
+    if (btn) {
+      btn.style.opacity = active ? "1" : "0.7";
+      btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
     }
 
-    // ✅ On caste l'endpoint PROXY "cast-safe" (comme globalradio.top)
-    function getCastUrl() {
-      const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
-      // 0=HD MP3, 1=SD MP3, sinon on force HD (AAC/FLAC pas pour Default Receiver)
-      const q = (idx === 1) ? "sd" : "hd";
-      return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
-    }
-
-    function clearTitleSync() {
-      if (castTitleTimer) {
-        clearInterval(castTitleTimer);
-        castTitleTimer = null;
-      }
-    }
-
-    function getNowPlayingMeta() {
-      const artist = $("npArtist")?.textContent?.trim() || "RadioABF";
-      const title  = $("npTitle")?.textContent?.trim()  || "Live • radioabf.com";
-      return { artist, title };
-    }
-
-    function buildMusicMetadata() {
-      const { artist, title } = getNowPlayingMeta();
-      const md = new chrome.cast.media.MusicTrackMediaMetadata();
-      md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
-      md.artist = artist;
-      md.title = title;
-      md.albumName = "RadioABF • Live";
-      md.images = [
-        { url: CAST_ARTWORK, width: 512, height: 512 },
-        { url: CAST_ARTWORK, width: 256, height: 256 }
-      ];
-      return md;
-    }
-
-    function startCastTitleSync() {
-      clearTitleSync();
-      castTitleTimer = setInterval(() => {
-        try {
-          const s = castCtx?.getCurrentSession?.();
-          const ms = s?.getMediaSession?.();
-          if (!s || !ms || !ms.media) return;
-
-          ms.media.metadata = buildMusicMetadata();
-
-          const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
-          ms.editMediaInfo(
-            req,
-            () => console.log("[Cast] metadata refreshed"),
-            (err) => console.warn("[Cast] metadata refresh failed", err)
-          );
-        } catch (e) {
-          console.warn("[Cast] sync error", e);
-        }
-      }, 10000);
-    }
-
-    function initCast() {
-      try {
-        castCtx = cast.framework.CastContext.getInstance();
-        castCtx.setOptions({
-          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-        });
-
-        const btn = $("castBtn");
-        if (btn) btn.style.display = "flex";
-
-        castCtx.addEventListener(
-          cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-          (e) => {
-            const st = e.sessionState;
-            console.log("[Cast] session state:", st);
-
-            if (
-              st === cast.framework.SessionState.SESSION_ENDED ||
-              st === cast.framework.SessionState.SESSION_ENDING ||
-              st === cast.framework.SessionState.SESSION_START_FAILED
-            ) {
-              castSession = null;
-              clearTitleSync();
-              setCastState(false);
-            }
-
-            if (st === cast.framework.SessionState.SESSION_STARTED) {
-              castSession = castCtx.getCurrentSession();
-            }
-          }
-        );
-
-        console.log("[Cast] ready");
-      } catch (err) {
-        console.error("[Cast] init error", err);
-      }
-    }
-
-    window["__onGCastApiAvailable"] = (isAvailable) => {
-      if (isAvailable) initCast();
-    };
-
-    // fallback
-    setTimeout(() => {
-      if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
-    }, 2500);
-
-    // Click cast button
-  document.addEventListener("click", async (e) => {
-  const btn = e.target?.closest?.("#castBtn");
-  if (!btn) return;
-  e.preventDefault();
-
-  if (!castCtx) {
-    alert("Chromecast not ready yet. Please try again.");
-    return;
+    const s1 = $("npStatus");
+    const s2 = $("npStatusMobile");
+    if (s1) s1.textContent = active ? "Casting…" : (s1.textContent || "live");
+    if (s2) s2.textContent = active ? "Casting…" : (s2.textContent || "live");
   }
 
-  // Toggle stop si une session existe
-  const existing = castCtx.getCurrentSession();
-  if (existing) {
-    try { await castCtx.endCurrentSession(true); } catch {}
+  function getCastUrl() {
+    const idx = Number(
+      $("streamSelect")?.value ||
+      $("streamSelectMobile")?.value ||
+      0
+    );
+
+    const q = (idx === 1) ? "sd" : "hd";
+
+    return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
+  }
+
+  function clearTitleSync() {
+    if (castTitleTimer) {
+      clearInterval(castTitleTimer);
+      castTitleTimer = null;
+    }
+  }
+
+  function getNowPlayingMeta() {
+    const artist = $("npArtist")?.textContent?.trim() || "RadioABF";
+    const title  = $("npTitle")?.textContent?.trim()  || "Live • radioabf.com";
+    return { artist, title };
+  }
+
+  function buildMusicMetadata() {
+    const { artist, title } = getNowPlayingMeta();
+
+    const md = new chrome.cast.media.MusicTrackMediaMetadata();
+    md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
+    md.artist = artist;
+    md.title = title;
+    md.albumName = "RadioABF • Live";
+
+    // IMPORTANT pour que le receiver affiche bien le logo
+    md.images = [
+      new chrome.cast.Image(CAST_ARTWORK)
+    ];
+
+    return md;
+  }
+
+  function startCastTitleSync() {
     clearTitleSync();
-    setCastState(false);
-    return;
+
+    castTitleTimer = setInterval(() => {
+      try {
+        const session = castCtx?.getCurrentSession?.();
+        const ms = session?.getMediaSession?.();
+        if (!session || !ms || !ms.media) return;
+
+        ms.media.metadata = buildMusicMetadata();
+
+        const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
+        ms.editMediaInfo(req, () => {}, () => {});
+      } catch {}
+    }, 10000);
   }
 
-  const url = getCastUrl();
-  console.log("[Cast] casting url:", url);
-
-  try {
-    // 1) Demande une session
-    await castCtx.requestSession();
-
-    // 2) Récupère LA session actuelle (source de vérité)
-    const session = castCtx.getCurrentSession();
-    if (!session) throw new Error("Cast session is null after requestSession()");
-
-    // 3) Prépare le media
-    const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
-    mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-    mediaInfo.metadata = buildMusicMetadata();
-
-    const req = new chrome.cast.media.LoadRequest(mediaInfo);
-    req.autoplay = true;
-    req.currentTime = 0;
-
-    // 4) Charge le media
-    await session.loadMedia(req);
-
-    // 5) Force play + debug state
+  function initCast() {
     try {
+      castCtx = cast.framework.CastContext.getInstance();
+
+      castCtx.setOptions({
+        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      });
+
+      const btn = $("castBtn");
+      if (btn) btn.style.display = "flex";
+
+      castCtx.addEventListener(
+        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+        (e) => {
+          console.log("[Cast] session state:", e.sessionState);
+
+          if (
+            e.sessionState === cast.framework.SessionState.SESSION_ENDED ||
+            e.sessionState === cast.framework.SessionState.SESSION_ENDING ||
+            e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
+          ) {
+            clearTitleSync();
+            setCastState(false);
+          }
+        }
+      );
+
+      console.log("[Cast] ready");
+
+    } catch (err) {
+      console.error("[Cast] init error", err);
+    }
+  }
+
+  window.__onGCastApiAvailable = (isAvailable) => {
+    if (isAvailable) initCast();
+  };
+
+  // fallback sécurité
+  setTimeout(() => {
+    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) {
+      initCast();
+    }
+  }, 2500);
+
+  document.addEventListener("click", async (e) => {
+
+    const btn = e.target?.closest?.("#castBtn");
+    if (!btn) return;
+
+    e.preventDefault();
+
+    if (!castCtx) {
+      alert("Chromecast not ready yet. Please try again.");
+      return;
+    }
+
+    // Si déjà en session → stop
+    const existing = castCtx.getCurrentSession();
+    if (existing) {
+      try { await castCtx.endCurrentSession(true); } catch {}
+      clearTitleSync();
+      setCastState(false);
+      return;
+    }
+
+    const url = getCastUrl();
+    console.log("[Cast] casting url:", url);
+
+    try {
+
+      await castCtx.requestSession();
+
+      const session = castCtx.getCurrentSession();
+      if (!session) throw new Error("Cast session is null");
+
+      const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
+      mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+      mediaInfo.metadata = buildMusicMetadata();
+
+      const req = new chrome.cast.media.LoadRequest(mediaInfo);
+      req.autoplay = true;
+      req.currentTime = 0;
+
+      await session.loadMedia(req);
+
       const ms = session.getMediaSession();
       if (ms) {
-        ms.addUpdateListener(() => {
-          console.log("[Cast] playerState:", ms.playerState, "idleReason:", ms.idleReason, "error:", ms.errorReason);
-        });
-        const pr = new chrome.cast.media.PlayRequest();
-        ms.play(pr, () => console.log("[Cast] play() ok"), (err) => console.warn("[Cast] play() err", err));
-      }
-    } catch {}
 
-    setCastState(true);
-    startCastTitleSync();
-    console.log("[Cast] LoadMedia OK");
-  } catch (err) {
-    console.error("[Cast] loadMedia error:", err);
-    clearTitleSync();
-    setCastState(false);
-    alert("Échec cast : " + (err?.description || err?.message || String(err)));
-  }
-});
+        ms.addUpdateListener(() => {
+          console.log(
+            "[Cast] playerState:",
+            ms.playerState,
+            "idleReason:",
+            ms.idleReason,
+            "error:",
+            ms.errorReason
+          );
+        });
+
+        const pr = new chrome.cast.media.PlayRequest();
+        ms.play(pr, () => console.log("[Cast] play() ok"), () => {});
+      }
+
+      // Force artwork après démarrage
+      setTimeout(() => {
+        try {
+          const ms = session.getMediaSession();
+          if (!ms?.media) return;
+
+          ms.media.metadata = buildMusicMetadata();
+          const r = new chrome.cast.media.EditMediaInfoRequest(ms.media);
+          ms.editMediaInfo(r, () => console.log("[Cast] artwork forced"), () => {});
+        } catch {}
+      }, 1200);
+
+      setCastState(true);
+      startCastTitleSync();
+
+      console.log("[Cast] LoadMedia OK");
+
+    } catch (err) {
+      console.error("[Cast] loadMedia error:", err);
+      clearTitleSync();
+      setCastState(false);
+      alert("Échec cast : " + (err?.description || err?.message || String(err)));
+    }
+
+  });
+
+})();
 </script>
 
 </body>
