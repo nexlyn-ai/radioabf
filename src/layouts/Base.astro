@@ -2287,15 +2287,29 @@ function buildMusicMetadata() {
 function pushMetadataNow() {
   try {
     const session = castCtx?.getCurrentSession?.();
-    const ms = session?.getMediaSession?.();
-    if (!ms || !ms.media) return;
+    if (!session) return;
 
-    ms.media.metadata = buildMusicMetadata();
+    const ms = session.getMediaSession?.();
+    if (!ms) return;
 
-    const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
-    ms.editMediaInfo(req, () => {
-      console.log("[Cast] metadata synced with tab title");
-    }, () => {});
+    const currentTime = ms.currentTime || 0;
+
+    const mediaInfo = new chrome.cast.media.MediaInfo(
+      getCastUrl(),
+      "audio/mpeg"
+    );
+
+    mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+    mediaInfo.metadata = buildMusicMetadata();
+
+    const req = new chrome.cast.media.LoadRequest(mediaInfo);
+    req.autoplay = true;
+    req.currentTime = currentTime;
+
+    session.loadMedia(req)
+      .then(() => console.log("[Cast] media reloaded for metadata refresh"))
+      .catch(() => {});
+
   } catch {}
 }
 
@@ -2432,6 +2446,15 @@ function pushMetadataNow() {
   // Fix icône après navigation Astro
   document.addEventListener("astro:page-load", ensureCastIcon);
   document.addEventListener("astro:after-swap", ensureCastIcon);
+
+const titleObserver = new MutationObserver(() => {
+  pushMetadataNow();
+});
+
+const titleEl = document.querySelector("title");
+if (titleEl) {
+  titleObserver.observe(titleEl, { childList: true });
+}
 
 })();
 </script>
