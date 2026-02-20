@@ -2190,16 +2190,15 @@ Legal
 
     // ⚠️ Le Default Receiver est capricieux avec FLAC/AAC et surtout certains flux Icecast (ICY metadata).
     // On tente MP3 HD/SD uniquement + cache buster.
-    function getCastUrl() {
-      const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
-      const MP3_HD = "https://stream.radioabf.com/abf-hd.mp3";
-      const MP3_SD = "https://stream.radioabf.com/abf-sd.mp3";
-      const base = (idx === 1) ? MP3_SD : MP3_HD;
+   function getCastUrl() {
+  const idx = Number(document.getElementById("streamSelect")?.value
+    || document.getElementById("streamSelectMobile")?.value
+    || 0);
 
-      // cache buster pour éviter certains buffers / reprises bizarres
-      const sep = base.includes("?") ? "&" : "?";
-      return base + sep + "cb=" + Date.now();
-    }
+  // 0 = HD mp3, 1 = SD mp3, tout le reste => HD mp3
+  const q = (idx === 1) ? "sd" : "hd";
+  return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
+}
 
     function clearTitleSync() {
       if (castTitleTimer) {
