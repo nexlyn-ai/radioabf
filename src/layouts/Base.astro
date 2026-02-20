@@ -2289,12 +2289,9 @@ Legal
 
   function repairCastBtn() {
     const btn = $("castBtn");
-    if (!btn) {
-      // pas un bug : parfois le player n’est pas encore remonté après swap
-      return false;
-    }
+    if (!btn) return false;
 
-    // ✅ IMPORTANT: forcer display:flex en IMPORTANT (style.display ne supporte pas !important)
+    // ✅ IMPORTANT: forcer display:flex en IMPORTANT
     btn.style.setProperty("display", "flex", "important");
 
     injectCastIcon(btn);
@@ -2319,7 +2316,6 @@ Legal
     if (btn) {
       btn.style.opacity = active ? "1" : "0.7";
       btn.style.background = active ? "rgba(47,194,255,0.25)" : "transparent";
-      // au cas où le swap a vidé le bouton
       injectCastIcon(btn);
     }
     ["npStatus", "npStatusMobile"].forEach((id) => {
@@ -2329,7 +2325,7 @@ Legal
   }
 
   // ────────────────────────────────────────────────
-  // 3) Utils (url + metadata) – inchangés
+  // 3) Utils (url + metadata)
   // ────────────────────────────────────────────────
   function getCastUrl() {
     const select = $("streamSelect") || $("streamSelectMobile");
@@ -2338,6 +2334,7 @@ Legal
     return `https://radioabf.com/api/cast.mp3?q=${q}`;
   }
 
+  // ✅ Nouveau texte (celui que tu veux)
   function buildFixedMetadata() {
     const md = new chrome.cast.media.MusicTrackMediaMetadata();
     md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
@@ -2349,12 +2346,10 @@ Legal
   }
 
   // ────────────────────────────────────────────────
-  // 4) Init / Repair CastContext (safe, sans dupliquer les listeners)
+  // 4) Init / Repair CastContext (sans dupliquer les listeners)
   // ────────────────────────────────────────────────
   function initOrRepairCast() {
-    if (!window.cast?.framework?.CastContext) {
-      return;
-    }
+    if (!window.cast?.framework?.CastContext) return;
 
     try {
       G.castCtx = cast.framework.CastContext.getInstance();
@@ -2367,8 +2362,8 @@ Legal
       if (!G.sessionListenerBound) {
         G.sessionListenerBound = true;
 
-        const SESSION_EVENTS = cast.framework.CastContextEventType.SESSION_STATE_CHANGED;
-        G.castCtx.addEventListener(SESSION_EVENTS, (e) => {
+        const EVT = cast.framework.CastContextEventType.SESSION_STATE_CHANGED;
+        G.castCtx.addEventListener(EVT, (e) => {
           console.log("[Cast] session state changed:", e.sessionState);
 
           const endedStates = [
@@ -2377,18 +2372,12 @@ Legal
             cast.framework.SessionState.SESSION_START_FAILED
           ];
 
-          if (endedStates.includes(e.sessionState)) {
-            setCastState(false);
-          }
-          if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
-            setCastState(true);
-          }
+          if (endedStates.includes(e.sessionState)) setCastState(false);
+          if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) setCastState(true);
         });
       }
 
-      // Toujours réparer le bouton après init/repair
       repairCastBtnWithRetries();
-
     } catch (err) {
       console.error("[Cast] initOrRepair failed", err);
     }
@@ -2401,7 +2390,7 @@ Legal
     }
   };
 
-  // Fallback si le callback rate (Astro / cache / timing)
+  // Fallback si le callback rate
   setTimeout(initOrRepairCast, 1200);
   setTimeout(initOrRepairCast, 3000);
 
@@ -2420,6 +2409,8 @@ Legal
 
   // ────────────────────────────────────────────────
   // 6) Click handler global (une fois)
+  //    ✅ BEST OPTION: force "new media" contentId to refresh metadata
+  //    (pas de editMediaInfo => évite les coupures / buffering)
   // ────────────────────────────────────────────────
   if (!G.clickBound) {
     G.clickBound = true;
@@ -2437,8 +2428,9 @@ Legal
         return;
       }
 
-      const session = castCtx.getCurrentSession();
-      if (session) {
+      // Toggle stop si déjà casting
+      const existing = castCtx.getCurrentSession();
+      if (existing) {
         try {
           await castCtx.endCurrentSession(true);
           setCastState(false);
@@ -2448,25 +2440,35 @@ Legal
         return;
       }
 
-      const url = getCastUrl();
-      console.log("[Cast] start casting →", url);
+      const baseUrl = getCastUrl();
+      console.log("[Cast] start casting →", baseUrl);
 
       try {
         await castCtx.requestSession();
-        const newSession = castCtx.getCurrentSession();
-        if (!newSession) throw new Error("Session null après request");
+        const session = castCtx.getCurrentSession();
+        if (!session) throw new Error("Session null après request");
 
-        const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
+        const md = buildFixedMetadata();
+
+        // ✅ contentId unique => le receiver considère que c'est un "nouveau media"
+        // => prend les nouvelles metas à coup sûr (sans editMediaInfo)
+        const contentId =
+          baseUrl +
+          "&cb=" + Date.now() +
+          "&meta=" + encodeURIComponent(md.subtitle || "");
+
+        const mediaInfo = new chrome.cast.media.MediaInfo(contentId, "audio/mpeg");
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-        mediaInfo.metadata = buildFixedMetadata();
+        mediaInfo.metadata = md;
 
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
         req.currentTime = 0;
 
-        await newSession.loadMedia(req);
+        await session.loadMedia(req);
+
         setCastState(true);
-        console.log("[Cast] Media loaded OK");
+        console.log("[Cast] Media loaded OK (fresh contentId => metadata refreshed)");
       } catch (err) {
         console.error("[Cast] error during cast", err);
         setCastState(false);
@@ -2480,77 +2482,6 @@ Legal
 })();
 </script>
 
-  // ---------- ANDROID "Cast → Sur cet appareil" (RemotePlayback) ----------
-  function bindRemotePlaybackAutoPause() {
-    const audio = getLocalAudio();
-    if (!audio) return;
-
-    // Chrome/Android remote playback
-    if (audio.remotePlayback && !audio.__abfRpBound) {
-      audio.__abfRpBound = true;
-      audio.remotePlayback.addEventListener("connecting", pauseLocal);
-      audio.remotePlayback.addEventListener("connect", pauseLocal);
-      audio.remotePlayback.addEventListener("disconnect", () => {});
-    }
-
-    // Some browsers expose audio.remote
-    if (audio.remote && !audio.__abfRemoteBound) {
-      audio.__abfRemoteBound = true;
-      try {
-        audio.remote.addEventListener("connect", pauseLocal);
-        audio.remote.addEventListener("disconnect", () => {});
-      } catch {}
-    }
-  }
-
-  // ---------- Click handler (one button for both) ----------
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
-
-    const mode = btn.dataset.mode || (isIOS() ? "airplay" : "cast");
-
-    try {
-      if (mode === "airplay") {
-        await openAirPlayPicker();
-      } else {
-        if (!castCtx) throw new Error("Cast not ready");
-        await startCast();
-      }
-    } catch (err) {
-      // Keep silent / or alert if you want
-      console.warn("[Cast/AirPlay] error:", err);
-    }
-  });
-
-  // ---------- Boot ----------
-  // Hide by default (shown only when target detected)
-  setBtnVisible(false);
-
-  // iOS AirPlay availability listener
-  if (isIOS()) {
-    setBtnMode("airplay");
-    bindAirPlayAvailability();
-  } else {
-    setBtnMode("cast");
-  }
-
-  // Cast framework init when available
-  window.__onGCastApiAvailable = (available) => {
-    if (available) initCastFramework();
-  };
-
-  // Fallback init if script already loaded
-  setTimeout(() => {
-    if (!castCtx && window.chrome?.cast && window.cast?.framework?.CastContext) {
-      initCastFramework();
-    }
-  }, 1200);
-
-  // Android "this device" remote playback
-  bindRemotePlaybackAutoPause();
-
-})();
-</script>
 </body>
 <!-- ================= DEDICATION MODAL ================= -->
 <div
