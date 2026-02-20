@@ -2247,34 +2247,30 @@ Legal
   })();
 </script>
 
-<!-- Google Cast (Default Receiver) — STABLE + icon survives Astro swaps -->
+<!-- Google Cast Sender SDK – chargé UNE SEULE fois au hard load -->
 <script
   type="text/javascript"
   src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
 ></script>
+
 <script is:inline data-astro-rerun>
 (() => {
-  console.log("[Cast] init…");
+  console.log("[Cast] script chargé (global)");
+
   const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
   let castCtx = null;
-  const $ = (id) => document.getElementById(id);
-  // --------------------------------------------------
-  // 1) HARD REPAIR: ensure button exists + visible + has icon
-  // --------------------------------------------------
-  function injectCastIcon(btn){
+  const $ = id => document.getElementById(id);
+
+  // ────────────────────────────────────────────────
+  // 1. Repair custom button UI (si tu gardes #castBtn)
+  // ────────────────────────────────────────────────
+  function injectCastIcon(btn) {
     if (!btn) return false;
-    // si déjà bon
     if (btn.dataset.castIcon === "1" && btn.querySelector("svg")) return true;
+
     btn.dataset.castIcon = "1";
     btn.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24"
-        aria-hidden="true"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        style="display:block; vector-effect:non-scaling-stroke; shape-rendering:geometricPrecision;">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block; vector-effect:non-scaling-stroke; shape-rendering:geometricPrecision;">
         <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
         <path d="M3 19a2 2 0 0 1 2 2" />
         <path d="M3 15a6 6 0 0 1 6 6" />
@@ -2284,173 +2280,188 @@ Legal
     btn.style.lineHeight = "0";
     return true;
   }
+
   function repairCastBtn() {
     const btn = $("castBtn");
-    if (!btn) return false;
-    // force visible (au cas où Astro swap remet display:none)
-    btn.style.display = "flex";
-    // reinject icon
+    if (!btn) {
+      console.warn("[Cast] #castBtn not found in DOM");
+      return false;
+    }
+    btn.style.display = "flex !important"; // force visible même si Astro cache
     injectCastIcon(btn);
     return true;
   }
-  // Retry après swap car parfois le player arrive un peu après
-  function repairCastBtnWithRetries() {
-    // 1) tout de suite
-    if (repairCastBtn()) return;
-    // 2) frame suivante
-    requestAnimationFrame(() => {
-      if (repairCastBtn()) return;
-      // 3) petit burst de retries (cas: player remonte après swap)
-      let n = 0;
-      const t = setInterval(() => {
-        n++;
-        const ok = repairCastBtn();
-        if (ok || n >= 20) clearInterval(t); // ~1s max
-      }, 50);
-    });
+
+  function repairCastBtnWithRetries(max = 25, delay = 40) {
+    let attempts = 0;
+    const tryRepair = () => {
+      attempts++;
+      if (repairCastBtn() || attempts >= max) return;
+      setTimeout(tryRepair, delay);
+    };
+    tryRepair();
   }
-  // --------------------------------------------------
-  // 2) Cast UI state
-  // --------------------------------------------------
+
+  // ────────────────────────────────────────────────
+  // 2. UI state (Casting… / live)
+  // ────────────────────────────────────────────────
   function setCastState(active) {
     const btn = $("castBtn");
     if (btn) {
       btn.style.opacity = active ? "1" : "0.7";
       btn.style.background = active ? "rgba(47,194,255,0.25)" : "transparent";
     }
-    const s1 = $("npStatus");
-    const s2 = $("npStatusMobile");
-    if (s1) s1.textContent = active ? "Casting…" : "live";
-    if (s2) s2.textContent = active ? "Casting…" : "live";
+    ["npStatus", "npStatusMobile"].forEach(id => {
+      const el = $(id);
+      if (el) el.textContent = active ? "Casting…" : "live";
+    });
   }
-  // --------------------------------------------------
-  // 3) Stream URL (existing endpoint, no new routes)
-  // --------------------------------------------------
+
+  // ────────────────────────────────────────────────
+  // 3. Utils (url + metadata) – inchangés
+  // ────────────────────────────────────────────────
   function getCastUrl() {
-    const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
-    const q = (idx === 1) ? "sd" : "hd";
+    const select = $("streamSelect") || $("streamSelectMobile");
+    const idx = Number(select?.value || 0);
+    const q = idx === 1 ? "sd" : "hd";
     return `https://radioabf.com/api/cast.mp3?q=${q}`;
   }
-  // --------------------------------------------------
-  // 4) Fixed metadata (no refresh => no cut)
-  // --------------------------------------------------
+
   function buildFixedMetadata() {
     const md = new chrome.cast.media.MusicTrackMediaMetadata();
     md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
     md.title = "RadioABF • LIVE";
     md.subtitle = "radioabf.com";
     md.albumName = "Live Electronic Music • 24/7";
-    md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
+    md.images = [new chrome.cast.Image(CAST_ARTWORK)];
     return md;
   }
-  // --------------------------------------------------
-  // 5) Init Cast framework
-  // --------------------------------------------------
+
+  // ────────────────────────────────────────────────
+  // 4. Init / Repair CastContext
+  // ────────────────────────────────────────────────
   function initOrRepairCast() {
-    if (window.cast?.framework?.CastContext) {
-      try {
-        castCtx = cast.framework.CastContext.getInstance();
-        castCtx.setOptions({
-          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-        });
-        repairCastBtnWithRetries();
-        // Écouteurs d'état
-        castCtx.addEventListener(
-          cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-          (e) => {
-            console.log("[Cast] session state:", e.sessionState);
-            if (
-              e.sessionState === cast.framework.SessionState.SESSION_ENDED ||
-              e.sessionState === cast.framework.SessionState.SESSION_ENDING ||
-              e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
-            ) {
-              setCastState(false);
-            }
-            // si on navigue et qu'une session existe, garder l'état UI
-            if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
-              setCastState(true);
-            }
-          }
-        );
-        console.log("[Cast] ready / repaired");
-      } catch (err) {
-        console.error("[Cast] initOrRepair error", err);
-      }
-    } else {
-      console.warn("[Cast] framework not available yet");
+    if (!window.cast?.framework?.CastContext) {
+      console.warn("[Cast] SDK pas encore chargé");
+      return;
+    }
+
+    try {
+      castCtx = cast.framework.CastContext.getInstance();
+
+      castCtx.setOptions({
+        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      });
+
+      // Ré-attache l'écouteur d'état (important après swap !)
+      const SESSION_EVENTS = cast.framework.CastContextEventType.SESSION_STATE_CHANGED;
+      castCtx.addEventListener(SESSION_EVENTS, (e) => {
+        console.log("[Cast] session state changed:", e.sessionState);
+        const endedStates = [
+          cast.framework.SessionState.SESSION_ENDED,
+          cast.framework.SessionState.SESSION_ENDING,
+          cast.framework.SessionState.SESSION_START_FAILED
+        ];
+        if (endedStates.includes(e.sessionState)) {
+          setCastState(false);
+        }
+        if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+          setCastState(true);
+        }
+      });
+
+      console.log("[Cast] CastContext initialized / repaired");
+      repairCastBtnWithRetries();
+    } catch (err) {
+      console.error("[Cast] initOrRepair failed", err);
     }
   }
+
   window.__onGCastApiAvailable = (isAvailable) => {
-    if (isAvailable) initOrRepairCast();
+    if (isAvailable) {
+      console.log("[Cast] API available → init");
+      initOrRepairCast();
+    }
   };
-  // fallback init
-  setTimeout(() => {
-    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initOrRepairCast();
-  }, 2500);
-  // --------------------------------------------------
-  // 6) Always repair after Astro swaps
-  // --------------------------------------------------
-  repairCastBtnWithRetries();
-  const onAstroEvent = () => {
-    repairCastBtnWithRetries();
-    // Recharge le script cast_sender.js
-    document.querySelectorAll('script[src*="cast_sender.js"]').forEach(el => el.remove());
-    const script = document.createElement("script");
-    script.src = "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
-    script.async = true;
-    script.onload = () => {
-      console.log("[Cast] framework reloaded after Astro event");
-      setTimeout(initOrRepairCast, 400);
-    };
-    document.head.appendChild(script);
+
+  // Fallback si le callback rate
+  setTimeout(initOrRepairCast, 1200);
+  setTimeout(initOrRepairCast, 3000); // double fallback
+
+  // ────────────────────────────────────────────────
+  // 5. Réactions Astro – clé du fix
+  // ────────────────────────────────────────────────
+  const handleAstroNavigation = () => {
+    console.log("[Cast] Astro navigation detected → repair");
+    repairCastBtnWithRetries(30, 50);
+
+    // Ré-init soft du context (le plus important !)
+    setTimeout(initOrRepairCast, 300);
+    setTimeout(initOrRepairCast, 800); // burst pour être sûr
   };
-  document.addEventListener("astro:page-load", onAstroEvent);
-  document.addEventListener("astro:after-swap", onAstroEvent);
-  // --------------------------------------------------
-  // 7) Click handler (bind ONCE globally)
-  // --------------------------------------------------
+
+  document.addEventListener("astro:page-load", handleAstroNavigation);
+  document.addEventListener("astro:after-swap", handleAstroNavigation);
+
+  // ────────────────────────────────────────────────
+  // 6. Click handler (global, une fois)
+  // ────────────────────────────────────────────────
   if (!window.__abfCastClickBound) {
     window.__abfCastClickBound = true;
+
     document.addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("#castBtn");
       if (!btn) return;
       e.preventDefault();
-      // Always repair icon (in case swap replaced button right before click)
-      repairCastBtnWithRetries();
+
+      repairCastBtn(); // sécurité
+
       if (!castCtx) {
-        alert("Chromecast not ready yet. Please try again.");
+        alert("Chromecast pas encore prêt. Réessayez dans quelques secondes.");
         return;
       }
-      // stop if already casting
-      const existing = castCtx.getCurrentSession();
-      if (existing) {
-        try { await castCtx.endCurrentSession(true); } catch {}
-        setCastState(false);
+
+      const session = castCtx.getCurrentSession();
+      if (session) {
+        try {
+          await castCtx.endCurrentSession(true);
+          setCastState(false);
+        } catch (err) {
+          console.warn("[Cast] end session failed", err);
+        }
         return;
       }
+
       const url = getCastUrl();
-      console.log("[Cast] casting url:", url);
+      console.log("[Cast] start casting →", url);
+
       try {
         await castCtx.requestSession();
-        const session = castCtx.getCurrentSession();
-        if (!session) throw new Error("Cast session is null");
+        const newSession = castCtx.getCurrentSession();
+        if (!newSession) throw new Error("Session null après request");
+
         const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
         mediaInfo.metadata = buildFixedMetadata();
+
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
         req.currentTime = 0;
-        await session.loadMedia(req);
+
+        await newSession.loadMedia(req);
         setCastState(true);
-        console.log("[Cast] LoadMedia OK");
+        console.log("[Cast] Media loaded OK");
       } catch (err) {
-        console.error("[Cast] loadMedia error:", err);
+        console.error("[Cast] error during cast", err);
         setCastState(false);
-        alert("Échec cast : " + (err?.description || err?.message || String(err)));
+        alert("Échec du cast : " + (err?.description || err?.message || "Erreur inconnue"));
       }
     });
   }
+
+  // Premier repair immédiat
+  repairCastBtnWithRetries();
 })();
 </script>
 
