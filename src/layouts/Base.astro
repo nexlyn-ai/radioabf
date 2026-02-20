@@ -2252,25 +2252,19 @@ Legal
   type="text/javascript"
   src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
 ></script>
-
 <script is:inline data-astro-rerun>
 (() => {
   console.log("[Cast] init…");
-
   const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
   let castCtx = null;
-
   const $ = (id) => document.getElementById(id);
-
   // --------------------------------------------------
   // 1) HARD REPAIR: ensure button exists + visible + has icon
   // --------------------------------------------------
   function injectCastIcon(btn){
     if (!btn) return false;
-
     // si déjà bon
     if (btn.dataset.castIcon === "1" && btn.querySelector("svg")) return true;
-
     btn.dataset.castIcon = "1";
     btn.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24"
@@ -2290,29 +2284,22 @@ Legal
     btn.style.lineHeight = "0";
     return true;
   }
-
   function repairCastBtn() {
     const btn = $("castBtn");
     if (!btn) return false;
-
     // force visible (au cas où Astro swap remet display:none)
     btn.style.display = "flex";
-
     // reinject icon
     injectCastIcon(btn);
-
     return true;
   }
-
   // Retry après swap car parfois le player arrive un peu après
   function repairCastBtnWithRetries() {
     // 1) tout de suite
     if (repairCastBtn()) return;
-
     // 2) frame suivante
     requestAnimationFrame(() => {
       if (repairCastBtn()) return;
-
       // 3) petit burst de retries (cas: player remonte après swap)
       let n = 0;
       const t = setInterval(() => {
@@ -2322,7 +2309,6 @@ Legal
       }, 50);
     });
   }
-
   // --------------------------------------------------
   // 2) Cast UI state
   // --------------------------------------------------
@@ -2337,7 +2323,6 @@ Legal
     if (s1) s1.textContent = active ? "Casting…" : "live";
     if (s2) s2.textContent = active ? "Casting…" : "live";
   }
-
   // --------------------------------------------------
   // 3) Stream URL (existing endpoint, no new routes)
   // --------------------------------------------------
@@ -2346,7 +2331,6 @@ Legal
     const q = (idx === 1) ? "sd" : "hd";
     return `https://radioabf.com/api/cast.mp3?q=${q}`;
   }
-
   // --------------------------------------------------
   // 4) Fixed metadata (no refresh => no cut)
   // --------------------------------------------------
@@ -2359,84 +2343,85 @@ Legal
     md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
     return md;
   }
-
   // --------------------------------------------------
   // 5) Init Cast framework
   // --------------------------------------------------
-  function initCast() {
-    try {
-      castCtx = cast.framework.CastContext.getInstance();
-
-      castCtx.setOptions({
-        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-      });
-
-      // force button visible + icon
-      repairCastBtnWithRetries();
-
-      castCtx.addEventListener(
-        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-        (e) => {
-          console.log("[Cast] session state:", e.sessionState);
-
-          if (
-            e.sessionState === cast.framework.SessionState.SESSION_ENDED ||
-            e.sessionState === cast.framework.SessionState.SESSION_ENDING ||
-            e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
-          ) {
-            setCastState(false);
+  function initOrRepairCast() {
+    if (window.cast?.framework?.CastContext) {
+      try {
+        castCtx = cast.framework.CastContext.getInstance();
+        castCtx.setOptions({
+          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        });
+        repairCastBtnWithRetries();
+        // Écouteurs d'état
+        castCtx.addEventListener(
+          cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+          (e) => {
+            console.log("[Cast] session state:", e.sessionState);
+            if (
+              e.sessionState === cast.framework.SessionState.SESSION_ENDED ||
+              e.sessionState === cast.framework.SessionState.SESSION_ENDING ||
+              e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
+            ) {
+              setCastState(false);
+            }
+            // si on navigue et qu'une session existe, garder l'état UI
+            if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+              setCastState(true);
+            }
           }
-
-          // si on navigue et qu'une session existe, garder l'état UI
-          if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
-            setCastState(true);
-          }
-        }
-      );
-
-      console.log("[Cast] ready");
-    } catch (err) {
-      console.error("[Cast] init error", err);
+        );
+        console.log("[Cast] ready / repaired");
+      } catch (err) {
+        console.error("[Cast] initOrRepair error", err);
+      }
+    } else {
+      console.warn("[Cast] framework not available yet");
     }
   }
-
   window.__onGCastApiAvailable = (isAvailable) => {
-    if (isAvailable) initCast();
+    if (isAvailable) initOrRepairCast();
   };
-
   // fallback init
   setTimeout(() => {
-    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
+    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initOrRepairCast();
   }, 2500);
-
   // --------------------------------------------------
   // 6) Always repair after Astro swaps
   // --------------------------------------------------
   repairCastBtnWithRetries();
-  document.addEventListener("astro:page-load", repairCastBtnWithRetries);
-  document.addEventListener("astro:after-swap", repairCastBtnWithRetries);
-
+  const onAstroEvent = () => {
+    repairCastBtnWithRetries();
+    // Recharge le script cast_sender.js
+    document.querySelectorAll('script[src*="cast_sender.js"]').forEach(el => el.remove());
+    const script = document.createElement("script");
+    script.src = "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
+    script.async = true;
+    script.onload = () => {
+      console.log("[Cast] framework reloaded after Astro event");
+      setTimeout(initOrRepairCast, 400);
+    };
+    document.head.appendChild(script);
+  };
+  document.addEventListener("astro:page-load", onAstroEvent);
+  document.addEventListener("astro:after-swap", onAstroEvent);
   // --------------------------------------------------
   // 7) Click handler (bind ONCE globally)
   // --------------------------------------------------
   if (!window.__abfCastClickBound) {
     window.__abfCastClickBound = true;
-
     document.addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("#castBtn");
       if (!btn) return;
-
       e.preventDefault();
-
       // Always repair icon (in case swap replaced button right before click)
       repairCastBtnWithRetries();
-
       if (!castCtx) {
         alert("Chromecast not ready yet. Please try again.");
         return;
       }
-
       // stop if already casting
       const existing = castCtx.getCurrentSession();
       if (existing) {
@@ -2444,26 +2429,19 @@ Legal
         setCastState(false);
         return;
       }
-
       const url = getCastUrl();
       console.log("[Cast] casting url:", url);
-
       try {
         await castCtx.requestSession();
-
         const session = castCtx.getCurrentSession();
         if (!session) throw new Error("Cast session is null");
-
         const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
         mediaInfo.metadata = buildFixedMetadata();
-
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
         req.currentTime = 0;
-
         await session.loadMedia(req);
-
         setCastState(true);
         console.log("[Cast] LoadMedia OK");
       } catch (err) {
@@ -2473,7 +2451,6 @@ Legal
       }
     });
   }
-
 })();
 </script>
 
