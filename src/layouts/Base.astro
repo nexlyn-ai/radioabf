@@ -444,6 +444,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         left: 23px;
         background: rgba(47,194,255,0.95);
       }
+      /* ===================== ICON CAST ===================== */
+      .ico-cast {
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c3.87 0 7 3.13 7 7h2c0-4.97-4.03-9-9-9zm0-4v2c6.08 0 11 4.92 11 11h2C14 14.82 9.18 10 3 10H1zm2-4c-1.1 0-2 .9-2 2v3h2V4h18v16h-7v2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H3z'/%3E%3C/svg%3E");
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c3.87 0 7 3.13 7 7h2c0-4.97-4.03-9-9-9zm0-4v2c6.08 0 11 4.92 11 11h2C14 14.82 9.18 10 3 10H1zm2-4c-1.1 0-2 .9-2 2v3h2V4h18v16h-7v2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H3z'/%3E%3C/svg%3E");
+      }
     </style>
     <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
     <script is:inline>
@@ -717,6 +722,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 </button>
                 <button id="fsBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Full screen" title="Full screen">
                   <span class="abf-ic" data-ic="fs"></span>
+                </button>
+                <button id="castBtn" type="button" class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Cast" title="Cast" style="display:none;">
+                  <span class="ico ico-cast"></span>
                 </button>
                 <input id="volRange" type="range" min="0" max="1" step="0.01" value="0.8" class="hidden sm:block w-28" aria-label="Volume" title="Volume" />
               </div>
@@ -1519,13 +1527,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (!audio.src){
             let idx = 0;
             try { idx = Number(localStorage.getItem(LS_KEY) || 0); } catch {}
-           
+          
             // Détection mobile : force Low Data (index 2 = AAC+ 32kbps) au premier lancement
             const isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
             if (isMobile && localStorage.getItem(LS_KEY) === null) {
               idx = 2; // Low Data en premier sur mobile
             }
-           
+          
             setStream(idx);
           }
           const savedVol = (() => {
@@ -1571,7 +1579,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           audio.addEventListener('waiting', () => console.warn("Waiting for more data..."));
           audio.addEventListener('playing', () => console.log("Audio is playing again"));
           audio.addEventListener('pause', () => console.log("Audio paused"));
-
           playBtn.onclick = async () => {
             if (!audio.paused) {
               // On met en pause → pas besoin de load
@@ -1579,12 +1586,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               S.isStopped = false;
             } else {
               S.isStopped = false;
-              
+             
               // On ne recharge QUE si on était vraiment arrêté ou si y a pas de source
               if (S.isStopped || !audio.src || audio.src === "") {
                 audio.load();
               }
-              
+             
               try {
                 await audio.play();
               } catch (e) {
@@ -1615,7 +1622,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             setStream(Number(v));
             fetchNowPlaying();
             syncSelectValues();
-            
+           
             if (wasPlaying) {
               // On recharge uniquement si on change vraiment de flux
               audio.load();
@@ -1625,7 +1632,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 console.error(e);
               }
             }
-            
+           
             ensureVisualizerReady();
             syncUI();
           };
@@ -1758,7 +1765,7 @@ Legal
           </a>
           <a href="https://www.facebook.com/abfonair" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="text-white/60 hover:text-cyan-300 transition">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.67 4.533-4.67 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.67 4.533-4.67 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073zM9.75 15.02V8.98l6.25 3.01-6.25 3.01z"/>
             </svg>
           </a>
           <a href="https://www.tiktok.com/@abfonair" target="_blank" rel="noopener noreferrer" aria-label="TikTok" class="text-white/60 hover:text-cyan-300 transition">
@@ -2151,6 +2158,146 @@ Legal
     document.addEventListener("astro:after-swap", apply);
     window.addEventListener("resize", apply);
   })();
+</script>
+<script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+<script is:inline data-astro-rerun>
+  // =============================================
+  // Google Cast – version minimaliste & robuste
+  // =============================================
+
+  let castCtx = null;
+  let castSession = null;
+  let castTitleTimer = null;
+
+  function setCastState(active) {
+    const btn = document.getElementById("castBtn");
+    if (btn) {
+      btn.classList.toggle("active", active); // optionnel : style différent quand casting
+    }
+
+    // Mise à jour du status player + footer
+    if (active) {
+      // "Casting…" ou "Diffusion sur TV…"
+      const msg = LANG === "fr" ? "Diffusion sur TV…" : "Casting…";
+      document.getElementById("npStatus").textContent = msg;
+      document.getElementById("npStatusMobile").textContent = msg;
+    } else {
+      // retour à l'état normal
+      if (!S.audio.paused) {
+        document.getElementById("npStatus").textContent = "live";
+        document.getElementById("npStatusMobile").textContent = "live";
+      } else {
+        document.getElementById("npStatus").textContent = "paused";
+        document.getElementById("npStatusMobile").textContent = "paused";
+      }
+    }
+  }
+
+  function startCastTitleSync() {
+    clearInterval(castTitleTimer);
+    castTitleTimer = setInterval(() => {
+      if (!castSession || !S.currentStreamIndex) return;
+
+      const title = "RadioABF";
+      const subtitle = document.getElementById("npTitle")?.textContent || 
+                       (LANG === "fr" ? "Écoute via radioabf.com" : "Listening via radioabf.com");
+
+      const md = new chrome.cast.media.GenericMediaMetadata();
+      md.title = title;
+      md.subtitle = subtitle;
+
+      const logo = "/logo-abf.png";
+      md.images = [new chrome.cast.Image(logo)];
+
+      try {
+        const media = castSession.getMediaSession();
+        if (media) {
+          const req = new chrome.cast.media.EditMediaInfoRequest(media.media);
+          media.media.metadata = md;
+          media.editMediaInfo(req, () => {}, () => {});
+        }
+      } catch (err) {}
+    }, 15000);
+  }
+
+  function initCast() {
+    if (!window.chrome?.cast?.media) return;
+
+    castCtx = cast.framework.CastContext.getInstance();
+    castCtx.setOptions({
+      receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, // ou ton app ID custom
+      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+    });
+
+    // Afficher le bouton dès que l'API est prête
+    document.getElementById("castBtn").style.display = "flex";
+
+    // Écoute des changements d'état de session
+    castCtx.addEventListener(
+      cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+      (e) => {
+        if (
+          e.sessionState === cast.framework.SessionState.SESSION_ENDED ||
+          e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
+        ) {
+          castSession = null;
+          clearInterval(castTitleTimer);
+          setCastState(false);
+        }
+      }
+    );
+  }
+
+  // Google Cast appelle cette fonction quand l'API est chargée
+  window.__onGCastApiAvailable = (isAvailable) => {
+    if (isAvailable) initCast();
+  };
+
+  // Clic sur le bouton Cast
+  document.getElementById("castBtn")?.addEventListener("click", async () => {
+    if (S.isStopped) {
+      // toast(LANG === "fr" ? "Choisis une radio d'abord" : "Pick a station first");
+      return;
+    }
+
+    try {
+      const session = await castCtx.requestSession();
+      castSession = session;
+
+      const contentType = S.streams[S.currentStreamIndex].url.includes("aac") 
+        ? "audio/aac" 
+        : S.streams[S.currentStreamIndex].url.includes("flac")
+          ? "audio/flac"
+          : "audio/mpeg";
+
+      const mediaInfo = new chrome.cast.media.MediaInfo(
+        S.streams[S.currentStreamIndex].url,
+        contentType
+      );
+
+      const md = new chrome.cast.media.GenericMediaMetadata();
+      md.title = "RadioABF";
+      md.subtitle = document.getElementById("npTitle")?.textContent || "via radioabf.com";
+      md.images = [new chrome.cast.Image("/logo-abf.png")];
+
+      mediaInfo.metadata = md;
+
+      const request = new chrome.cast.media.LoadRequest(mediaInfo);
+      await session.loadMedia(request);
+
+      // On coupe le son local
+      S.audio?.pause();
+
+      setCastState(true);
+      startCastTitleSync();
+
+      // toast(LANG === "fr" ? "Diffusion démarrée" : "Casting started");
+
+    } catch (err) {
+      console.error("Cast error:", err);
+      // toast(LANG === "fr" ? "Échec de la diffusion" : "Cast failed");
+    }
+  });
 </script>
 </body>
 <!-- ================= DEDICATION MODAL ================= -->
