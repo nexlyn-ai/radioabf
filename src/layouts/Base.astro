@@ -2159,7 +2159,167 @@ Legal
     window.addEventListener("resize", apply);
   })();
 </script>
-<script type="text/javascript" src="https://www.gstatic
+<!-- Google Cast – version robuste, indépendante de __abf -->
+<script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
+<script is:inline data-astro-rerun>
+  console.log("[Cast] Script Cast chargé – attente API...");
+
+  let castCtx = null;
+  let castSession = null;
+  let castTitleTimer = null;
+
+  function setCastState(active) {
+    console.log("[Cast] Changement état casting →", active);
+    const btn = document.getElementById("castBtn");
+    if (btn) {
+      btn.style.display = "flex";
+      btn.style.opacity = active ? "1" : "0.7";
+      btn.style.background = active ? "rgba(47,194,255,0.2)" : "";
+      btn.title = active ? "Casting actif – cliquer pour arrêter" : "Caster sur TV";
+    }
+
+    const status = document.getElementById("npStatus");
+    const statusMob = document.getElementById("npStatusMobile");
+    if (status) status.textContent = active ? "Casting…" : (document.querySelector("#playBtn .abf-ic")?.getAttribute("data-ic") === "pause" ? "live" : "paused");
+    if (statusMob) statusMob.textContent = status?.textContent || "paused";
+  }
+
+  function startCastTitleSync() {
+    console.log("[Cast] Sync titres démarrée");
+    clearInterval(castTitleTimer);
+    castTitleTimer = setInterval(() => {
+      if (!castSession) return;
+      const artist = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
+      const title = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music";
+      const md = new chrome.cast.media.GenericMediaMetadata();
+      md.title = artist;
+      md.subtitle = title + " • radioabf.com";
+      md.images = [new chrome.cast.Image("/logo-abf.png")];
+
+      try {
+        const media = castSession.getMediaSession();
+        if (media?.media) {
+          media.media.metadata = md;
+          const req = new chrome.cast.media.EditMediaInfoRequest(media.media);
+          media.editMediaInfo(req, () => {}, err => console.warn("[Cast] Erreur metadata edit", err));
+        }
+      } catch (e) { console.warn("[Cast] Erreur sync titres", e); }
+    }, 12000);
+  }
+
+  function initCast() {
+    console.log("[Cast] initCast appelée");
+    try {
+      castCtx = cast.framework.CastContext.getInstance();
+      castCtx.setOptions({
+        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      });
+      console.log("[Cast] Options appliquées");
+
+      const btn = document.getElementById("castBtn");
+      if (btn) {
+        btn.style.display = "flex";
+        console.log("[Cast] Bouton visible");
+      }
+
+      castCtx.addEventListener(
+        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+        e => {
+          console.log("[Cast] Session state:", e.sessionState);
+          if (e.sessionState?.includes("ENDED") || e.sessionState?.includes("FAILED") || e.sessionState === "NO_SESSION") {
+            castSession = null;
+            clearInterval(castTitleTimer);
+            setCastState(false);
+          }
+        }
+      );
+    } catch (err) {
+      console.error("[Cast] Erreur init", err);
+    }
+  }
+
+  window["__onGCastApiAvailable"] = isAvailable => {
+    console.log("[Cast] Callback Google → isAvailable =", isAvailable);
+    if (isAvailable) initCast();
+  };
+
+  // Sécurité : forcer init si callback Google absente après 4s
+  setTimeout(() => {
+    if (!castCtx && window.chrome?.cast?.media) {
+      console.warn("[Cast] Callback Google manquante – FORCAGE init");
+      initCast();
+    }
+  }, 4000);
+
+  // Listener clic (délégation + garde anti-crash)
+  document.addEventListener("click", e => {
+    if (!e.target.closest("#castBtn")) return;
+    e.preventDefault();
+    console.log("[Cast] Clic sur CastBtn");
+
+    const streamSelect = document.getElementById("streamSelect") || document.getElementById("streamSelectMobile");
+    const selectedIndex = streamSelect ? Number(streamSelect.value) : 0;
+
+    const streams = [
+      "https://stream.radioabf.com/abf-hd.mp3",
+      "https://stream.radioabf.com/abf-sd.mp3",
+      "https://stream.radioabf.com/abf-low.aac",
+      "https://stream.radioabf.com/abf-uhd.flac"
+    ];
+
+    const currentUrl = streams[selectedIndex];
+    if (!currentUrl) {
+      alert("Aucun flux audio sélectionné. Lance la radio d’abord.");
+      return;
+    }
+
+    if (castSession) {
+      console.log("[Cast] Déconnexion...");
+      castCtx?.endCurrentSession(true).then(() => {
+        castSession = null;
+        setCastState(false);
+        alert("Casting arrêté");
+      }).catch(err => {
+        console.error("[Cast] Erreur déconnexion", err);
+        alert("Impossible d’arrêter le cast");
+      });
+      return;
+    }
+
+    console.log("[Cast] Lancement session...");
+    castCtx?.requestSession()
+      .then(session => {
+        castSession = session;
+        console.log("[Cast] Session obtenue");
+
+        const contentType = currentUrl.includes("flac") ? "audio/flac" :
+                           currentUrl.includes("aac")  ? "audio/aac"  : "audio/mpeg";
+
+        const mediaInfo = new chrome.cast.media.MediaInfo(currentUrl, contentType);
+        mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+        mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+        mediaInfo.metadata.title = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
+        mediaInfo.metadata.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music";
+
+        const req = new chrome.cast.media.LoadRequest(mediaInfo);
+        return session.loadMedia(req);
+      })
+      .then(() => {
+        // Pause local
+        const audio = document.querySelector("audio") || new Audio();
+        audio.pause?.();
+        setCastState(true);
+        startCastTitleSync();
+        alert("Casting lancé sur votre TV !");
+      })
+      .catch(err => {
+        console.error("[Cast] Erreur complète cast", err);
+        alert("Échec du casting : " + (err?.description || err?.message || "erreur inconnue"));
+      });
+  });
+</script>
 </body>
 <!-- ================= DEDICATION MODAL ================= -->
 <div
