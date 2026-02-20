@@ -2186,19 +2186,17 @@ Legal
       }
       const status = $("npStatus");
       if (status) status.textContent = active ? "Casting…" : (status.textContent || "live");
+      const statusM = $("npStatusMobile");
+      if (statusM) statusM.textContent = active ? "Casting…" : (statusM.textContent || "live");
     }
 
-    // ⚠️ Le Default Receiver est capricieux avec FLAC/AAC et surtout certains flux Icecast (ICY metadata).
-    // On tente MP3 HD/SD uniquement + cache buster.
-   function getCastUrl() {
-  const idx = Number(document.getElementById("streamSelect")?.value
-    || document.getElementById("streamSelectMobile")?.value
-    || 0);
-
-  // 0 = HD mp3, 1 = SD mp3, tout le reste => HD mp3
-  const q = (idx === 1) ? "sd" : "hd";
-  return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
-}
+    // ✅ On caste l'endpoint PROXY "cast-safe" (comme globalradio.top)
+    function getCastUrl() {
+      const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
+      // 0=HD MP3, 1=SD MP3, sinon on force HD (AAC/FLAC pas pour Default Receiver)
+      const q = (idx === 1) ? "sd" : "hd";
+      return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
+    }
 
     function clearTitleSync() {
       if (castTitleTimer) {
@@ -2209,14 +2207,12 @@ Legal
 
     function getNowPlayingMeta() {
       const artist = $("npArtist")?.textContent?.trim() || "RadioABF";
-      const title  = $("npTitle")?.textContent?.trim()  || "Live Electronic Music • radioabf.com";
+      const title  = $("npTitle")?.textContent?.trim()  || "Live • radioabf.com";
       return { artist, title };
     }
 
     function buildMusicMetadata() {
       const { artist, title } = getNowPlayingMeta();
-
-      // ✅ Pour audio, MusicTrack marche mieux que Generic sur l’affichage artwork
       const md = new chrome.cast.media.MusicTrackMediaMetadata();
       md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
       md.artist = artist;
@@ -2234,16 +2230,13 @@ Legal
       castTitleTimer = setInterval(() => {
         try {
           const s = castCtx?.getCurrentSession?.();
-          const media = s?.getMediaSession?.();
-          if (!s || !media) return;
+          const ms = s?.getMediaSession?.();
+          if (!s || !ms || !ms.media) return;
 
-          const current = media.media;
-          if (!current) return;
+          ms.media.metadata = buildMusicMetadata();
 
-          current.metadata = buildMusicMetadata();
-
-          const req = new chrome.cast.media.EditMediaInfoRequest(current);
-          media.editMediaInfo(
+          const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
+          ms.editMediaInfo(
             req,
             () => console.log("[Cast] metadata refreshed"),
             (err) => console.warn("[Cast] metadata refresh failed", err)
@@ -2297,14 +2290,15 @@ Legal
       if (isAvailable) initCast();
     };
 
+    // fallback
     setTimeout(() => {
       if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
     }, 2500);
 
+    // Click cast button
     document.addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("#castBtn");
       if (!btn) return;
-
       e.preventDefault();
 
       if (!castCtx) {
@@ -2312,7 +2306,7 @@ Legal
         return;
       }
 
-      // Toggle stop
+      // Toggle end session
       if (castCtx.getCurrentSession()) {
         try { await castCtx.endCurrentSession(true); } catch {}
         castSession = null;
@@ -2336,25 +2330,21 @@ Legal
         req.autoplay = true;
         req.currentTime = 0;
 
-        // ✅ Certains devices ont un volume session bas par défaut
+        // Volume session à fond (certains chromecast démarrent à faible volume)
         try {
-          const vol = new chrome.cast.Volume();
-          vol.level = 1.0;
-          const sv = new chrome.cast.media.Volume();
-          sv.level = 1.0;
-          req.volume = sv;
-          session.setVolume(vol, () => {}, () => {});
+          const v = new chrome.cast.Volume();
+          v.level = 1.0;
+          session.setVolume(v, () => {}, () => {});
         } catch {}
 
-        const media = await session.loadMedia(req);
+        await session.loadMedia(req);
 
-        // ✅ Force play après load (quand autoplay est “ignoré”)
+        // Force play (autoplay parfois ignoré)
         try {
           const ms = session.getMediaSession();
           if (ms) {
-            ms.addUpdateListener((isAlive) => {
-              // Debug ultra utile : tu verras le playerState + raisons
-              console.log("[Cast] update alive:", isAlive, "state:", ms.playerState, "idleReason:", ms.idleReason, "error:", ms.errorReason);
+            ms.addUpdateListener(() => {
+              console.log("[Cast] playerState:", ms.playerState, "idleReason:", ms.idleReason, "error:", ms.errorReason);
             });
             const pr = new chrome.cast.media.PlayRequest();
             ms.play(pr, () => console.log("[Cast] play() ok"), (err) => console.warn("[Cast] play() err", err));
