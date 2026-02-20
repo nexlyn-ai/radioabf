@@ -286,3 +286,6 @@ main#mainContent{
   fill: currentColor;
   stroke: none;
 }
+#castBtn {
+  backdrop-filter: none !important;
+}
