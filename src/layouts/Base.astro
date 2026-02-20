@@ -2233,22 +2233,36 @@ Legal
     return md;
   }
 
-  function startCastTitleSync() {
-    clearTitleSync();
+  <script>
+/* remplace uniquement startCastTitleSync() par ça */
+function startCastTitleSync() {
+  clearTitleSync();
 
-    castTitleTimer = setInterval(() => {
-      try {
-        const session = castCtx?.getCurrentSession?.();
-        const ms = session?.getMediaSession?.();
-        if (!session || !ms || !ms.media) return;
+  castTitleTimer = setInterval(() => {
+    try {
+      const session = castCtx?.getCurrentSession?.();
+      if (!session) return;
 
-        ms.media.metadata = buildMusicMetadata();
+      const ms = session.getMediaSession?.();
+      if (!ms || !ms.media) return;
 
-        const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
-        ms.editMediaInfo(req, () => {}, () => {});
-      } catch {}
-    }, 10000);
-  }
+      // ✅ update metadata
+      ms.media.metadata = buildMusicMetadata();
+
+      // ✅ push to receiver (ça force l’update comme globalradio)
+      const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
+
+      ms.editMediaInfo(
+        req,
+        () => console.log("[Cast] metadata refreshed"),
+        (err) => console.warn("[Cast] metadata refresh failed", err)
+      );
+    } catch (e) {
+      console.warn("[Cast] sync error", e);
+    }
+  }, 10000);
+}
+</script>
 
   function initCast() {
     try {
@@ -2380,6 +2394,17 @@ Legal
     }
 
   });
+
+window.addEventListener("abf:nowplaying-updated", () => {
+  try {
+    const session = castCtx?.getCurrentSession?.();
+    const ms = session?.getMediaSession?.();
+    if (!ms || !ms.media) return;
+    ms.media.metadata = buildMusicMetadata();
+    const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
+    ms.editMediaInfo(req, () => console.log("[Cast] metadata refreshed (event)"), () => {});
+  } catch {}
+});
 
 })();
 </script>
