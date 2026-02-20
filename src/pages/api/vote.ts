@@ -80,7 +80,7 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
-// Normalize track_key so we don't store duplicates with different casing/spaces/quotes
+// Normalize track_key for dedupe + stable matching
 function normTrackKey(k: string) {
   return String(k || "")
     .trim()
@@ -123,7 +123,6 @@ function getClientIp(request: Request) {
 // ----------------------
 function fileUrl(fileId?: string | null) {
   if (!fileId) return "";
-  // Directus assets endpoint
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
@@ -169,20 +168,17 @@ type TrackRow = {
   track_key: string;
   artist?: string | null;
   title?: string | null;
-  // ✅ on stocke l'ID final du fichier cover (string) pour éviter [object Object]
+  // on stocke l'id final (string) du fichier cover
   cover_art: string | null;
 };
 
-// ✅ FIX CRITIQUE:
-// - abandon du filter[_in] (cassé dès qu'il y a des virgules dans track_key)
-// - utilise filter[_or][i][track_key][_eq]=... (safe)
-// - demande cover_art.id pour supporter relations File
+// ✅ MATCH tracks.track_key en insensible à la casse via _ilike (sans wildcard)
+// ✅ pas de _in (safe virgules)
 async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   const map = new Map<string, TrackRow>();
   const clean = (keys || []).map(normTrackKey).filter(Boolean);
   if (!clean.length) return map;
 
-  // Evite URL trop longue
   const slice = clean.slice(0, 200);
 
   const params = new URLSearchParams();
@@ -190,7 +186,8 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   params.set("limit", String(Math.min(500, slice.length)));
 
   slice.forEach((tk, i) => {
-    params.set(`filter[_or][${i}][track_key][_eq]`, tk);
+    // ✅ case-insensitive compare
+    params.set(`filter[_or][${i}][track_key][_ilike]`, tk);
   });
 
   const res = await dFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
@@ -200,8 +197,8 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   const rows = Array.isArray(j?.data) ? j.data : [];
 
   for (const r of rows) {
-    const tk = normTrackKey(r?.track_key || "");
-    if (!tk) continue;
+    const normalized = normTrackKey(r?.track_key || "");
+    if (!normalized) continue;
 
     const coverVal = r?.cover_art;
     const coverId =
@@ -209,7 +206,7 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
         ? coverVal
         : (coverVal?.id ? String(coverVal.id) : "");
 
-    map.set(tk, {
+    map.set(normalized, {
       id: r?.id,
       track_key: String(r?.track_key || ""),
       artist: r?.artist ?? null,
@@ -282,7 +279,7 @@ export const GET: APIRoute = async ({ url }) => {
         const cover_art = trow?.cover_art ?? null;
         let cover_url = cover_art ? fileUrl(cover_art) : "";
 
-        // Fallback iTunes (only if Directus cover missing)
+        // Fallback iTunes uniquement si cover Directus manquante
         if (!cover_url && artist && title) {
           cover_url = await fetchItunesCover(artist, title);
         }
