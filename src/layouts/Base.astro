@@ -2268,17 +2268,12 @@ Legal
   }
 
 function buildMusicMetadata() {
-  // On prend exactement le title de l’onglet
-  const fullTitle = document.title || "RadioABF • Live";
-
-  // Optionnel : séparer si ton title est du type "ARTIST - TITLE | RadioABF"
-  const cleaned = fullTitle.split("|")[0].trim();
-
   const md = new chrome.cast.media.MusicTrackMediaMetadata();
   md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
 
-  md.title = cleaned;
-  md.albumName = "RadioABF • Live";
+  md.title = "RadioABF • LIVE";
+  md.subtitle = "The DJs’ Frequency — Enjoy the ride ✨";
+  md.albumName = "radioabf.com";
   md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
 
   return md;
@@ -2313,10 +2308,9 @@ function pushMetadataNow() {
   } catch {}
 }
 
-  function startCastTitleSync() {
-    clearTitleSync();
-    castTitleTimer = setInterval(pushMetadataNow, 10000);
-  }
+function startCastTitleSync() {
+  // no-op: pas de refresh metadata (évite coupures / comportements instables)
+}
 
   function initCast() {
     try {
@@ -2440,8 +2434,6 @@ function pushMetadataNow() {
 
   });
 
-  // Update metadata immédiatement quand Now Playing change
-  window.addEventListener("abf:nowplaying-updated", pushMetadataNow);
 
   // Fix icône après navigation Astro
   document.addEventListener("astro:page-load", ensureCastIcon);
