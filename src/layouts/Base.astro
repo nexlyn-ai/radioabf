@@ -2199,19 +2199,49 @@ Legal
 
   const $ = (id) => document.getElementById(id);
 
-function setCastState(active) {
-  const btn = $("castBtn");
-  if (!btn) return;
+  /* --------------------------------------------------
+     FIX ICON (évite effet "gras / surimpression")
+  -------------------------------------------------- */
+  function ensureCastIcon() {
+    const btn = $("castBtn");
+    if (!btn) return;
 
-  btn.classList.toggle("cast-active", active);
-  btn.classList.toggle("cast-idle", !active);
+    if (btn.dataset.castIcon === "1") return;
+    btn.dataset.castIcon = "1";
 
-  const s1 = $("npStatus");
-  const s2 = $("npStatusMobile");
+    btn.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        style="display:block; vector-effect:non-scaling-stroke; shape-rendering:geometricPrecision;">
+        <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
+        <path d="M3 19a2 2 0 0 1 2 2" />
+        <path d="M3 15a6 6 0 0 1 6 6" />
+        <path d="M3 11a10 10 0 0 1 10 10" />
+      </svg>
+    `;
 
-  if (s1) s1.textContent = active ? "Casting…" : "live";
-  if (s2) s2.textContent = active ? "Casting…" : "live";
-}
+    btn.style.lineHeight = "0";
+  }
+
+  /* -------------------------------------------------- */
+
+  function setCastState(active) {
+    const btn = $("castBtn");
+    if (!btn) return;
+
+    btn.style.opacity = active ? "1" : "0.7";
+    btn.style.background = active ? "rgba(47,194,255,0.25)" : "transparent";
+
+    const s1 = $("npStatus");
+    const s2 = $("npStatusMobile");
+
+    if (s1) s1.textContent = active ? "Casting…" : "live";
+    if (s2) s2.textContent = active ? "Casting…" : "live";
+  }
 
   function getCastUrl() {
     const idx = Number(
@@ -2221,7 +2251,6 @@ function setCastState(active) {
     );
 
     const q = (idx === 1) ? "sd" : "hd";
-
     return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
   }
 
@@ -2246,45 +2275,30 @@ function setCastState(active) {
     md.artist = artist;
     md.title = title;
     md.albumName = "RadioABF • Live";
-
-    // IMPORTANT pour que le receiver affiche bien le logo
-    md.images = [
-      new chrome.cast.Image(CAST_ARTWORK)
-    ];
+    md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
 
     return md;
   }
 
-  <script>
-/* remplace uniquement startCastTitleSync() par ça */
-function startCastTitleSync() {
-  clearTitleSync();
-
-  castTitleTimer = setInterval(() => {
+  function pushMetadataNow() {
     try {
       const session = castCtx?.getCurrentSession?.();
-      if (!session) return;
-
-      const ms = session.getMediaSession?.();
+      const ms = session?.getMediaSession?.();
       if (!ms || !ms.media) return;
 
-      // ✅ update metadata
       ms.media.metadata = buildMusicMetadata();
 
-      // ✅ push to receiver (ça force l’update comme globalradio)
       const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
+      ms.editMediaInfo(req, () => {
+        console.log("[Cast] metadata refreshed");
+      }, () => {});
+    } catch {}
+  }
 
-      ms.editMediaInfo(
-        req,
-        () => console.log("[Cast] metadata refreshed"),
-        (err) => console.warn("[Cast] metadata refresh failed", err)
-      );
-    } catch (e) {
-      console.warn("[Cast] sync error", e);
-    }
-  }, 10000);
-}
-</script>
+  function startCastTitleSync() {
+    clearTitleSync();
+    castTitleTimer = setInterval(pushMetadataNow, 10000);
+  }
 
   function initCast() {
     try {
@@ -2297,6 +2311,8 @@ function startCastTitleSync() {
 
       const btn = $("castBtn");
       if (btn) btn.style.display = "flex";
+
+      ensureCastIcon();
 
       castCtx.addEventListener(
         cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
@@ -2325,7 +2341,6 @@ function startCastTitleSync() {
     if (isAvailable) initCast();
   };
 
-  // fallback sécurité
   setTimeout(() => {
     if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) {
       initCast();
@@ -2344,7 +2359,6 @@ function startCastTitleSync() {
       return;
     }
 
-    // Si déjà en session → stop
     const existing = castCtx.getCurrentSession();
     if (existing) {
       try { await castCtx.endCurrentSession(true); } catch {}
@@ -2391,17 +2405,8 @@ function startCastTitleSync() {
         ms.play(pr, () => console.log("[Cast] play() ok"), () => {});
       }
 
-      // Force artwork après démarrage
-      setTimeout(() => {
-        try {
-          const ms = session.getMediaSession();
-          if (!ms?.media) return;
-
-          ms.media.metadata = buildMusicMetadata();
-          const r = new chrome.cast.media.EditMediaInfoRequest(ms.media);
-          ms.editMediaInfo(r, () => console.log("[Cast] artwork forced"), () => {});
-        } catch {}
-      }, 1200);
+      // Force artwork 1.2s après
+      setTimeout(pushMetadataNow, 1200);
 
       setCastState(true);
       startCastTitleSync();
@@ -2417,16 +2422,12 @@ function startCastTitleSync() {
 
   });
 
-window.addEventListener("abf:nowplaying-updated", () => {
-  try {
-    const session = castCtx?.getCurrentSession?.();
-    const ms = session?.getMediaSession?.();
-    if (!ms || !ms.media) return;
-    ms.media.metadata = buildMusicMetadata();
-    const req = new chrome.cast.media.EditMediaInfoRequest(ms.media);
-    ms.editMediaInfo(req, () => console.log("[Cast] metadata refreshed (event)"), () => {});
-  } catch {}
-});
+  // Update metadata immédiatement quand Now Playing change
+  window.addEventListener("abf:nowplaying-updated", pushMetadataNow);
+
+  // Fix icône après navigation Astro
+  document.addEventListener("astro:page-load", ensureCastIcon);
+  document.addEventListener("astro:after-swap", ensureCastIcon);
 
 })();
 </script>
