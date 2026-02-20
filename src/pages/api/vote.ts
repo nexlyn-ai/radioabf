@@ -123,7 +123,6 @@ function getClientIp(request: Request) {
 // ----------------------
 function fileUrl(fileId?: string | null) {
   if (!fileId) return "";
-  // Directus assets endpoint
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
@@ -169,41 +168,53 @@ type TrackRow = {
   track_key: string;
   artist?: string | null;
   title?: string | null;
-  cover_art?: string | null;
+  cover_art_id?: string | null; // ✅ on stocke l'id file final
 };
 
+// ✅ FIX #1 + #2 : OR filters (safe with commas) + cover_art.id
 async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   const map = new Map<string, TrackRow>();
   const clean = (keys || []).map(normTrackKey).filter(Boolean);
 
   if (!clean.length) return map;
 
-  // Directus filter _in: comma-separated list
-  // NOTE: track_key values contain spaces/commas, so we MUST encode the whole string
-  const inList = clean.join(",");
-  const fields = ["id", "track_key", "artist", "title", "cover_art"].join(",");
+  // Evite query trop longue
+  const slice = clean.slice(0, 200);
 
-  const res = await dFetch(
-    `/items/${TRACKS_COLLECTION}?fields=${encodeURIComponent(fields)}&filter[track_key][_in]=${encodeURIComponent(
-      inList
-    )}&limit=${Math.min(500, clean.length)}`
-  );
+  // Build filter[_or][i][track_key][_eq]=...
+  const params = new URLSearchParams();
+  params.set("fields", "id,track_key,artist,title,cover_art,cover_art.id");
+  params.set("limit", String(Math.min(500, slice.length)));
 
+  slice.forEach((tk, i) => {
+    params.set(`filter[_or][${i}][track_key][_eq]`, tk);
+  });
+
+  const res = await dFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
   if (!res.ok) return map;
 
   const j = (await res.json().catch(() => ({}))) as any;
   const rows = Array.isArray(j?.data) ? j.data : [];
+
   for (const r of rows) {
     const tk = normTrackKey(r?.track_key || "");
     if (!tk) continue;
+
+    const coverVal = r?.cover_art;
+    const coverId =
+      typeof coverVal === "string"
+        ? coverVal
+        : (coverVal?.id ? String(coverVal.id) : "");
+
     map.set(tk, {
       id: r?.id,
       track_key: String(r?.track_key || ""),
       artist: r?.artist ?? null,
       title: r?.title ?? null,
-      cover_art: r?.cover_art ?? null,
+      cover_art_id: coverId || null,
     });
   }
+
   return map;
 }
 
@@ -265,10 +276,11 @@ export const GET: APIRoute = async ({ url }) => {
         const title =
           String(trow?.title || "").trim() || String(split.title || "").trim();
 
-        const cover_art = trow?.cover_art ?? null;
-        let cover_url = cover_art ? fileUrl(cover_art) : "";
+        // ✅ Directus cover_art PRIORITAIRE
+        const cover_art_id = trow?.cover_art_id ?? null;
+        let cover_url = cover_art_id ? fileUrl(cover_art_id) : "";
 
-        // Fallback iTunes (doesn't require Directus write permissions)
+        // ✅ Fallback iTunes uniquement si Directus vide
         if (!cover_url && artist && title) {
           cover_url = await fetchItunesCover(artist, title);
         }
@@ -278,7 +290,7 @@ export const GET: APIRoute = async ({ url }) => {
           artist,
           title,
           count: row.count,
-          cover_art,
+          cover_art: cover_art_id, // on renvoie l'id (plus fiable)
           cover_url,
         };
       })
