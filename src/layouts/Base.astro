@@ -2158,11 +2158,12 @@ Legal
     document.addEventListener("astro:after-swap", apply);
     window.addEventListener("resize", apply);
   })();
-<!-- Google Cast – proxy + metadata renforcé pour Default Receiver -->
+
+<!-- Google Cast – proxy audio live + artwork forcé -->
 <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
 <script is:inline data-astro-rerun>
-  console.log("[Cast vFinal] Chargement...");
+  console.log("[Cast FINAL] Chargement...");
 
   let castCtx = null;
   let castSession = null;
@@ -2182,14 +2183,12 @@ Legal
     clearInterval(castTitleTimer);
     castTitleTimer = setInterval(() => {
       if (!castSession) return;
-      const artist = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
-      const title = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic";
       try {
         const media = castSession.getMediaSession();
         if (media?.media) {
           const md = new chrome.cast.media.GenericMediaMetadata();
-          md.title = artist;
-          md.subtitle = title + " • radioabf.com";
+          md.title = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
+          md.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music • radioabf.com";
           md.images = [{
             url: "https://radioabf.com/logo-abf.png",
             height: 512,
@@ -2197,10 +2196,10 @@ Legal
           }];
           media.media.metadata = md;
           const req = new chrome.cast.media.EditMediaInfoRequest(media.media);
-          media.editMediaInfo(req, () => {}, () => {});
+          media.editMediaInfo(req, () => console.log("[Cast] Artwork + titre mis à jour"), () => {});
         }
-      } catch (e) {}
-    }, 12000);
+      } catch (e) { console.warn("[Cast] Erreur sync", e); }
+    }, 10000);
   }
 
   function initCast() {
@@ -2227,7 +2226,7 @@ Legal
 
   setTimeout(() => {
     if (!castCtx && window.chrome?.cast?.media) initCast();
-  }, 4000);
+  }, 3000);
 
   document.addEventListener("click", e => {
     if (!e.target.closest("#castBtn")) return;
@@ -2241,8 +2240,7 @@ Legal
       "https://stream.radioabf.com/abf-uhd.flac"
     ][idx];
 
-    // Proxy public fiable pour forcer HTTPS + contourner blocages receiver
-    url = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+       console.log("[Cast] Flux proxifié :", url);
 
     if (castSession) {
       castCtx?.endCurrentSession(true).then(() => {
@@ -2255,6 +2253,7 @@ Legal
     castCtx?.requestSession()
       .then(session => {
         castSession = session;
+
         const contentType = url.includes("flac") ? "audio/flac" :
                            url.includes("aac")  ? "audio/aac"  : "audio/mpeg";
 
@@ -2262,7 +2261,7 @@ Legal
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
         mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
         mediaInfo.metadata.title = document.getElementById("npArtist")?.textContent?.trim() || "RadioABF";
-        mediaInfo.metadata.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live Electronic Music";
+        mediaInfo.metadata.subtitle = document.getElementById("npTitle")?.textContent?.trim() || "Live sur radioabf.com";
         mediaInfo.metadata.images = [{
           url: "https://radioabf.com/logo-abf.png",
           height: 512,
@@ -2271,19 +2270,22 @@ Legal
 
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
+        req.currentTime = 0;
         return session.loadMedia(req);
       })
       .then(() => {
         document.querySelector("audio")?.pause?.();
         setCastState(true);
         startCastTitleSync();
+        console.log("[Cast] LoadMedia OK – devrait jouer maintenant");
       })
       .catch(err => {
-        console.error("[Cast] Erreur finale :", err);
+        console.error("[Cast] Erreur loadMedia :", err);
         alert("Échec cast : " + (err?.description || err?.message || "vérifie console"));
       });
   });
 </script>
+
 </body>
 <!-- ================= DEDICATION MODAL ================= -->
 <div
