@@ -2193,41 +2193,9 @@ Legal
   console.log("[Cast] init…");
 
   const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
-
   let castCtx = null;
-  let castTitleTimer = null;
 
   const $ = (id) => document.getElementById(id);
-
-  /* --------------------------------------------------
-     FIX ICON (évite effet "gras / surimpression")
-  -------------------------------------------------- */
-  function ensureCastIcon() {
-    const btn = $("castBtn");
-    if (!btn) return;
-
-    if (btn.dataset.castIcon === "1") return;
-    btn.dataset.castIcon = "1";
-
-    btn.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        style="display:block; vector-effect:non-scaling-stroke; shape-rendering:geometricPrecision;">
-        <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
-        <path d="M3 19a2 2 0 0 1 2 2" />
-        <path d="M3 15a6 6 0 0 1 6 6" />
-        <path d="M3 11a10 10 0 0 1 10 10" />
-      </svg>
-    `;
-
-    btn.style.lineHeight = "0";
-  }
-
-  /* -------------------------------------------------- */
 
   function setCastState(active) {
     const btn = $("castBtn");
@@ -2251,66 +2219,20 @@ Legal
     );
 
     const q = (idx === 1) ? "sd" : "hd";
-    return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
+    return `https://radioabf.com/api/cast.mp3?q=${q}`;
   }
 
-  function clearTitleSync() {
-    if (castTitleTimer) {
-      clearInterval(castTitleTimer);
-      castTitleTimer = null;
-    }
+  function buildFixedMetadata() {
+    const md = new chrome.cast.media.MusicTrackMediaMetadata();
+    md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
+
+    md.title = "RadioABF • LIVE";
+    md.subtitle = "radioabf.com";
+    md.albumName = "Live Electronic Music • 24/7";
+    md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
+
+    return md;
   }
-
-  function getNowPlayingMeta() {
-    const artist = $("npArtist")?.textContent?.trim() || "RadioABF";
-    const title  = $("npTitle")?.textContent?.trim()  || "Live • radioabf.com";
-    return { artist, title };
-  }
-
-function buildMusicMetadata() {
-  const md = new chrome.cast.media.MusicTrackMediaMetadata();
-  md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
-
-  md.title = "RadioABF • LIVE";
-  md.subtitle = "The DJs’ Frequency — Enjoy the ride ✨";
-  md.albumName = "radioabf.com";
-  md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
-
-  return md;
-}
-
-function pushMetadataNow() {
-  try {
-    const session = castCtx?.getCurrentSession?.();
-    if (!session) return;
-
-    const ms = session.getMediaSession?.();
-    if (!ms) return;
-
-    const currentTime = ms.currentTime || 0;
-
-    const mediaInfo = new chrome.cast.media.MediaInfo(
-      getCastUrl(),
-      "audio/mpeg"
-    );
-
-    mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-    mediaInfo.metadata = buildMusicMetadata();
-
-    const req = new chrome.cast.media.LoadRequest(mediaInfo);
-    req.autoplay = true;
-    req.currentTime = currentTime;
-
-    session.loadMedia(req)
-      .then(() => console.log("[Cast] media reloaded for metadata refresh"))
-      .catch(() => {});
-
-  } catch {}
-}
-
-function startCastTitleSync() {
-  // no-op: pas de refresh metadata (évite coupures / comportements instables)
-}
 
   function initCast() {
     try {
@@ -2324,8 +2246,6 @@ function startCastTitleSync() {
       const btn = $("castBtn");
       if (btn) btn.style.display = "flex";
 
-      ensureCastIcon();
-
       castCtx.addEventListener(
         cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
         (e) => {
@@ -2336,7 +2256,6 @@ function startCastTitleSync() {
             e.sessionState === cast.framework.SessionState.SESSION_ENDING ||
             e.sessionState === cast.framework.SessionState.SESSION_START_FAILED
           ) {
-            clearTitleSync();
             setCastState(false);
           }
         }
@@ -2374,7 +2293,6 @@ function startCastTitleSync() {
     const existing = castCtx.getCurrentSession();
     if (existing) {
       try { await castCtx.endCurrentSession(true); } catch {}
-      clearTitleSync();
       setCastState(false);
       return;
     }
@@ -2391,7 +2309,7 @@ function startCastTitleSync() {
 
       const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
       mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-      mediaInfo.metadata = buildMusicMetadata();
+      mediaInfo.metadata = buildFixedMetadata();
 
       const req = new chrome.cast.media.LoadRequest(mediaInfo);
       req.autoplay = true;
@@ -2399,54 +2317,17 @@ function startCastTitleSync() {
 
       await session.loadMedia(req);
 
-      const ms = session.getMediaSession();
-      if (ms) {
-
-        ms.addUpdateListener(() => {
-          console.log(
-            "[Cast] playerState:",
-            ms.playerState,
-            "idleReason:",
-            ms.idleReason,
-            "error:",
-            ms.errorReason
-          );
-        });
-
-        const pr = new chrome.cast.media.PlayRequest();
-        ms.play(pr, () => console.log("[Cast] play() ok"), () => {});
-      }
-
-      // Force artwork 1.2s après
-      setTimeout(pushMetadataNow, 1200);
-
       setCastState(true);
-      startCastTitleSync();
 
       console.log("[Cast] LoadMedia OK");
 
     } catch (err) {
       console.error("[Cast] loadMedia error:", err);
-      clearTitleSync();
       setCastState(false);
       alert("Échec cast : " + (err?.description || err?.message || String(err)));
     }
 
   });
-
-
-  // Fix icône après navigation Astro
-  document.addEventListener("astro:page-load", ensureCastIcon);
-  document.addEventListener("astro:after-swap", ensureCastIcon);
-
-const titleObserver = new MutationObserver(() => {
-  pushMetadataNow();
-});
-
-const titleEl = document.querySelector("title");
-if (titleEl) {
-  titleObserver.observe(titleEl, { childList: true });
-}
 
 })();
 </script>
