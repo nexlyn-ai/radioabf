@@ -2247,7 +2247,7 @@ Legal
   })();
 </script>
 
-<!-- Google Cast (Default Receiver) — STABLE (fixed meta + stable audio + icon persists across Astro swaps) -->
+<!-- Google Cast (Default Receiver) — STABLE + icon survives Astro swaps -->
 <script
   type="text/javascript"
   src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
@@ -2262,12 +2262,13 @@ Legal
 
   const $ = (id) => document.getElementById(id);
 
-  // ✅ Icon injection (prevents "bold" + re-inject after Astro swaps)
-  function ensureCastIcon() {
-    const btn = $("castBtn");
+  // --------------------------------------------------
+  // 1) HARD REPAIR: ensure button exists + visible + has icon
+  // --------------------------------------------------
+  function injectCastIcon(btn){
     if (!btn) return false;
 
-    // already injected + svg present
+    // si déjà bon
     if (btn.dataset.castIcon === "1" && btn.querySelector("svg")) return true;
 
     btn.dataset.castIcon = "1";
@@ -2290,14 +2291,41 @@ Legal
     return true;
   }
 
-  function ensureCastIconWithRetry() {
-    if (ensureCastIcon()) return;
+  function repairCastBtn() {
+    const btn = $("castBtn");
+    if (!btn) return false;
+
+    // force visible (au cas où Astro swap remet display:none)
+    btn.style.display = "flex";
+
+    // reinject icon
+    injectCastIcon(btn);
+
+    return true;
+  }
+
+  // Retry après swap car parfois le player arrive un peu après
+  function repairCastBtnWithRetries() {
+    // 1) tout de suite
+    if (repairCastBtn()) return;
+
+    // 2) frame suivante
     requestAnimationFrame(() => {
-      if (ensureCastIcon()) return;
-      setTimeout(() => ensureCastIcon(), 50);
+      if (repairCastBtn()) return;
+
+      // 3) petit burst de retries (cas: player remonte après swap)
+      let n = 0;
+      const t = setInterval(() => {
+        n++;
+        const ok = repairCastBtn();
+        if (ok || n >= 20) clearInterval(t); // ~1s max
+      }, 50);
     });
   }
 
+  // --------------------------------------------------
+  // 2) Cast UI state
+  // --------------------------------------------------
   function setCastState(active) {
     const btn = $("castBtn");
     if (btn) {
@@ -2310,27 +2338,31 @@ Legal
     if (s2) s2.textContent = active ? "Casting…" : "live";
   }
 
-  // ✅ Use your existing cast-safe proxy (no new routes)
+  // --------------------------------------------------
+  // 3) Stream URL (existing endpoint, no new routes)
+  // --------------------------------------------------
   function getCastUrl() {
     const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
     const q = (idx === 1) ? "sd" : "hd";
     return `https://radioabf.com/api/cast.mp3?q=${q}`;
   }
 
-  // ✅ Fixed, premium, 3-line-friendly message
+  // --------------------------------------------------
+  // 4) Fixed metadata (no refresh => no cut)
+  // --------------------------------------------------
   function buildFixedMetadata() {
     const md = new chrome.cast.media.MusicTrackMediaMetadata();
     md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
-
-    // Receiver display typically shows: (small line) + (big title) + (album/subtitle)
     md.title = "RadioABF • LIVE";
     md.subtitle = "radioabf.com";
     md.albumName = "Live Electronic Music • 24/7";
     md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
-
     return md;
   }
 
+  // --------------------------------------------------
+  // 5) Init Cast framework
+  // --------------------------------------------------
   function initCast() {
     try {
       castCtx = cast.framework.CastContext.getInstance();
@@ -2340,9 +2372,8 @@ Legal
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
       });
 
-      const btn = $("castBtn");
-      if (btn) btn.style.display = "flex";
-      ensureCastIconWithRetry();
+      // force button visible + icon
+      repairCastBtnWithRetries();
 
       castCtx.addEventListener(
         cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
@@ -2356,6 +2387,11 @@ Legal
           ) {
             setCastState(false);
           }
+
+          // si on navigue et qu'une session existe, garder l'état UI
+          if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+            setCastState(true);
+          }
         }
       );
 
@@ -2365,75 +2401,78 @@ Legal
     }
   }
 
-  // Cast framework callback
   window.__onGCastApiAvailable = (isAvailable) => {
     if (isAvailable) initCast();
   };
 
   // fallback init
   setTimeout(() => {
-    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) {
-      initCast();
-    }
+    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
   }, 2500);
 
-  // Ensure icon after Astro navigation swaps
-  ensureCastIconWithRetry();
-  document.addEventListener("astro:page-load", ensureCastIconWithRetry);
-  document.addEventListener("astro:after-swap", ensureCastIconWithRetry);
+  // --------------------------------------------------
+  // 6) Always repair after Astro swaps
+  // --------------------------------------------------
+  repairCastBtnWithRetries();
+  document.addEventListener("astro:page-load", repairCastBtnWithRetries);
+  document.addEventListener("astro:after-swap", repairCastBtnWithRetries);
 
-  // Click cast button (toggle cast on/off)
-  document.addEventListener("click", async (e) => {
-    const btn = e.target?.closest?.("#castBtn");
-    if (!btn) return;
-    e.preventDefault();
+  // --------------------------------------------------
+  // 7) Click handler (bind ONCE globally)
+  // --------------------------------------------------
+  if (!window.__abfCastClickBound) {
+    window.__abfCastClickBound = true;
 
-    ensureCastIconWithRetry();
+    document.addEventListener("click", async (e) => {
+      const btn = e.target?.closest?.("#castBtn");
+      if (!btn) return;
 
-    if (!castCtx) {
-      alert("Chromecast not ready yet. Please try again.");
-      return;
-    }
+      e.preventDefault();
 
-    // If already casting: stop session
-    const existing = castCtx.getCurrentSession();
-    if (existing) {
-      try { await castCtx.endCurrentSession(true); } catch {}
-      setCastState(false);
-      return;
-    }
+      // Always repair icon (in case swap replaced button right before click)
+      repairCastBtnWithRetries();
 
-    const url = getCastUrl();
-    console.log("[Cast] casting url:", url);
+      if (!castCtx) {
+        alert("Chromecast not ready yet. Please try again.");
+        return;
+      }
 
-    try {
-      // 1) Request session
-      await castCtx.requestSession();
+      // stop if already casting
+      const existing = castCtx.getCurrentSession();
+      if (existing) {
+        try { await castCtx.endCurrentSession(true); } catch {}
+        setCastState(false);
+        return;
+      }
 
-      // 2) Get current session
-      const session = castCtx.getCurrentSession();
-      if (!session) throw new Error("Cast session is null");
+      const url = getCastUrl();
+      console.log("[Cast] casting url:", url);
 
-      // 3) Prepare media
-      const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
-      mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-      mediaInfo.metadata = buildFixedMetadata();
+      try {
+        await castCtx.requestSession();
 
-      const req = new chrome.cast.media.LoadRequest(mediaInfo);
-      req.autoplay = true;
-      req.currentTime = 0;
+        const session = castCtx.getCurrentSession();
+        if (!session) throw new Error("Cast session is null");
 
-      // 4) Load
-      await session.loadMedia(req);
+        const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
+        mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+        mediaInfo.metadata = buildFixedMetadata();
 
-      setCastState(true);
-      console.log("[Cast] LoadMedia OK");
-    } catch (err) {
-      console.error("[Cast] loadMedia error:", err);
-      setCastState(false);
-      alert("Échec cast : " + (err?.description || err?.message || String(err)));
-    }
-  });
+        const req = new chrome.cast.media.LoadRequest(mediaInfo);
+        req.autoplay = true;
+        req.currentTime = 0;
+
+        await session.loadMedia(req);
+
+        setCastState(true);
+        console.log("[Cast] LoadMedia OK");
+      } catch (err) {
+        console.error("[Cast] loadMedia error:", err);
+        setCastState(false);
+        alert("Échec cast : " + (err?.description || err?.message || String(err)));
+      }
+    });
+  }
 
 })();
 </script>
