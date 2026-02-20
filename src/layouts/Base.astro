@@ -2184,28 +2184,21 @@ Legal
         btn.style.opacity = active ? "1" : "0.7";
         btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
       }
-
-      // On laisse ton status global gérer "live/paused/stopped" côté player,
-      // ici on affiche juste l'état cast si besoin.
       const status = $("npStatus");
       if (status) status.textContent = active ? "Casting…" : (status.textContent || "live");
     }
 
-    // ✅ Compatibilité Default Receiver :
-    // - FLAC : non (sur le receiver par défaut)
-    // - AAC/AAC+ : pas fiable selon serveurs/headers
-    // => on force un MP3 (HD ou SD).
+    // ⚠️ Le Default Receiver est capricieux avec FLAC/AAC et surtout certains flux Icecast (ICY metadata).
+    // On tente MP3 HD/SD uniquement + cache buster.
     function getCastUrl() {
       const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
-
       const MP3_HD = "https://stream.radioabf.com/abf-hd.mp3";
       const MP3_SD = "https://stream.radioabf.com/abf-sd.mp3";
+      const base = (idx === 1) ? MP3_SD : MP3_HD;
 
-      // si l’utilisateur est sur 0 ou 1, on respecte (HD/SD MP3)
-      if (idx === 1) return MP3_SD;
-
-      // sinon (AAC/FLAC), on force MP3 HD pour que ça joue partout
-      return MP3_HD;
+      // cache buster pour éviter certains buffers / reprises bizarres
+      const sep = base.includes("?") ? "&" : "?";
+      return base + sep + "cb=" + Date.now();
     }
 
     function clearTitleSync() {
@@ -2217,34 +2210,40 @@ Legal
 
     function getNowPlayingMeta() {
       const artist = $("npArtist")?.textContent?.trim() || "RadioABF";
-      const title = $("npTitle")?.textContent?.trim() || "Live Electronic Music • radioabf.com";
+      const title  = $("npTitle")?.textContent?.trim()  || "Live Electronic Music • radioabf.com";
       return { artist, title };
+    }
+
+    function buildMusicMetadata() {
+      const { artist, title } = getNowPlayingMeta();
+
+      // ✅ Pour audio, MusicTrack marche mieux que Generic sur l’affichage artwork
+      const md = new chrome.cast.media.MusicTrackMediaMetadata();
+      md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
+      md.artist = artist;
+      md.title = title;
+      md.albumName = "RadioABF • Live";
+      md.images = [
+        { url: CAST_ARTWORK, width: 512, height: 512 },
+        { url: CAST_ARTWORK, width: 256, height: 256 }
+      ];
+      return md;
     }
 
     function startCastTitleSync() {
       clearTitleSync();
-
       castTitleTimer = setInterval(() => {
         try {
           const s = castCtx?.getCurrentSession?.();
           const media = s?.getMediaSession?.();
           if (!s || !media) return;
 
-          const { artist, title } = getNowPlayingMeta();
+          const current = media.media;
+          if (!current) return;
 
-          // On met à jour la metadata proprement
-          const md = new chrome.cast.media.GenericMediaMetadata();
-          md.metadataType = chrome.cast.media.MetadataType.GENERIC;
-          md.title = artist;
-          md.subtitle = title;
-          md.images = [{ url: CAST_ARTWORK }];
+          current.metadata = buildMusicMetadata();
 
-          const currentMediaInfo = media.media;
-          if (!currentMediaInfo) return;
-
-          currentMediaInfo.metadata = md;
-
-          const req = new chrome.cast.media.EditMediaInfoRequest(currentMediaInfo);
+          const req = new chrome.cast.media.EditMediaInfoRequest(current);
           media.editMediaInfo(
             req,
             () => console.log("[Cast] metadata refreshed"),
@@ -2271,6 +2270,7 @@ Legal
           cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
           (e) => {
             const st = e.sessionState;
+            console.log("[Cast] session state:", st);
 
             if (
               st === cast.framework.SessionState.SESSION_ENDED ||
@@ -2294,17 +2294,14 @@ Legal
       }
     }
 
-    // API callback officiel
     window["__onGCastApiAvailable"] = (isAvailable) => {
       if (isAvailable) initCast();
     };
 
-    // Fallback (au cas où)
     setTimeout(() => {
       if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
     }, 2500);
 
-    // Click handler (sans toucher le reste de ton code)
     document.addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("#castBtn");
       if (!btn) return;
@@ -2316,11 +2313,9 @@ Legal
         return;
       }
 
-      // Toggle : si déjà en session, on coupe
+      // Toggle stop
       if (castCtx.getCurrentSession()) {
-        try {
-          await castCtx.endCurrentSession(true);
-        } catch {}
+        try { await castCtx.endCurrentSession(true); } catch {}
         castSession = null;
         clearTitleSync();
         setCastState(false);
@@ -2334,27 +2329,39 @@ Legal
         const session = await castCtx.requestSession();
         castSession = session;
 
-        const { artist, title } = getNowPlayingMeta();
-
-        // ✅ On force audio/mpeg (MP3)
         const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-
-        const md = new chrome.cast.media.GenericMediaMetadata();
-        md.metadataType = chrome.cast.media.MetadataType.GENERIC;
-        md.title = artist;
-        md.subtitle = title;
-        md.images = [{ url: CAST_ARTWORK }];
-        mediaInfo.metadata = md;
+        mediaInfo.metadata = buildMusicMetadata();
 
         const req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
         req.currentTime = 0;
 
-        await session.loadMedia(req);
+        // ✅ Certains devices ont un volume session bas par défaut
+        try {
+          const vol = new chrome.cast.Volume();
+          vol.level = 1.0;
+          const sv = new chrome.cast.media.Volume();
+          sv.level = 1.0;
+          req.volume = sv;
+          session.setVolume(vol, () => {}, () => {});
+        } catch {}
 
-        // On n'essaie pas de pause un <audio> DOM (chez toi c'est un Audio() JS),
-        // donc on ne touche à rien ici.
+        const media = await session.loadMedia(req);
+
+        // ✅ Force play après load (quand autoplay est “ignoré”)
+        try {
+          const ms = session.getMediaSession();
+          if (ms) {
+            ms.addUpdateListener((isAlive) => {
+              // Debug ultra utile : tu verras le playerState + raisons
+              console.log("[Cast] update alive:", isAlive, "state:", ms.playerState, "idleReason:", ms.idleReason, "error:", ms.errorReason);
+            });
+            const pr = new chrome.cast.media.PlayRequest();
+            ms.play(pr, () => console.log("[Cast] play() ok"), (err) => console.warn("[Cast] play() err", err));
+          }
+        } catch {}
+
         setCastState(true);
         startCastTitleSync();
 
