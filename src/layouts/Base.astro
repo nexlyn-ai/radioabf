@@ -2178,18 +2178,19 @@ Legal
 
   const $ = (id) => document.getElementById(id);
 
-  function setCastState(active) {
-    const btn = $("castBtn");
-    if (btn) {
-      btn.style.opacity = active ? "1" : "0.7";
-      btn.style.background = active ? "rgba(47,194,255,0.25)" : "";
-    }
+function setCastState(active) {
+  const btn = $("castBtn");
+  if (!btn) return;
 
-    const s1 = $("npStatus");
-    const s2 = $("npStatusMobile");
-    if (s1) s1.textContent = active ? "Casting…" : (s1.textContent || "live");
-    if (s2) s2.textContent = active ? "Casting…" : (s2.textContent || "live");
-  }
+  btn.classList.toggle("cast-active", active);
+  btn.classList.toggle("cast-idle", !active);
+
+  const s1 = $("npStatus");
+  const s2 = $("npStatusMobile");
+
+  if (s1) s1.textContent = active ? "Casting…" : "live";
+  if (s2) s2.textContent = active ? "Casting…" : "live";
+}
 
   function getCastUrl() {
     const idx = Number(
