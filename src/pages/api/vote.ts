@@ -123,6 +123,7 @@ function getClientIp(request: Request) {
 // ----------------------
 function fileUrl(fileId?: string | null) {
   if (!fileId) return "";
+  // Directus assets endpoint
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
@@ -148,8 +149,8 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
       itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
       return "";
     }
-    const j = await r.json().catch(() => ({}));
-    const item = j?.results?.[0];
+    const j = await r.json().catch(() => ({} as any));
+    const item = (j as any)?.results?.[0];
     const art100 = String(item?.artworkUrl100 || "");
     const art600 = art100
       ? art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg")
@@ -168,20 +169,22 @@ type TrackRow = {
   track_key: string;
   artist?: string | null;
   title?: string | null;
-  cover_art_id?: string | null; // ✅ on stocke l'id file final
+  // ✅ on stocke l'ID final du fichier cover (string) pour éviter [object Object]
+  cover_art: string | null;
 };
 
-// ✅ FIX #1 + #2 : OR filters (safe with commas) + cover_art.id
+// ✅ FIX CRITIQUE:
+// - abandon du filter[_in] (cassé dès qu'il y a des virgules dans track_key)
+// - utilise filter[_or][i][track_key][_eq]=... (safe)
+// - demande cover_art.id pour supporter relations File
 async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   const map = new Map<string, TrackRow>();
   const clean = (keys || []).map(normTrackKey).filter(Boolean);
-
   if (!clean.length) return map;
 
-  // Evite query trop longue
+  // Evite URL trop longue
   const slice = clean.slice(0, 200);
 
-  // Build filter[_or][i][track_key][_eq]=...
   const params = new URLSearchParams();
   params.set("fields", "id,track_key,artist,title,cover_art,cover_art.id");
   params.set("limit", String(Math.min(500, slice.length)));
@@ -211,7 +214,7 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
       track_key: String(r?.track_key || ""),
       artist: r?.artist ?? null,
       title: r?.title ?? null,
-      cover_art_id: coverId || null,
+      cover_art: coverId || null,
     });
   }
 
@@ -276,11 +279,10 @@ export const GET: APIRoute = async ({ url }) => {
         const title =
           String(trow?.title || "").trim() || String(split.title || "").trim();
 
-        // ✅ Directus cover_art PRIORITAIRE
-        const cover_art_id = trow?.cover_art_id ?? null;
-        let cover_url = cover_art_id ? fileUrl(cover_art_id) : "";
+        const cover_art = trow?.cover_art ?? null;
+        let cover_url = cover_art ? fileUrl(cover_art) : "";
 
-        // ✅ Fallback iTunes uniquement si Directus vide
+        // Fallback iTunes (only if Directus cover missing)
         if (!cover_url && artist && title) {
           cover_url = await fetchItunesCover(artist, title);
         }
@@ -290,7 +292,7 @@ export const GET: APIRoute = async ({ url }) => {
           artist,
           title,
           count: row.count,
-          cover_art: cover_art_id, // on renvoie l'id (plus fiable)
+          cover_art,
           cover_url,
         };
       })
