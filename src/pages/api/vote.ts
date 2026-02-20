@@ -80,7 +80,7 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
-// Normalize track_key for dedupe + stable matching
+// Normalize track_key so we don't store duplicates with different casing/spaces/quotes
 function normTrackKey(k: string) {
   return String(k || "")
     .trim()
@@ -123,6 +123,7 @@ function getClientIp(request: Request) {
 // ----------------------
 function fileUrl(fileId?: string | null) {
   if (!fileId) return "";
+  // Directus assets endpoint
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
@@ -168,12 +169,11 @@ type TrackRow = {
   track_key: string;
   artist?: string | null;
   title?: string | null;
-  // on stocke l'id final (string) du fichier cover
   cover_art: string | null;
 };
 
-// ✅ MATCH tracks.track_key en insensible à la casse via _ilike (sans wildcard)
-// ✅ pas de _in (safe virgules)
+// ✅ Robust: your tracks.track_key are already normalized => _eq works perfectly.
+// ✅ No _in (safe with commas), uses OR filters.
 async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   const map = new Map<string, TrackRow>();
   const clean = (keys || []).map(normTrackKey).filter(Boolean);
@@ -186,8 +186,7 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   params.set("limit", String(Math.min(500, slice.length)));
 
   slice.forEach((tk, i) => {
-    // ✅ case-insensitive compare
-    params.set(`filter[_or][${i}][track_key][_ilike]`, tk);
+    params.set(`filter[_or][${i}][track_key][_eq]`, tk);
   });
 
   const res = await dFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
@@ -261,21 +260,20 @@ export const GET: APIRoute = async ({ url }) => {
     // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
     const trackKeyList = topRaw.map((x) => x.nk);
     const tracksByKey = await getTracksByKeys(trackKeyList);
-	
-	// debug
-	
-	const debug = url.searchParams.get("debug") === "1";
-if (debug) {
-  return json({
-    ok: true,
-    week,
-    debug: {
-      requested: trackKeyList.slice(0, 20),
-      found: tracksByKey.size,
-      found_keys: Array.from(tracksByKey.keys()).slice(0, 20),
-    },
-  });
-}
+
+    // Optional debug
+    const debug = url.searchParams.get("debug") === "1";
+    if (debug) {
+      return json({
+        ok: true,
+        week,
+        debug: {
+          requested: trackKeyList.slice(0, 50),
+          found: tracksByKey.size,
+          found_keys: Array.from(tracksByKey.keys()).slice(0, 50),
+        },
+      });
+    }
 
     // 4) Build response items with cover_url
     const top = await Promise.all(
@@ -294,7 +292,7 @@ if (debug) {
         const cover_art = trow?.cover_art ?? null;
         let cover_url = cover_art ? fileUrl(cover_art) : "";
 
-        // Fallback iTunes uniquement si cover Directus manquante
+        // Fallback iTunes (only if Directus cover is missing)
         if (!cover_url && artist && title) {
           cover_url = await fetchItunesCover(artist, title);
         }
