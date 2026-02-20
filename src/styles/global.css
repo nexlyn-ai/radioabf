@@ -266,3 +266,23 @@ html, body{
 main#mainContent{
   padding-top: calc(var(--dedications-h, 28px) + 16px);
 }
+
+#castBtn {
+  transition: all 0.25s ease;
+}
+
+#castBtn.cast-idle {
+  opacity: 0.7;
+  background: transparent;
+}
+
+#castBtn.cast-active {
+  opacity: 1;
+  background: rgba(47, 194, 255, 0.25);
+}
+
+/* évite effet “gras” sur SVG */
+#castBtn svg {
+  fill: currentColor;
+  stroke: none;
+}
