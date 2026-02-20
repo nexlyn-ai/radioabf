@@ -261,6 +261,21 @@ export const GET: APIRoute = async ({ url }) => {
     // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
     const trackKeyList = topRaw.map((x) => x.nk);
     const tracksByKey = await getTracksByKeys(trackKeyList);
+	
+	// debug
+	
+	const debug = url.searchParams.get("debug") === "1";
+if (debug) {
+  return json({
+    ok: true,
+    week,
+    debug: {
+      requested: trackKeyList.slice(0, 20),
+      found: tracksByKey.size,
+      found_keys: Array.from(tracksByKey.keys()).slice(0, 20),
+    },
+  });
+}
 
     // 4) Build response items with cover_url
     const top = await Promise.all(
