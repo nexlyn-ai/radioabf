@@ -2296,73 +2296,70 @@ Legal
     }, 2500);
 
     // Click cast button
-    document.addEventListener("click", async (e) => {
-      const btn = e.target?.closest?.("#castBtn");
-      if (!btn) return;
-      e.preventDefault();
+  document.addEventListener("click", async (e) => {
+  const btn = e.target?.closest?.("#castBtn");
+  if (!btn) return;
+  e.preventDefault();
 
-      if (!castCtx) {
-        alert("Chromecast not ready yet. Please try again in 2 seconds.");
-        return;
+  if (!castCtx) {
+    alert("Chromecast not ready yet. Please try again.");
+    return;
+  }
+
+  // Toggle stop si une session existe
+  const existing = castCtx.getCurrentSession();
+  if (existing) {
+    try { await castCtx.endCurrentSession(true); } catch {}
+    clearTitleSync();
+    setCastState(false);
+    return;
+  }
+
+  const url = getCastUrl();
+  console.log("[Cast] casting url:", url);
+
+  try {
+    // 1) Demande une session
+    await castCtx.requestSession();
+
+    // 2) Récupère LA session actuelle (source de vérité)
+    const session = castCtx.getCurrentSession();
+    if (!session) throw new Error("Cast session is null after requestSession()");
+
+    // 3) Prépare le media
+    const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
+    mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+    mediaInfo.metadata = buildMusicMetadata();
+
+    const req = new chrome.cast.media.LoadRequest(mediaInfo);
+    req.autoplay = true;
+    req.currentTime = 0;
+
+    // 4) Charge le media
+    await session.loadMedia(req);
+
+    // 5) Force play + debug state
+    try {
+      const ms = session.getMediaSession();
+      if (ms) {
+        ms.addUpdateListener(() => {
+          console.log("[Cast] playerState:", ms.playerState, "idleReason:", ms.idleReason, "error:", ms.errorReason);
+        });
+        const pr = new chrome.cast.media.PlayRequest();
+        ms.play(pr, () => console.log("[Cast] play() ok"), (err) => console.warn("[Cast] play() err", err));
       }
+    } catch {}
 
-      // Toggle end session
-      if (castCtx.getCurrentSession()) {
-        try { await castCtx.endCurrentSession(true); } catch {}
-        castSession = null;
-        clearTitleSync();
-        setCastState(false);
-        return;
-      }
-
-      const url = getCastUrl();
-      console.log("[Cast] casting url:", url);
-
-      try {
-        const session = await castCtx.requestSession();
-        castSession = session;
-
-        const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
-        mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-        mediaInfo.metadata = buildMusicMetadata();
-
-        const req = new chrome.cast.media.LoadRequest(mediaInfo);
-        req.autoplay = true;
-        req.currentTime = 0;
-
-        // Volume session à fond (certains chromecast démarrent à faible volume)
-        try {
-          const v = new chrome.cast.Volume();
-          v.level = 1.0;
-          session.setVolume(v, () => {}, () => {});
-        } catch {}
-
-        await session.loadMedia(req);
-
-        // Force play (autoplay parfois ignoré)
-        try {
-          const ms = session.getMediaSession();
-          if (ms) {
-            ms.addUpdateListener(() => {
-              console.log("[Cast] playerState:", ms.playerState, "idleReason:", ms.idleReason, "error:", ms.errorReason);
-            });
-            const pr = new chrome.cast.media.PlayRequest();
-            ms.play(pr, () => console.log("[Cast] play() ok"), (err) => console.warn("[Cast] play() err", err));
-          }
-        } catch {}
-
-        setCastState(true);
-        startCastTitleSync();
-
-        console.log("[Cast] LoadMedia OK");
-      } catch (err) {
-        console.error("[Cast] loadMedia error:", err);
-        setCastState(false);
-        clearTitleSync();
-        alert("Échec cast : " + (err?.description || err?.message || "vérifie console"));
-      }
-    });
-  })();
+    setCastState(true);
+    startCastTitleSync();
+    console.log("[Cast] LoadMedia OK");
+  } catch (err) {
+    console.error("[Cast] loadMedia error:", err);
+    clearTitleSync();
+    setCastState(false);
+    alert("Échec cast : " + (err?.description || err?.message || String(err)));
+  }
+});
 </script>
 
 </body>
