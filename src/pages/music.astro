@@ -110,7 +110,10 @@ export const prerender = false;
               <div class="text-sm text-white/60 uppercase tracking-wider">Last played</div>
               <div class="text-xs text-white/50">Tap 👍 to vote</div>
             </div>
-            <div id="historyTable" class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"></div>
+            <div
+              id="historyTable"
+              class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
+            ></div>
             <div id="historyEmpty" class="text-white/55 text-sm hidden">
               Start the player to load history.
             </div>
@@ -125,8 +128,8 @@ export const prerender = false;
           </div>
           <div class="p-5">
             <div class="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-3">
-              <input id="airDate" type="date" class="abfInput" aria-label="Air date" />
-              <input id="airTime" type="time" class="abfInput" aria-label="Air time" />
+              <input id="airDate" type="date" class="abfInput" aria-label="Air date" placeholder="Select date" />
+              <input id="airTime" type="time" class="abfInput" aria-label="Air time" placeholder="Select time" />
               <button id="airSearchBtn" type="button" class="abfBtn">Search</button>
             </div>
             <div id="airSearchResult" class="mt-4"></div>
@@ -174,7 +177,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- HOW IT WORKS – TEXTE QUE TU VIENS DE ME DONNER EXACTEMENT -->
+        <!-- HOW IT WORKS – TEXTE QUE TU VIENS DE ME DONNER -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
           <div class="p-6 relative">
@@ -518,7 +521,7 @@ export const prerender = false;
     `;
   }
 
-  function LAST_PLAYED_LIMIT(){ return 18; }
+  function LAST_PLAYED_LIMIT(){ return 19; }
 
   const VOTES_TTL_MS = 10_000;
   function votesCacheKey(week){ return `votes:${week}`; }
@@ -604,33 +607,44 @@ export const prerender = false;
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
   }
 
-  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 30) {
+  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 45) {
     if (!dateStr || !timeStr) return null;
     const [y, m, d] = dateStr.split("-").map(Number);
     const [hh, mi] = timeStr.split(":").map(Number);
     if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
 
-    // Force UTC pour éviter décalage fuseau
-    const target = Date.UTC(y, m - 1, d, hh, mi, 0, 0);
-
+    // Force UTC pour cohérence avec timestamps serveur
+    const targetUTC = Date.UTC(y, m - 1, d, hh, mi, 0, 0);
     const tol = toleranceMinutes * 60 * 1000;
+
     let best = null;
     let bestDelta = Infinity;
+    let sameDayMatches = 0;
 
     for (const entry of (history || [])) {
       const ts = Number(entry?.ts || 0);
       if (!ts) continue;
-      const delta = Math.abs(ts - target);
+
+      // Vérifier si c'est le même jour (UTC)
+      const entryDate = new Date(ts);
+      const entryUTCDate = Date.UTC(entryDate.getUTCFullYear(), entryDate.getUTCMonth(), entryDate.getUTCDate());
+      const targetUTCDate = Date.UTC(y, m - 1, d);
+      if (entryUTCDate !== targetUTCDate) continue; // même jour seulement
+
+      sameDayMatches++;
+      const delta = Math.abs(ts - targetUTC);
       if (delta < bestDelta) {
         bestDelta = delta;
         best = entry;
       }
     }
 
-    if (!best) return null;
+    if (!best) {
+      console.log("Recherche:", { dateStr, timeStr, targetUTC: new Date(targetUTC).toISOString(), sameDayMatches, result: "No match in the same day" });
+      return null;
+    }
 
-    // Debug log pour voir pourquoi ça matche ou pas
-    console.log("Recherche:", { dateStr, timeStr, targetUTC: new Date(target).toISOString(), bestTs: best.ts, bestDeltaMin: Math.round(bestDelta / 60000) });
+    console.log("Recherche:", { dateStr, timeStr, targetUTC: new Date(targetUTC).toISOString(), bestTs: best.ts, bestDeltaMin: Math.round(bestDelta / 60000), sameDayMatches });
 
     return { best, bestDelta, within: bestDelta <= tol };
   }
@@ -638,9 +652,9 @@ export const prerender = false;
   function renderAirSearchResult(root, payload){
     const box = root.querySelector("#airSearchResult");
     if (!box) return;
+    box.classList.remove("hidden");
     if (!payload){
-      box.classList.add("hidden");
-      box.innerHTML = "";
+      box.innerHTML = `<div class="text-white/60 text-sm">No close match found in that day.</div>`;
       return;
     }
     const { best, bestDelta, within } = payload;
@@ -649,12 +663,11 @@ export const prerender = false;
     const d = toLocalKey(best.ts).date;
     const artist = upperArtist(String(t.artist || "—"));
     const title = titleCaseEN(stripTitleSuffixes(String(t.title || "—")));
-    box.classList.remove("hidden");
     box.innerHTML = `
       <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
         <div class="flex items-center justify-between gap-3">
           <div class="text-xs text-white/60">
-            ${within ? "Closest match found" : "Closest match (outside tolerance)"} •
+            ${within ? "Closest match found" : "Match found (time delta is large)"} •
             <span class="tabular-nums">${esc(d)} ${esc(time)}</span>
           </div>
           <div class="text-xs text-white/45 tabular-nums">Δ ${Math.round(bestDelta/60000)} min</div>
@@ -685,7 +698,7 @@ export const prerender = false;
     const run = () => {
       state.search.date = dateEl.value || "";
       state.search.time = timeEl.value || "";
-      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 30);
+      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 45);
       renderAirSearchResult(root, payload);
     };
     btnEl.addEventListener("click", run);
@@ -1028,7 +1041,7 @@ export const prerender = false;
       }
       // search refresh
       if (state.search?.date && state.search?.time){
-        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 30);
+        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 45);
         renderAirSearchResult(root, payload);
       }
       state.lastRenderAt = nowTs();
