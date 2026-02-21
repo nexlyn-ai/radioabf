@@ -9,7 +9,7 @@ export const prerender = false;
   canonical="/music"
   image="/og-image.jpg"
 >
-  <!-- ✅ ROOT WRAPPER (critical to avoid ID collisions with the pinned player) -->
+  <!-- ✅ ROOT WRAPPER (avoid ID collisions with pinned player) -->
   <div id="musicPageRoot">
     <!-- HERO -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
@@ -22,19 +22,19 @@ export const prerender = false;
           Music portal
         </div>
 
-        <!-- ✅ Header layout with right-side space -->
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+        <!-- ✅ Premium header layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-5 lg:items-end">
           <div class="min-w-0">
             <h1 class="text-3xl md:text-4xl font-extrabold leading-tight">
               Live titles, covers & weekly community charts
             </h1>
             <p class="mt-3 text-white/65 max-w-2xl whitespace-normal">
-              Clean metadata, Directus-first covers when available, iTunes fallback when needed — and community voting (1 vote / track / day).
+              Clean metadata + community voting (1 vote / track / day). Covers: Directus-first when you upload, iTunes fallback when needed.
             </p>
           </div>
 
-          <!-- ✅ RIGHT AREA (badges + search) -->
-          <div class="w-full lg:w-[420px]">
+          <!-- Right column -->
+          <div class="min-w-0">
             <div class="flex flex-wrap items-center justify-start lg:justify-end gap-2">
               <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
                 Vote: 1 / track / day
@@ -47,17 +47,17 @@ export const prerender = false;
               </span>
             </div>
 
-            <!-- ✅ Search widget IN THE HEADER RIGHT -->
+            <!-- Search widget -->
             <div class="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4">
               <div class="flex items-center justify-between gap-3">
                 <div class="text-xs text-white/60 uppercase tracking-wider">Search air time</div>
-                <div class="text-xs text-white/45">Latest history buffer</div>
+                <div class="text-xs text-white/45">Closest match</div>
               </div>
 
-              <div class="mt-2 flex flex-col sm:flex-row gap-2">
-                <input id="airDate" type="date" class="abfInput w-full sm:w-[170px]" aria-label="Air date" />
-                <input id="airTime" type="time" class="abfInput w-full sm:w-[120px]" aria-label="Air time" />
-                <button id="airSearchBtn" type="button" class="abfBtn w-full sm:w-auto">Find</button>
+              <div class="mt-2 grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-2">
+                <input id="airDate" type="date" class="abfInput" aria-label="Air date" />
+                <input id="airTime" type="time" class="abfInput" aria-label="Air time" />
+                <button id="airSearchBtn" type="button" class="abfBtn">Find</button>
               </div>
 
               <div id="airSearchResult" class="mt-3 hidden"></div>
@@ -69,7 +69,7 @@ export const prerender = false;
 
     <!-- PORTAL GRID -->
     <section class="mt-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
-      <!-- LEFT: LIVE HISTORY -->
+      <!-- LEFT -->
       <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
         <div class="p-5 md:p-6 border-b border-white/10">
           <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -78,8 +78,8 @@ export const prerender = false;
               <div class="text-xs text-white/50 mt-1">Live metadata • clean titles • vote enabled</div>
             </div>
 
+            <!-- ✅ Badges order EXACTLY: LIVE → TIME → SOURCE -->
             <div class="flex items-center gap-2">
-              <!-- LIVE badge RED -->
               <div
                 id="npLiveBadge"
                 class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider"
@@ -88,7 +88,6 @@ export const prerender = false;
                 LIVE
               </div>
 
-              <!-- time badge BLUE -->
               <div
                 id="npTimeBadge"
                 class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs font-semibold tabular-nums"
@@ -98,7 +97,6 @@ export const prerender = false;
                 <span id="musicTime">--:--</span>
               </div>
 
-              <!-- ✅ cover source badge -->
               <div
                 id="npCoverSource"
                 class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums"
@@ -138,7 +136,7 @@ export const prerender = false;
                 </div>
               </div>
 
-              <!-- ✅ smaller vote button (same spirit as last played) -->
+              <!-- ✅ small vote button -->
               <button
                 id="nowVoteBtn"
                 class="voteBtnMini flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition inline-flex items-center gap-2"
@@ -169,7 +167,7 @@ export const prerender = false;
         </div>
       </div>
 
-      <!-- RIGHT: CHARTS + EXPLAIN -->
+      <!-- RIGHT -->
       <aside class="space-y-6">
         <!-- THIS WEEK -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
@@ -191,7 +189,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- PREVIOUS WEEK TOP 5 -->
+        <!-- PREV WEEK -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
           <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
             <div class="min-w-0">
@@ -211,12 +209,23 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- HOW IT WORKS (focused on votes + covers + ABF CLUB) -->
+        <!-- HOW IT WORKS (✅ week ISO restored here) -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
           <div class="p-6 relative">
             <div class="text-xs text-white/50 uppercase tracking-wider">How it works</div>
-            <div class="mt-2 font-extrabold text-lg leading-tight">Voting + covers</div>
+
+            <div class="mt-2 flex items-center justify-between gap-3 flex-wrap">
+              <div class="font-extrabold text-lg leading-tight">Voting + covers</div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/75">
+                  Current <span id="howWeekThis" class="tabular-nums">—</span>
+                </span>
+                <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/75">
+                  Last <span id="howWeekPrev" class="tabular-nums">—</span>
+                </span>
+              </div>
+            </div>
 
             <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2">
               <li class="flex gap-2">
@@ -229,7 +238,7 @@ export const prerender = false;
               </li>
               <li class="flex gap-2">
                 <span class="text-cyan-200 font-semibold">•</span>
-                <span>Covers use <span class="text-white/85 font-semibold">Directus-first</span> when you uploaded one, otherwise <span class="text-white/85 font-semibold">iTunes fallback</span>.</span>
+                <span>Covers: <span class="text-white/85 font-semibold">Directus-first</span> if you uploaded one, else <span class="text-white/85 font-semibold">iTunes fallback</span>.</span>
               </li>
             </ul>
 
@@ -295,13 +304,11 @@ export const prerender = false;
   const DAY = 24 * 60 * 60 * 1000;
   const HISTORY_KEY = "abf_history";
 
-  // --------- Global singleton state ---------
   const state = (window[KEY] = window[KEY] || {
     bound: false,
     timer: null,
     inFlight: false,
     lastRenderAt: 0,
-
     lastHistory: [],
     search: { date: "", time: "" },
     searchBound: false,
@@ -311,7 +318,6 @@ export const prerender = false;
   function getRoot() { return document.getElementById("musicPageRoot"); }
   function nowTs() { return Date.now(); }
 
-  // --------- Week helpers ---------
   function getISOWeekId(d = new Date()){
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = date.getUTCDay() || 7;
@@ -326,7 +332,6 @@ export const prerender = false;
     return getISOWeekId(d);
   }
 
-  // --------- Text helpers ---------
   function esc(s){
     return String(s || "")
       .replace(/&/g,"&amp;")
@@ -344,7 +349,6 @@ export const prerender = false;
     return `${hh}:${mm}`;
   }
 
-  // remove common suffixes like (Extended Mix), (Original Mix), (Radio Edit) etc.
   function stripTitleSuffixes(input){
     let s = String(input || "").trim();
     if (!s) return "";
@@ -353,7 +357,6 @@ export const prerender = false;
     return s.replace(/\s{2,}/g, " ").trim();
   }
 
-  // Hyphen-safe split (Jean-Pierre safe): only split on " - "
   function splitTrack(entry){
     const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
     const idx = s.indexOf(" - ");
@@ -406,7 +409,6 @@ export const prerender = false;
     }).join("");
   }
 
-  // --------- Voting rules ---------
   function isBlockedShow(artist){
     return /^abf\s*club\b/i.test(String(artist || "").trim());
   }
@@ -424,7 +426,6 @@ export const prerender = false;
     return (nowTs() - last) < DAY;
   }
 
-  // --------- Legacy history fallback ---------
   function loadHistory(){
     let raw = [];
     try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
@@ -438,7 +439,6 @@ export const prerender = false;
     }).filter(Boolean);
   }
 
-  // --------- Server nowplaying ---------
   async function fetchServerNowPlaying(limit = 80){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -458,7 +458,7 @@ export const prerender = false;
             ts: Number(data?.now?.played_at_ms) ||
                 (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
             cover_url: String(data?.now?.cover_url || ""),
-            cover_source: String(data?.now?.cover_source || "") // optional
+            cover_source: String(data?.now?.cover_source || "")
           });
         }
       }
@@ -472,12 +472,11 @@ export const prerender = false;
             ts: Number(row?.played_at_ms) ||
                 (row?.played_at ? new Date(row.played_at).getTime() : 0),
             cover_url: String(row?.cover_url || ""),
-            cover_source: String(row?.cover_source || "") // optional
+            cover_source: String(row?.cover_source || "")
           });
         }
       }
 
-      // dedupe
       const seen = new Set();
       const deduped = [];
       for (const item of out){
@@ -493,7 +492,6 @@ export const prerender = false;
     }
   }
 
-  // --------- Covers (scoped) ---------
   function setCover(url, root){
     const img = root?.querySelector("#musicCover");
     if (!img) return;
@@ -507,25 +505,40 @@ export const prerender = false;
     }
   }
 
-  function setCoverSourceBadge(root, source){
+  // ✅ Always show cover source when cover exists (even without cover_source)
+  function inferCoverSource(coverUrl, explicitSource){
+    const src = String(explicitSource || "").toLowerCase().trim();
+    const u = String(coverUrl || "").toLowerCase().trim();
+
+    if (src.includes("directus")) return "directus";
+    if (src.includes("itunes") || src.includes("apple")) return "itunes";
+
+    if (u.includes("mzstatic.com")) return "itunes";
+    if (u.includes("/assets/") || u.includes("directus")) return "directus";
+
+    return u ? "other" : "";
+  }
+
+  function setCoverSourceBadge(root, coverUrl, explicitSource){
     const el = root?.querySelector("#npCoverSource");
     if (!el) return;
 
-    const s = String(source || "").toLowerCase().trim();
-    if (!s){
+    const kind = inferCoverSource(coverUrl, explicitSource);
+
+    if (!kind){
       el.classList.add("hidden");
       el.textContent = "";
       return;
     }
 
-    // violet for directus, cyan for itunes
-    if (s.includes("directus")){
+    if (kind === "directus"){
       el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums bg-purple-500/15 border-purple-400/25 text-purple-200";
       el.textContent = "Directus cover";
       el.classList.remove("hidden");
       return;
     }
-    if (s.includes("itunes") || s.includes("apple")){
+
+    if (kind === "itunes"){
       el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums bg-cyan-500/10 border-cyan-400/20 text-cyan-200";
       el.textContent = "iTunes cover";
       el.classList.remove("hidden");
@@ -533,7 +546,7 @@ export const prerender = false;
     }
 
     el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums bg-white/5 border-white/10 text-white/70";
-    el.textContent = source;
+    el.textContent = "Cover";
     el.classList.remove("hidden");
   }
 
@@ -549,10 +562,8 @@ export const prerender = false;
     `;
   }
 
-  // stable count of last played rows (excluding now playing)
   function LAST_PLAYED_LIMIT(){ return 23; }
 
-  // --------- Votes API ---------
   const VOTES_TTL_MS = 10_000;
   function votesCacheKey(week){ return `votes:${week}`; }
 
@@ -601,7 +612,6 @@ export const prerender = false;
     alert(`Vote failed: ${r?.error || "Unknown error"}`);
   }
 
-  // ✅ Build a robust vote index so counts never stay at 0 due to casing differences
   function buildVoteIndex(topRows){
     const exact = Object.create(null);
     const lower = Object.create(null);
@@ -623,12 +633,9 @@ export const prerender = false;
     return {
       getCount(trackKeyRaw, artistMaybe, titleMaybe){
         const k = String(trackKeyRaw || "").trim();
-        if (!k && (!artistMaybe || !titleMaybe)) return 0;
-
         if (k && exact[k] != null) return exact[k];
         if (k && lower[k.toLowerCase()] != null) return lower[k.toLowerCase()];
 
-        // fallback by norm
         const sp = k ? splitTrack(k) : { artist: String(artistMaybe||""), title: String(titleMaybe||"") };
         const n = normKey(sp.artist, sp.title);
         if (n && byNorm[n] != null) return byNorm[n];
@@ -638,7 +645,7 @@ export const prerender = false;
     };
   }
 
-  // --------- Search by day/time (header right) ---------
+  // ---- Search by day/time ----
   function toLocalKey(ts){
     const d = new Date(ts);
     const yyyy = d.getFullYear();
@@ -651,7 +658,6 @@ export const prerender = false;
 
   function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 12){
     if (!dateStr || !timeStr) return null;
-
     const [y,m,d] = dateStr.split("-").map(Number);
     const [hh,mi] = timeStr.split(":").map(Number);
     if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
@@ -720,10 +726,8 @@ export const prerender = false;
     const dateEl = root.querySelector("#airDate");
     const timeEl = root.querySelector("#airTime");
     const btnEl  = root.querySelector("#airSearchBtn");
-
     if (!dateEl || !timeEl || !btnEl) return;
 
-    // defaults
     if (!dateEl.value){
       const n = new Date();
       const yyyy = n.getFullYear();
@@ -751,7 +755,6 @@ export const prerender = false;
     run();
   }
 
-  // --------- Render HTML helpers ---------
   function badgeTimeBlue(text){
     return `
       <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-[11px] font-semibold tabular-nums">
@@ -793,7 +796,6 @@ export const prerender = false;
     `;
   }
 
-  // ✅ different colors for rank number badge only
   function rankBadgeClass(rank){
     if (rank === 1) return "bg-amber-400/15 border-amber-300/30 text-amber-200";
     if (rank === 2) return "bg-slate-200/10 border-slate-200/25 text-slate-100";
@@ -803,7 +805,6 @@ export const prerender = false;
 
   function chartRowHtml(rank, coverUrl, artist, title, count, max){
     const pct = Math.round((Number(count) / Math.max(1, Number(max))) * 100);
-
     return `
       <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition">
         <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadgeClass(rank)} flex items-center justify-center text-sm font-extrabold tabular-nums">
@@ -828,7 +829,6 @@ export const prerender = false;
     `;
   }
 
-  // --------- Main render (mutex protected) ---------
   async function render(){
     if (!isMusicRoute()) return;
     const root = getRoot();
@@ -841,15 +841,18 @@ export const prerender = false;
       const artistEl = root.querySelector("#musicArtist");
       const titleEl  = root.querySelector("#musicTitle");
       const timeEl   = root.querySelector("#musicTime");
-      const coverSourceEl = root.querySelector("#npCoverSource");
 
       const histEl   = root.querySelector("#historyTable");
       const histEmpty= root.querySelector("#historyEmpty");
+
       const nowVoteBtn   = root.querySelector("#nowVoteBtn");
       const nowVoteCount = root.querySelector("#nowVoteCount");
 
       const weekThisEl = root.querySelector("#weekThis");
       const weekPrevEl = root.querySelector("#weekPrev");
+      const howWeekThis = root.querySelector("#howWeekThis");
+      const howWeekPrev = root.querySelector("#howWeekPrev");
+
       const topThisEl = root.querySelector("#topThisWeek");
       const topPrevEl = root.querySelector("#topPrevWeek");
       const topThisEmpty = root.querySelector("#topThisEmpty");
@@ -860,10 +863,11 @@ export const prerender = false;
 
       if (weekThisEl) weekThisEl.textContent = week.replace("-W"," W");
       if (weekPrevEl) weekPrevEl.textContent = prevWeek.replace("-W"," W");
+      if (howWeekThis) howWeekThis.textContent = week.replace("-W"," W");
+      if (howWeekPrev) howWeekPrev.textContent = prevWeek.replace("-W"," W");
 
       if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
 
-      // history
       let history = await fetchServerNowPlaying(80);
       if (!history.length) history = loadHistory();
       state.lastHistory = history || [];
@@ -873,28 +877,22 @@ export const prerender = false;
         titleEl.textContent = "—";
         if (timeEl) timeEl.textContent = "--:--";
         setCover("", root);
-        if (coverSourceEl) coverSourceEl.classList.add("hidden");
+        setCoverSourceBadge(root, "", "");
 
         if (histEmpty) histEmpty.classList.remove("hidden");
         histEl.innerHTML = "";
+
         if (nowVoteBtn) nowVoteBtn.style.display = "none";
 
         if (topThisEmpty) topThisEmpty.classList.remove("hidden");
         if (topPrevEmpty) topPrevEmpty.classList.remove("hidden");
         topThisEl.innerHTML = "";
         topPrevEl.innerHTML = "";
-
-        // search update
-        if (state.search?.date && state.search?.time){
-          const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 12);
-          renderAirSearchResult(root, payload);
-        }
         return;
       }
 
       if (histEmpty) histEmpty.classList.add("hidden");
 
-      // cover map (best-effort)
       const coverByNorm = {};
       for (const entry of history){
         const t = splitTrack(entry.t);
@@ -903,7 +901,6 @@ export const prerender = false;
         if (n && u) coverByNorm[n] = u;
       }
 
-      // now playing
       const currentEntry = history[0];
       const current = splitTrack(currentEntry.t);
 
@@ -922,18 +919,9 @@ export const prerender = false;
         (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
       setCover(nowCover, root);
 
-      // cover source badge (based on presence of directus cover in currentEntry if provided)
-      // fallback heuristic: if currentEntry.cover_source set, use it; else if cover_url exists in entry but coverByNorm likely from nowplaying pipeline
-      const coverSource = String(currentEntry.cover_source || "").trim();
-      if (coverSource){
-        setCoverSourceBadge(root, coverSource);
-      } else {
-        // heuristic: if entry has cover_url but also matches coverByNorm, assume itunes unless your API provides explicit source
-        // If you want: modify /api/nowplaying to send cover_source="directus" or "itunes".
-        setCoverSourceBadge(root, "");
-      }
+      // ✅ ensure source badge shows
+      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || ""));
 
-      // votes
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
         apiGetTopWeek(prevWeek),
@@ -941,7 +929,7 @@ export const prerender = false;
 
       const voteIndex = buildVoteIndex(topThis || []);
 
-      // now vote (count + button state)
+      // NOW vote
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
       const nowKRaw  = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = voteIndex.getCount(nowKRaw, nowArtistRaw, nowTitleRaw0);
@@ -952,6 +940,7 @@ export const prerender = false;
       if (nowVoteBtn){
         nowVoteBtn.style.display = "inline-flex";
 
+        // ✅ gray when already voted OR blocked
         if (nowBlocked){
           nowVoteBtn.style.opacity = "0.45";
           nowVoteBtn.style.cursor  = "not-allowed";
@@ -961,7 +950,6 @@ export const prerender = false;
           nowVoteBtn.style.cursor  = already ? "not-allowed" : "pointer";
         }
 
-        // bind once, but use dataset to store raw/norm values refreshed each render
         nowVoteBtn.dataset.raw = nowKRaw;
         nowVoteBtn.dataset.norm = nowKNorm;
         nowVoteBtn.dataset.artist = nowArtistRaw;
@@ -989,6 +977,9 @@ export const prerender = false;
             }
             if (sessionAlreadyVoted(kNorm)){
               alert("You already voted for this track. Come back in 24h 🙂");
+              // ✅ keep it grey
+              btn.style.opacity = "0.55";
+              btn.style.cursor = "not-allowed";
               return;
             }
 
@@ -1008,14 +999,16 @@ export const prerender = false;
             const ck = votesCacheKey(getISOWeekId());
             if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
 
+            // ✅ grey after success
             btn.style.opacity = "0.55";
             btn.style.cursor = "not-allowed";
+
             render();
           });
         }
       }
 
-      // LAST PLAYED list (✅ exclude now playing, show 23)
+      // LAST PLAYED (23)
       const limit = LAST_PLAYED_LIMIT();
       const rows = history.slice(1, 1 + limit);
 
@@ -1049,7 +1042,7 @@ export const prerender = false;
         });
       }).join("");
 
-      // wire vote buttons
+      // wire vote buttons (✅ grey after vote)
       histEl.querySelectorAll(".voteBtn").forEach((btn) => {
         const kNorm = btn.dataset.norm || "";
         const kRaw  = btn.dataset.raw || "";
@@ -1062,6 +1055,8 @@ export const prerender = false;
         if (countEl) countEl.textContent = String(c);
 
         if (blocked){
+          btn.style.opacity = "0.45";
+          btn.style.cursor  = "not-allowed";
           btn.onclick = () => blockedVoteMsg();
           return;
         }
@@ -1073,6 +1068,8 @@ export const prerender = false;
         btn.onclick = async () => {
           if (sessionAlreadyVoted(kNorm)){
             alert("You already voted for this track. Come back in 24h 🙂");
+            btn.style.opacity = "0.55";
+            btn.style.cursor  = "not-allowed";
             return;
           }
 
@@ -1088,16 +1085,19 @@ export const prerender = false;
           }
 
           markSessionVoted(kNorm);
+
           const ck = votesCacheKey(week);
           if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
 
+          // ✅ grey after success
           btn.style.opacity = "0.55";
           btn.style.cursor = "not-allowed";
+
           render();
         };
       });
 
-      // charts this week
+      // TOP THIS WEEK
       const topThisSafe = (topThis || [])
         .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
         .slice(0, 10);
@@ -1131,7 +1131,7 @@ export const prerender = false;
         }).join("");
       }
 
-      // charts prev week top 5
+      // TOP PREV WEEK
       const topPrevSafe = (topPrev || [])
         .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
         .slice(0, 5);
@@ -1200,7 +1200,6 @@ export const prerender = false;
     startTimer();
   }
 
-  // --------- Bind global listeners ONCE ---------
   if (!state.bound){
     state.bound = true;
 
