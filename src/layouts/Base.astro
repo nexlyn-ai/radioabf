@@ -1009,52 +1009,52 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         ];
         S.audio = S.audio || new Audio();
         const audio = S.audio;
-audio.playsinline = true;
-// =========================
-// AirPlay / iOS safety
-// =========================
-audio.addEventListener("webkitplaybacktargetavailabilitychanged", (e) => {
-  // e.availability === "available" quand une cible AirPlay est dispo
-  // (on ne fait rien ici, c'est surtout pour debug)
-  // console.log("[AirPlay] target availability:", e.availability);
-});
-// =========================
-// REMOTE PLAYBACK (Android "Cast → This device" / Media Router)
-// =========================
-(function bindRemotePlaybackAutoPause(){
-  // 1) API moderne (Chrome/Android)
-  const rp = audio.remotePlayback;
-  if (rp && !audio.__abfRpBound) {
-    audio.__abfRpBound = true;
-    rp.addEventListener("connecting", () => {
-      // Quand Android commence à router vers un device
-      try { audio.pause(); } catch {}
-    });
-    rp.addEventListener("connect", () => {
-      // Routage actif → coupe le local
-      try { audio.pause(); } catch {}
-      console.log("[RemotePlayback] connected → local paused");
-    });
-    rp.addEventListener("disconnect", () => {
-      console.log("[RemotePlayback] disconnected");
-      // Optionnel: ne pas auto-reprendre (je laisse safe)
-      // try { if (!window.__abf?.isStopped) audio.play(); } catch {}
-    });
-  }
-  // 2) Certains Chrome exposent aussi audio.remote (fallback)
-  if (audio.remote && !audio.__abfRemoteBound) {
-    audio.__abfRemoteBound = true;
-    try {
-      audio.remote.addEventListener("connect", () => {
-        try { audio.pause(); } catch {}
-        console.log("[remote] connected → local paused");
-      });
-      audio.remote.addEventListener("disconnect", () => {
-        console.log("[remote] disconnected");
-      });
-    } catch {}
-  }
-})();
+        audio.playsinline = true;
+        // =========================
+        // AirPlay / iOS safety
+        // =========================
+        audio.addEventListener("webkitplaybacktargetavailabilitychanged", (e) => {
+          // e.availability === "available" quand une cible AirPlay est dispo
+          // (on ne fait rien ici, c'est surtout pour debug)
+          // console.log("[AirPlay] target availability:", e.availability);
+        });
+        // =========================
+        // REMOTE PLAYBACK (Android "Cast → This device" / Media Router)
+        // =========================
+        (function bindRemotePlaybackAutoPause(){
+          // 1) API moderne (Chrome/Android)
+          const rp = audio.remotePlayback;
+          if (rp && !audio.__abfRpBound) {
+            audio.__abfRpBound = true;
+            rp.addEventListener("connecting", () => {
+              // Quand Android commence à router vers un device
+              try { audio.pause(); } catch {}
+            });
+            rp.addEventListener("connect", () => {
+              // Routage actif → coupe le local
+              try { audio.pause(); } catch {}
+              console.log("[RemotePlayback] connected → local paused");
+            });
+            rp.addEventListener("disconnect", () => {
+              console.log("[RemotePlayback] disconnected");
+              // Optionnel: ne pas auto-reprendre (je laisse safe)
+              // try { if (!window.__abf?.isStopped) audio.play(); } catch {}
+            });
+          }
+          // 2) Certains Chrome exposent aussi audio.remote (fallback)
+          if (audio.remote && !audio.__abfRemoteBound) {
+            audio.__abfRemoteBound = true;
+            try {
+              audio.remote.addEventListener("connect", () => {
+                try { audio.pause(); } catch {}
+                console.log("[remote] connected → local paused");
+              });
+              audio.remote.addEventListener("disconnect", () => {
+                console.log("[remote] disconnected");
+              });
+            } catch {}
+          }
+        })();
         audio.preload = "none";
         audio.crossOrigin = "anonymous";
         const $ = (id) => document.getElementById(id);
@@ -1728,15 +1728,18 @@ audio.addEventListener("webkitplaybacktargetavailabilitychanged", (e) => {
             });
             S.__escBound = true;
           }
-          // Ajout pour reprise auto quand l'onglet redevient visible
+          // CORRECTION : Reprise quand l'onglet redevient visible
           document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible' && !S.isStopped) {
               try {
                 await resumeAudioCtx();
+                const wasMuted = audio.muted;
+                audio.muted = true;
                 await audio.play();
-                console.log("Stream resumed after tab became visible");
+                audio.muted = wasMuted;
+                console.log("[visibilitychange] Stream resumed");
               } catch (e) {
-                console.warn("Resume failed after visibility change:", e);
+                console.warn("[visibilitychange] Resume failed:", e);
               }
             }
           });
@@ -2155,6 +2158,73 @@ Legal
         };
       })();
     </script>
+    <!-- ================= LAYOUT measure ================= -->
+    <script is:inline data-astro-rerun>
+      (() => {
+        const footer = document.getElementById("siteFooter");
+        const player = document.getElementById("playerContainer");
+        if (!footer || !player) return;
+        const apply = () => {
+          const fh = footer.offsetHeight || 0;
+          const ph = player.offsetHeight || 0;
+          document.body.style.setProperty("--abf-footer-h", fh + "px");
+          document.body.style.setProperty("--abf-player-h", ph + "px");
+        };
+        window.__abfUpdateLayout = apply;
+        const ro = new ResizeObserver(apply);
+        ro.observe(footer);
+        ro.observe(player);
+        apply();
+        window.addEventListener("resize", apply);
+        document.addEventListener("astro:page-load", apply);
+        document.addEventListener("astro:after-swap", apply);
+      })();
+    </script>
+    <!-- Back to top button -->
+    <script is:inline data-astro-rerun>
+      (() => {
+        const btn = document.getElementById("backToTop");
+        if (!btn) return;
+        const update = () => {
+          const y = window.scrollY || document.documentElement.scrollTop;
+          if (y > 320) {
+            btn.classList.remove("opacity-0", "pointer-events-none");
+            btn.classList.add("opacity-100");
+          } else {
+            btn.classList.add("opacity-0", "pointer-events-none");
+            btn.classList.remove("opacity-100");
+          }
+        };
+        btn.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
+        window.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("resize", update);
+        document.addEventListener("astro:page-load", update);
+        document.addEventListener("astro:after-swap", update);
+        update();
+      })();
+    </script>
+    <div
+      class="fixed left-0 right-0 z-[55] pointer-events-none"
+      style="bottom: calc(var(--abf-footer-h) + var(--abf-player-h) + 20px);"
+    >
+      <div class="mx-auto max-w-6xl px-4 sm:px-6 flex justify-end">
+        <button
+          id="backToTop"
+          type="button"
+          aria-label="Back to top"
+          class="pointer-events-auto
+                 rounded-2xl border border-white/15
+                 bg-[#050B14]/80 backdrop-blur-xl
+                 w-12 h-12 flex items-center justify-center
+                 text-white/80 hover:text-cyan-200
+                 hover:bg-white/10 transition
+                 shadow-xl shadow-black/40
+                 opacity-0 pointer-events-none"
+        >
+          ↑
+        </button>
+      </div>
+    </div>
 <script is:inline data-astro-rerun>
   (() => {
     const h = document.getElementById("siteHeader");
@@ -2520,7 +2590,7 @@ Legal
   document.addEventListener("astro:after-swap", boot);
 })();
 </script>
-</body>
+  </body>
 <!-- ================= DEDICATION MODAL ================= -->
 <div
   id="dedicationModal"
