@@ -8,11 +8,10 @@ export const prerender = false;
   canonical="/music"
   image="/og-image.jpg"
 >
-  <!-- ✅ ROOT WRAPPER (critical to avoid ID collisions with the pinned player) -->
+  <!-- ROOT WRAPPER -->
   <div id="musicPageRoot">
     <!-- HERO -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
-      <!-- background glow -->
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
       <div class="relative z-10">
@@ -30,7 +29,7 @@ export const prerender = false;
             </p>
           </div>
 
-          <!-- Badges (sans recherche ici) -->
+          <!-- Badges -->
           <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
               Vote: 1 / track / day
@@ -48,7 +47,7 @@ export const prerender = false;
 
     <!-- PORTAL GRID -->
     <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
-      <!-- LEFT: LIVE HISTORY + SEARCH CARD BELOW -->
+      <!-- LEFT COLUMN -->
       <div class="space-y-6">
         <!-- Now Playing + History Card -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
@@ -59,38 +58,23 @@ export const prerender = false;
                 <div class="text-xs text-white/50 mt-1">Live metadata • clean titles • voting enabled</div>
               </div>
               <div class="flex items-center gap-2">
-                <div
-                  id="npLiveBadge"
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider"
-                >
+                <div id="npLiveBadge" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider">
                   <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
                   LIVE
                 </div>
-                <div
-                  id="npCoverSource"
-                  class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums"
-                  aria-label="Cover source"
-                >
+                <div id="npCoverSource" class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums" aria-label="Cover source">
                   —
                 </div>
-                <div
-                  id="npTimeBadge"
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs font-semibold tabular-nums"
-                  aria-label="Now playing time"
-                >
+                <div id="npTimeBadge" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs font-semibold tabular-nums" aria-label="Now playing time">
                   <span class="w-2 h-2 rounded-full bg-cyan-300/80"></span>
                   <span id="musicTime">--:--</span>
                 </div>
               </div>
             </div>
-            <!-- NOW PLAYING CARD -->
             <div class="mt-5 rounded-3xl border border-white/10 bg-white/5 overflow-hidden">
               <div class="p-4 md:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch">
                 <div class="flex-none">
-                  <div
-                    id="musicCoverWrapper"
-                    class="abfCover w-24 h-24 md:w-28 md:h-28 rounded-2xl border border-white/10 overflow-hidden shadow-xl bg-black/20"
-                  >
+                  <div id="musicCoverWrapper" class="abfCover w-24 h-24 md:w-28 md:h-28 rounded-2xl border border-white/10 overflow-hidden shadow-xl bg-black/20">
                     <img id="musicCover" class="hidden w-full h-full object-cover" alt="Current cover" />
                     <div class="abfCoverFallback w-full h-full grid place-items-center">
                       <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" class="w-16 h-16 opacity-90" />
@@ -126,17 +110,14 @@ export const prerender = false;
               <div class="text-sm text-white/60 uppercase tracking-wider">Last played</div>
               <div class="text-xs text-white/50">Tap 👍 to vote</div>
             </div>
-            <div
-              id="historyTable"
-              class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
-            ></div>
+            <div id="historyTable" class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"></div>
             <div id="historyEmpty" class="text-white/55 text-sm hidden">
               Start the player to load history.
             </div>
           </div>
         </div>
 
-        <!-- CARD RECHERCHE – sous Last Played -->
+        <!-- CARD RECHERCHE -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
           <div class="p-5 border-b border-white/10">
             <div class="text-sm text-white/60 uppercase tracking-wider">Search airplay time</div>
@@ -153,7 +134,7 @@ export const prerender = false;
         </div>
       </div>
 
-      <!-- RIGHT: CHARTS + HOW IT WORKS ORIGINALE -->
+      <!-- RIGHT COLUMN -->
       <aside class="space-y-6">
         <!-- THIS WEEK -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
@@ -193,7 +174,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- HOW IT WORKS – TEXTE EXACT QUE TU VIENS DE ME DONNER -->
+        <!-- HOW IT WORKS – TEXTE QUE TU VIENS DE ME DONNER EXACTEMENT -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
           <div class="p-6 relative">
@@ -202,7 +183,7 @@ export const prerender = false;
             <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2 list-disc pl-5">
               <li><strong>1 vote per track per day.</strong><br>Every listener helps shape the weekly ABF chart.</li>
               <li><strong>ABF CLUB shows are not votable.</strong><br>Only individual tracks count toward the charts.</li>
-              <li><strong>Covers system:</strong><br>Directus first when you upload one,<br>otherwise automatic iTunes fallback.</li>
+              <li><strong>Covers system:</strong><br>Priorité aux pochettes manuelles uploadées dans Directus,<br>sinon fallback automatique iTunes.</li>
               <li><strong>Weekly rankings reset every Monday (ISO week).</strong><br>Fresh chart, fresh competition.</li>
             </ul>
             <p class="mt-4 text-sm text-white/80 italic">
@@ -221,7 +202,7 @@ export const prerender = false;
         background-color: rgba(255,255,255,0.2);
         border-radius: 9999px;
       }
-      .abfInput{
+      .abfInput {
         appearance: none;
         border: 1px solid rgba(255,255,255,0.12);
         background: rgba(255,255,255,0.06);
@@ -231,11 +212,11 @@ export const prerender = false;
         font-size: 12px;
         outline: none;
       }
-      .abfInput:focus{
+      .abfInput:focus {
         border-color: rgba(47,194,255,0.35);
         box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
       }
-      .abfBtn{
+      .abfBtn {
         border: 1px solid rgba(255,255,255,0.12);
         background: rgba(255,255,255,0.06);
         color: rgba(255,255,255,0.9);
@@ -245,9 +226,8 @@ export const prerender = false;
         font-weight: 800;
         transition: 150ms ease;
       }
-      .abfBtn:hover{ background: rgba(255,255,255,0.10); }
-      .voteBtnMini{ white-space: nowrap; }
-      /* Grisage fort quand déjà voté (persiste 24h via localStorage) */
+      .abfBtn:hover { background: rgba(255,255,255,0.10); }
+      .voteBtnMini { white-space: nowrap; }
       .abfVotedRow {
         opacity: 0.72;
         filter: saturate(0.65) brightness(0.92);
@@ -258,14 +238,13 @@ export const prerender = false;
         cursor: not-allowed !important;
         background: rgba(255,255,255,0.03) !important;
       }
-      /* Couleurs badges cover */
       #npCoverSource.directus {
         background: rgba(168,85,247,0.12);
         border-color: rgba(168,85,247,0.3);
         color: rgba(216,180,254,0.95);
       }
       #npCoverSource.itunes {
-        background: rgba(236,72,153,0.12);       /* rose/violet doux */
+        background: rgba(236,72,153,0.12);
         border-color: rgba(236,72,153,0.3);
         color: rgba(249,168,212,0.95);
       }
@@ -283,7 +262,7 @@ export const prerender = false;
   const ROUTE = "/music";
   const KEY = "__abfMusicPortal";
   const DAY = 24 * 60 * 60 * 1000;
-  const VOTED_KEY = "abf_voted_tracks"; // Stockage persistant dans localStorage
+  const VOTED_KEY = "abf_voted_tracks";
   const HISTORY_KEY = "abf_history";
   const state = (window[KEY] = window[KEY] || {
     bound: false,
@@ -295,7 +274,6 @@ export const prerender = false;
     searchBound: false,
   });
 
-  // Charge et nettoie les votes anciens (> 24h)
   function loadVotedTracks() {
     try {
       const raw = localStorage.getItem(VOTED_KEY) || "{}";
@@ -326,6 +304,7 @@ export const prerender = false;
   function isMusicRoute() { return window.location.pathname === ROUTE; }
   function getRoot() { return document.getElementById("musicPageRoot"); }
   function nowTs() { return Date.now(); }
+
   function getISOWeekId(d = new Date()){
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = date.getUTCDay() || 7;
@@ -334,11 +313,13 @@ export const prerender = false;
     const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
     return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
   }
+
   function getPrevISOWeekId(){
     const d = new Date();
     d.setDate(d.getDate() - 7);
     return getISOWeekId(d);
   }
+
   function esc(s){
     return String(s || "")
       .replace(/&/g,"&amp;")
@@ -347,6 +328,7 @@ export const prerender = false;
       .replace(/"/g,"&quot;")
       .replace(/'/g,"&#039;");
   }
+
   function fmtTime(ts){
     if (!ts) return "--:--";
     const d = new Date(ts);
@@ -354,6 +336,7 @@ export const prerender = false;
     const mm = String(d.getMinutes()).padStart(2,"0");
     return `${hh}:${mm}`;
   }
+
   function stripTitleSuffixes(input){
     let s = String(input || "").trim();
     if (!s) return "";
@@ -361,12 +344,14 @@ export const prerender = false;
     s = s.replace(rx, " ");
     return s.replace(/\s{2,}/g, " ").trim();
   }
+
   function splitTrack(entry){
     const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
     const idx = s.indexOf(" - ");
     if (idx === -1) return { artist: s.trim(), title: "" };
     return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
   }
+
   function normKey(artist, title){
     return (String(artist || "") + " - " + String(title || ""))
       .toLowerCase()
@@ -375,12 +360,15 @@ export const prerender = false;
       .replace(/[“”"']/g, "")
       .trim();
   }
+
   function rawKey(artist, title){
     const a = String(artist || "").trim();
     const t = String(title || "").trim();
     return `${a} - ${t}`.trim();
   }
+
   function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
+
   function titleCaseEN(input){
     const s = String(input || "").trim();
     if (!s) return "—";
@@ -407,12 +395,15 @@ export const prerender = false;
       return rebuilt.join("-");
     }).join("");
   }
+
   function isBlockedShow(artist){
     return /^abf\s*club\b/i.test(String(artist || "").trim());
   }
+
   function blockedVoteMsg(){
     alert("Voting is disabled for ABF CLUB shows. Please vote for tracks only 🙂");
   }
+
   function loadHistory(){
     let raw = [];
     try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
@@ -425,6 +416,7 @@ export const prerender = false;
       return null;
     }).filter(Boolean);
   }
+
   async function fetchServerNowPlaying(limit = 80){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -472,6 +464,7 @@ export const prerender = false;
       return [];
     }
   }
+
   function setCover(url, root){
     const img = root?.querySelector("#musicCover");
     if (!img) return;
@@ -484,6 +477,7 @@ export const prerender = false;
       img.classList.add("hidden");
     }
   }
+
   function inferCoverSource(coverUrl, explicitSource){
     const src = String(explicitSource || "").toLowerCase().trim();
     const u = String(coverUrl || "").toLowerCase().trim();
@@ -493,6 +487,7 @@ export const prerender = false;
     if (u.includes("/assets/") || u.includes("directus")) return "directus";
     return u ? "other" : "";
   }
+
   function setCoverSourceBadge(root, coverUrl, explicitSource){
     const el = root?.querySelector("#npCoverSource");
     if (!el) return;
@@ -510,6 +505,7 @@ export const prerender = false;
     if (kind === "other") el.classList.add("other");
     el.classList.remove("hidden");
   }
+
   function coverHtmlByUrl(url, sizeClass = "w-12 h-12 rounded-2xl"){
     const u = String(url || "").trim();
     return `
@@ -521,9 +517,12 @@ export const prerender = false;
       </div>
     `;
   }
-  function LAST_PLAYED_LIMIT(){ return 18; } // Limité à 18
+
+  function LAST_PLAYED_LIMIT(){ return 18; }
+
   const VOTES_TTL_MS = 10_000;
   function votesCacheKey(week){ return `votes:${week}`; }
+
   async function apiGetTopWeek(week){
     const k = votesCacheKey(week);
     window.__abfVotesCache = window.__abfVotesCache || {};
@@ -541,6 +540,7 @@ export const prerender = false;
       return { top: [] };
     }
   }
+
   async function apiVote(trackKeyRaw, artist = "", title = ""){
     const week = getISOWeekId();
     const res = await fetch("/api/vote", {
@@ -554,6 +554,7 @@ export const prerender = false;
     }
     return { ok: true, status: res.status, week: data?.week || week, count: data?.count };
   }
+
   function voteErrorToast(r){
     if (r?.status === 429){
       alert("You already voted today. Come back in 24h 🙂");
@@ -565,6 +566,7 @@ export const prerender = false;
     }
     alert(`Vote failed: ${r?.error || "Unknown error"}`);
   }
+
   function buildVoteIndex(topRows){
     const exact = Object.create(null);
     const lower = Object.create(null);
@@ -591,7 +593,7 @@ export const prerender = false;
       }
     };
   }
-  // ---- Search by day/time ----
+
   function toLocalKey(ts){
     const d = new Date(ts);
     const yyyy = d.getFullYear();
@@ -601,29 +603,38 @@ export const prerender = false;
     const mi = String(d.getMinutes()).padStart(2,"0");
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
   }
-  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 12){
+
+  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 30) {
     if (!dateStr || !timeStr) return null;
-    const [y,m,d] = dateStr.split("-").map(Number);
-    const [hh,mi] = timeStr.split(":").map(Number);
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [hh, mi] = timeStr.split(":").map(Number);
     if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
-    const target = new Date(y, (m - 1), d, hh, mi, 0, 0).getTime();
+
+    // Force UTC pour éviter décalage fuseau
+    const target = Date.UTC(y, m - 1, d, hh, mi, 0, 0);
+
     const tol = toleranceMinutes * 60 * 1000;
     let best = null;
     let bestDelta = Infinity;
-    for (const entry of (history || [])){
+
+    for (const entry of (history || [])) {
       const ts = Number(entry?.ts || 0);
       if (!ts) continue;
-      const k = toLocalKey(ts);
-      if (k.date !== dateStr) continue;
       const delta = Math.abs(ts - target);
-      if (delta < bestDelta){
+      if (delta < bestDelta) {
         bestDelta = delta;
         best = entry;
       }
     }
+
     if (!best) return null;
+
+    // Debug log pour voir pourquoi ça matche ou pas
+    console.log("Recherche:", { dateStr, timeStr, targetUTC: new Date(target).toISOString(), bestTs: best.ts, bestDeltaMin: Math.round(bestDelta / 60000) });
+
     return { best, bestDelta, within: bestDelta <= tol };
   }
+
   function renderAirSearchResult(root, payload){
     const box = root.querySelector("#airSearchResult");
     if (!box) return;
@@ -653,6 +664,7 @@ export const prerender = false;
       </div>
     `;
   }
+
   function bindAirSearchOnce(root){
     if (!root || state.searchBound) return;
     const dateEl = root.querySelector("#airDate");
@@ -673,7 +685,7 @@ export const prerender = false;
     const run = () => {
       state.search.date = dateEl.value || "";
       state.search.time = timeEl.value || "";
-      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 12);
+      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 30);
       renderAirSearchResult(root, payload);
     };
     btnEl.addEventListener("click", run);
@@ -682,6 +694,7 @@ export const prerender = false;
     state.searchBound = true;
     run();
   }
+
   function badgeTimeBlue(text){
     return `
       <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-[11px] font-semibold tabular-nums">
@@ -690,6 +703,7 @@ export const prerender = false;
       </span>
     `;
   }
+
   function rowHtml({ coverUrl, artist, title, time, count, blocked, voted, kNorm, kRaw, aRaw, tRaw }){
     return `
       <div class="abfHistoryRow ${voted ? "abfVotedRow" : ""} flex items-center justify-between gap-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
@@ -721,12 +735,14 @@ export const prerender = false;
       </div>
     `;
   }
+
   function rankBadgeClass(rank){
     if (rank === 1) return "bg-amber-400/15 border-amber-300/30 text-amber-200";
     if (rank === 2) return "bg-slate-200/10 border-slate-200/25 text-slate-100";
     if (rank === 3) return "bg-orange-400/15 border-orange-300/30 text-orange-200";
     return "bg-cyan-500/10 border-cyan-400/20 text-cyan-100";
   }
+
   function chartRowHtml(rank, coverUrl, artist, title, count, max){
     const pct = Math.round((Number(count) / Math.max(1, Number(max))) * 100);
     return `
@@ -752,6 +768,7 @@ export const prerender = false;
       </li>
     `;
   }
+
   async function render(){
     if (!isMusicRoute()) return;
     const root = getRoot();
@@ -887,7 +904,7 @@ export const prerender = false;
           });
         }
       }
-      // LAST PLAYED - limité à 18
+      // LAST PLAYED - 18 titres
       const limit = 18;
       const rows = history.slice(1, 1 + limit);
       histEl.innerHTML = rows.map((entry) => {
@@ -1011,7 +1028,7 @@ export const prerender = false;
       }
       // search refresh
       if (state.search?.date && state.search?.time){
-        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 12);
+        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 30);
         renderAirSearchResult(root, payload);
       }
       state.lastRenderAt = nowTs();
@@ -1019,10 +1036,12 @@ export const prerender = false;
       state.inFlight = false;
     }
   }
+
   function stopTimer(){
     if (state.timer) clearInterval(state.timer);
     state.timer = null;
   }
+
   function startTimer(){
     stopTimer();
     state.timer = setInterval(() => {
@@ -1030,6 +1049,7 @@ export const prerender = false;
       render();
     }, 8000);
   }
+
   function init(){
     if (!isMusicRoute()) return;
     const root = getRoot();
@@ -1038,6 +1058,7 @@ export const prerender = false;
     render();
     startTimer();
   }
+
   if (!state.bound){
     state.bound = true;
     document.addEventListener("astro:page-load", init);
