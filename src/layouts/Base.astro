@@ -2247,7 +2247,7 @@ Legal
   })();
 </script>
 
-<!-- Cast + AirPlay (PRO: always visible + friendly notice if no target) -->
+<!-- Cast + AirPlay (Always visible + friendly notice) -->
 <script
   type="text/javascript"
   src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
@@ -2258,22 +2258,24 @@ Legal
   const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
   const $ = (id) => document.getElementById(id);
 
-  // Avoid rebinding on Astro swaps
+  // Single global state (Astro swap safe)
   window.__abfCastPro = window.__abfCastPro || {
     castCtx: null,
-    castState: null,
-    hasCastDevices: false,
-    hasAirPlayTargets: false,
     listenersBound: false,
     clickBound: false,
-    toastEl: null
+    hasCastDevices: null,     // null=unknown, true/false known
+    hasAirPlayTargets: null,  // null=unknown, true/false known
+    toastEl: null,
+    toastTimer: null
   };
   const G = window.__abfCastPro;
 
   const btn = $("castBtn");
   if (!btn) return;
 
-  // ---------- Helpers ----------
+  // -------------------------
+  // Helpers
+  // -------------------------
   function getLocalAudio() {
     return window.__abf?.audio || null;
   }
@@ -2282,7 +2284,7 @@ Legal
     return /iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
 
-  // ✅ Button ALWAYS visible now
+  // Always visible
   function setBtnVisible(on) {
     btn.style.display = on ? "flex" : "none";
   }
@@ -2294,7 +2296,6 @@ Legal
     if (mode === "airplay") {
       btn.title = "AirPlay";
       btn.setAttribute("aria-label", "AirPlay");
-
       btn.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
           fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
@@ -2306,7 +2307,6 @@ Legal
     } else {
       btn.title = "Cast";
       btn.setAttribute("aria-label", "Cast");
-
       btn.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
           fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
@@ -2332,7 +2332,9 @@ Legal
     }
   }
 
-  // ---------- Premium toast ----------
+  // -------------------------
+  // Toast (premium, simple)
+  // -------------------------
   function ensureToast() {
     if (G.toastEl && G.toastEl.isConnected) return G.toastEl;
 
@@ -2347,13 +2349,13 @@ Legal
     el.style.zIndex = "9999";
     el.style.padding = "10px 12px";
     el.style.borderRadius = "14px";
-    el.style.border = "1px solid rgba(255,255,255,0.14)";
+    el.style.border = "1px solid rgba(47,194,255,0.22)";
     el.style.background = "rgba(5,11,20,0.92)";
     el.style.backdropFilter = "blur(18px) saturate(140%)";
     el.style.boxShadow = "0 18px 80px rgba(0,0,0,0.55)";
-    el.style.color = "rgba(255,255,255,0.90)";
+    el.style.color = "rgba(255,255,255,0.92)";
     el.style.fontSize = "13px";
-    el.style.fontWeight = "700";
+    el.style.fontWeight = "800";
     el.style.maxWidth = "min(560px, 92vw)";
     el.style.textAlign = "center";
     el.style.opacity = "0";
@@ -2365,22 +2367,23 @@ Legal
     return el;
   }
 
-  let toastTimer = null;
   function toast(msg) {
     const el = ensureToast();
     el.textContent = msg;
 
-    if (toastTimer) clearTimeout(toastTimer);
+    if (G.toastTimer) clearTimeout(G.toastTimer);
     el.style.opacity = "1";
     el.style.transform = "translateX(-50%) translateY(0)";
 
-    toastTimer = setTimeout(() => {
+    G.toastTimer = setTimeout(() => {
       el.style.opacity = "0";
       el.style.transform = "translateX(-50%) translateY(6px)";
-    }, 2600);
+    }, 2800);
   }
 
-  // ---------- CAST (Chromecast) ----------
+  // -------------------------
+  // CAST (Chromecast) — use cast-safe proxy
+  // -------------------------
   function pauseLocal() {
     const a = getLocalAudio();
     if (a && !a.paused) a.pause();
@@ -2391,11 +2394,11 @@ Legal
     if (a && a.paused && !window.__abf?.isStopped) a.play().catch(()=>{});
   }
 
-  function getCastMedia() {
+  // Cast URL MUST be the proxy endpoint (avoid direct mount + query issues)
+  function getCastUrl() {
     const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
-    if (idx === 2) return { url: "https://stream.radioabf.com/abf-low.aac", type: "audio/aac" };
-    if (idx === 1) return { url: "https://stream.radioabf.com/abf-sd.mp3", type: "audio/mpeg" };
-    return { url: "https://stream.radioabf.com/abf-hd.mp3", type: "audio/mpeg" };
+    const q = (idx === 1) ? "sd" : "hd"; // cast: mp3 only
+    return `https://radioabf.com/api/cast.mp3?q=${q}&cb=${Date.now()}`;
   }
 
   function buildMetadata() {
@@ -2415,20 +2418,15 @@ Legal
         receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
       });
-
       G.castCtx = ctx;
 
-      // listen once
       if (!G.listenersBound) {
         G.listenersBound = true;
 
         ctx.addEventListener(
           cast.framework.CastContextEventType.CAST_STATE_CHANGED,
           (e) => {
-            G.castState = e.castState;
-            G.hasCastDevices = e.castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
-
-            // We keep the button visible, but we ensure it stays in cast mode on non-iOS
+            G.hasCastDevices = (e.castState !== cast.framework.CastState.NO_DEVICES_AVAILABLE);
             if (!isIOS()) setBtnMode("cast");
           }
         );
@@ -2458,32 +2456,32 @@ Legal
   }
 
   async function startCast() {
-    const castCtx = G.castCtx;
-    if (!castCtx) throw new Error("Cast not ready");
+    const ctx = G.castCtx;
+    if (!ctx) {
+      toast("Chromecast isn’t ready yet — try again in a couple seconds.");
+      throw new Error("Cast not ready");
+    }
 
-    const existing = castCtx.getCurrentSession();
+    const existing = ctx.getCurrentSession();
     if (existing) {
-      await castCtx.endCurrentSession(true);
+      await ctx.endCurrentSession(true);
       return;
     }
 
     if (G.hasCastDevices === false) {
-      toast("Aucun Chromecast détecté 😅 Allume ta TV/enceinte Cast et connecte-la au même Wi-Fi.");
+      toast("No Chromecast detected. Make sure your TV/speaker is on the same Wi-Fi.");
       return;
     }
 
-    const media = getCastMedia();
+    const url = getCastUrl();
 
-    await castCtx.requestSession();
+    await ctx.requestSession();
     pauseLocal();
 
-    const session = castCtx.getCurrentSession();
+    const session = ctx.getCurrentSession();
     if (!session) throw new Error("Cast session null");
 
-    // ✅ add cache buster to avoid receiver caching weirdness
-    const url = media.url + (media.url.includes("?") ? "&" : "?") + "cb=" + Date.now();
-
-    const mediaInfo = new chrome.cast.media.MediaInfo(url, media.type);
+    const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
     mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
     mediaInfo.metadata = buildMetadata();
 
@@ -2495,21 +2493,24 @@ Legal
     setActiveUI(true, "Casting…");
   }
 
-  // ---------- AIRPLAY (iOS Safari) ----------
+  // -------------------------
+  // AIRPLAY (iOS Safari)
+  // -------------------------
   function bindAirPlayAvailability() {
     const audio = getLocalAudio();
     if (!audio) return;
 
     const hasPicker = typeof audio.webkitShowPlaybackTargetPicker === "function";
-    if (!hasPicker) return;
+    if (!hasPicker) {
+      G.hasAirPlayTargets = false;
+      return;
+    }
 
     if (audio.__abfAirPlayBound) return;
     audio.__abfAirPlayBound = true;
 
-    // iOS event when AirPlay targets become available
     audio.addEventListener("webkitplaybacktargetavailabilitychanged", (e) => {
       G.hasAirPlayTargets = (e?.availability === "available");
-      // Keep visible anyway; just track availability
       if (isIOS()) setBtnMode("airplay");
     });
   }
@@ -2519,11 +2520,12 @@ Legal
     if (!audio) throw new Error("No audio");
 
     if (typeof audio.webkitShowPlaybackTargetPicker !== "function") {
-      throw new Error("AirPlay not supported");
+      toast("AirPlay isn’t available on this device (Safari on iOS required).");
+      return;
     }
 
-    if (!G.hasAirPlayTargets) {
-      toast("Aucune cible AirPlay détectée 😅 Active AirPlay sur ta TV/enceinte puis réessaie.");
+    if (G.hasAirPlayTargets === false) {
+      toast("No AirPlay device detected. Turn on AirPlay on your TV/speaker.");
       return;
     }
 
@@ -2532,7 +2534,9 @@ Legal
     setTimeout(() => setActiveUI(false, "live"), 1500);
   }
 
-  // ---------- ANDROID "Cast → Sur cet appareil" (RemotePlayback) ----------
+  // -------------------------
+  // ANDROID "Cast to this device" (RemotePlayback)
+  // -------------------------
   function bindRemotePlaybackAutoPause() {
     const audio = getLocalAudio();
     if (!audio) return;
@@ -2553,7 +2557,9 @@ Legal
     }
   }
 
-  // ---------- Click handler (one button for both) ----------
+  // -------------------------
+  // Click handler (one button for both)
+  // -------------------------
   function bindClickOnce() {
     if (G.clickBound) return;
     G.clickBound = true;
@@ -2561,34 +2567,29 @@ Legal
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
 
-      // decide mode
       const wantsAirPlay = isIOS() && typeof getLocalAudio()?.webkitShowPlaybackTargetPicker === "function";
       const mode = btn.dataset.mode || (wantsAirPlay ? "airplay" : "cast");
 
       try {
-        if (mode === "airplay") {
-          await openAirPlayPicker();
-        } else {
-          await startCast();
-        }
+        if (mode === "airplay") await openAirPlayPicker();
+        else await startCast();
       } catch (err) {
         console.warn("[Cast/AirPlay] error:", err);
 
-        // Friendly notice (instead of silent fail)
-        if (mode === "airplay") {
-          toast("AirPlay indisponible sur cet appareil 😅 (Safari iOS requis + cible AirPlay).");
-        } else {
-          toast("Chromecast indisponible 😅 Vérifie que ton appareil Cast est allumé et sur le même Wi-Fi.");
+        // Friendly hint if discovery is still unknown
+        if (mode === "cast" && G.hasCastDevices === null) {
+          toast("Looking for Chromecast devices… make sure you’re on the same Wi-Fi.");
         }
       }
     });
   }
 
-  // ---------- Boot ----------
-  // ✅ ALWAYS visible
+  // -------------------------
+  // Boot (ALWAYS visible)
+  // -------------------------
   setBtnVisible(true);
+  ensureToast();
 
-  // Keep mode consistent
   if (isIOS()) {
     setBtnMode("airplay");
     bindAirPlayAvailability();
@@ -2596,28 +2597,21 @@ Legal
     setBtnMode("cast");
   }
 
-  // Cast framework init when available
   window.__onGCastApiAvailable = (available) => {
     if (available) initCastFramework();
   };
 
-  // Fallback init if script already loaded
+  // fallback init
   setTimeout(() => {
-    if (!G.castCtx && window.chrome?.cast && window.cast?.framework?.CastContext) {
-      initCastFramework();
-    }
+    if (!G.castCtx && window.chrome?.cast && window.cast?.framework?.CastContext) initCastFramework();
   }, 1200);
 
-  // Android "this device" remote playback
   bindRemotePlaybackAutoPause();
-
-  // Click bind once
   bindClickOnce();
 
-  // Astro navigation repair (icon + toast + re-check airplay)
+  // Astro navigation repair
   const onAstroNav = () => {
     setBtnVisible(true);
-    // re-inject icon (Astro may replace innerHTML)
     setBtnMode(btn.dataset.mode || (isIOS() ? "airplay" : "cast"));
     ensureToast();
     bindAirPlayAvailability();
@@ -2628,8 +2622,6 @@ Legal
   document.addEventListener("astro:page-load", onAstroNav);
   document.addEventListener("astro:after-swap", onAstroNav);
 
-  // Create toast container now
-  ensureToast();
 })();
 </script>
 
