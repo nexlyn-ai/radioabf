@@ -1009,39 +1009,34 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         ];
         S.audio = S.audio || new Audio();
         const audio = S.audio;
+
+        // CORRECTION : playsinline pour mobile (évite plein écran forcé)
         audio.playsinline = true;
+
         // =========================
         // AirPlay / iOS safety
         // =========================
         audio.addEventListener("webkitplaybacktargetavailabilitychanged", (e) => {
           // e.availability === "available" quand une cible AirPlay est dispo
-          // (on ne fait rien ici, c'est surtout pour debug)
-          // console.log("[AirPlay] target availability:", e.availability);
         });
         // =========================
         // REMOTE PLAYBACK (Android "Cast → This device" / Media Router)
         // =========================
         (function bindRemotePlaybackAutoPause(){
-          // 1) API moderne (Chrome/Android)
           const rp = audio.remotePlayback;
           if (rp && !audio.__abfRpBound) {
             audio.__abfRpBound = true;
             rp.addEventListener("connecting", () => {
-              // Quand Android commence à router vers un device
               try { audio.pause(); } catch {}
             });
             rp.addEventListener("connect", () => {
-              // Routage actif → coupe le local
               try { audio.pause(); } catch {}
               console.log("[RemotePlayback] connected → local paused");
             });
             rp.addEventListener("disconnect", () => {
               console.log("[RemotePlayback] disconnected");
-              // Optionnel: ne pas auto-reprendre (je laisse safe)
-              // try { if (!window.__abf?.isStopped) audio.play(); } catch {}
             });
           }
-          // 2) Certains Chrome exposent aussi audio.remote (fallback)
           if (audio.remote && !audio.__abfRemoteBound) {
             audio.__abfRemoteBound = true;
             try {
@@ -1728,18 +1723,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             });
             S.__escBound = true;
           }
-          // CORRECTION : Reprise quand l'onglet redevient visible
+          // CORRECTION FINALE : reprise propre sans mute/unmute forcé
           document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && !S.isStopped) {
+            if (document.visibilityState === 'visible' && !audio.paused && !S.isStopped) {
               try {
                 await resumeAudioCtx();
-                const wasMuted = audio.muted;
-                audio.muted = true;
                 await audio.play();
-                audio.muted = wasMuted;
-                console.log("[visibilitychange] Stream resumed");
+                console.log("[visibility] Stream resumed cleanly");
               } catch (e) {
-                console.warn("[visibilitychange] Resume failed:", e);
+                console.warn("[visibility] Resume failed:", e);
               }
             }
           });
