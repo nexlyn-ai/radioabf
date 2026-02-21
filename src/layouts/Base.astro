@@ -1904,6 +1904,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
   {
+  v: "3.3.6",
+  d: "Feb 21, 2026",
+  t: "Music page refresh: renamed the Music hero/title to “Music Portal” (UI + SEO title), keeping ABF premium layout. Also applied the track title cleanup rule across the player/base so titles display without suffix noise (e.g. Radio Edit, Extended Mix, Original Mix, Remaster, etc.) for a cleaner Now Playing experience."
+  },
+  {
   v: "3.3.5",
   d: "Feb 20, 2026",
   t: "Casting support added: unified Chromecast + AirPlay PRO button with auto-detection (button only appears when a target is available). Chromecast streaming stabilized by casting directly from stream.radioabf.com endpoints (HD/SD MP3 + Low AAC) and auto-pausing local playback to prevent double audio. Improved compatibility with Android \"Cast on this device\" routing and Xiaomi TV stick receivers. Metadata display simplified for default receivers."
