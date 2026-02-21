@@ -141,7 +141,7 @@ export const prerender = false;
             <div class="text-xs text-white/50">Tap 👍 to vote</div>
           </div>
 
-          <!-- 20 last tracks -->
+          <!-- 25 last tracks -->
           <div
             id="historyTable"
             class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
@@ -195,7 +195,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- ✅ HOW IT WORKS (focus votes + quick covers) -->
+        <!-- ✅ HOW IT WORKS (focus votes + ABF CLUB + quick covers) -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
 
@@ -227,6 +227,13 @@ export const prerender = false;
 
               <li class="flex gap-3">
                 <span class="flex-none w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-white/80 grid place-items-center font-bold tabular-nums">3</span>
+                <div class="min-w-0">
+                  <span class="text-white/85 font-semibold">ABF CLUB shows are not votable</span> — voting is disabled for “ABF CLUB” entries (tracks only).
+                </div>
+              </li>
+
+              <li class="flex gap-3">
+                <span class="flex-none w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-white/80 grid place-items-center font-bold tabular-nums">4</span>
                 <div class="min-w-0">
                   <span class="text-white/85 font-semibold">Covers: Directus-first → iTunes fallback</span> — manual uploads win; otherwise iTunes keeps everything visual.
                 </div>
@@ -494,9 +501,7 @@ export const prerender = false;
     const u = String(url || "").trim().toLowerCase();
     if (!u) return "none";
     if (u.includes("mzstatic.com")) return "itunes";
-    // directus common patterns (/assets/..., /files/..., /uploads/..., "directus")
     if (u.includes("/assets/") || u.includes("/files/") || u.includes("/uploads/") || u.includes("directus")) return "directus";
-    // fallback: if not mzstatic, it's most likely Directus or site-hosted
     return "directus";
   }
 
@@ -508,13 +513,11 @@ export const prerender = false;
 
     const src = detectCoverSource(url);
 
-    // Reset
     badge.style.display = "inline-flex";
     badge.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold";
     dot.className = "w-2 h-2 rounded-full";
 
     if (src === "directus"){
-      // Violet
       badge.classList.add("bg-violet-500/10","border-violet-400/25","text-violet-200");
       dot.classList.add("bg-violet-300/90");
       text.textContent = "Directus cover";
@@ -522,23 +525,20 @@ export const prerender = false;
     }
 
     if (src === "itunes"){
-      // Blue (iTunes)
       badge.classList.add("bg-blue-500/10","border-blue-400/25","text-blue-200");
       dot.classList.add("bg-blue-300/90");
       text.textContent = "iTunes fallback";
       return;
     }
 
-    // none
     badge.classList.add("bg-white/5","border-white/10","text-white/70");
     dot.classList.add("bg-white/40");
     text.textContent = "No cover";
   }
 
-  // ✅ simple & stable: compute rows from viewport height (no recursive render)
+  // ✅ user asked for 25 last tracks
   function computeHistoryLimitStable(){
-    // user asked for 20 last tracks
-    return 20;
+    return 25;
   }
 
   // --------- Votes API ---------
@@ -600,6 +600,14 @@ export const prerender = false;
     `;
   }
 
+  function badgeBlocked(){
+    return `
+      <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-400/20 text-red-200 text-[11px] font-semibold tracking-wider">
+        ABF CLUB
+      </span>
+    `;
+  }
+
   function rowHtml({ coverUrl, artist, title, time, count, blocked, kNorm, kRaw, aRaw, tRaw }){
     return `
       <div class="flex items-center justify-between gap-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
@@ -607,7 +615,10 @@ export const prerender = false;
           ${coverHtmlByUrl(coverUrl)}
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-3">
-              <div class="font-extrabold text-white truncate">${esc(artist || "—")}</div>
+              <div class="font-extrabold text-white truncate flex items-center gap-2">
+                ${blocked ? badgeBlocked() : ""}
+                <span class="truncate">${esc(artist || "—")}</span>
+              </div>
               ${badgeTimeBlue(time)}
             </div>
             <div class="text-white/65 text-sm truncate">${esc(title || "—")}</div>
@@ -819,7 +830,7 @@ export const prerender = false;
         if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       }
 
-      // last played: 20
+      // last played: 25
       const limit = computeHistoryLimitStable();
       const rows = history.slice(1, 1 + limit);
 
@@ -836,13 +847,15 @@ export const prerender = false;
           String(entry.cover_url || "").trim() ||
           (coverByNorm[normKey(aRaw, tRaw0)] || "");
 
+        const blocked = isBlockedShow(aRaw);
+
         return rowHtml({
           coverUrl,
           artist: upperArtist(aRaw || "—"),
           title: titleCaseEN(tClean || "—"),
           time: fmtTime(entry.ts),
           count: votesByRaw[kRaw] || 0,
-          blocked: isBlockedShow(aRaw),
+          blocked,
           kNorm,
           kRaw,
           aRaw,
