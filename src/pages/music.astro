@@ -30,7 +30,7 @@ export const prerender = false;
             </p>
           </div>
 
-          <!-- Badges (juste les 3 infos, sans recherche ici) -->
+          <!-- Badges (sans recherche ici) -->
           <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
               Vote: 1 / track / day
@@ -136,7 +136,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- NOUVELLE CARD RECHERCHE – placée juste en dessous de Last Played -->
+        <!-- NOUVELLE CARD RECHERCHE – juste en dessous de Last Played -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
           <div class="p-5 border-b border-white/10">
             <div class="text-sm text-white/60 uppercase tracking-wider">Search airplay time</div>
@@ -193,7 +193,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- HOW IT WORKS – REVENUE EXACTEMENT COMME AVANT -->
+        <!-- HOW IT WORKS – EXACTEMENT COMME DANS TON ORIGINAL -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
           <div class="p-6 relative">
@@ -263,14 +263,14 @@ export const prerender = false;
         cursor: not-allowed !important;
         background: rgba(255,255,255,0.03) !important;
       }
-      /* Couleurs badges cover – iTunes changé en violet/rose doux distinct */
+      /* Couleurs badges cover */
       #npCoverSource.directus {
         background: rgba(168,85,247,0.12);
         border-color: rgba(168,85,247,0.3);
         color: rgba(216,180,254,0.95);
       }
       #npCoverSource.itunes {
-        background: rgba(236,72,153,0.12);       /* rose/violet doux */
+        background: rgba(236,72,153,0.12);       /* rose/violet doux, distinct du cyan */
         border-color: rgba(236,72,153,0.3);
         color: rgba(249,168,212,0.95);
       }
@@ -901,7 +901,7 @@ export const prerender = false;
           tRaw: tRaw0
         });
       }).join("");
-      // wire vote buttons
+      // wire vote buttons – grisage appliqué ici aussi
       histEl.querySelectorAll(".voteBtn").forEach((btn) => {
         const kNorm = btn.dataset.norm || "";
         const kRaw = btn.dataset.raw || "";
@@ -913,51 +913,47 @@ export const prerender = false;
         if (countEl) countEl.textContent = String(c);
         const row = btn.closest(".abfHistoryRow");
         const already = sessionAlreadyVoted(kNorm);
-        if (blocked){
-          btn.style.opacity = "0.45";
-          btn.style.cursor = "not-allowed";
-          if (row) row.classList.add("abfVotedRow");
-          btn.onclick = () => blockedVoteMsg();
-          return;
-        }
-        if (already){
+        if (blocked || already){
+          btn.classList.add("is-voted");
           btn.style.opacity = "0.55";
           btn.style.cursor = "not-allowed";
           if (row) row.classList.add("abfVotedRow");
-          btn.onclick = () => {
+          btn.onclick = blocked ? blockedVoteMsg : () => {
             alert("You already voted for this track. Come back in 24h 🙂");
           };
-          return;
         } else {
-          if (row) row.classList.remove("abfVotedRow");
+          btn.classList.remove("is-voted");
           btn.style.opacity = "1";
           btn.style.cursor = "pointer";
-        }
-        btn.onclick = async () => {
-          if (sessionAlreadyVoted(kNorm)){
-            alert("You already voted for this track. Come back in 24h 🙂");
+          if (row) row.classList.remove("abfVotedRow");
+          btn.onclick = async () => {
+            if (sessionAlreadyVoted(kNorm)){
+              alert("You already voted for this track. Come back in 24h 🙂");
+              btn.classList.add("is-voted");
+              btn.style.opacity = "0.55";
+              btn.style.cursor = "not-allowed";
+              if (row) row.classList.add("abfVotedRow");
+              return;
+            }
+            btn.style.opacity = "0.7";
+            btn.style.cursor = "wait";
+            const r = await apiVote(kRaw || rawKey(a, t0), a, t0);
+            if (!r.ok){
+              btn.style.opacity = "1";
+              btn.style.cursor = "pointer";
+              voteErrorToast(r);
+              return;
+            }
+            markSessionVoted(kNorm);
+            const ck = votesCacheKey(week);
+            if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
+            btn.classList.add("is-voted");
             btn.style.opacity = "0.55";
             btn.style.cursor = "not-allowed";
             if (row) row.classList.add("abfVotedRow");
-            return;
-          }
-          btn.style.opacity = "0.7";
-          btn.style.cursor = "wait";
-          const r = await apiVote(kRaw || rawKey(a, t0), a, t0);
-          if (!r.ok){
-            btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
-            voteErrorToast(r);
-            return;
-          }
-          markSessionVoted(kNorm);
-          const ck = votesCacheKey(week);
-          if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
-          btn.style.opacity = "0.55";
-          btn.style.cursor = "not-allowed";
-          if (row) row.classList.add("abfVotedRow");
-          render();
-        };
+            render();
+          };
+        }
       });
       // charts this week
       const topThisSafe = (topThis || [])
