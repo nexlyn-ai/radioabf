@@ -2247,7 +2247,7 @@ Legal
   })();
 </script>
 
-<!-- Google Cast (Default Receiver) — ULTRA STABLE + button/icon never disappears (Astro swaps safe) -->
+<!-- Google Cast (Default Receiver) — STABLE + icon survives Astro swaps -->
 <script
   type="text/javascript"
   src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
@@ -2258,23 +2258,17 @@ Legal
   console.log("[Cast] init…");
 
   const CAST_ARTWORK = "https://radioabf.com/logo-abf.png";
-
-  // Singleton global (avoid duplicate observers/bindings across Astro swaps)
-  window.__abfCast = window.__abfCast || {};
-  const C = window.__abfCast;
+  let castCtx = null;
 
   const $ = (id) => document.getElementById(id);
 
-  // ---------------------------
-  // 1) Repair button + icon (idempotent)
-  // ---------------------------
+  // --------------------------------------------------
+  // 1) HARD REPAIR: ensure button exists + visible + has icon
+  // --------------------------------------------------
   function injectCastIcon(btn){
     if (!btn) return false;
 
-    // Always ensure visible (some swaps reapply display:none via SSR)
-    btn.style.display = "flex";
-
-    // If already has our svg, done
+    // si déjà bon
     if (btn.dataset.castIcon === "1" && btn.querySelector("svg")) return true;
 
     btn.dataset.castIcon = "1";
@@ -2300,32 +2294,43 @@ Legal
   function repairCastBtn() {
     const btn = $("castBtn");
     if (!btn) return false;
+
+    // force visible (au cas où Astro swap remet display:none)
+    btn.style.display = "flex";
+
+    // reinject icon
     injectCastIcon(btn);
+
     return true;
   }
 
-  // Retry burst (player can mount after swap)
-  function repairCastBtnBurst() {
+  // Retry après swap car parfois le player arrive un peu après
+  function repairCastBtnWithRetries() {
+    // 1) tout de suite
     if (repairCastBtn()) return;
 
-    let tries = 0;
-    const t = setInterval(() => {
-      tries++;
-      const ok = repairCastBtn();
-      if (ok || tries >= 30) clearInterval(t); // ~1.5s max
-    }, 50);
+    // 2) frame suivante
+    requestAnimationFrame(() => {
+      if (repairCastBtn()) return;
+
+      // 3) petit burst de retries (cas: player remonte après swap)
+      let n = 0;
+      const t = setInterval(() => {
+        n++;
+        const ok = repairCastBtn();
+        if (ok || n >= 20) clearInterval(t); // ~1s max
+      }, 50);
+    });
   }
 
-  // ---------------------------
-  // 2) Cast state UI (optional)
-  // ---------------------------
+  // --------------------------------------------------
+  // 2) Cast UI state
+  // --------------------------------------------------
   function setCastState(active) {
     const btn = $("castBtn");
     if (btn) {
       btn.style.opacity = active ? "1" : "0.7";
       btn.style.background = active ? "rgba(47,194,255,0.25)" : "transparent";
-      // re-ensure icon because some swaps overwrite innerHTML
-      injectCastIcon(btn);
     }
     const s1 = $("npStatus");
     const s2 = $("npStatusMobile");
@@ -2333,18 +2338,18 @@ Legal
     if (s2) s2.textContent = active ? "Casting…" : "live";
   }
 
-  // ---------------------------
-  // 3) Stream URL (existing endpoint)
-  // ---------------------------
+  // --------------------------------------------------
+  // 3) Stream URL (existing endpoint, no new routes)
+  // --------------------------------------------------
   function getCastUrl() {
     const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
     const q = (idx === 1) ? "sd" : "hd";
     return `https://radioabf.com/api/cast.mp3?q=${q}`;
   }
 
-  // ---------------------------
-  // 4) Fixed metadata (NO refresh => NO cut)
-  // ---------------------------
+  // --------------------------------------------------
+  // 4) Fixed metadata (no refresh => no cut)
+  // --------------------------------------------------
   function buildFixedMetadata() {
     const md = new chrome.cast.media.MusicTrackMediaMetadata();
     md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
@@ -2355,20 +2360,22 @@ Legal
     return md;
   }
 
-  // ---------------------------
-  // 5) Init Cast Framework (once)
-  // ---------------------------
-  function initCastOnce() {
+  // --------------------------------------------------
+  // 5) Init Cast framework
+  // --------------------------------------------------
+  function initCast() {
     try {
-      if (C.castCtx) return; // already initialized
+      castCtx = cast.framework.CastContext.getInstance();
 
-      C.castCtx = cast.framework.CastContext.getInstance();
-      C.castCtx.setOptions({
+      castCtx.setOptions({
         receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
       });
 
-      C.castCtx.addEventListener(
+      // force button visible + icon
+      repairCastBtnWithRetries();
+
+      castCtx.addEventListener(
         cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
         (e) => {
           console.log("[Cast] session state:", e.sessionState);
@@ -2381,6 +2388,7 @@ Legal
             setCastState(false);
           }
 
+          // si on navigue et qu'une session existe, garder l'état UI
           if (e.sessionState === cast.framework.SessionState.SESSION_STARTED) {
             setCastState(true);
           }
@@ -2388,52 +2396,32 @@ Legal
       );
 
       console.log("[Cast] ready");
-      repairCastBtnBurst();
     } catch (err) {
       console.error("[Cast] init error", err);
     }
   }
 
-  // Cast callback (fires once per page load, not after Astro swaps)
   window.__onGCastApiAvailable = (isAvailable) => {
-    if (isAvailable) initCastOnce();
+    if (isAvailable) initCast();
   };
 
-  // Fallback init if callback already fired earlier
+  // fallback init
   setTimeout(() => {
-    if (!C.castCtx && window.chrome?.cast && cast.framework?.CastContext) {
-      initCastOnce();
-    }
-  }, 2000);
+    if (!castCtx && window.chrome?.cast && cast.framework?.CastContext) initCast();
+  }, 2500);
 
-  // ---------------------------
-  // 6) MutationObserver: re-fix button whenever DOM changes
-  // ---------------------------
-  function startObserverOnce() {
-    if (C.observerStarted) return;
-    C.observerStarted = true;
+  // --------------------------------------------------
+  // 6) Always repair after Astro swaps
+  // --------------------------------------------------
+  repairCastBtnWithRetries();
+  document.addEventListener("astro:page-load", repairCastBtnWithRetries);
+  document.addEventListener("astro:after-swap", repairCastBtnWithRetries);
 
-    const obs = new MutationObserver(() => {
-      // Any time DOM changes, ensure cast button is back + has icon
-      repairCastBtn();
-    });
-
-    obs.observe(document.documentElement, { childList: true, subtree: true });
-    C.observer = obs;
-  }
-
-  startObserverOnce();
-
-  // Also repair explicitly on Astro navigation
-  repairCastBtnBurst();
-  document.addEventListener("astro:page-load", repairCastBtnBurst);
-  document.addEventListener("astro:after-swap", repairCastBtnBurst);
-
-  // ---------------------------
-  // 7) Click handler (bind once globally)
-  // ---------------------------
-  if (!C.clickBound) {
-    C.clickBound = true;
+  // --------------------------------------------------
+  // 7) Click handler (bind ONCE globally)
+  // --------------------------------------------------
+  if (!window.__abfCastClickBound) {
+    window.__abfCastClickBound = true;
 
     document.addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("#castBtn");
@@ -2441,19 +2429,18 @@ Legal
 
       e.preventDefault();
 
-      // always ensure visible + icon at click time
-      repairCastBtnBurst();
+      // Always repair icon (in case swap replaced button right before click)
+      repairCastBtnWithRetries();
 
-      const ctx = C.castCtx;
-      if (!ctx) {
+      if (!castCtx) {
         alert("Chromecast not ready yet. Please try again.");
         return;
       }
 
-      // Toggle stop if already casting
-      const existing = ctx.getCurrentSession();
+      // stop if already casting
+      const existing = castCtx.getCurrentSession();
       if (existing) {
-        try { await ctx.endCurrentSession(true); } catch {}
+        try { await castCtx.endCurrentSession(true); } catch {}
         setCastState(false);
         return;
       }
@@ -2462,9 +2449,9 @@ Legal
       console.log("[Cast] casting url:", url);
 
       try {
-        await ctx.requestSession();
+        await castCtx.requestSession();
 
-        const session = ctx.getCurrentSession();
+        const session = castCtx.getCurrentSession();
         if (!session) throw new Error("Cast session is null");
 
         const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
