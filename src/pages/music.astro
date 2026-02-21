@@ -620,45 +620,64 @@ export const prerender = false;
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
   }
 
-  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10) {
-    if (!dateStr || !timeStr) return null;
-    const [y, m, d] = dateStr.split("-").map(Number);
-    const [hh, mi] = timeStr.split(":").map(Number);
-    if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
+function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10) {
+  if (!dateStr || !timeStr) return null;
 
-    const targetUTC = Date.UTC(y, m - 1, d, hh, mi, 0, 0);
-    const tol = toleranceMinutes * 60 * 1000;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [hh, mi] = timeStr.split(":").map(Number);
+  if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
 
-    let best = null;
-    let bestDelta = Infinity;
-    let sameDayMatches = 0;
+  // ✅ IMPORTANT: inputs date/time are LOCAL time (Europe/Paris), so build a LOCAL timestamp
+  const targetLocal = new Date(y, m - 1, d, hh, mi, 0, 0).getTime();
+  const tol = toleranceMinutes * 60 * 1000;
 
-    for (const entry of (history || [])) {
-      const ts = Number(entry?.ts || 0);
-      if (!ts) continue;
+  let best = null;
+  let bestDelta = Infinity;
+  let sameDayMatches = 0;
 
-      const entryDate = new Date(ts);
-      const entryUTCDate = Date.UTC(entryDate.getUTCFullYear(), entryDate.getUTCMonth(), entryDate.getUTCDate());
-      const targetUTCDate = Date.UTC(y, m - 1, d);
-      if (entryUTCDate !== targetUTCDate) continue;
+  for (const entry of (history || [])) {
+    const ts = Number(entry?.ts || 0);
+    if (!ts) continue;
 
-      sameDayMatches++;
-      const delta = Math.abs(ts - targetUTC);
-      if (delta < bestDelta) {
-        bestDelta = delta;
-        best = entry;
-      }
+    // ✅ Compare LOCAL day (not UTC)
+    const ed = new Date(ts);
+    const sameDay =
+      ed.getFullYear() === y &&
+      (ed.getMonth() + 1) === m &&
+      ed.getDate() === d;
+
+    if (!sameDay) continue;
+
+    sameDayMatches++;
+    const delta = Math.abs(ts - targetLocal);
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      best = entry;
     }
-
-    if (!best) {
-      console.log("Search:", { dateStr, timeStr, targetUTC: new Date(targetUTC).toISOString(), sameDayMatches, result: "No match in the same day" });
-      return null;
-    }
-
-    console.log("Search:", { dateStr, timeStr, targetUTC: new Date(targetUTC).toISOString(), bestTs: best.ts, bestDeltaMin: Math.round(bestDelta / 60000), sameDayMatches });
-
-    return { best, bestDelta, within: bestDelta <= tol };
   }
+
+  if (!best) {
+    console.log("Search:", {
+      dateStr,
+      timeStr,
+      targetLocal: new Date(targetLocal).toString(),
+      sameDayMatches,
+      result: "No match in the same local day",
+    });
+    return null;
+  }
+
+  console.log("Search:", {
+    dateStr,
+    timeStr,
+    targetLocal: new Date(targetLocal).toString(),
+    bestTs: best.ts,
+    bestDeltaMin: Math.round(bestDelta / 60000),
+    sameDayMatches,
+  });
+
+  return { best, bestDelta, within: bestDelta <= tol };
+}
 
   function renderAirSearchResult(root, payload){
     const box = root.querySelector("#airSearchResult");
