@@ -136,7 +136,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- NOUVELLE CARD RECHERCHE – juste en dessous de Last Played -->
+        <!-- CARD RECHERCHE – sous Last Played -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
           <div class="p-5 border-b border-white/10">
             <div class="text-sm text-white/60 uppercase tracking-wider">Search airplay time</div>
@@ -153,7 +153,7 @@ export const prerender = false;
         </div>
       </div>
 
-      <!-- RIGHT: CHARTS + EXPLAIN (inchangé) -->
+      <!-- RIGHT: CHARTS + HOW IT WORKS ORIGINALE -->
       <aside class="space-y-6">
         <!-- THIS WEEK -->
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
@@ -193,7 +193,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- HOW IT WORKS – EXACTEMENT COMME DANS TON ORIGINAL -->
+        <!-- HOW IT WORKS – VERSION ORIGINALE QUE TU M'AVAIS DONNÉE AU DÉBUT -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
           <div class="p-6 relative">
@@ -252,7 +252,7 @@ export const prerender = false;
       }
       .abfBtn:hover{ background: rgba(255,255,255,0.10); }
       .voteBtnMini{ white-space: nowrap; }
-      /* Grisage fort quand déjà voté (persiste 24h) */
+      /* Grisage fort quand déjà voté (persiste 24h via localStorage) */
       .abfVotedRow {
         opacity: 0.72;
         filter: saturate(0.65) brightness(0.92);
@@ -270,7 +270,7 @@ export const prerender = false;
         color: rgba(216,180,254,0.95);
       }
       #npCoverSource.itunes {
-        background: rgba(236,72,153,0.12);       /* rose/violet doux, distinct du cyan */
+        background: rgba(236,72,153,0.12);       /* rose/violet doux */
         border-color: rgba(236,72,153,0.3);
         color: rgba(249,168,212,0.95);
       }
@@ -288,6 +288,7 @@ export const prerender = false;
   const ROUTE = "/music";
   const KEY = "__abfMusicPortal";
   const DAY = 24 * 60 * 60 * 1000;
+  const VOTED_KEY = "abf_voted_tracks"; // Stockage persistant dans localStorage
   const HISTORY_KEY = "abf_history";
   const state = (window[KEY] = window[KEY] || {
     bound: false,
@@ -298,6 +299,35 @@ export const prerender = false;
     search: { date: "", time: "" },
     searchBound: false,
   });
+
+  // Charge et nettoie les votes anciens (> 24h)
+  function loadVotedTracks() {
+    try {
+      const raw = localStorage.getItem(VOTED_KEY) || "{}";
+      const voted = JSON.parse(raw);
+      const now = nowTs();
+      for (const k in voted) {
+        if (now - voted[k] >= DAY) delete voted[k];
+      }
+      localStorage.setItem(VOTED_KEY, JSON.stringify(voted));
+      return voted;
+    } catch {
+      return {};
+    }
+  }
+
+  function markVoted(norm) {
+    const voted = loadVotedTracks();
+    voted[norm] = nowTs();
+    localStorage.setItem(VOTED_KEY, JSON.stringify(voted));
+  }
+
+  function isVoted(norm) {
+    const voted = loadVotedTracks();
+    const last = voted[norm] || 0;
+    return (nowTs() - last) < DAY;
+  }
+
   function isMusicRoute() { return window.location.pathname === ROUTE; }
   function getRoot() { return document.getElementById("musicPageRoot"); }
   function nowTs() { return Date.now(); }
@@ -387,15 +417,6 @@ export const prerender = false;
   }
   function blockedVoteMsg(){
     alert("Voting is disabled for ABF CLUB shows. Please vote for tracks only 🙂");
-  }
-  function markSessionVoted(norm){
-    window.__abfVotedSession = window.__abfVotedSession || {};
-    window.__abfVotedSession[norm] = nowTs();
-  }
-  function sessionAlreadyVoted(norm){
-    const m = window.__abfVotedSession || {};
-    const last = m[norm] || 0;
-    return (nowTs() - last) < DAY;
   }
   function loadHistory(){
     let raw = [];
@@ -505,7 +526,7 @@ export const prerender = false;
       </div>
     `;
   }
-  function LAST_PLAYED_LIMIT(){ return 23; }
+  function LAST_PLAYED_LIMIT(){ return 18; } // Limité à 18 comme demandé
   const VOTES_TTL_MS = 10_000;
   function votesCacheKey(week){ return `votes:${week}`; }
   async function apiGetTopWeek(week){
@@ -811,7 +832,7 @@ export const prerender = false;
       const nowKRaw = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = voteIndex.getCount(nowKRaw, nowArtistRaw, nowTitleRaw0);
       const nowBlocked = isBlockedShow(nowArtistRaw);
-      const nowAlready = sessionAlreadyVoted(nowKNorm);
+      const nowAlready = isVoted(nowKNorm);
       if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       if (nowVoteBtn){
         nowVoteBtn.style.display = "inline-flex";
@@ -845,7 +866,7 @@ export const prerender = false;
               blockedVoteMsg();
               return;
             }
-            if (sessionAlreadyVoted(kNorm)){
+            if (isVoted(kNorm)){
               alert("You already voted for this track. Come back in 24h 🙂");
               btn.classList.add("is-voted");
               btn.style.opacity = "0.55";
@@ -861,7 +882,7 @@ export const prerender = false;
               voteErrorToast(r);
               return;
             }
-            markSessionVoted(kNorm);
+            markVoted(kNorm);
             const ck = votesCacheKey(getISOWeekId());
             if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
             btn.classList.add("is-voted");
@@ -871,8 +892,8 @@ export const prerender = false;
           });
         }
       }
-      // LAST PLAYED
-      const limit = LAST_PLAYED_LIMIT();
+      // LAST PLAYED - limité à 18
+      const limit = 18;
       const rows = history.slice(1, 1 + limit);
       histEl.innerHTML = rows.map((entry) => {
         const t = splitTrack(entry.t);
@@ -886,7 +907,7 @@ export const prerender = false;
           (coverByNorm[normKey(aRaw, tRaw0)] || "");
         const count = voteIndex.getCount(kRaw, aRaw, tRaw0);
         const blocked = isBlockedShow(aRaw);
-        const voted = sessionAlreadyVoted(kNorm);
+        const voted = isVoted(kNorm);
         return rowHtml({
           coverUrl,
           artist: upperArtist(aRaw || "—"),
@@ -912,7 +933,7 @@ export const prerender = false;
         const c = voteIndex.getCount(kRaw, a, t0);
         if (countEl) countEl.textContent = String(c);
         const row = btn.closest(".abfHistoryRow");
-        const already = sessionAlreadyVoted(kNorm);
+        const already = isVoted(kNorm);
         if (blocked || already){
           btn.classList.add("is-voted");
           btn.style.opacity = "0.55";
@@ -927,7 +948,7 @@ export const prerender = false;
           btn.style.cursor = "pointer";
           if (row) row.classList.remove("abfVotedRow");
           btn.onclick = async () => {
-            if (sessionAlreadyVoted(kNorm)){
+            if (isVoted(kNorm)){
               alert("You already voted for this track. Come back in 24h 🙂");
               btn.classList.add("is-voted");
               btn.style.opacity = "0.55";
@@ -944,7 +965,7 @@ export const prerender = false;
               voteErrorToast(r);
               return;
             }
-            markSessionVoted(kNorm);
+            markVoted(kNorm);
             const ck = votesCacheKey(week);
             if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
             btn.classList.add("is-voted");
