@@ -11,26 +11,24 @@ export const prerender = false;
 >
   <!-- ✅ ROOT WRAPPER (critical to avoid ID collisions with the pinned player) -->
   <div id="musicPageRoot">
-    <!-- HERO (classic portal header) -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
-      <!-- background glow -->
-      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <!-- HERO -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
 
       <div class="relative z-10">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+          Music portal
+        </div>
+
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div class="min-w-0">
-            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-              Music
-            </div>
-
-            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-              Latest tracks played on <span class="text-cyan-200">RadioABF</span>
+            <h1 class="text-3xl md:text-4xl font-extrabold leading-tight">
+              Live titles, covers & weekly community charts
             </h1>
-
-            <p class="text-white/65 mt-3 max-w-2xl">
-              Live history, covers and weekly community votes.
+            <p class="mt-3 text-white/65 max-w-2xl">
+              Directus-first cover system (manual uploads) with iTunes fallback — clean metadata and a premium portal view.
             </p>
           </div>
 
@@ -50,14 +48,14 @@ export const prerender = false;
     </section>
 
     <!-- PORTAL GRID -->
-    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
+    <section class="mt-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
       <!-- LEFT: LIVE HISTORY -->
       <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
         <div class="p-5 md:p-6 border-b border-white/10">
           <div class="flex items-center justify-between gap-4 flex-wrap">
             <div class="min-w-0">
-              <div class="text-sm text-white/60 uppercase tracking-wider">Live history</div>
-              <div class="text-xs text-white/50 mt-1">Now playing + last tracks (clean titles)</div>
+              <div class="text-sm text-white/60 uppercase tracking-wider">Now playing</div>
+              <div class="text-xs text-white/50 mt-1">Live metadata (auto-cleaned titles)</div>
             </div>
 
             <div class="flex items-center gap-2">
@@ -98,12 +96,13 @@ export const prerender = false;
               </div>
 
               <div class="min-w-0 flex-1">
-                <div id="musicArtist" class="text-xl md:text-2xl font-extrabold text-white truncate leading-tight">—</div>
+                <!-- ✅ Artist reduced -->
+                <div id="musicArtist" class="text-lg md:text-xl font-extrabold text-white truncate leading-tight">—</div>
                 <div id="musicTitle" class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
 
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                   <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl">
-                    Auto-cleaned titles
+                    Directus-first covers
                   </span>
                   <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl">
                     Hyphen-safe split
@@ -111,20 +110,14 @@ export const prerender = false;
                 </div>
               </div>
 
+              <!-- ✅ Vote button reduced (same vibe as last played vote buttons) -->
               <button
                 id="nowVoteBtn"
-                class="group w-full sm:w-auto justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white/85 transition flex items-center gap-3"
+                class="voteBtnLike flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition inline-flex items-center gap-2"
                 type="button"
                 aria-label="Vote for now playing"
               >
-                <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition">
-                  👍
-                </span>
-                <span class="flex items-baseline gap-2">
-                  <span class="font-semibold">Vote</span>
-                  <span class="text-white/60">•</span>
-                  <span class="tabular-nums font-semibold"><span id="nowVoteCount">0</span></span>
-                </span>
+                👍 <span class="tabular-nums font-semibold" id="nowVoteCount">0</span>
               </button>
             </div>
           </div>
@@ -137,11 +130,8 @@ export const prerender = false;
             <div class="text-xs text-white/50">Tap 👍 to vote</div>
           </div>
 
-          <!-- ✅ fixed: show 20 last played tracks (excluding now playing) -->
-          <div
-            id="historyTable"
-            class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
-          ></div>
+          <!-- 20 last tracks -->
+          <div id="historyTable" class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"></div>
 
           <div id="historyEmpty" class="text-white/55 text-sm hidden">
             Start the player to load the history.
@@ -191,7 +181,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- EXPLAIN CARD -->
+        <!-- ✅ HOW IT WORKS (back to "first portal" structure, keep same colors) -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
           <div class="p-6 relative">
@@ -199,14 +189,16 @@ export const prerender = false;
             <div class="mt-2 font-extrabold text-lg leading-tight">Directus-first covers</div>
             <p class="mt-3 text-sm text-white/70 leading-relaxed">
               If a track has a manual cover uploaded in <span class="text-cyan-200 font-semibold">Directus → tracks.cover_art</span>,
-              it always wins.
-              If not, we fallback to iTunes so the portal stays visually rich.
+              it always wins. If not, we fallback to iTunes so the portal stays visually rich.
             </p>
+
             <div class="mt-4 flex flex-wrap gap-2 text-xs">
               <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Manual override</span>
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">No bulk uploads</span>
+              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Locked covers</span>
+              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Clean titles</span>
               <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-cyan-200">Premium look</span>
             </div>
+
             <div class="mt-5">
               <a href="/" class="inline-flex items-center gap-2 text-sm text-cyan-200 hover:text-cyan-100 transition">
                 Back to Home →
@@ -221,10 +213,7 @@ export const prerender = false;
       .tabular-nums { font-variant-numeric: tabular-nums; }
       .scrollbar-thin::-webkit-scrollbar { width: 6px; }
       .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-      .scrollbar-thin::-webkit-scrollbar-thumb {
-        background-color: rgba(255,255,255,0.2);
-        border-radius: 9999px;
-      }
+      .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 9999px; }
     </style>
 
     <script is:inline data-astro-rerun>
@@ -234,7 +223,6 @@ export const prerender = false;
   const DAY = 24 * 60 * 60 * 1000;
   const HISTORY_KEY = "abf_history";
 
-  // --------- Global singleton state (prevents double init / double timers) ---------
   const state = (window[KEY] = window[KEY] || {
     bound: false,
     timer: null,
@@ -242,18 +230,10 @@ export const prerender = false;
     lastRenderAt: 0,
   });
 
-  function isMusicRoute() {
-    return window.location.pathname === ROUTE;
-  }
-
-  function getRoot() {
-    // IMPORTANT: scope everything to this root (avoids ID collisions with pinned player)
-    return document.getElementById("musicPageRoot");
-  }
-
+  function isMusicRoute() { return window.location.pathname === ROUTE; }
+  function getRoot() { return document.getElementById("musicPageRoot"); }
   function nowTs() { return Date.now(); }
 
-  // --------- Week helpers ---------
   function getISOWeekId(d = new Date()){
     const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const dayNum = date.getUTCDay() || 7;
@@ -268,7 +248,6 @@ export const prerender = false;
     return getISOWeekId(d);
   }
 
-  // --------- Text helpers ---------
   function esc(s){
     return String(s || "")
       .replace(/&/g,"&amp;")
@@ -286,7 +265,6 @@ export const prerender = false;
     return `${hh}:${mm}`;
   }
 
-  // ✅ remove common suffixes like (Extended Mix), (Original Mix), (Radio Edit) etc.
   function stripTitleSuffixes(input){
     let s = String(input || "").trim();
     if (!s) return "";
@@ -295,7 +273,6 @@ export const prerender = false;
     return s.replace(/\s{2,}/g, " ").trim();
   }
 
-  // ✅ Hyphen-safe split (Jean-Pierre safe)
   function splitTrack(entry){
     const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
     const idx = s.indexOf(" - ");
@@ -331,9 +308,7 @@ export const prerender = false;
     return parts.map((chunk, idx) => {
       if (/^\s+$/.test(chunk)) return chunk;
       const word = chunk;
-
       if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
-
       const hyParts = word.split("-");
       const rebuilt = hyParts.map((w, hIdx) => {
         const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
@@ -349,7 +324,6 @@ export const prerender = false;
     }).join("");
   }
 
-  // --------- Voting rules ---------
   function isBlockedShow(artist){
     return /^abf\s*club\b/i.test(String(artist || "").trim());
   }
@@ -367,7 +341,6 @@ export const prerender = false;
     return (nowTs() - last) < DAY;
   }
 
-  // --------- Legacy history fallback ---------
   function loadHistory(){
     let raw = [];
     try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
@@ -381,7 +354,6 @@ export const prerender = false;
     }).filter(Boolean);
   }
 
-  // --------- Server nowplaying ---------
   async function fetchServerNowPlaying(limit = 80){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -418,7 +390,6 @@ export const prerender = false;
         }
       }
 
-      // dedupe
       const seen = new Set();
       const deduped = [];
       for (const item of out){
@@ -434,7 +405,6 @@ export const prerender = false;
     }
   }
 
-  // --------- Covers (scoped) ---------
   function setCover(url, root){
     const img = root?.querySelector("#musicCover");
     if (!img) return;
@@ -460,7 +430,6 @@ export const prerender = false;
     `;
   }
 
-  // --------- Votes API ---------
   const VOTES_TTL_MS = 10_000;
   function votesCacheKey(week){ return `votes:${week}`; }
 
@@ -498,18 +467,11 @@ export const prerender = false;
   }
 
   function voteErrorToast(r){
-    if (r?.status === 429){
-      alert("You already voted today. Come back in 24h 🙂");
-      return;
-    }
-    if (r?.status === 409 || r?.reason === "cooldown"){
-      alert("You already voted for this track. Come back in 24h 🙂");
-      return;
-    }
+    if (r?.status === 429){ alert("You already voted today. Come back in 24h 🙂"); return; }
+    if (r?.status === 409 || r?.reason === "cooldown"){ alert("You already voted for this track. Come back in 24h 🙂"); return; }
     alert(`Vote failed: ${r?.error || "Unknown error"}`);
   }
 
-  // --------- Render HTML helpers ---------
   function badgeTimeBlue(text){
     return `
       <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-[11px] font-semibold tabular-nums">
@@ -583,7 +545,6 @@ export const prerender = false;
     `;
   }
 
-  // --------- Main render (mutex protected) ---------
   async function render(){
     if (!isMusicRoute()) return;
     const root = getRoot();
@@ -639,7 +600,6 @@ export const prerender = false;
 
       if (histEmpty) histEmpty.classList.add("hidden");
 
-      // cover map
       const coverByNorm = {};
       for (const entry of history){
         const t = splitTrack(entry.t);
@@ -648,7 +608,6 @@ export const prerender = false;
         if (n && u) coverByNorm[n] = u;
       }
 
-      // now playing
       const currentEntry = history[0];
       const current = splitTrack(currentEntry.t);
 
@@ -667,7 +626,6 @@ export const prerender = false;
         (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
       setCover(nowCover, root);
 
-      // votes
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
         apiGetTopWeek(prevWeek),
@@ -680,10 +638,10 @@ export const prerender = false;
         if (k) votesByRaw[k] = c;
       }
 
-      // now vote
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
       const nowKRaw  = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = votesByRaw[nowKRaw] || 0;
+
       const nowBlocked = isBlockedShow(nowArtistRaw);
 
       if (nowVoteBtn && !nowVoteBtn.dataset.listenerAttached) {
@@ -695,11 +653,7 @@ export const prerender = false;
           const nowBlocked2 = isBlockedShow(nowArtistRaw);
 
           if (nowBlocked2) { blockedVoteMsg(); return; }
-
-          if (sessionAlreadyVoted(nowKNorm2)) {
-            alert("You already voted for this track. Come back in 24h 🙂");
-            return;
-          }
+          if (sessionAlreadyVoted(nowKNorm2)) { alert("You already voted for this track. Come back in 24h 🙂"); return; }
 
           nowVoteBtn.style.opacity = "0.7";
           nowVoteBtn.style.cursor = "wait";
@@ -718,13 +672,12 @@ export const prerender = false;
 
           nowVoteBtn.style.opacity = "0.55";
           nowVoteBtn.style.cursor = "not-allowed";
-
           render();
         });
       }
 
       if (nowVoteBtn) {
-        nowVoteBtn.style.display = "flex";
+        nowVoteBtn.style.display = "inline-flex";
 
         if (nowBlocked) {
           nowVoteBtn.style.opacity = "0.45";
@@ -738,7 +691,7 @@ export const prerender = false;
         if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       }
 
-      // ✅ Last played = 20 tracks (excluding now playing)
+      // Last played = 20 (excluding now playing)
       const LAST_PLAYED_LIMIT = 20;
       const rows = history.slice(1, 1 + LAST_PLAYED_LIMIT);
 
@@ -769,7 +722,6 @@ export const prerender = false;
         });
       }).join("");
 
-      // wire vote buttons
       histEl.querySelectorAll(".voteBtn").forEach((btn) => {
         const kNorm = btn.dataset.norm || "";
         const kRaw  = btn.dataset.raw || "";
@@ -781,31 +733,20 @@ export const prerender = false;
         const c = votesByRaw[kRaw] || 0;
         if (countEl) countEl.textContent = String(c);
 
-        if (blocked){
-          btn.onclick = () => blockedVoteMsg();
-          return;
-        }
+        if (blocked){ btn.onclick = () => blockedVoteMsg(); return; }
 
         const already = sessionAlreadyVoted(kNorm);
         btn.style.opacity = already ? "0.55" : "1";
         btn.style.cursor  = already ? "not-allowed" : "pointer";
 
         btn.onclick = async () => {
-          if (sessionAlreadyVoted(kNorm)){
-            alert("You already voted for this track. Come back in 24h 🙂");
-            return;
-          }
+          if (sessionAlreadyVoted(kNorm)){ alert("You already voted for this track. Come back in 24h 🙂"); return; }
 
           btn.style.opacity = "0.7";
           btn.style.cursor = "wait";
 
           const r = await apiVote(kRaw || rawKey(a, t0), a, t0);
-          if (!r.ok){
-            btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
-            voteErrorToast(r);
-            return;
-          }
+          if (!r.ok){ btn.style.opacity = "1"; btn.style.cursor = "pointer"; voteErrorToast(r); return; }
 
           markSessionVoted(kNorm);
           const ck = votesCacheKey(week);
@@ -817,10 +758,7 @@ export const prerender = false;
         };
       });
 
-      // charts this week
-      const topThisSafe = (topThis || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
-        .slice(0, 10);
+      const topThisSafe = (topThis || []).filter(x => x && x.track_key && !isBlockedShow(String(x.artist || ""))).slice(0, 10);
 
       if (!topThisSafe.length){
         if (topThisEmpty) topThisEmpty.classList.remove("hidden");
@@ -838,10 +776,7 @@ export const prerender = false;
         }).join("");
       }
 
-      // charts prev week top 5
-      const topPrevSafe = (topPrev || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
-        .slice(0, 5);
+      const topPrevSafe = (topPrev || []).filter(x => x && x.track_key && !isBlockedShow(String(x.artist || ""))).slice(0, 5);
 
       if (!topPrevSafe.length){
         if (topPrevEmpty) topPrevEmpty.classList.remove("hidden");
@@ -887,16 +822,13 @@ export const prerender = false;
     startTimer();
   }
 
-  // --------- Bind global listeners ONCE ---------
   if (!state.bound){
     state.bound = true;
 
     document.addEventListener("astro:page-load", init);
     document.addEventListener("astro:after-swap", init);
 
-    document.addEventListener("astro:before-swap", () => {
-      stopTimer();
-    });
+    document.addEventListener("astro:before-swap", () => { stopTimer(); });
 
     window.addEventListener("abf:history-updated", () => {
       if (!isMusicRoute()) return;
