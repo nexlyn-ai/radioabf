@@ -11,7 +11,7 @@ export const prerender = false;
 >
   <!-- ✅ ROOT WRAPPER (critical to avoid ID collisions with the pinned player) -->
   <div id="musicPageRoot">
-    <!-- ✅ HEADER (back to the FIRST portal header style) -->
+    <!-- ✅ HEADER (portal spirit + same clean premium style) -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
@@ -21,15 +21,15 @@ export const prerender = false;
           <div class="min-w-0">
             <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
               <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-              Music
+              Music portal
             </div>
 
             <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-              Latest tracks played on <span class="text-cyan-200">RadioABF</span>
+              Live titles & charts on <span class="text-cyan-200">RadioABF</span>
             </h1>
 
             <p class="text-white/65 mt-3 max-w-2xl">
-              Live history, covers and weekly community votes.
+              A premium music portal view: now playing, live history, covers (Directus-first) and weekly community rankings.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export const prerender = false;
                 </div>
               </div>
 
-              <!-- Vote compact (same vibe as last played buttons) -->
+              <!-- Vote compact -->
               <button
                 id="nowVoteBtn"
                 class="flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition inline-flex items-center gap-2"
@@ -184,24 +184,49 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- ✅ HOW IT WORKS (structure restored to FIRST portal version, keep current colors) -->
+        <!-- ✅ HOW IT WORKS (the LISTED / STEP version like the first portal) -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
 
           <div class="p-6 relative">
-            <div class="text-xs text-white/50 uppercase tracking-wider">How it works</div>
-            <div class="mt-2 font-extrabold text-lg leading-tight">Directus-first covers</div>
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="text-xs text-white/50 uppercase tracking-wider">How it works</div>
+                <div class="mt-2 font-extrabold text-lg leading-tight">Covers & votes pipeline</div>
+              </div>
+              <div class="flex-none text-xs text-cyan-200 border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 rounded-xl">
+                Directus-first
+              </div>
+            </div>
 
-            <p class="mt-3 text-sm text-white/70 leading-relaxed">
-              If a track has a manual cover uploaded in <span class="text-cyan-200 font-semibold">Directus → tracks.cover_art</span>,
-              it always wins. If not, we fallback to iTunes so the portal stays visually rich.
-            </p>
+            <ol class="mt-4 space-y-3 text-sm text-white/70 leading-relaxed">
+              <li class="flex gap-3">
+                <span class="flex-none w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-white/80 grid place-items-center font-bold tabular-nums">1</span>
+                <div class="min-w-0">
+                  <span class="text-white/85 font-semibold">Manual cover wins</span> — if <span class="text-cyan-200 font-semibold">tracks.cover_art</span> exists (and/or locked), it is always used everywhere.
+                </div>
+              </li>
+
+              <li class="flex gap-3">
+                <span class="flex-none w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-white/80 grid place-items-center font-bold tabular-nums">2</span>
+                <div class="min-w-0">
+                  <span class="text-white/85 font-semibold">iTunes fallback</span> — if no manual cover exists, we fetch iTunes artwork so the portal stays visually rich.
+                </div>
+              </li>
+
+              <li class="flex gap-3">
+                <span class="flex-none w-7 h-7 rounded-xl bg-white/5 border border-white/10 text-white/80 grid place-items-center font-bold tabular-nums">3</span>
+                <div class="min-w-0">
+                  <span class="text-white/85 font-semibold">Weekly votes</span> — votes are grouped by ISO week and refreshed live (cooldown 24h per track).
+                </div>
+              </li>
+            </ol>
 
             <div class="mt-4 flex flex-wrap gap-2 text-xs">
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Manual override</span>
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Locked covers</span>
               <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Clean titles</span>
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-cyan-200">Premium look</span>
+              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Hyphen-safe split</span>
+              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80">Cover lock</span>
+              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-cyan-200">Premium portal</span>
             </div>
 
             <div class="mt-5">
@@ -221,6 +246,7 @@ export const prerender = false;
       .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 9999px; }
     </style>
 
+    <!-- SCRIPT: unchanged logic from your working version, kept intact -->
     <script is:inline data-astro-rerun>
 (() => {
   const ROUTE = "/music";
@@ -696,7 +722,6 @@ export const prerender = false;
         if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       }
 
-      // Last played = 20 (excluding now playing)
       const LAST_PLAYED_LIMIT = 20;
       const rows = history.slice(1, 1 + LAST_PLAYED_LIMIT);
 
