@@ -48,7 +48,7 @@ export const prerender = false;
     </section>
 
     <!-- PORTAL GRID -->
-    <section class="mt-8 grid grid-cols-1 xl:grid-cols-[1.35fr_0.65fr] gap-6 items-start">
+    <section class="mt-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
       <!-- LEFT: LIVE HISTORY -->
       <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
         <div class="p-5 md:p-6 border-b border-white/10">
@@ -136,7 +136,7 @@ export const prerender = false;
           </div>
 
           <!-- ✅ Bonus: we inject NOW PLAYING as the first row here too -->
-          <div id="historyTable" class="space-y-3"></div>
+          <div id="historyTable" class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"></div>
 
           <div id="historyEmpty" class="text-white/55 text-sm hidden">
             Start the player to load the history.
@@ -217,6 +217,16 @@ export const prerender = false;
 
     <style>
       .tabular-nums { font-variant-numeric: tabular-nums; }
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: rgba(255,255,255,0.2);
+        border-radius: 9999px;
+      }
     </style>
 
     <script is:inline data-astro-rerun>
@@ -456,11 +466,11 @@ export const prerender = false;
   // ✅ simple & stable: compute rows from viewport height (no recursive render)
   function computeHistoryLimitStable(){
     const h = window.innerHeight || 900;
-    // Rough: row ~ 74-86px depending on responsive; keep safe
-    const approxRow = 82;
-    const min = 14;
-    const max = 42;
-    const want = Math.round((h - 420) / approxRow); // 420 = headers + card area estimate
+    const approxRow = 84;
+    const min = 10;
+    const max = 28;
+    const headerEstimate = 480;
+    const want = Math.round((h - headerEstimate) / approxRow);
     return Math.max(min, Math.min(max, want));
   }
 
@@ -702,47 +712,66 @@ export const prerender = false;
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
       const nowKRaw  = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = votesByRaw[nowKRaw] || 0;
-      if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
 
       const nowBlocked = isBlockedShow(nowArtistRaw);
 
-      if (nowVoteBtn){
+      if (nowVoteBtn && !nowVoteBtn.dataset.listenerAttached) {
+        nowVoteBtn.dataset.listenerAttached = "true";
+
+        nowVoteBtn.addEventListener("click", async () => {
+          const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
+          const nowKRaw  = rawKey(nowArtistRaw, nowTitleRaw0);
+          const nowBlocked = isBlockedShow(nowArtistRaw);
+
+          if (nowBlocked) {
+            blockedVoteMsg();
+            return;
+          }
+
+          if (sessionAlreadyVoted(nowKNorm)) {
+            alert("You already voted for this track. Come back in 24h 🙂");
+            return;
+          }
+
+          nowVoteBtn.style.opacity = "0.7";
+          nowVoteBtn.style.cursor = "wait";
+
+          const r = await apiVote(nowKRaw, nowArtistRaw, nowTitleRaw0);
+          if (!r.ok) {
+            nowVoteBtn.style.opacity = "1";
+            nowVoteBtn.style.cursor = "pointer";
+            voteErrorToast(r);
+            return;
+          }
+
+          markSessionVoted(nowKNorm);
+          const ck = votesCacheKey(week);
+          if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
+
+          nowVoteBtn.style.opacity = "0.55";
+          nowVoteBtn.style.cursor = "not-allowed";
+
+          render(); // refresh
+        });
+      }
+
+      // Mise à jour visuelle seulement (sans ré-attacher)
+      if (nowVoteBtn) {
         nowVoteBtn.style.display = "flex";
 
-        if (nowBlocked){
+        const nowBlocked = isBlockedShow(nowArtistRaw);
+        const nowKNorm   = normKey(nowArtistRaw, nowTitleRaw0);
+
+        if (nowBlocked) {
           nowVoteBtn.style.opacity = "0.45";
-          nowVoteBtn.style.cursor = "not-allowed";
-          nowVoteBtn.onclick = () => blockedVoteMsg();
+          nowVoteBtn.style.cursor  = "not-allowed";
         } else {
           const already = sessionAlreadyVoted(nowKNorm);
           nowVoteBtn.style.opacity = already ? "0.55" : "1";
-          nowVoteBtn.style.cursor = already ? "not-allowed" : "pointer";
-
-          nowVoteBtn.onclick = async () => {
-            if (sessionAlreadyVoted(nowKNorm)){
-              alert("You already voted for this track. Come back in 24h 🙂");
-              return;
-            }
-            nowVoteBtn.style.opacity = "0.7";
-            nowVoteBtn.style.cursor = "wait";
-
-            const r = await apiVote(nowKRaw, nowArtistRaw, nowTitleRaw0);
-            if (!r.ok){
-              nowVoteBtn.style.opacity = "1";
-              nowVoteBtn.style.cursor = "pointer";
-              voteErrorToast(r);
-              return;
-            }
-
-            markSessionVoted(nowKNorm);
-            const ck = votesCacheKey(week);
-            if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
-
-            nowVoteBtn.style.opacity = "0.55";
-            nowVoteBtn.style.cursor = "not-allowed";
-            render();
-          };
+          nowVoteBtn.style.cursor  = already ? "not-allowed" : "pointer";
         }
+
+        if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       }
 
       // history list: ✅ now playing inserted as first row
