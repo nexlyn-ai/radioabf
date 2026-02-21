@@ -3,8 +3,8 @@ import Base from "../layouts/Base.astro";
 export const prerender = false;
 ---
 <Base
-  title="Music — RadioABF"
-  description="Live history, covers and weekly community votes on RadioABF."
+  title="Music Portal — RadioABF"
+  description="Live track history, manual covers priority, and real-time weekly votes by the ABF community."
   canonical="/music"
   image="/og-image.jpg"
 >
@@ -20,12 +20,13 @@ export const prerender = false;
               Music
             </div>
             <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-              Community Music & Charts <span class="text-cyan-200">on RadioABF</span>
+              Music Portal & Community Charts <span class="text-cyan-200">on RadioABF</span>
             </h1>
             <p class="text-white/65 mt-3 max-w-2xl">
-              Live history, covers and weekly community votes.
+              Live track history, manual covers priority, and real-time weekly votes by the ABF community.
             </p>
           </div>
+
           <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
               Vote: 1 / track / day
@@ -610,7 +611,7 @@ export const prerender = false;
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
   }
 
-  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 45) {
+  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10) {
     if (!dateStr || !timeStr) return null;
     const [y, m, d] = dateStr.split("-").map(Number);
     const [hh, mi] = timeStr.split(":").map(Number);
@@ -655,7 +656,7 @@ export const prerender = false;
     if (!box) return;
     box.classList.remove("hidden");
     if (!payload){
-      box.innerHTML = `<div class="text-white/60 text-sm">No close match found in that day.</div>`;
+      box.innerHTML = `<div class="text-white/60 text-sm">No match found in that day.</div>`;
       return;
     }
     const { best, bestDelta, within } = payload;
@@ -664,14 +665,15 @@ export const prerender = false;
     const d = toLocalKey(best.ts).date;
     const artist = upperArtist(String(t.artist || "—"));
     const title = titleCaseEN(stripTitleSuffixes(String(t.title || "—")));
+    const deltaMin = Math.round(bestDelta / 60000);
     box.innerHTML = `
       <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
         <div class="flex items-center justify-between gap-3">
           <div class="text-xs text-white/60">
-            ${within ? "Closest match found" : "Match found (time delta is large)"} •
+            ${within ? "Closest match found" : `Match found (time difference: ${deltaMin} min)`} •
             <span class="tabular-nums">${esc(d)} ${esc(time)}</span>
           </div>
-          <div class="text-xs text-white/45 tabular-nums">Δ ${Math.round(bestDelta/60000)} min</div>
+          <div class="text-xs text-white/45 tabular-nums">Δ ${deltaMin} min</div>
         </div>
         <div class="mt-2 font-extrabold text-white truncate">${esc(artist)}</div>
         <div class="text-white/65 text-sm truncate">${esc(title)}</div>
@@ -699,7 +701,7 @@ export const prerender = false;
     const run = () => {
       state.search.date = dateEl.value || "";
       state.search.time = timeEl.value || "";
-      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 45);
+      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 10);
       renderAirSearchResult(root, payload);
     };
     btnEl.addEventListener("click", run);
@@ -1040,7 +1042,7 @@ export const prerender = false;
         }).join("");
       }
       if (state.search?.date && state.search?.time){
-        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 45);
+        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 10);
         renderAirSearchResult(root, payload);
       }
       state.lastRenderAt = nowTs();
