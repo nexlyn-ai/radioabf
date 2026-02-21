@@ -562,12 +562,52 @@ const fmtDate = (iso?: string | null) => {
   // -------------------------
   // Helpers
   // -------------------------
+  function normalizeDashes(s){
+    return String(s || "")
+      .replace(/\s+—\s+/g, " - ")
+      .replace(/\s+–\s+/g, " - ")
+      .replace(/\s+-\s+/g, " - ")
+      .trim();
+  }
+
+  // Split only on " - " (with spaces) => Jean-Pierre safe
   function splitTrack(entry){
-    const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
+    const s = normalizeDashes(String(entry || "").trim().replace(/^undefined\s*-\s*/i, ""));
     const idx = s.indexOf(" - ");
     if (idx === -1) return { artist: s, title: "" };
     return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
   }
+
+  function cleanTitleForDisplay(title){
+    let t = String(title || "").trim();
+    if (!t) return "";
+
+    const killWords =
+      "(?:original|extended|radio|club|dub|edit|mix|version|remix|rework|bootleg|vip|instrumental|acapella|a cappella|mono|stereo|clean|explicit|single|album|live|demo)";
+
+    for (let i = 0; i < 6; i++){
+      const before = t;
+
+      // (Extended Mix) / [Radio Edit] at end
+      t = t.replace(
+        new RegExp(`\\s*[\\(\\[][^\\)\\]]*?\\b${killWords}\\b[^\\)\\]]*[\\)\\]]\\s*$`, "i"),
+        ""
+      );
+
+      // "- Radio Edit" / "– Extended Mix" / "— Original Mix" at end
+      t = t.replace(new RegExp(`\\s*(?:-|–|—)\\s*${killWords}\\b.*$`, "i"), "");
+
+      t = t.replace(/\s{2,}/g, " ").trim();
+      if (t === before) break;
+    }
+
+    return t;
+  }
+
+  function cleanArtistForDisplay(artist){
+    return String(artist || "").replace(/\s{2,}/g, " ").trim();
+  }
+
   function normKey(a,t){
     return (a + " - " + t)
       .toLowerCase()
@@ -734,8 +774,8 @@ const fmtDate = (iso?: string | null) => {
     // NOW
     const currentEntry = history[0];
     const current = splitTrack(currentEntry.t);
-    const artist = String(current.artist || "").trim();
-    const title = String(current.title || "").trim();
+    const artist = cleanArtistForDisplay(current.artist);
+    const title = cleanTitleForDisplay(current.title);
     // on laisse Base faire le formatage global via data-abf-*
     artistEl.textContent = artist || "—";
     titleEl.textContent = title || "—";
@@ -748,8 +788,8 @@ const fmtDate = (iso?: string | null) => {
     }
     host.innerHTML = items.map((entry) => {
       const t = splitTrack(entry.t);
-      const a = String(t.artist || "").trim();
-      const ti = String(t.title || "").trim();
+      const a = cleanArtistForDisplay(t.artist);
+      const ti = cleanTitleForDisplay(t.title);
       const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
       return `
         <a href="/music"
@@ -785,8 +825,8 @@ const fmtDate = (iso?: string | null) => {
       setHeroTop1Cover("");
       return;
     }
-    const artistRaw = String(first.artist || "").trim() || "—";
-    const titleRaw = String(first.title || "").trim() || "—";
+    const artistRaw = cleanArtistForDisplay(first.artist) || "—";
+    const titleRaw = cleanTitleForDisplay(first.title) || "—";
     aEl.textContent = artistRaw;
     tEl.textContent = titleRaw;
     const coverByNorm = window.__abfHomeCoverByNorm || {};
@@ -841,8 +881,8 @@ const fmtDate = (iso?: string | null) => {
         if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
         return;
       }
-      const artistRaw = String(row.artist || "").trim() || "—";
-      const titleRaw = String(row.title || "").trim() || "—";
+      const artistRaw = cleanArtistForDisplay(row.artist) || "—";
+      const titleRaw = cleanTitleForDisplay(row.title) || "—";
       const count = Number(row.count) || 0;
       const coverUrl =
         String(row.cover_url || "").trim() ||
