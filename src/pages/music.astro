@@ -11,24 +11,26 @@ export const prerender = false;
 >
   <!-- ✅ ROOT WRAPPER (critical to avoid ID collisions with the pinned player) -->
   <div id="musicPageRoot">
-    <!-- HERO -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
-      <div class="pointer-events-none absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
-      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+    <!-- HERO (classic portal header) -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+      <!-- background glow -->
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
       <div class="relative z-10">
-        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-          Music portal
-        </div>
-
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
           <div class="min-w-0">
-            <h1 class="text-3xl md:text-4xl font-extrabold leading-tight">
-              Live titles, covers & weekly community charts
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Music
+            </div>
+
+            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+              Latest tracks played on <span class="text-cyan-200">RadioABF</span>
             </h1>
-            <p class="mt-3 text-white/65 max-w-2xl">
-              Directus-first cover system (manual uploads) with iTunes fallback — clean metadata and a premium portal view.
+
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Live history, covers and weekly community votes.
             </p>
           </div>
 
@@ -48,7 +50,7 @@ export const prerender = false;
     </section>
 
     <!-- PORTAL GRID -->
-    <section class="mt-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
+    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
       <!-- LEFT: LIVE HISTORY -->
       <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
         <div class="p-5 md:p-6 border-b border-white/10">
@@ -135,8 +137,11 @@ export const prerender = false;
             <div class="text-xs text-white/50">Tap 👍 to vote</div>
           </div>
 
-          <!-- ✅ Bonus: we inject NOW PLAYING as the first row here too -->
-          <div id="historyTable" class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"></div>
+          <!-- ✅ fixed: show 20 last played tracks (excluding now playing) -->
+          <div
+            id="historyTable"
+            class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
+          ></div>
 
           <div id="historyEmpty" class="text-white/55 text-sm hidden">
             Start the player to load the history.
@@ -203,10 +208,7 @@ export const prerender = false;
               <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-cyan-200">Premium look</span>
             </div>
             <div class="mt-5">
-              <a
-                href="/"
-                class="inline-flex items-center gap-2 text-sm text-cyan-200 hover:text-cyan-100 transition"
-              >
+              <a href="/" class="inline-flex items-center gap-2 text-sm text-cyan-200 hover:text-cyan-100 transition">
                 Back to Home →
               </a>
             </div>
@@ -217,12 +219,8 @@ export const prerender = false;
 
     <style>
       .tabular-nums { font-variant-numeric: tabular-nums; }
-      .scrollbar-thin::-webkit-scrollbar {
-        width: 6px;
-      }
-      .scrollbar-thin::-webkit-scrollbar-track {
-        background: transparent;
-      }
+      .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+      .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
       .scrollbar-thin::-webkit-scrollbar-thumb {
         background-color: rgba(255,255,255,0.2);
         border-radius: 9999px;
@@ -292,7 +290,6 @@ export const prerender = false;
   function stripTitleSuffixes(input){
     let s = String(input || "").trim();
     if (!s) return "";
-
     const rx = /\s*[\(\[]\s*(?:(?:extended|original|radio|club|album|single|clean|explicit|short|long)\s*)?(?:mix|edit|version|remix|re\-mix|rework|bootleg|instrumental|acapella|a\s*cappella|dub|vip|remaster(?:ed)?|mono|stereo)\b[^)\]]*[\)\]]\s*/gi;
     s = s.replace(rx, " ");
     return s.replace(/\s{2,}/g, " ").trim();
@@ -463,17 +460,6 @@ export const prerender = false;
     `;
   }
 
-  // ✅ simple & stable: compute rows from viewport height (no recursive render)
-  function computeHistoryLimitStable(){
-    const h = window.innerHeight || 900;
-    const approxRow = 84;
-    const min = 10;
-    const max = 28;
-    const headerEstimate = 480;
-    const want = Math.round((h - headerEstimate) / approxRow);
-    return Math.max(min, Math.min(max, want));
-  }
-
   // --------- Votes API ---------
   const VOTES_TTL_MS = 10_000;
   function votesCacheKey(week){ return `votes:${week}`; }
@@ -533,26 +519,14 @@ export const prerender = false;
     `;
   }
 
-  function badgeLiveRed(){
-    return `
-      <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-[11px] font-semibold tracking-wider">
-        <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
-        LIVE
-      </span>
-    `;
-  }
-
-  function rowHtml({ coverUrl, artist, title, time, count, blocked, kNorm, kRaw, aRaw, tRaw, isLiveRow }){
+  function rowHtml({ coverUrl, artist, title, time, count, blocked, kNorm, kRaw, aRaw, tRaw }){
     return `
       <div class="flex items-center justify-between gap-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           ${coverHtmlByUrl(coverUrl)}
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-3">
-              <div class="font-extrabold text-white truncate flex items-center gap-2">
-                ${isLiveRow ? badgeLiveRed() : ""}
-                <span class="truncate">${esc(artist || "—")}</span>
-              </div>
+              <div class="font-extrabold text-white truncate">${esc(artist || "—")}</div>
               ${badgeTimeBlue(time)}
             </div>
             <div class="text-white/65 text-sm truncate">${esc(title || "—")}</div>
@@ -615,7 +589,6 @@ export const prerender = false;
     const root = getRoot();
     if (!root) return;
 
-    // prevent concurrent renders
     if (state.inFlight) return;
     state.inFlight = true;
 
@@ -643,7 +616,6 @@ export const prerender = false;
 
       if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
 
-      // history
       let history = await fetchServerNowPlaying(80);
       if (!history.length) history = loadHistory();
 
@@ -695,7 +667,7 @@ export const prerender = false;
         (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
       setCover(nowCover, root);
 
-      // votes maps
+      // votes
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
         apiGetTopWeek(prevWeek),
@@ -712,23 +684,19 @@ export const prerender = false;
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
       const nowKRaw  = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = votesByRaw[nowKRaw] || 0;
-
       const nowBlocked = isBlockedShow(nowArtistRaw);
 
       if (nowVoteBtn && !nowVoteBtn.dataset.listenerAttached) {
         nowVoteBtn.dataset.listenerAttached = "true";
 
         nowVoteBtn.addEventListener("click", async () => {
-          const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
-          const nowKRaw  = rawKey(nowArtistRaw, nowTitleRaw0);
-          const nowBlocked = isBlockedShow(nowArtistRaw);
+          const nowKNorm2 = normKey(nowArtistRaw, nowTitleRaw0);
+          const nowKRaw2  = rawKey(nowArtistRaw, nowTitleRaw0);
+          const nowBlocked2 = isBlockedShow(nowArtistRaw);
 
-          if (nowBlocked) {
-            blockedVoteMsg();
-            return;
-          }
+          if (nowBlocked2) { blockedVoteMsg(); return; }
 
-          if (sessionAlreadyVoted(nowKNorm)) {
+          if (sessionAlreadyVoted(nowKNorm2)) {
             alert("You already voted for this track. Come back in 24h 🙂");
             return;
           }
@@ -736,7 +704,7 @@ export const prerender = false;
           nowVoteBtn.style.opacity = "0.7";
           nowVoteBtn.style.cursor = "wait";
 
-          const r = await apiVote(nowKRaw, nowArtistRaw, nowTitleRaw0);
+          const r = await apiVote(nowKRaw2, nowArtistRaw, nowTitleRaw0);
           if (!r.ok) {
             nowVoteBtn.style.opacity = "1";
             nowVoteBtn.style.cursor = "pointer";
@@ -744,23 +712,19 @@ export const prerender = false;
             return;
           }
 
-          markSessionVoted(nowKNorm);
+          markSessionVoted(nowKNorm2);
           const ck = votesCacheKey(week);
           if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
 
           nowVoteBtn.style.opacity = "0.55";
           nowVoteBtn.style.cursor = "not-allowed";
 
-          render(); // refresh
+          render();
         });
       }
 
-      // Mise à jour visuelle seulement (sans ré-attacher)
       if (nowVoteBtn) {
         nowVoteBtn.style.display = "flex";
-
-        const nowBlocked = isBlockedShow(nowArtistRaw);
-        const nowKNorm   = normKey(nowArtistRaw, nowTitleRaw0);
 
         if (nowBlocked) {
           nowVoteBtn.style.opacity = "0.45";
@@ -774,53 +738,36 @@ export const prerender = false;
         if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       }
 
-      // history list: ✅ now playing inserted as first row
-      const limit = computeHistoryLimitStable();
-      const rows = history.slice(1, 1 + Math.max(0, limit - 1));
+      // ✅ Last played = 20 tracks (excluding now playing)
+      const LAST_PLAYED_LIMIT = 20;
+      const rows = history.slice(1, 1 + LAST_PLAYED_LIMIT);
 
-      const npRow = rowHtml({
-        coverUrl: nowCover,
-        artist: upperArtist(nowArtistRaw || "—"),
-        title: titleCaseEN(nowTitleClean || "—"),
-        time: nowTime,
-        count: votesByRaw[nowKRaw] || 0,
-        blocked: nowBlocked,
-        kNorm: nowKNorm,
-        kRaw: nowKRaw,
-        aRaw: nowArtistRaw,
-        tRaw: nowTitleRaw0,
-        isLiveRow: true
-      });
+      histEl.innerHTML = rows.map((entry) => {
+        const t = splitTrack(entry.t);
+        const aRaw = String(t.artist || "").trim();
+        const tRaw0 = String(t.title || "").trim();
+        const tClean = stripTitleSuffixes(tRaw0);
 
-      histEl.innerHTML =
-        npRow +
-        rows.map((entry) => {
-          const t = splitTrack(entry.t);
-          const aRaw = String(t.artist || "").trim();
-          const tRaw0 = String(t.title || "").trim();
-          const tClean = stripTitleSuffixes(tRaw0);
+        const kNorm = normKey(aRaw, tRaw0);
+        const kRaw  = rawKey(aRaw, tRaw0);
 
-          const kNorm = normKey(aRaw, tRaw0);
-          const kRaw  = rawKey(aRaw, tRaw0);
+        const coverUrl =
+          String(entry.cover_url || "").trim() ||
+          (coverByNorm[normKey(aRaw, tRaw0)] || "");
 
-          const coverUrl =
-            String(entry.cover_url || "").trim() ||
-            (coverByNorm[normKey(aRaw, tRaw0)] || "");
-
-          return rowHtml({
-            coverUrl,
-            artist: upperArtist(aRaw || "—"),
-            title: titleCaseEN(tClean || "—"),
-            time: fmtTime(entry.ts),
-            count: votesByRaw[kRaw] || 0,
-            blocked: isBlockedShow(aRaw),
-            kNorm,
-            kRaw,
-            aRaw,
-            tRaw: tRaw0,
-            isLiveRow: false
-          });
-        }).join("");
+        return rowHtml({
+          coverUrl,
+          artist: upperArtist(aRaw || "—"),
+          title: titleCaseEN(tClean || "—"),
+          time: fmtTime(entry.ts),
+          count: votesByRaw[kRaw] || 0,
+          blocked: isBlockedShow(aRaw),
+          kNorm,
+          kRaw,
+          aRaw,
+          tRaw: tRaw0
+        });
+      }).join("");
 
       // wire vote buttons
       histEl.querySelectorAll(".voteBtn").forEach((btn) => {
@@ -926,7 +873,6 @@ export const prerender = false;
   function startTimer(){
     stopTimer();
     state.timer = setInterval(() => {
-      // avoid spamming if tab is lagging
       if (state.inFlight) return;
       render();
     }, 8000);
@@ -959,16 +905,13 @@ export const prerender = false;
 
     window.addEventListener("resize", () => {
       if (!isMusicRoute()) return;
-      // cheap throttle
       const t = nowTs();
       if (t - state.lastRenderAt > 400) render();
     });
   }
 
-  // run now
   init();
 })();
 </script>
-   
   </div>
 </Base>
