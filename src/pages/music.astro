@@ -11,24 +11,25 @@ export const prerender = false;
 >
   <!-- ✅ ROOT WRAPPER (critical to avoid ID collisions with the pinned player) -->
   <div id="musicPageRoot">
-    <!-- HERO -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
-      <div class="pointer-events-none absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
-      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+    <!-- ✅ HEADER (back to the FIRST portal header style) -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
       <div class="relative z-10">
-        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-          Music portal
-        </div>
-
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
           <div class="min-w-0">
-            <h1 class="text-3xl md:text-4xl font-extrabold leading-tight">
-              Live titles, covers & weekly community charts
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Music
+            </div>
+
+            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+              Latest tracks played on <span class="text-cyan-200">RadioABF</span>
             </h1>
-            <p class="mt-3 text-white/65 max-w-2xl">
-              Directus-first cover system (manual uploads) with iTunes fallback — clean metadata and a premium portal view.
+
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Live history, covers and weekly community votes.
             </p>
           </div>
 
@@ -37,7 +38,7 @@ export const prerender = false;
               Vote once / 24h
             </span>
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
-              Covers: Directus → iTunes fallback
+              Covers: Directus → iTunes
             </span>
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
               Updates every 8s
@@ -48,7 +49,7 @@ export const prerender = false;
     </section>
 
     <!-- PORTAL GRID -->
-    <section class="mt-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
+    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
       <!-- LEFT: LIVE HISTORY -->
       <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
         <div class="p-5 md:p-6 border-b border-white/10">
@@ -96,7 +97,6 @@ export const prerender = false;
               </div>
 
               <div class="min-w-0 flex-1">
-                <!-- ✅ Artist reduced -->
                 <div id="musicArtist" class="text-lg md:text-xl font-extrabold text-white truncate leading-tight">—</div>
                 <div id="musicTitle" class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
 
@@ -110,10 +110,10 @@ export const prerender = false;
                 </div>
               </div>
 
-              <!-- ✅ Vote button reduced (same vibe as last played vote buttons) -->
+              <!-- Vote compact (same vibe as last played buttons) -->
               <button
                 id="nowVoteBtn"
-                class="voteBtnLike flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition inline-flex items-center gap-2"
+                class="flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition inline-flex items-center gap-2"
                 type="button"
                 aria-label="Vote for now playing"
               >
@@ -131,7 +131,10 @@ export const prerender = false;
           </div>
 
           <!-- 20 last tracks -->
-          <div id="historyTable" class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"></div>
+          <div
+            id="historyTable"
+            class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
+          ></div>
 
           <div id="historyEmpty" class="text-white/55 text-sm hidden">
             Start the player to load the history.
@@ -181,12 +184,14 @@ export const prerender = false;
           </div>
         </div>
 
-        <!-- ✅ HOW IT WORKS (back to "first portal" structure, keep same colors) -->
+        <!-- ✅ HOW IT WORKS (structure restored to FIRST portal version, keep current colors) -->
         <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
           <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
+
           <div class="p-6 relative">
             <div class="text-xs text-white/50 uppercase tracking-wider">How it works</div>
             <div class="mt-2 font-extrabold text-lg leading-tight">Directus-first covers</div>
+
             <p class="mt-3 text-sm text-white/70 leading-relaxed">
               If a track has a manual cover uploaded in <span class="text-cyan-200 font-semibold">Directus → tracks.cover_art</span>,
               it always wins. If not, we fallback to iTunes so the portal stays visually rich.
@@ -817,7 +822,6 @@ export const prerender = false;
     if (!isMusicRoute()) return;
     const root = getRoot();
     if (!root) return;
-
     render();
     startTimer();
   }
