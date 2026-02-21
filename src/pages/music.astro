@@ -2,6 +2,7 @@
 import Base from "../layouts/Base.astro";
 export const prerender = false;
 ---
+
 <Base
   title="Music Portal — RadioABF"
   description="Live track history, manual covers priority, and real-time weekly votes by the ABF community."
@@ -255,7 +256,8 @@ export const prerender = false;
         border-color: rgba(236,72,153,0.3);
         color: rgba(249,168,212,0.95);
       }
-      #npCoverSource.other {
+      #npCoverSource.other,
+      #npCoverSource.none {
         background: rgba(255,255,255,0.05);
         border-color: rgba(255,255,255,0.15);
         color: rgba(255,255,255,0.8);
@@ -485,31 +487,38 @@ export const prerender = false;
     }
   }
 
+  // ✅ FIX: return "none" when there's no cover URL so the badge can display "No cover"
   function inferCoverSource(coverUrl, explicitSource){
     const src = String(explicitSource || "").toLowerCase().trim();
     const u = String(coverUrl || "").toLowerCase().trim();
+
     if (src.includes("directus")) return "directus";
     if (src.includes("itunes") || src.includes("apple")) return "itunes";
     if (u.includes("mzstatic.com")) return "itunes";
     if (u.includes("/assets/") || u.includes("directus")) return "directus";
-    return u ? "other" : "";
+
+    if (!u) return "none"; // <-- show "No cover"
+    return "other";
   }
 
   function setCoverSourceBadge(root, coverUrl, explicitSource){
     const el = root?.querySelector("#npCoverSource");
     if (!el) return;
+
     const kind = inferCoverSource(coverUrl, explicitSource);
-    if (!kind){
-      el.classList.add("hidden");
-      el.textContent = "";
-      return;
-    }
+
+    // Always show badge for "none" too
     el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
-    el.textContent = kind === "directus" ? "Directus cover" :
-                     kind === "itunes"   ? "iTunes cover"   : "No cover";
+    el.textContent =
+      kind === "directus" ? "Directus cover" :
+      kind === "itunes"   ? "iTunes cover"   :
+      "No cover";
+
     if (kind === "directus") el.classList.add("directus");
     if (kind === "itunes") el.classList.add("itunes");
     if (kind === "other") el.classList.add("other");
+    if (kind === "none") el.classList.add("none");
+
     el.classList.remove("hidden");
   }
 
@@ -822,7 +831,7 @@ export const prerender = false;
         titleEl.textContent = "—";
         if (timeEl) timeEl.textContent = "--:--";
         setCover("", root);
-        setCoverSourceBadge(root, "", "");
+        setCoverSourceBadge(root, "", ""); // will show "No cover"
         if (histEmpty) histEmpty.classList.remove("hidden");
         histEl.innerHTML = "";
         if (nowVoteBtn) nowVoteBtn.style.display = "none";
@@ -853,7 +862,7 @@ export const prerender = false;
         String(currentEntry.cover_url || "").trim() ||
         (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
       setCover(nowCover, root);
-      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || ""));
+      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || "")); // ✅ shows "No cover" if empty
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
         apiGetTopWeek(prevWeek),
