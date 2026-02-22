@@ -29,9 +29,7 @@ type Occurrence = {
 
 type DirectusListResp<T> = { data: T[] };
 
-// -------------------------
-// Helpers (server-side)
-// -------------------------
+// Helpers
 const isoToKey = (d: number) => {
   if (d === 1) return "mon";
   if (d === 2) return "tue";
@@ -55,9 +53,7 @@ const pickImage = (p: Program | null) => {
   return "/logo-abf.png";
 };
 
-// -------------------------
 // Debug toggle (?debug=1)
-// -------------------------
 const url = new URL(Astro.request.url);
 const debug = url.searchParams.get("debug") === "1";
 
@@ -73,9 +69,7 @@ let debugInfo: {
   sample: null
 };
 
-// -------------------------
 // Build schedule map for client JS
-// -------------------------
 let scheduleByDay: Record<string, { time: string; img: string; title: string; desc: string }[]> = {
   mon: [],
   tue: [],
@@ -91,8 +85,6 @@ try {
     "id,day_of_week,start_time,end_time,is_live,status," +
     "program.id,program.title,program.slug,program.excerpt,program.description,program.cover,program.hero,program.status";
 
-  // ✅ Start with a permissive query for debugging reliability.
-  // We filter only occurrences status; we also ignore rows where program is null (permissions issue).
   const resp = await directusGet<DirectusListResp<Occurrence>>(
     `/items/program_occurrences?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
@@ -107,10 +99,7 @@ try {
   debugInfo.sample = rows[0] ?? null;
 
   for (const r of rows) {
-    if (!r) continue;
-
-    // If program is null, it's usually a permissions/fields issue (Public role can't read programs relation).
-    if (!r.program) continue;
+    if (!r?.program) continue;
 
     const dayKey = isoToKey(Number(r.day_of_week));
     const p = r.program;
@@ -309,7 +298,7 @@ try {
 
   <script is:inline data-astro-rerun>
     (() => {
-      // ✅ Schedule from Directus (server-rendered JSON)
+      // ✅ Injected schedule (REAL JS object)
       const SCHEDULE = {JSON.stringify(scheduleByDay)};
 
       const escapeHtml = (s) =>
@@ -355,8 +344,8 @@ try {
       }
 
       function setActiveDay(day){
-        document.querySelectorAll(".dayTab").forEach(b => {
-          b.classList.toggle("active", b.dataset.day === day);
+        document.querySelectorAll(".dayTab").forEach((b) => {
+          b.classList.toggle("active", b.getAttribute("data-day") === day);
         });
       }
 
@@ -457,34 +446,42 @@ try {
         window.__abfProgramsBound = true;
 
         document.addEventListener("click", (e) => {
-          const btn = e.target?.closest?.(".dayTab");
+          const t = e.target;
+          if (!(t instanceof Element)) return;
+          const btn = t.closest(".dayTab");
           if (!btn) return;
-          const day = btn.dataset.day;
+          const day = btn.getAttribute("data-day");
           if (!day) return;
           render(day);
         });
       }
 
-     function initPrograms(){
-  bindTabsOnce();
+      function pickInitialDay(){
+        const keys = ["mon","tue","wed","thu","fri","sat","sun"];
+        const today = todayKey();
+        if ((SCHEDULE[today] || []).length > 0) return today;
+        const firstNonEmpty = keys.find(k => (SCHEDULE[k] || []).length > 0);
+        return firstNonEmpty || today;
+      }
 
-  const keys = ["mon","tue","wed","thu","fri","sat","sun"];
-  const today = todayKey();
+      function initPrograms(){
+        try{
+          bindTabsOnce();
 
-  // ✅ pick today if it has items, otherwise pick the first non-empty day, otherwise today
-  const firstNonEmpty = keys.find(k => (SCHEDULE[k] || []).length > 0) || today;
-  const day = ((SCHEDULE[today] || []).length > 0) ? today : firstNonEmpty;
+          const day = pickInitialDay();
+          render(day);
 
-  render(day);
-
-  // ✅ one timer only
-  if (!window.__abfProgramsTimer){
-    window.__abfProgramsTimer = setInterval(() => {
-      const current = document.querySelector(".dayTab.active")?.dataset?.day || day;
-      render(current);
-    }, 30000);
-  }
-}
+          if (!window.__abfProgramsTimer){
+            window.__abfProgramsTimer = setInterval(() => {
+              const active = document.querySelector(".dayTab.active");
+              const current = active ? active.getAttribute("data-day") : day;
+              render(current || day);
+            }, 30000);
+          }
+        } catch (err) {
+          console.error("ABF programs init error:", err);
+        }
+      }
 
       initPrograms();
       document.addEventListener("astro:page-load", initPrograms);
