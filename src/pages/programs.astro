@@ -19,9 +19,9 @@ type Program = {
 
 type Occurrence = {
   id: string;
-  day_of_week: number;      // 1..7 (Mon..Sun)
-  start_time: string;       // "HH:MM:SS" (or "HH:MM")
-  end_time?: string | null; // optional
+  day_of_week: number;
+  start_time: string;
+  end_time?: string | null;
   is_live?: boolean | null;
   status?: string | null;
   program: Program | null;
@@ -29,7 +29,6 @@ type Occurrence = {
 
 type DirectusListResp<T> = { data: T[] };
 
-// Helpers
 const isoToKey = (d: number) => {
   if (d === 1) return "mon";
   if (d === 2) return "tue";
@@ -42,35 +41,18 @@ const isoToKey = (d: number) => {
 
 const timeToDisplay = (t: string) => {
   const m = String(t || "").match(/^(\d{1,2}):(\d{2})/);
-  const hh = m ? String(m[1]).padStart(2, "0") : "00";
-  const mm = m ? String(m[2]).padStart(2, "0") : "00";
-  return `${Number(hh)}h${mm}`;
+  if (!m) return "00h00";
+  return Number(m[1]) + "h" + m[2];
 };
 
 const pickImage = (p: Program | null) => {
-  const id = p?.hero || p?.cover;
+  if (!p) return "/logo-abf.png";
+  const id = p.hero || p.cover;
   if (id) return directusAsset(id);
   return "/logo-abf.png";
 };
 
-// Debug toggle (?debug=1)
-const url = new URL(Astro.request.url);
-const debug = url.searchParams.get("debug") === "1";
-
-let debugInfo: {
-  ok: boolean;
-  count: number;
-  error: string;
-  sample: any;
-} = {
-  ok: false,
-  count: 0,
-  error: "",
-  sample: null
-};
-
-// Build schedule map for client JS
-let scheduleByDay: Record<string, { time: string; img: string; title: string; desc: string }[]> = {
+let scheduleByDay: Record<string, any[]> = {
   mon: [],
   tue: [],
   wed: [],
@@ -82,410 +64,147 @@ let scheduleByDay: Record<string, { time: string; img: string; title: string; de
 
 try {
   const fields =
-    "id,day_of_week,start_time,end_time,is_live,status," +
-    "program.id,program.title,program.slug,program.excerpt,program.description,program.cover,program.hero,program.status";
+    "id,day_of_week,start_time,status," +
+    "program.id,program.title,program.excerpt,program.cover,program.hero,program.status";
 
   const resp = await directusGet<DirectusListResp<Occurrence>>(
-    `/items/program_occurrences?fields=${encodeURIComponent(fields)}` +
-      `&filter[status][_eq]=published` +
-      `&sort=day_of_week,start_time` +
-      `&limit=500`
+    "/items/program_occurrences?fields=" + encodeURIComponent(fields) +
+    "&filter[status][_eq]=published" +
+    "&sort=day_of_week,start_time"
   );
 
-  const rows = resp?.data ?? [];
-
-  debugInfo.ok = true;
-  debugInfo.count = rows.length;
-  debugInfo.sample = rows[0] ?? null;
+  const rows = resp && resp.data ? resp.data : [];
 
   for (const r of rows) {
-    if (!r?.program) continue;
+    if (!r.program) continue;
+    if (r.program.status !== "published") continue;
 
-    const dayKey = isoToKey(Number(r.day_of_week));
-    const p = r.program;
+    const key = isoToKey(Number(r.day_of_week));
 
-    scheduleByDay[dayKey].push({
+    scheduleByDay[key].push({
       time: timeToDisplay(r.start_time),
-      img: pickImage(p),
-      title: p?.title || "Untitled program",
-      desc: (p?.excerpt || p?.description || "").trim()
+      img: pickImage(r.program),
+      title: r.program.title || "Untitled",
+      desc: r.program.excerpt || ""
     });
   }
-} catch (e: any) {
-  debugInfo.error = String(e?.message || e || "unknown error");
+} catch (e) {
+  console.error("Programs fetch error:", e);
 }
 ---
 
 <Base
   title="Programs — RadioABF"
-  description="Discover DJ programs and live schedule on radioabf.com — Alternative Bass Fréquence electronic radio."
+  description="Discover DJ programs and live schedule on radioabf.com."
   canonical="/programs"
   image="/og-image.jpg"
 >
-  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
-    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-    <div class="relative z-10">
-      <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div class="min-w-0">
-          <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-            Programs
-          </div>
+<section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 mb-6 shadow-2xl">
+  <h1 class="text-3xl font-extrabold">
+    Weekly schedule on <span class="text-cyan-200">RadioABF</span>
+  </h1>
+</section>
 
-          <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-            Weekly schedule on <span class="text-cyan-200">RadioABF</span>
-          </h1>
+<section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4 mb-6">
+  <div class="flex gap-2">
+    <button class="dayTab active" data-day="mon">Mon</button>
+    <button class="dayTab" data-day="tue">Tue</button>
+    <button class="dayTab" data-day="wed">Wed</button>
+    <button class="dayTab" data-day="thu">Thu</button>
+    <button class="dayTab" data-day="fri">Fri</button>
+    <button class="dayTab" data-day="sat">Sat</button>
+    <button class="dayTab" data-day="sun">Sun</button>
+  </div>
+</section>
 
-          <p class="text-white/65 mt-3 max-w-2xl">
-            Residents, guests & non-stop rotations — with ON AIR highlight.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
+<section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4">
+  <div id="scheduleList"></div>
+</section>
 
-  <!-- Day tabs -->
-  <section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4 md:p-5 mb-6">
-    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-      <button class="dayTab active" data-day="mon" type="button">Mon</button>
-      <button class="dayTab" data-day="tue" type="button">Tue</button>
-      <button class="dayTab" data-day="wed" type="button">Wed</button>
-      <button class="dayTab" data-day="thu" type="button">Thu</button>
-      <button class="dayTab" data-day="fri" type="button">Fri</button>
-      <button class="dayTab" data-day="sat" type="button">Sat</button>
-      <button class="dayTab" data-day="sun" type="button">Sun</button>
-    </div>
+<script is:inline>
+(function(){
 
-    <style is:inline>
-      .no-scrollbar::-webkit-scrollbar{display:none}
-      .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  var SCHEDULE = {JSON.stringify(scheduleByDay)};
 
-      .dayTab{
-        flex:0 0 auto;
-        padding:.55rem .95rem;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,.12);
-        background: rgba(255,255,255,.04);
-        color: rgba(255,255,255,.75);
-        font-size:.9rem;
-        transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  function todayKey(){
+    var d = new Date().getDay();
+    if (d === 0) return "sun";
+    if (d === 1) return "mon";
+    if (d === 2) return "tue";
+    if (d === 3) return "wed";
+    if (d === 4) return "thu";
+    if (d === 5) return "fri";
+    return "sat";
+  }
+
+  function setActive(day){
+    var tabs = document.querySelectorAll(".dayTab");
+    for (var i=0;i<tabs.length;i++){
+      if (tabs[i].getAttribute("data-day") === day){
+        tabs[i].classList.add("active");
+      } else {
+        tabs[i].classList.remove("active");
       }
-      .dayTab:hover{
-        background: rgba(255,255,255,.07);
-        color: rgba(255,255,255,.92);
+    }
+  }
+
+  function render(day){
+    var list = document.getElementById("scheduleList");
+    if (!list) return;
+
+    setActive(day);
+
+    var items = SCHEDULE[day] || [];
+
+    if (!items.length){
+      list.innerHTML = "<div class='text-white/50'>No schedule found.</div>";
+      return;
+    }
+
+    var html = "";
+
+    for (var i=0;i<items.length;i++){
+      var it = items[i];
+      html +=
+        "<div class='mb-4 p-4 border border-white/10 rounded-xl'>" +
+        "<div class='text-cyan-200 font-bold mb-2'>" + it.time + "</div>" +
+        "<img src='" + it.img + "' class='w-full mb-2' />" +
+        "<div class='text-white font-semibold'>" + it.title + "</div>" +
+        "<div class='text-white/70 text-sm'>" + it.desc + "</div>" +
+        "</div>";
+    }
+
+    list.innerHTML = html;
+  }
+
+  document.addEventListener("click", function(e){
+    var target = e.target;
+    if (!(target instanceof Element)) return;
+
+    var btn = target.closest(".dayTab");
+    if (!btn) return;
+
+    var day = btn.getAttribute("data-day");
+    if (!day) return;
+
+    render(day);
+  });
+
+  var initial = todayKey();
+  if (!(SCHEDULE[initial] && SCHEDULE[initial].length)){
+    var keys = ["mon","tue","wed","thu","fri","sat","sun"];
+    for (var i=0;i<keys.length;i++){
+      if (SCHEDULE[keys[i]] && SCHEDULE[keys[i]].length){
+        initial = keys[i];
+        break;
       }
-      .dayTab.active{
-        background: linear-gradient(90deg,#145C8F,#2FC2FF);
-        border-color: rgba(47,194,255,.35);
-        color: #fff;
-        box-shadow: 0 0 22px rgba(47,194,255,.18);
-      }
+    }
+  }
 
-      .line-clamp-2{
-        display:-webkit-box;
-        -webkit-line-clamp:2;
-        -webkit-box-orient:vertical;
-        overflow:hidden;
-      }
+  render(initial);
 
-      /* ✅ ON AIR: full card highlight */
-      .onAirCard{
-        border-color: rgba(248,113,113,.35) !important;
-        background: radial-gradient(1200px 220px at 20% 0%,
-          rgba(239,68,68,0.22),
-          rgba(255,255,255,0.05) 45%,
-          rgba(255,255,255,0.03) 100%);
-        box-shadow:
-          0 0 0 1px rgba(239,68,68,0.15) inset,
-          0 20px 70px rgba(239,68,68,0.14),
-          0 10px 35px rgba(0,0,0,0.35);
-        position: relative;
-      }
-      .onAirCard::before{
-        content:"";
-        position:absolute;
-        inset:-1px;
-        border-radius: 1rem;
-        pointer-events:none;
-        background: linear-gradient(90deg,
-          rgba(239,68,68,0.22),
-          rgba(239,68,68,0.10),
-          rgba(239,68,68,0.22));
-        filter: blur(18px);
-        opacity: .55;
-      }
+})();
+</script>
 
-      .onAirStrip{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:10px;
-        padding: 10px 12px;
-        border-radius: 14px;
-        border: 1px solid rgba(248,113,113,.25);
-        background: rgba(239,68,68,0.14);
-        box-shadow: 0 0 22px rgba(239,68,68,0.14);
-      }
-      .onAirStrip .left{
-        display:flex; align-items:center; gap:10px;
-        min-width:0;
-      }
-      .onAirStrip .pill{
-        flex:none;
-        display:inline-flex;
-        align-items:center;
-        gap:8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(248,113,113,.35);
-        background: rgba(239,68,68,0.18);
-        color: rgba(254,202,202,0.95);
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: .16em;
-        white-space: nowrap;
-      }
-      .onAirStrip .dot{
-        width: 8px; height: 8px; border-radius: 999px;
-        background: rgb(248,113,113);
-        box-shadow: 0 0 18px rgba(248,113,113,0.65);
-        animation: onAirPulse 1.1s ease-in-out infinite;
-      }
-      @keyframes onAirPulse{
-        0%,100%{ transform: scale(1); opacity: .9; }
-        50%{ transform: scale(1.25); opacity: 1; }
-      }
-      .onAirStrip .label{
-        min-width:0;
-        color: rgba(254,202,202,0.95);
-        font-weight: 800;
-        letter-spacing: .02em;
-        white-space: nowrap;
-        overflow:hidden;
-        text-overflow: ellipsis;
-      }
-      .onAirStrip .time{
-        flex:none;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(248,113,113,.30);
-        background: rgba(239,68,68,0.10);
-        color: rgba(254,202,202,0.95);
-        font-weight: 800;
-        font-size: 12px;
-        white-space: nowrap;
-      }
-    </style>
-  </section>
-
-  <!-- Schedule list -->
-  <section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4 md:p-6">
-    <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
-      Schedule
-    </div>
-
-    <div id="scheduleList" class="space-y-3"></div>
-  </section>
-
-  <!-- ✅ Debug (only with ?debug=1) -->
-  {debug ? (
-    <pre class="mt-6 text-xs text-white/70 bg-black/30 border border-white/10 rounded-xl p-4 overflow-auto">
-      {JSON.stringify(debugInfo, null, 2)}
-    </pre>
-  ) : null}
-
-  <script is:inline data-astro-rerun>
-    (() => {
-      // ✅ Injected schedule (REAL JS object)
-      const SCHEDULE = {JSON.stringify(scheduleByDay)};
-
-      const escapeHtml = (s) =>
-        String(s || "")
-          .replace(/&/g,"&amp;")
-          .replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;")
-          .replace(/"/g,"&quot;")
-          .replace(/'/g,"&#039;");
-
-      function parseTimeToMinutes(t){
-        const m = String(t || "").match(/(\d{1,2})\s*h\s*(\d{2})/i);
-        if (!m) return 0;
-        const hh = Math.max(0, Math.min(23, Number(m[1]) || 0));
-        const mm = Math.max(0, Math.min(59, Number(m[2]) || 0));
-        return hh * 60 + mm;
-      }
-
-      function todayKey(){
-        const d = new Date().getDay();
-        if (d === 0) return "sun";
-        if (d === 1) return "mon";
-        if (d === 2) return "tue";
-        if (d === 3) return "wed";
-        if (d === 4) return "thu";
-        if (d === 5) return "fri";
-        return "sat";
-      }
-
-      function nowMinutes(){
-        const n = new Date();
-        return n.getHours() * 60 + n.getMinutes();
-      }
-
-      function isOnAirForIndex(day, items, idx){
-        if (day !== todayKey()) return false;
-        const cur = nowMinutes();
-        const start = parseTimeToMinutes(items[idx]?.time);
-        const next = (idx < items.length - 1)
-          ? parseTimeToMinutes(items[idx + 1]?.time)
-          : 24 * 60;
-        return cur >= start && cur < next;
-      }
-
-      function setActiveDay(day){
-        document.querySelectorAll(".dayTab").forEach((b) => {
-          b.classList.toggle("active", b.getAttribute("data-day") === day);
-        });
-      }
-
-      function card(item, onAir){
-        const time = escapeHtml(item.time);
-        const title = escapeHtml(item.title);
-        const desc = escapeHtml(item.desc || "");
-        const src = String(item.img || "/logo-abf.png");
-
-        const timeClasses = onAir
-          ? "border-red-400/35 bg-red-500/15 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
-          : "border-white/10 bg-[#050B14]/45 text-cyan-200";
-
-        const dotClasses = onAir ? "bg-red-400 animate-pulse" : "bg-cyan-400 animate-pulse";
-
-        const onAirBadge = onAir ? `
-          <span class="ml-1 inline-flex items-center gap-2 px-2 py-0.5 rounded-xl
-                       border border-red-400/30 bg-red-500/15
-                       text-[10px] uppercase tracking-widest text-red-200
-                       shadow-[0_0_18px_rgba(239,68,68,0.16)]">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
-            On Air
-          </span>
-        ` : "";
-
-        const header = onAir ? `
-          <div class="onAirStrip">
-            <div class="left">
-              <span class="pill"><span class="dot"></span> LIVE NOW</span>
-              <div class="label">${title}</div>
-            </div>
-            <div class="time">${time}</div>
-          </div>
-        ` : `
-          <div class="flex items-center gap-2 flex-wrap">
-            <div class="inline-flex items-center gap-2 w-fit
-                        px-2.5 py-1 rounded-xl
-                        border backdrop-blur-xl
-                        text-[12px] md:text-[13px] font-bold tracking-wide ${timeClasses}">
-              <span class="w-2 h-2 rounded-full ${dotClasses}"></span>
-              ${time}
-            </div>
-            ${onAirBadge}
-          </div>
-        `;
-
-        return `
-          <article class="group flex flex-col gap-3 p-4 md:p-5
-                          rounded-2xl border border-white/10
-                          bg-gradient-to-br from-white/5 to-white/[0.03]
-                          hover:from-white/10 hover:to-white/[0.06]
-                          transition-all duration-300 ${onAir ? "onAirCard" : ""}">
-            ${header}
-
-            <div class="w-full rounded-xl overflow-hidden
-                        border border-white/10 bg-black/20
-                        shadow-md shadow-cyan-500/10">
-              <div class="w-full aspect-[16/6] md:aspect-[16/5] flex items-center justify-center">
-                <img
-                  src="${escapeHtml(src)}"
-                  alt="${title}"
-                  class="max-w-full max-h-full object-contain transition duration-500 group-hover:scale-[1.02]"
-                  loading="lazy"
-                  decoding="async"
-                >
-              </div>
-            </div>
-
-            <div class="min-w-0">
-              ${onAir ? "" : `<div class="text-base md:text-lg font-semibold text-white truncate">${title}</div>`}
-              <div class="text-white/70 text-sm md:text-base leading-snug mt-1 line-clamp-2">
-                ${desc}
-              </div>
-            </div>
-          </article>
-        `;
-      }
-
-      function render(day){
-        const list = document.getElementById("scheduleList");
-        if (!list) return;
-
-        setActiveDay(day);
-
-        const items = (SCHEDULE[day] || []).slice()
-          .sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
-
-        if (!items.length){
-          list.innerHTML = `<div class="text-white/50">No schedule found.</div>`;
-          return;
-        }
-
-        list.innerHTML = items.map((it, idx) => card(it, isOnAirForIndex(day, items, idx))).join("");
-      }
-
-      function bindTabsOnce(){
-        if (window.__abfProgramsBound) return;
-        window.__abfProgramsBound = true;
-
-        document.addEventListener("click", (e) => {
-          const t = e.target;
-          if (!(t instanceof Element)) return;
-          const btn = t.closest(".dayTab");
-          if (!btn) return;
-          const day = btn.getAttribute("data-day");
-          if (!day) return;
-          render(day);
-        });
-      }
-
-      function pickInitialDay(){
-        const keys = ["mon","tue","wed","thu","fri","sat","sun"];
-        const today = todayKey();
-        if ((SCHEDULE[today] || []).length > 0) return today;
-        const firstNonEmpty = keys.find(k => (SCHEDULE[k] || []).length > 0);
-        return firstNonEmpty || today;
-      }
-
-      function initPrograms(){
-        try{
-          bindTabsOnce();
-
-          const day = pickInitialDay();
-          render(day);
-
-          if (!window.__abfProgramsTimer){
-            window.__abfProgramsTimer = setInterval(() => {
-              const active = document.querySelector(".dayTab.active");
-              const current = active ? active.getAttribute("data-day") : day;
-              render(current || day);
-            }, 30000);
-          }
-        } catch (err) {
-          console.error("ABF programs init error:", err);
-        }
-      }
-
-      initPrograms();
-      document.addEventListener("astro:page-load", initPrograms);
-      document.addEventListener("astro:after-swap", initPrograms);
-    })();
-  </script>
 </Base>
