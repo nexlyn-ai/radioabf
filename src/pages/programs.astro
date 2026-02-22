@@ -1,5 +1,95 @@
 ---
 import Base from "../layouts/Base.astro";
+import { directusGet, directusAsset } from "../lib/directus";
+
+export const prerender = false;
+
+type DirectusFile = string | null;
+
+type Program = {
+  id: string;
+  title: string;
+  slug?: string | null;
+  excerpt?: string | null;
+  description?: string | null;
+  cover?: DirectusFile;
+  hero?: DirectusFile;
+  status?: string | null;
+};
+
+type Occurrence = {
+  id: string;
+  day_of_week: number;      // 1..7 (Mon..Sun)
+  start_time: string;       // "HH:MM:SS" (or "HH:MM")
+  end_time?: string | null; // optional
+  is_live?: boolean | null;
+  status?: string | null;
+  program: Program;
+};
+
+type DirectusListResp<T> = { data: T[] };
+
+const isoToKey = (d: number) => {
+  if (d === 1) return "mon";
+  if (d === 2) return "tue";
+  if (d === 3) return "wed";
+  if (d === 4) return "thu";
+  if (d === 5) return "fri";
+  if (d === 6) return "sat";
+  return "sun";
+};
+
+const timeToDisplay = (t: string) => {
+  const m = String(t || "").match(/^(\d{1,2}):(\d{2})/);
+  const hh = m ? String(m[1]).padStart(2, "0") : "00";
+  const mm = m ? String(m[2]).padStart(2, "0") : "00";
+  return `${Number(hh)}h${mm}`;
+};
+
+const pickImage = (p: Program) => {
+  const id = p?.hero || p?.cover;
+  if (id) return directusAsset(id);
+  return "/logo-abf.png";
+};
+
+// ✅ schedule map given to client JS
+let scheduleByDay: Record<string, { time: string; img: string; title: string; desc: string }[]> = {
+  mon: [],
+  tue: [],
+  wed: [],
+  thu: [],
+  fri: [],
+  sat: [],
+  sun: []
+};
+
+try {
+  const fields =
+    "id,day_of_week,start_time,end_time,is_live,status," +
+    "program.id,program.title,program.slug,program.excerpt,program.description,program.cover,program.hero,program.status";
+
+  const resp = await directusGet<DirectusListResp<Occurrence>>(
+    `/items/program_occurrences?fields=${encodeURIComponent(fields)}` +
+      `&filter[status][_eq]=published` +
+      `&filter[program][status][_eq]=published` +
+      `&sort=day_of_week,start_time` +
+      `&limit=500`
+  );
+
+  for (const r of resp?.data ?? []) {
+    const dayKey = isoToKey(Number(r.day_of_week));
+    const p = r.program;
+
+    scheduleByDay[dayKey].push({
+      time: timeToDisplay(r.start_time),
+      img: pickImage(p),
+      title: p?.title || "Untitled program",
+      desc: (p?.excerpt || p?.description || "").trim()
+    });
+  }
+} catch {
+  // keep empty schedule (UI will show "No schedule found.")
+}
 ---
 
 <Base
@@ -8,31 +98,29 @@ import Base from "../layouts/Base.astro";
   canonical="/programs"
   image="/og-image.jpg"
 >
-<section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <div class="relative z-10">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            Programs
+          </div>
 
-  <div class="relative z-10">
-    <div class="flex items-start justify-between gap-4 flex-wrap">
-      <div class="min-w-0">
-        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-          Programs
+          <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+            Weekly schedule on <span class="text-cyan-200">RadioABF</span>
+          </h1>
+
+          <p class="text-white/65 mt-3 max-w-2xl">
+            Residents, guests & non-stop rotations — with ON AIR highlight.
+          </p>
         </div>
-
-        <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-          Weekly schedule on <span class="text-cyan-200">RadioABF</span>
-        </h1>
-
-        <p class="text-white/65 mt-3 max-w-2xl">
-          Residents, guests & non-stop rotations — with ON AIR highlight.
-        </p>
       </div>
     </div>
-  </div>
-</section>
-
+  </section>
 
   <!-- Day tabs -->
   <section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4 md:p-5 mb-6">
@@ -179,60 +267,10 @@ import Base from "../layouts/Base.astro";
 
   <script is:inline data-astro-rerun>
     (() => {
-      // ✅ local images directory on new site
-      // put files in: public/images/programs/<filename>
-      const PROGRAMS_DIR = "/images/programs/";
-
-      const SCHEDULE = {
-        mon: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507170_24ed82d807a1c66d30e0.jpg", title:"ABF CLUB - JNOES", desc:"Groovy drum'n'bass & commercial house master with big room builds and festival energy." },
-          { time:"23h00", img:"1768507185_5cc0873ee591d1b570eb.jpg", title:"ABF CLUB - DEGIANNY", desc:"Melodic techno & progressive specialist delivering emotional, keyboard-live journeys." }
-        ],
-        tue: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507231_488e50db2ea8cda46b2f.jpg", title:"ABF CLUB - TECKROAD", desc:"Veteran blending psy-trance, tech house, funky classics, and warm vinyl grooves." },
-          { time:"23h00", img:"1768507251_046f763d818c022f3c69.jpg", title:"ABF CLUB - THE SPYMBOYS", desc:"Alpine party king with eclectic funky/jackin' house and high-energy vibes." }
-        ],
-        wed: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507297_9c576120fcbd38219aa9.jpg", title:"ABF CLUB - JEAN-JEROME", desc:"Paris house veteran serving authentic groovy roots and soulful club feels." },
-          { time:"23h00", img:"1768507316_1261bdc48106c8579a39.jpg", title:"ABF CLUB - WILLIAM FOREST", desc:"Melodic deep/prog producer with emotional tracks and creative mashups." }
-        ],
-        thu: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1770803145_3590fecff4df25a42558.jpg", title:"ABF CLUB - PIERRE DE PARIS", desc:"Real mix for real mix lovers..." },
-          { time:"23h00", img:"1768507375_9f458c45cbf3edbcce4d.jpg", title:"ABF CLUB - C-DRYK", desc:"Versatile jackin' house expert with nu-disco, funky, and scratch flair." }
-        ],
-        fri: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"18h00", img:"1770136551_b9cc44e800f0124bbab4.png", title:"ABF WARMUP EXTENDED", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507456_050c7b9177cfce665c11.jpg", title:"ABF CLUB - BETTY MIX", desc:"Feel-good queen of sunny remixes, uplifting house, psy-trance and positive energy." },
-          { time:"23h00", img:"1768507483_b656d4c2f50a3652be6f.jpg", title:"ABF CLUB - DJ JOEE", desc:"Australian house traveler with melodic deep/prog and seamless journeys." }
-        ],
-        sat: [
-          { time:"00h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"20h00", img:"1770577445_c2959a4650239906609a.jpg", title:"ABF CLUB - GUEST MIX 1", desc:"Rotating international guest delivering fresh, surprising house/techno vibes to kick off the prime time." },
-          { time:"21h00", img:"1770577532_f7aae5eb0902593ac1cb.jpg", title:"ABF CLUB - GUEST MIX 2", desc:"Second rotating guest slot packed with high-energy club heat and exclusive selections." },
-          { time:"22h00", img:"1768507536_07beeacfd28b4fc86c30.jpg", title:"ABF CLUB - LAURENT SCHARK", desc:"Vocal/funky house pillar bringing groovy, timeless London-Paris vibes." },
-          { time:"23h00", img:"1768677347_b8fc41f1805e109d4d66.png", title:"ABF CLUB - TONY JAY", desc:"Paris club selector with energetic house, tech, and dancefloor fire." }
-        ],
-        sun: [
-          { time:"00h00", img:"1769976420_3b4d78bf20f028487165.png", title:"ABF AFTER", desc:"Deep, driving hypnotic techno to fuel the afterhours and keep the energy high till dawn." },
-          { time:"07h00", img:"1770128309_dc9e7e2e6b3e22de821f.png", title:"ABF CHILL", desc:"Lounge, chill-out & downtempo grooves — smooth beats and dreamy melodies to relax." },
-          { time:"10h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"20h00", img:"1768155428_bf272625d4798bd3d3f5.jpg", title:"ABF CLUB [MADE IN JAPAN] - ZEPHYR", desc:"Elegant deep/melodic house from Japan with atmospheric Ibiza touches." },
-          { time:"21h00", img:"1768155467_5ed42c9a2e258587b90c.jpg", title:"ABF CLUB [MADE IN JAPAN] - HIDEKI", desc:"Funky big beat legend mixing game-soundtrack energy and club heat." },
-          { time:"22h00", img:"1768155500_86865e0936bc69837bc6.jpg", title:"ABF CLUB [MADE IN JAPAN] - TAMIO YAMASHITA", desc:"Innovative house/trance producer fusing tech and emotional melodies." },
-          { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
-        ]
-      };
+      // ✅ Schedule from Directus (server-rendered JSON)
+      const SCHEDULE = /** @type {Record<string, Array<{time:string,img:string,title:string,desc?:string}>>} */ (
+        {JSON.stringify(scheduleByDay)}
+      );
 
       const escapeHtml = (s) =>
         String(s || "")
@@ -286,7 +324,7 @@ import Base from "../layouts/Base.astro";
         const time = escapeHtml(item.time);
         const title = escapeHtml(item.title);
         const desc = escapeHtml(item.desc || "");
-        const src = PROGRAMS_DIR + String(item.img || "");
+        const src = String(item.img || "/logo-abf.png");
 
         const timeClasses = onAir
           ? "border-red-400/35 bg-red-500/15 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
