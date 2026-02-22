@@ -310,9 +310,7 @@ try {
   <script is:inline data-astro-rerun>
     (() => {
       // ✅ Schedule from Directus (server-rendered JSON)
-      const SCHEDULE = /** @type {Record<string, Array<{time:string,img:string,title:string,desc?:string}>>} */ (
-        {JSON.stringify(scheduleByDay)}
-      );
+      const SCHEDULE = JSON.parse({JSON.stringify(JSON.stringify(scheduleByDay))});
 
       const escapeHtml = (s) =>
         String(s || "")
@@ -473,6 +471,9 @@ try {
         // ✅ FORCE day-of-week on every page load / swap
         const day = todayKey();
         render(day);
+
+console.log("ABF Programs SCHEDULE", SCHEDULE);
+console.log("ABF Programs day", day, (SCHEDULE[day] || []).length);
 
         // ✅ one timer only
         if (!window.__abfProgramsTimer){
