@@ -24,11 +24,14 @@ type Occurrence = {
   end_time?: string | null; // optional
   is_live?: boolean | null;
   status?: string | null;
-  program: Program;
+  program: Program | null;
 };
 
 type DirectusListResp<T> = { data: T[] };
 
+// -------------------------
+// Helpers (server-side)
+// -------------------------
 const isoToKey = (d: number) => {
   if (d === 1) return "mon";
   if (d === 2) return "tue";
@@ -46,13 +49,33 @@ const timeToDisplay = (t: string) => {
   return `${Number(hh)}h${mm}`;
 };
 
-const pickImage = (p: Program) => {
+const pickImage = (p: Program | null) => {
   const id = p?.hero || p?.cover;
   if (id) return directusAsset(id);
   return "/logo-abf.png";
 };
 
-// ✅ schedule map given to client JS
+// -------------------------
+// Debug toggle (?debug=1)
+// -------------------------
+const url = new URL(Astro.request.url);
+const debug = url.searchParams.get("debug") === "1";
+
+let debugInfo: {
+  ok: boolean;
+  count: number;
+  error: string;
+  sample: any;
+} = {
+  ok: false,
+  count: 0,
+  error: "",
+  sample: null
+};
+
+// -------------------------
+// Build schedule map for client JS
+// -------------------------
 let scheduleByDay: Record<string, { time: string; img: string; title: string; desc: string }[]> = {
   mon: [],
   tue: [],
@@ -68,15 +91,27 @@ try {
     "id,day_of_week,start_time,end_time,is_live,status," +
     "program.id,program.title,program.slug,program.excerpt,program.description,program.cover,program.hero,program.status";
 
+  // ✅ Start with a permissive query for debugging reliability.
+  // We filter only occurrences status; we also ignore rows where program is null (permissions issue).
   const resp = await directusGet<DirectusListResp<Occurrence>>(
     `/items/program_occurrences?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
-      `&filter[program][status][_eq]=published` +
       `&sort=day_of_week,start_time` +
       `&limit=500`
   );
 
-  for (const r of resp?.data ?? []) {
+  const rows = resp?.data ?? [];
+
+  debugInfo.ok = true;
+  debugInfo.count = rows.length;
+  debugInfo.sample = rows[0] ?? null;
+
+  for (const r of rows) {
+    if (!r) continue;
+
+    // If program is null, it's usually a permissions/fields issue (Public role can't read programs relation).
+    if (!r.program) continue;
+
     const dayKey = isoToKey(Number(r.day_of_week));
     const p = r.program;
 
@@ -87,8 +122,8 @@ try {
       desc: (p?.excerpt || p?.description || "").trim()
     });
   }
-} catch {
-  // keep empty schedule (UI will show "No schedule found.")
+} catch (e: any) {
+  debugInfo.error = String(e?.message || e || "unknown error");
 }
 ---
 
@@ -264,6 +299,13 @@ try {
 
     <div id="scheduleList" class="space-y-3"></div>
   </section>
+
+  <!-- ✅ Debug (only with ?debug=1) -->
+  {debug ? (
+    <pre class="mt-6 text-xs text-white/70 bg-black/30 border border-white/10 rounded-xl p-4 overflow-auto">
+      {JSON.stringify(debugInfo, null, 2)}
+    </pre>
+  ) : null}
 
   <script is:inline data-astro-rerun>
     (() => {
