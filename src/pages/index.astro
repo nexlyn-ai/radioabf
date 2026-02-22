@@ -1101,13 +1101,75 @@ function parseTimeToMinutes(t){
     `;
     document.head.appendChild(st);
   }
+// --------- WORLD TIME (Paris -> UTC) ----------
+function parseTimeToMinutesFlexible(t){
+  const s = String(t || "").trim();
+  const m = s.match(/^(\d{1,2})[:h](\d{2})(?::\d{2})?$/i);
+  if (!m) return null;
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+  return hh * 60 + mm;
+}
+
+function minutesToHHMM(min){
+  const m = ((min % 1440) + 1440) % 1440;
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+}
+
+function getTimeZoneOffsetMinutes(date, timeZone){
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    dtf.formatToParts(date).map(p => [p.type, p.value])
+  );
+  const asUTC = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return Math.round((asUTC - date.getTime()) / 60000);
+}
+
+function formatWorldTimeLabel(timeHHMM){
+  const minsParis = parseTimeToMinutesFlexible(timeHHMM);
+  if (minsParis == null) return esc(timeHHMM || "");
+
+  const now = new Date();
+  const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris"); // CET/CEST auto
+
+  const utcMins = minsParis - offset;
+  const utcHHMM = minutesToHHMM(utcMins);
+
+  const sign = offset >= 0 ? "+" : "-";
+  const abs = Math.abs(offset);
+  const oh = Math.floor(abs / 60);
+  const om = abs % 60;
+  const offStr = `UTC${sign}${oh}${om ? ":" + String(om).padStart(2,"0") : ""}`;
+
+  return `${esc(minutesToHHMM(minsParis))} <span class="text-white/50 font-medium">Paris (${offStr})</span> <span class="text-white/30">•</span> <span class="text-white/70 font-semibold">${esc(utcHHMM)} UTC</span>`;
+}
+
   function renderOnAirTonight(){
     const host = document.getElementById("onAirTonight");
     if (!host) return;
     const day = dayKey();
     const schedule = getSchedule();
     const items = (schedule[day] || [])
-      .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
+      .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
       .filter(x => x.min !== null)
       .sort((a,b) => a.min - b.min);
     const now = new Date();
@@ -1152,7 +1214,7 @@ function parseTimeToMinutes(t){
       let nextDay = "";
       for (const dk of rotate){
         const arr = (schedule[dk] || [])
-          .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
+          .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
           .filter(x => x.min !== null)
           .sort((a,b) => a.min - b.min);
         if (arr.length){
@@ -1221,7 +1283,7 @@ function parseTimeToMinutes(t){
             </div>
             <div class="min-w-0 flex-1">
               <div class="text-cyan-300 font-bold text-xl md:text-2xl">
-                ${esc(first.time)} <span class="text-white/50 font-medium">(CET)</span>
+                ${formatWorldTimeLabel(first.time)} <span class="text-white/50 font-medium">(CET)</span>
               </div>
               <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
                 ${esc(firstDisplayTitle)}
@@ -1277,7 +1339,7 @@ function parseTimeToMinutes(t){
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center justify-between gap-2">
                         <div class="text-cyan-300 font-bold text-sm">
-                          ${esc(x.time)} <span class="text-white/50 font-medium">(CET)</span>
+                          ${formatWorldTimeLabel(x.time)} <span class="text-white/50 font-medium">(CET)</span>
                         </div>
                       </div>
                       <div class="mt-1 text-white font-semibold text-sm truncate">
