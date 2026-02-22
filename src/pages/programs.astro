@@ -310,7 +310,7 @@ try {
   <script is:inline data-astro-rerun>
     (() => {
       // ✅ Schedule from Directus (server-rendered JSON)
-      const SCHEDULE = JSON.parse({JSON.stringify(JSON.stringify(scheduleByDay))});
+      const SCHEDULE = {JSON.stringify(scheduleByDay)};
 
       const escapeHtml = (s) =>
         String(s || "")
@@ -465,24 +465,26 @@ try {
         });
       }
 
-      function initPrograms(){
-        bindTabsOnce();
+     function initPrograms(){
+  bindTabsOnce();
 
-        // ✅ FORCE day-of-week on every page load / swap
-        const day = todayKey();
-        render(day);
+  const keys = ["mon","tue","wed","thu","fri","sat","sun"];
+  const today = todayKey();
 
-console.log("ABF Programs SCHEDULE", SCHEDULE);
-console.log("ABF Programs day", day, (SCHEDULE[day] || []).length);
+  // ✅ pick today if it has items, otherwise pick the first non-empty day, otherwise today
+  const firstNonEmpty = keys.find(k => (SCHEDULE[k] || []).length > 0) || today;
+  const day = ((SCHEDULE[today] || []).length > 0) ? today : firstNonEmpty;
 
-        // ✅ one timer only
-        if (!window.__abfProgramsTimer){
-          window.__abfProgramsTimer = setInterval(() => {
-            const current = document.querySelector(".dayTab.active")?.dataset?.day || todayKey();
-            render(current);
-          }, 30000);
-        }
-      }
+  render(day);
+
+  // ✅ one timer only
+  if (!window.__abfProgramsTimer){
+    window.__abfProgramsTimer = setInterval(() => {
+      const current = document.querySelector(".dayTab.active")?.dataset?.day || day;
+      render(current);
+    }, 30000);
+  }
+}
 
       initPrograms();
       document.addEventListener("astro:page-load", initPrograms);
