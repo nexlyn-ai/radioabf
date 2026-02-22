@@ -1,0 +1,16 @@
+{
+  "mon": [],
+  "tue": [],
+  "wed": [],
+  "thu": [],
+  "fri": [],
+  "sat": [],
+  "sun": [
+    {
+      "time": "24H16",
+      "title": "${title}",
+      "desc": "—",
+      "img": "${escapeHtml(src)}"
+    }
+  ]
+}

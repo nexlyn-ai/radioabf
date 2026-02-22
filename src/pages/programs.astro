@@ -1,5 +1,163 @@
 ---
 import Base from "../layouts/Base.astro";
+import { directusGet, directusAsset } from "../lib/directus";
+
+export const prerender = false;
+
+// Types & Helpers
+type Program = {
+  id: string | number;
+  title?: string | null;
+  description?: string | null;
+  cover?: string | null;
+  hero?: string | null;
+  status?: string | null;
+};
+
+type Occurrence = {
+  id: string | number;
+  status?: string | null;
+
+  // Directus fields
+  day_of_week?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  is_live?: boolean | null;
+
+  program?: Program | null;
+};
+
+type DirectusListResp<T> = { data: T[] };
+
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function safeStr(v: any): string {
+  return typeof v === "string" ? v : v == null ? "" : String(v);
+}
+
+// ✅ bulletproof day mapping: mon/tue..., monday..., numeric, FR
+function normalizeDay(v: any): string {
+  const raw = safeStr(v).trim().toLowerCase();
+  if (!raw) return "";
+
+  if (DAY_KEYS.includes(raw)) return raw;
+
+  const mapLong: Record<string, string> = {
+    monday: "mon",
+    tuesday: "tue",
+    wednesday: "wed",
+    thursday: "thu",
+    friday: "fri",
+    saturday: "sat",
+    sunday: "sun",
+  };
+  if (mapLong[raw]) return mapLong[raw];
+
+  const raw3 = raw.slice(0, 3);
+  const mapShort: Record<string, string> = {
+    mon: "mon",
+    tue: "tue",
+    wed: "wed",
+    thu: "thu",
+    fri: "fri",
+    sat: "sat",
+    sun: "sun",
+  };
+  if (mapShort[raw3]) return mapShort[raw3];
+
+  const n = Number(raw);
+  if (Number.isFinite(n)) {
+    // ISO: 1=Mon ... 7=Sun
+    const iso: Record<number, string> = { 1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat", 7: "sun" };
+    if (iso[n]) return iso[n];
+
+    // JS: 0=Sun ... 6=Sat
+    const js: Record<number, string> = { 0: "sun", 1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat" };
+    if (js[n]) return js[n];
+  }
+
+  const mapFr: Record<string, string> = {
+    lundi: "mon",
+    mardi: "tue",
+    mercredi: "wed",
+    jeudi: "thu",
+    vendredi: "fri",
+    samedi: "sat",
+    dimanche: "sun",
+  };
+  if (mapFr[raw]) return mapFr[raw];
+
+  return "";
+}
+
+// ✅ audience mondiale: "18:00 (CET)" + support HH:MM:SS / HH:MM
+function normalizeTime(v: any): string {
+  const t = safeStr(v).trim();
+  if (!t) return "";
+
+  const m = t.match(/^(\d{1,2})\s*:\s*(\d{2})(?::\s*\d{2})?$/);
+  if (m) {
+    const hh = m[1].padStart(2, "0");
+    const mm = m[2].padStart(2, "0");
+    return `${hh}:${mm} (CET)`;
+  }
+
+  return t;
+}
+
+// ✅ parse minutes from "18:00 (CET)" (or any string containing HH:MM)
+function parseTimeToMinutes(t: string): number {
+  const m = safeStr(t).match(/(\d{1,2})\s*:\s*(\d{2})/);
+  if (!m) return 0;
+  const hh = Math.max(0, Math.min(23, Number(m[1]) || 0));
+  const mm = Math.max(0, Math.min(59, Number(m[2]) || 0));
+  return hh * 60 + mm;
+}
+
+function buildScheduleFromOccurrences(rows: Occurrence[]) {
+  const schedule: Record<string, any[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+
+  for (const row of rows || []) {
+    const day = normalizeDay((row as any).day_of_week);
+    if (!day) continue;
+
+    const time = normalizeTime((row as any).start_time) || "00:00 (CET)";
+
+    const p = row.program || null;
+    const title = safeStr(p?.title) || "Untitled program";
+    const desc = safeStr(p?.description || (p as any)?.desc) || "";
+
+    // ✅ image Directus: cover prioritaire, sinon hero
+    const coverId = safeStr((p as any)?.cover);
+    const heroId = safeStr((p as any)?.hero);
+    const imgId = coverId || heroId;
+    const imgUrl = imgId ? directusAsset(imgId) : "";
+
+    schedule[day].push({ time, img: imgUrl, title, desc });
+  }
+
+  for (const k of DAY_KEYS) {
+    schedule[k] = (schedule[k] || []).sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+  }
+  return schedule;
+}
+
+let directusSchedule: Record<string, any[]> | null = null;
+
+try {
+  const fields =
+    "id,status,day_of_week,start_time,end_time,is_live,program.id,program.status,program.title,program.description,program.cover,program.hero";
+
+  const resp = await directusGet<DirectusListResp<Occurrence>>(
+    `/items/program_occurrences?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&filter[program][status][_eq]=published&limit=500&sort=day_of_week,start_time`
+  );
+
+  const rows = resp?.data ?? [];
+  directusSchedule = buildScheduleFromOccurrences(rows);
+} catch (err) {
+  console.error("Erreur fetch Directus:", err);
+  directusSchedule = null;
+}
 ---
 
 <Base
@@ -8,31 +166,26 @@ import Base from "../layouts/Base.astro";
   canonical="/programs"
   image="/og-image.jpg"
 >
-<section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
-
-  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
-
-  <div class="relative z-10">
-    <div class="flex items-start justify-between gap-4 flex-wrap">
-      <div class="min-w-0">
-        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-          Programs
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <div class="relative z-10">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            Programs
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+            Weekly schedule on <span class="text-cyan-200">RadioABF</span>
+          </h1>
+          <p class="text-white/65 mt-3 max-w-2xl">
+            Residents, guests & non-stop rotations — with ON AIR highlight.
+          </p>
         </div>
-
-        <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-          Weekly schedule on <span class="text-cyan-200">RadioABF</span>
-        </h1>
-
-        <p class="text-white/65 mt-3 max-w-2xl">
-          Residents, guests & non-stop rotations — with ON AIR highlight.
-        </p>
       </div>
     </div>
-  </div>
-</section>
-
+  </section>
 
   <!-- Day tabs -->
   <section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4 md:p-5 mb-6">
@@ -47,84 +200,64 @@ import Base from "../layouts/Base.astro";
     </div>
 
     <style is:inline>
-      .no-scrollbar::-webkit-scrollbar{display:none}
-      .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-
-      .dayTab{
-        flex:0 0 auto;
-        padding:.55rem .95rem;
+      .no-scrollbar::-webkit-scrollbar { display: none }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .dayTab {
+        flex: 0 0 auto;
+        padding: .55rem .95rem;
         border-radius: 999px;
         border: 1px solid rgba(255,255,255,.12);
         background: rgba(255,255,255,.04);
         color: rgba(255,255,255,.75);
-        font-size:.9rem;
-        transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+        font-size: .9rem;
+        transition: all .15s ease;
       }
-      .dayTab:hover{
-        background: rgba(255,255,255,.07);
-        color: rgba(255,255,255,.92);
-      }
-      .dayTab.active{
+      .dayTab:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.92); }
+      .dayTab.active {
         background: linear-gradient(90deg,#145C8F,#2FC2FF);
         border-color: rgba(47,194,255,.35);
         color: #fff;
         box-shadow: 0 0 22px rgba(47,194,255,.18);
       }
-
-      .line-clamp-2{
-        display:-webkit-box;
-        -webkit-line-clamp:2;
-        -webkit-box-orient:vertical;
-        overflow:hidden;
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
-
-      /* ✅ ON AIR: full card highlight */
-      .onAirCard{
+      .onAirCard {
         border-color: rgba(248,113,113,.35) !important;
-        background: radial-gradient(1200px 220px at 20% 0%,
-          rgba(239,68,68,0.22),
-          rgba(255,255,255,0.05) 45%,
-          rgba(255,255,255,0.03) 100%);
-        box-shadow:
-          0 0 0 1px rgba(239,68,68,0.15) inset,
-          0 20px 70px rgba(239,68,68,0.14),
-          0 10px 35px rgba(0,0,0,0.35);
+        background: radial-gradient(1200px 220px at 20% 0%, rgba(239,68,68,0.22), rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.03) 100%);
+        box-shadow: 0 0 0 1px rgba(239,68,68,0.15) inset, 0 20px 70px rgba(239,68,68,0.14), 0 10px 35px rgba(0,0,0,0.35);
         position: relative;
       }
-      .onAirCard::before{
-        content:"";
-        position:absolute;
-        inset:-1px;
+      .onAirCard::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
         border-radius: 1rem;
-        pointer-events:none;
-        background: linear-gradient(90deg,
-          rgba(239,68,68,0.22),
-          rgba(239,68,68,0.10),
-          rgba(239,68,68,0.22));
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(239,68,68,0.22), rgba(239,68,68,0.10), rgba(239,68,68,0.22));
         filter: blur(18px);
         opacity: .55;
       }
-
-      .onAirStrip{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:10px;
+      .onAirStrip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
         padding: 10px 12px;
         border-radius: 14px;
         border: 1px solid rgba(248,113,113,.25);
         background: rgba(239,68,68,0.14);
         box-shadow: 0 0 22px rgba(239,68,68,0.14);
       }
-      .onAirStrip .left{
-        display:flex; align-items:center; gap:10px;
-        min-width:0;
-      }
-      .onAirStrip .pill{
-        flex:none;
-        display:inline-flex;
-        align-items:center;
-        gap:8px;
+      .onAirStrip .left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .onAirStrip .pill {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         padding: 6px 10px;
         border-radius: 999px;
         border: 1px solid rgba(248,113,113,.35);
@@ -135,34 +268,27 @@ import Base from "../layouts/Base.astro";
         letter-spacing: .16em;
         white-space: nowrap;
       }
-      .onAirStrip .dot{
+      .onAirStrip .dot {
         width: 8px; height: 8px; border-radius: 999px;
         background: rgb(248,113,113);
         box-shadow: 0 0 18px rgba(248,113,113,0.65);
         animation: onAirPulse 1.1s ease-in-out infinite;
       }
-      @keyframes onAirPulse{
-        0%,100%{ transform: scale(1); opacity: .9; }
-        50%{ transform: scale(1.25); opacity: 1; }
+      @keyframes onAirPulse {
+        0%,100% { transform: scale(1); opacity: .9; }
+        50% { transform: scale(1.25); opacity: 1; }
       }
       .onAirStrip .label{
-        min-width:0;
-        color: rgba(254,202,202,0.95);
-        font-weight: 800;
-        letter-spacing: .02em;
+        color: rgba(255,255,255,.92);
+        font-weight: 700;
         white-space: nowrap;
-        overflow:hidden;
+        overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 56vw;
       }
       .onAirStrip .time{
-        flex:none;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(248,113,113,.30);
-        background: rgba(239,68,68,0.10);
-        color: rgba(254,202,202,0.95);
-        font-weight: 800;
-        font-size: 12px;
+        color: rgba(255,255,255,.78);
+        font-weight: 700;
         white-space: nowrap;
       }
     </style>
@@ -170,87 +296,51 @@ import Base from "../layouts/Base.astro";
 
   <!-- Schedule list -->
   <section class="bg-[#0A1F33] border border-white/10 rounded-2xl p-4 md:p-6">
-    <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
-      Schedule
-    </div>
-
+    <div class="text-sm text-white/50 uppercase tracking-wider mb-4">Schedule</div>
     <div id="scheduleList" class="space-y-3"></div>
   </section>
 
-  <script is:inline data-astro-rerun>
-    (() => {
-      // ✅ local images directory on new site
-      // put files in: public/images/programs/<filename>
+  <!-- ✅ Injection Directus (Astro native) -->
+  <script is:inline define:vars={{ directusSchedule }}>
+    window.__abfProgramsFromDirectus = directusSchedule ?? null;
+  </script>
+
+  <!-- Script client -->
+  <script is:inline>
+    (function() {
+      console.log("[CLIENT] Script programs chargé");
+
       const PROGRAMS_DIR = "/images/programs/";
 
-      const SCHEDULE = {
-        mon: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507170_24ed82d807a1c66d30e0.jpg", title:"ABF CLUB - JNOES", desc:"Groovy drum'n'bass & commercial house master with big room builds and festival energy." },
-          { time:"23h00", img:"1768507185_5cc0873ee591d1b570eb.jpg", title:"ABF CLUB - DEGIANNY", desc:"Melodic techno & progressive specialist delivering emotional, keyboard-live journeys." }
-        ],
-        tue: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507231_488e50db2ea8cda46b2f.jpg", title:"ABF CLUB - TECKROAD", desc:"Veteran blending psy-trance, tech house, funky classics, and warm vinyl grooves." },
-          { time:"23h00", img:"1768507251_046f763d818c022f3c69.jpg", title:"ABF CLUB - THE SPYMBOYS", desc:"Alpine party king with eclectic funky/jackin' house and high-energy vibes." }
-        ],
-        wed: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507297_9c576120fcbd38219aa9.jpg", title:"ABF CLUB - JEAN-JEROME", desc:"Paris house veteran serving authentic groovy roots and soulful club feels." },
-          { time:"23h00", img:"1768507316_1261bdc48106c8579a39.jpg", title:"ABF CLUB - WILLIAM FOREST", desc:"Melodic deep/prog producer with emotional tracks and creative mashups." }
-        ],
-        thu: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1770803145_3590fecff4df25a42558.jpg", title:"ABF CLUB - PIERRE DE PARIS", desc:"Real mix for real mix lovers..." },
-          { time:"23h00", img:"1768507375_9f458c45cbf3edbcce4d.jpg", title:"ABF CLUB - C-DRYK", desc:"Versatile jackin' house expert with nu-disco, funky, and scratch flair." }
-        ],
-        fri: [
-          { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"18h00", img:"1770136551_b9cc44e800f0124bbab4.png", title:"ABF WARMUP EXTENDED", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"22h00", img:"1768507456_050c7b9177cfce665c11.jpg", title:"ABF CLUB - BETTY MIX", desc:"Feel-good queen of sunny remixes, uplifting house, psy-trance and positive energy." },
-          { time:"23h00", img:"1768507483_b656d4c2f50a3652be6f.jpg", title:"ABF CLUB - DJ JOEE", desc:"Australian house traveler with melodic deep/prog and seamless journeys." }
-        ],
-        sat: [
-          { time:"00h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"20h00", img:"1770577445_c2959a4650239906609a.jpg", title:"ABF CLUB - GUEST MIX 1", desc:"Rotating international guest delivering fresh, surprising house/techno vibes to kick off the prime time." },
-          { time:"21h00", img:"1770577532_f7aae5eb0902593ac1cb.jpg", title:"ABF CLUB - GUEST MIX 2", desc:"Second rotating guest slot packed with high-energy club heat and exclusive selections." },
-          { time:"22h00", img:"1768507536_07beeacfd28b4fc86c30.jpg", title:"ABF CLUB - LAURENT SCHARK", desc:"Vocal/funky house pillar bringing groovy, timeless London-Paris vibes." },
-          { time:"23h00", img:"1768677347_b8fc41f1805e109d4d66.png", title:"ABF CLUB - TONY JAY", desc:"Paris club selector with energetic house, tech, and dancefloor fire." }
-        ],
-        sun: [
-          { time:"00h00", img:"1769976420_3b4d78bf20f028487165.png", title:"ABF AFTER", desc:"Deep, driving hypnotic techno to fuel the afterhours and keep the energy high till dawn." },
-          { time:"07h00", img:"1770128309_dc9e7e2e6b3e22de821f.png", title:"ABF CHILL", desc:"Lounge, chill-out & downtempo grooves — smooth beats and dreamy melodies to relax." },
-          { time:"10h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-          { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-          { time:"20h00", img:"1768155428_bf272625d4798bd3d3f5.jpg", title:"ABF CLUB [MADE IN JAPAN] - ZEPHYR", desc:"Elegant deep/melodic house from Japan with atmospheric Ibiza touches." },
-          { time:"21h00", img:"1768155467_5ed42c9a2e258587b90c.jpg", title:"ABF CLUB [MADE IN JAPAN] - HIDEKI", desc:"Funky big beat legend mixing game-soundtrack energy and club heat." },
-          { time:"22h00", img:"1768155500_86865e0936bc69837bc6.jpg", title:"ABF CLUB [MADE IN JAPAN] - TAMIO YAMASHITA", desc:"Innovative house/trance producer fusing tech and emotional melodies." },
-          { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
-        ]
+      // fallback local (au cas où Directus est vide)
+      const STATIC_SCHEDULE = {
+        mon: [],
+        tue: [],
+        wed: [],
+        thu: [],
+        fri: [],
+        sat: [],
+        sun: []
       };
 
-      const escapeHtml = (s) =>
-        String(s || "")
-          .replace(/&/g,"&amp;")
-          .replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;")
-          .replace(/"/g,"&quot;")
-          .replace(/'/g,"&#039;");
+      function escapeHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
 
-      function parseTimeToMinutes(t){
-        const m = String(t || "").match(/(\d{1,2})\s*h\s*(\d{2})/i);
+      function parseTimeToMinutes(t) {
+        const m = String(t || "").match(/(\d{1,2})\s*:\s*(\d{2})/);
         if (!m) return 0;
         const hh = Math.max(0, Math.min(23, Number(m[1]) || 0));
         const mm = Math.max(0, Math.min(59, Number(m[2]) || 0));
         return hh * 60 + mm;
       }
 
-      function todayKey(){
+      function todayKey() {
         const d = new Date().getDay();
         if (d === 0) return "sun";
         if (d === 1) return "mon";
@@ -261,32 +351,62 @@ import Base from "../layouts/Base.astro";
         return "sat";
       }
 
-      function nowMinutes(){
+      function nowMinutes() {
         const n = new Date();
         return n.getHours() * 60 + n.getMinutes();
       }
 
-      function isOnAirForIndex(day, items, idx){
+      function isOnAirForIndex(day, items, idx) {
         if (day !== todayKey()) return false;
         const cur = nowMinutes();
-        const start = parseTimeToMinutes(items[idx]?.time);
-        const next = (idx < items.length - 1)
-          ? parseTimeToMinutes(items[idx + 1]?.time)
-          : 24 * 60;
+        const curItem = items?.[idx] ?? null;
+        const nextItem = idx < items.length - 1 ? items[idx + 1] : null;
+        const start = parseTimeToMinutes(curItem?.time ?? "");
+        const next = nextItem ? parseTimeToMinutes(nextItem.time) : 24 * 60;
         return cur >= start && cur < next;
       }
 
-      function setActiveDay(day){
-        document.querySelectorAll(".dayTab").forEach(b => {
-          b.classList.toggle("active", b.dataset.day === day);
+      function setActiveDay(day) {
+        document.querySelectorAll(".dayTab").forEach(tab => {
+          tab.classList.toggle("active", tab.dataset.day === day);
         });
       }
 
-      function card(item, onAir){
-        const time = escapeHtml(item.time);
-        const title = escapeHtml(item.title);
-        const desc = escapeHtml(item.desc || "");
-        const src = PROGRAMS_DIR + String(item.img || "");
+      function isAbsoluteOrRootUrl(u) {
+        const s = String(u || "");
+        return s.startsWith("http://") || s.startsWith("https://") || s.startsWith("/");
+      }
+
+      function getSchedule() {
+        const raw = window.__abfProgramsFromDirectus;
+
+        if (raw && typeof raw === "object") {
+          console.log("[CLIENT] Directus planning prêt (object)");
+          return raw;
+        }
+
+        if (typeof raw === "string" && raw.trim() && raw !== "null") {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+              console.log("[CLIENT] Directus planning parsé (string JSON)");
+              return parsed;
+            }
+          } catch (e) {
+            console.error("[CLIENT] Erreur parse JSON Directus:", e);
+          }
+        }
+
+        console.log("[CLIENT] Fallback sur STATIC_SCHEDULE");
+        return STATIC_SCHEDULE;
+      }
+
+      function card(item, onAir) {
+        const time   = escapeHtml(item?.time ?? "");
+        const title  = escapeHtml(item?.title ?? "");
+        const desc   = escapeHtml(item?.desc ?? "");
+        const rawImg = String(item?.img ?? "");
+        const src    = rawImg ? (isAbsoluteOrRootUrl(rawImg) ? rawImg : PROGRAMS_DIR + rawImg) : "";
 
         const timeClasses = onAir
           ? "border-red-400/35 bg-red-500/15 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
@@ -294,113 +414,88 @@ import Base from "../layouts/Base.astro";
 
         const dotClasses = onAir ? "bg-red-400 animate-pulse" : "bg-cyan-400 animate-pulse";
 
-        const onAirBadge = onAir ? `
-          <span class="ml-1 inline-flex items-center gap-2 px-2 py-0.5 rounded-xl
-                       border border-red-400/30 bg-red-500/15
-                       text-[10px] uppercase tracking-widest text-red-200
-                       shadow-[0_0_18px_rgba(239,68,68,0.16)]">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
-            On Air
-          </span>
-        ` : "";
+        let onAirBadge = "";
+        if (onAir) {
+          onAirBadge =
+            '<span class="ml-1 inline-flex items-center gap-2 px-2 py-0.5 rounded-xl border border-red-400/30 bg-red-500/15 text-[10px] uppercase tracking-widest text-red-200 shadow-[0_0_18px_rgba(239,68,68,0.16)]">' +
+              '<span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>On Air</span>';
+        }
 
-        const header = onAir ? `
-          <div class="onAirStrip">
-            <div class="left">
-              <span class="pill"><span class="dot"></span> LIVE NOW</span>
-              <div class="label">${title}</div>
-            </div>
-            <div class="time">${time}</div>
-          </div>
-        ` : `
-          <div class="flex items-center gap-2 flex-wrap">
-            <div class="inline-flex items-center gap-2 w-fit
-                        px-2.5 py-1 rounded-xl
-                        border backdrop-blur-xl
-                        text-[12px] md:text-[13px] font-bold tracking-wide ${timeClasses}">
-              <span class="w-2 h-2 rounded-full ${dotClasses}"></span>
-              ${time}
-            </div>
-            ${onAirBadge}
-          </div>
-        `;
+        let header =
+          '<div class="flex items-center gap-2 flex-wrap">' +
+            '<div class="inline-flex items-center gap-2 w-fit px-2.5 py-1 rounded-xl border backdrop-blur-xl text-[12px] md:text-[13px] font-bold tracking-wide ' + timeClasses + '">' +
+              '<span class="w-2 h-2 rounded-full ' + dotClasses + '"></span>' + time +
+            "</div>" +
+            onAirBadge +
+          "</div>";
 
-        return `
-          <article class="group flex flex-col gap-3 p-4 md:p-5
-                          rounded-2xl border border-white/10
-                          bg-gradient-to-br from-white/5 to-white/[0.03]
-                          hover:from-white/10 hover:to-white/[0.06]
-                          transition-all duration-300 ${onAir ? "onAirCard" : ""}">
-            ${header}
+        if (onAir) {
+          header =
+            '<div class="onAirStrip">' +
+              '<div class="left">' +
+                '<span class="pill"><span class="dot"></span> LIVE NOW</span>' +
+                '<div class="label">' + title + "</div>" +
+              "</div>" +
+              '<div class="time">' + time + "</div>" +
+            "</div>";
+        }
 
-            <div class="w-full rounded-xl overflow-hidden
-                        border border-white/10 bg-black/20
-                        shadow-md shadow-cyan-500/10">
-              <div class="w-full aspect-[16/6] md:aspect-[16/5] flex items-center justify-center">
-                <img
-                  src="${escapeHtml(src)}"
-                  alt="${title}"
-                  class="max-w-full max-h-full object-contain transition duration-500 group-hover:scale-[1.02]"
-                  loading="lazy"
-                  decoding="async"
-                >
-              </div>
-            </div>
+        let imgBlock = "";
+        if (src) {
+          imgBlock =
+            '<div class="w-full rounded-xl overflow-hidden border border-white/10 bg-black/20 shadow-md shadow-cyan-500/10">' +
+              '<div class="w-full aspect-[16/6] md:aspect-[16/5] flex items-center justify-center">' +
+                '<img src="' + escapeHtml(src) + '" alt="' + title + '" class="max-w-full max-h-full object-contain transition duration-500 group-hover:scale-[1.02]" loading="lazy" decoding="async">' +
+              "</div>" +
+            "</div>";
+        }
 
-            <div class="min-w-0">
-              ${onAir ? "" : `<div class="text-base md:text-lg font-semibold text-white truncate">${title}</div>`}
-              <div class="text-white/70 text-sm md:text-base leading-snug mt-1 line-clamp-2">
-                ${desc}
-              </div>
-            </div>
-          </article>
-        `;
+        return (
+          '<article class="group flex flex-col gap-3 p-4 md:p-5 rounded-2xl border border-white/10 ' +
+            "bg-gradient-to-br from-white/5 to-white/[0.03] hover:from-white/10 hover:to-white/[0.06] " +
+            "transition-all duration-300 " + (onAir ? "onAirCard" : "") + '">' +
+              header +
+              imgBlock +
+              '<div class="min-w-0">' +
+                (onAir ? "" : '<div class="text-base md:text-lg font-semibold text-white truncate">' + title + "</div>") +
+                '<div class="text-white/70 text-sm md:text-base leading-snug mt-1 line-clamp-2">' + desc + "</div>" +
+              "</div>" +
+          "</article>"
+        );
       }
 
-      function render(day){
+      function render(day) {
         const list = document.getElementById("scheduleList");
         if (!list) return;
 
         setActiveDay(day);
 
-        const items = (SCHEDULE[day] || []).slice()
-          .sort((a,b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        const schedule = getSchedule();
+        const items = (schedule?.[day] || []).slice().sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
-        if (!items.length){
-          list.innerHTML = `<div class="text-white/50">No schedule found.</div>`;
+        if (items.length === 0) {
+          list.innerHTML = '<div class="text-white/50">No schedule found.</div>';
           return;
         }
 
-        list.innerHTML = items.map((it, idx) => card(it, isOnAirForIndex(day, items, idx))).join("");
-      }
-
-      function bindTabsOnce(){
-        if (window.__abfProgramsBound) return;
-        window.__abfProgramsBound = true;
-
-        document.addEventListener("click", (e) => {
-          const btn = e.target?.closest?.(".dayTab");
-          if (!btn) return;
-          const day = btn.dataset.day;
-          if (!day) return;
-          render(day);
-        });
-      }
-
-      function initPrograms(){
-        bindTabsOnce();
-
-        // ✅ FORCE day-of-week on every page load / swap
-        const day = todayKey();
-        render(day);
-
-        // ✅ one timer only
-        if (!window.__abfProgramsTimer){
-          window.__abfProgramsTimer = setInterval(() => {
-            const current = document.querySelector(".dayTab.active")?.dataset?.day || todayKey();
-            render(current);
-          }, 30000);
+        let html = "";
+        for (let i = 0; i < items.length; i++) {
+          html += card(items[i], isOnAirForIndex(day, items, i));
         }
+        list.innerHTML = html;
+      }
+
+      function initPrograms() {
+        console.log("[CLIENT] initPrograms exécuté");
+
+        document.querySelectorAll(".dayTab").forEach(tab => {
+          tab.addEventListener("click", function() {
+            const day = this.dataset.day;
+            if (day) render(day);
+          });
+        });
+
+        render(todayKey());
       }
 
       initPrograms();
