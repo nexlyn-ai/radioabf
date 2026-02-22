@@ -121,7 +121,6 @@ try {
   directusSchedule = null;
 }
 ---
----
 
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
   <!-- BIG NOW PLAYING HERO -->
@@ -619,7 +618,8 @@ try {
 </div>
 
 <!-- ✅ Directus schedule injection (HOME) -->
-<script define:vars={{ directusSchedule }}>
+<script is:inline define:vars={{ directusSchedule }}>
+  // Inject as a JS object (not a JSON string)
   window.__abfProgramsFromDirectus = directusSchedule ?? null;
 </script>
 
@@ -1006,11 +1006,19 @@ try {
     if (d === 5) return "fri";
     return "sat";
   }
-  function parseTimeToMinutes(t){
-    const m = String(t || "").match(/^(\d{1,2})h(\d{2})$/i);
-    if (!m) return null;
-    return Number(m[1]) * 60 + Number(m[2]);
-  }
+function parseTimeToMinutesFlexible(t){
+  const s = String(t || "").trim();
+
+  // "18h00"
+  let m = s.match(/^(\d{1,2})h(\d{2})$/i);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+
+  // "18:00" or "18:00:00"
+  m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+
+  return null;
+}
   function fmtCountdown(ms){
     if (ms <= 0) return "Starting now";
     const totalMin = Math.floor(ms / 60000);
@@ -1064,7 +1072,7 @@ try {
     const day = dayKey();
     const schedule = getSchedule();
     const items = (schedule[day] || [])
-      .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
+      .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
       .filter(x => x.min !== null)
       .sort((a,b) => a.min - b.min);
     const now = new Date();
@@ -1101,20 +1109,45 @@ try {
       }
     }
     if (!selected.length){
-      host.innerHTML = `
-        <div class="text-white/70">
-          No more shows today — check the full schedule.
-        </div>
-        <div class="mt-4">
-          <a href="/programs"
-             class="inline-flex items-center justify-center
-                    bg-white/5 hover:bg-white/10 border border-white/10
-                    rounded-xl px-5 py-3 text-white/85 transition">
-            Open schedule →
-          </a>
-        </div>
-      `;
-      return;
+      // ✅ fallback: show next available day (tomorrow or later)
+      const order = ["mon","tue","wed","thu","fri","sat","sun"];
+      const curIndex = order.indexOf(day);
+      const rotate = order.slice(curIndex + 1).concat(order.slice(0, curIndex + 1));
+
+      let nextDay = "";
+      for (const dk of rotate){
+        const arr = (schedule[dk] || [])
+          .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
+          .filter(x => x.min !== null)
+          .sort((a,b) => a.min - b.min);
+        if (arr.length){
+          nextDay = dk;
+          selected = arr.slice(0, 3);
+          mode = "next";
+          subline = `Next shows: ${dk.toUpperCase()}`;
+          break;
+        }
+      }
+
+      if (!selected.length){
+        host.innerHTML = `
+          <div class="text-white/70">
+            No schedule found yet — check the full schedule.
+          </div>
+          <div class="mt-4">
+            <a href="/programs"
+               class="inline-flex items-center justify-center
+                      bg-white/5 hover:bg-white/10 border border-white/10
+                      rounded-xl px-5 py-3 text-white/85 transition">
+              Open schedule →
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      // ✅ override day label if we switched day
+      // (optional, purely visual)
     }
     const first = selected[0];
     const others = selected.slice(1);
