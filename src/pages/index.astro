@@ -45,6 +45,82 @@ const fmtDate = (iso?: string | null) => {
     year: "numeric",
   });
 };
+
+type Program = {
+  id: string | number;
+  title?: string | null;
+  description?: string | null;
+  cover?: string | null;
+  status?: string | null;
+};
+
+type Occurrence = {
+  id: string | number;
+  status?: string | null;
+  day_of_week?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  is_live?: boolean | null;
+  program?: Program | null;
+};
+
+type DirectusListResp<T> = { data: T[] };
+
+const DAY_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
+
+function safeStr(v: any): string {
+  return typeof v === "string" ? v : v == null ? "" : String(v);
+}
+function normalizeDay(v: any): string {
+  const d = safeStr(v).toLowerCase().trim();
+  return DAY_KEYS.includes(d) ? d : "";
+}
+function normalizeTimeFromDirectus(v: any): string {
+  // Directus time usually: "18:00:00" → we keep "18:00"
+  const t = safeStr(v).trim();
+  const m = t.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
+  return m ? `${m[1]}:${m[2]}` : t;
+}
+
+function buildScheduleFromOccurrences(rows: Occurrence[]) {
+  const schedule: Record<string, any[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+
+  for (const row of rows || []) {
+    const day = normalizeDay(row.day_of_week);
+    if (!day) continue;
+
+    const time = normalizeTimeFromDirectus(row.start_time) || "00:00";
+    const p = row.program || null;
+
+    const title = safeStr(p?.title) || "Untitled program";
+    const desc  = safeStr(p?.description) || "";
+
+    const coverId = safeStr(p?.cover);
+    const imgUrl  = coverId ? directusAsset(coverId) : "";
+
+    schedule[day].push({ time, img: imgUrl, title, desc });
+  }
+
+  return schedule;
+}
+
+let directusSchedule: Record<string, any[]> | null = null;
+
+try {
+  const fields =
+    "id,status,day_of_week,start_time,end_time,is_live," +
+    "program.id,program.status,program.title,program.description,program.cover";
+
+  const resp = await directusGet<DirectusListResp<Occurrence>>(
+    `/items/program_occurrences?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&filter[program][status][_eq]=published&limit=500&sort=day_of_week,start_time`
+  );
+
+  directusSchedule = buildScheduleFromOccurrences(resp?.data ?? []);
+} catch (e) {
+  console.error("[INDEX] Directus schedule fetch failed:", e);
+  directusSchedule = null;
+}
+---
 ---
 
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
@@ -538,9 +614,14 @@ const fmtDate = (iso?: string | null) => {
           Secure payment • One-time or become a monthly supporter
         </p>
       </div>
-    </div>
   </div>
 </div>
+</div>
+
+<!-- ✅ Directus schedule injection (HOME) -->
+<script define:vars={{ directusSchedule }}>
+  window.__abfProgramsFromDirectus = directusSchedule ?? null;
+</script>
 
   <!-- SCRIPT -->
 <script is:inline data-astro-rerun>
@@ -906,56 +987,15 @@ const fmtDate = (iso?: string | null) => {
   // -------------------------
   // ON AIR (inchangé)
   // -------------------------
-  const SCHEDULE = {
-    mon: [
-      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"22h00", img:"1768507170_24ed82d807a1c66d30e0.jpg", title:"ABF CLUB - JNOES", desc:"Groovy drum'n'bass & commercial house master with big room builds and festival energy." },
-      { time:"23h00", img:"1768507185_5cc0873ee591d1b570eb.jpg", title:"ABF CLUB - DEGIANNY", desc:"Melodic techno & progressive specialist delivering emotional, keyboard-live journeys." }
-    ],
-    tue: [
-      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"22h00", img:"1768507231_488e50db2ea8cda46b2f.jpg", title:"ABF CLUB - TECKROAD", desc:"Veteran blending psy-trance, tech house, funky classics, and warm vinyl grooves." },
-      { time:"23h00", img:"1768507251_046f763d818c022f3c69.jpg", title:"ABF CLUB - THE SPYMBOYS", desc:"Alpine party king with eclectic funky/jackin' house and high-energy vibes." }
-    ],
-    wed: [
-      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"22h00", img:"1768507297_9c576120fcbd38219aa9.jpg", title:"ABF CLUB - JEAN-JEROME", desc:"Paris house veteran serving authentic groovy roots and soulful club feels." },
-      { time:"23h00", img:"1768507316_1261bdc48106c8579a39.jpg", title:"ABF CLUB - WILLIAM FOREST", desc:"Melodic deep/prog producer with emotional tracks and creative mashups." }
-    ],
-    thu: [
-      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"20h00", img:"1770047761_e11655100a3832a23639.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"22h00", img:"1770803145_3590fecff4df25a42558.jpg", title:"ABF CLUB - PIERRE DE PARIS", desc:"Real mix for real mix lovers..." },
-      { time:"23h00", img:"1768507375_9f458c45cbf3edbcce4d.jpg", title:"ABF CLUB - C-DRYK", desc:"Versatile jackin' house expert with nu-d-security, funky, and scratch flair." }
-    ],
-    fri: [
-      { time:"00h00", img:"1770128201_8d78f92b917e17047c53.jpg", title:"ABF PLAYLIST - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"18h00", img:"1770136551_b9cc44e800f0124bbab4.png", title:"ABF WARMUP EXTENDED", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"22h00", img:"1768507456_050c7b9177cfce665c11.jpg", title:"ABF CLUB - BETTY MIX", desc:"Feel-good queen of sunny remixes, uplifting house, psy-trance and positive energy." },
-      { time:"23h00", img:"1768507483_b656d4c2f50a3652be6f.jpg", title:"ABF CLUB - DJ JOEE", desc:"Australian house traveler with melodic deep/prog and seamless journeys." }
-    ],
-    sat: [
-      { time:"00h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"20h00", img:"1770577445_c2959a4650239906609a.jpg", title:"ABF CLUB - GUEST MIX 1", desc:"Rotating international guest delivering fresh, surprising house/techno vibes to kick off the prime time." },
-      { time:"21h00", img:"1770577532_f7aae5eb0902593ac1cb.jpg", title:"ABF CLUB - GUEST MIX 2", desc:"Second rotating guest slot packed with high-energy club heat and exclusive selections." },
-      { time:"22h00", img:"1768507536_07beeacfd28b4fc86c30.jpg", title:"ABF CLUB - LAURENT SCHARK", desc:"Vocal/funky house pillar bringing groovy, timeless London-Paris vibes." },
-      { time:"23h00", img:"1768677347_b8fc41f1805e109d4d66.png", title:"ABF CLUB - TONY JAY", desc:"Paris club selector with energetic house, tech, and dancefloor fire." }
-    ],
-    sun: [
-      { time:"00h00", img:"1769976420_3b4d78bf20f028487165.png", title:"ABF AFTER", desc:"Deep, driving hypnotic techno to fuel the afterhours and keep the energy high till dawn." },
-      { time:"07h00", img:"1770128309_dc9e7e2e6b3e22de821f.png", title:"ABF CHILL", desc:"Lounge, chill-out & downtempo grooves — smooth beats and dreamy melodies to relax." },
-      { time:"10h00", img:"1770128100_1e3c223bf0e46a478e5d.jpg", title:"ABF PLAYLIST WE - NON-STOP MUSIC!", desc:"Non-stop electro, house, tribal, deep & progressive — current hits and timeless classics, no interruptions." },
-      { time:"18h00", img:"1770048348_cb6f7ac34f65bfb50c95.png", title:"ABF WARMUP", desc:"Fresh groovy house & electro hits — uplifting funky pre-party vibes." },
-      { time:"20h00", img:"1768155428_bf272625d4798bd3d3f5.jpg", title:"ABF CLUB [MADE IN JAPAN] - ZEPHYR", desc:"Elegant deep/melodic house from Japan with atmospheric Ibiza touches." },
-      { time:"21h00", img:"1768155467_5ed42c9a2e258587b90c.jpg", title:"ABF CLUB [MADE IN JAPAN] - HIDEKI", desc:"Funky big beat legend mixing game-soundtrack energy and club heat." },
-      { time:"22h00", img:"1768155500_86865e0936bc69837bc6.jpg", title:"ABF CLUB [MADE IN JAPAN] - TAMIO YAMASHITA", desc:"Innovative house/trance producer fusing tech and emotional melodies." },
-      { time:"23h00", img:"1768155543_6c967eb97fdae7bd70e3.jpg", title:"ABF CLUB [MADE IN JAPAN] - DJ DARKNESS", desc:"Veteran techno/trance/house DJ with high-energy, uplifting Japanese roots." }
-    ]
-  };
+  // -------------------------
+  // ✅ ON AIR (Directus schedule)
+  // -------------------------
+  function getSchedule(){
+    const raw = window.__abfProgramsFromDirectus;
+    if (raw && typeof raw === "object") return raw;
+    return { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+  }
+
   function dayKey(){
     const d = new Date().getDay();
     if (d === 0) return "sun";
@@ -1022,7 +1062,8 @@ const fmtDate = (iso?: string | null) => {
     const host = document.getElementById("onAirTonight");
     if (!host) return;
     const day = dayKey();
-    const items = (SCHEDULE[day] || [])
+    const schedule = getSchedule();
+    const items = (schedule[day] || [])
       .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
       .filter(x => x.min !== null)
       .sort((a,b) => a.min - b.min);
@@ -1102,7 +1143,7 @@ const fmtDate = (iso?: string | null) => {
             <div class="w-full md:w-56 flex-none">
               <div class="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden flex items-center justify-center p-2">
                 <img
-                  src="${esc(PROGRAMS_DIR + first.img)}"
+                  src="${esc(first.img || "")}"
                   alt="${esc(first.title)}"
                   class="w-full h-full object-contain"
                   loading="lazy"
@@ -1157,7 +1198,7 @@ const fmtDate = (iso?: string | null) => {
                     <div class="w-24 flex-none">
                       <div class="h-24 rounded-xl overflow-hidden border border-white/10 bg-black/20 flex items-center justify-center p-1">
                         <img
-                          src="${esc(PROGRAMS_DIR + x.img)}"
+                          src="${esc(x.img || "")}"
                           alt="${esc(x.title)}"
                           class="w-full h-full object-contain"
                           loading="lazy"
