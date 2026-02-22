@@ -72,8 +72,43 @@ function safeStr(v: any): string {
   return typeof v === "string" ? v : v == null ? "" : String(v);
 }
 function normalizeDay(v: any): string {
-  const d = safeStr(v).toLowerCase().trim();
-  return DAY_KEYS.includes(d) ? d : "";
+  const s = safeStr(v).toLowerCase().trim();
+
+  // Déjà au bon format
+  if (["mon","tue","wed","thu","fri","sat","sun"].includes(s)) return s;
+
+  // Numérique (string ou number)
+  const n = Number(s);
+  if (!Number.isNaN(n)) {
+    // Support 1..7 (1=lun ... 7=dim)
+    if (n === 1) return "mon";
+    if (n === 2) return "tue";
+    if (n === 3) return "wed";
+    if (n === 4) return "thu";
+    if (n === 5) return "fri";
+    if (n === 6) return "sat";
+    if (n === 7) return "sun";
+
+    // Support 0..6 (0=dim ... 6=sam) au cas où
+    if (n === 0) return "sun";
+    if (n === 1) return "mon";
+    if (n === 2) return "tue";
+    if (n === 3) return "wed";
+    if (n === 4) return "thu";
+    if (n === 5) return "fri";
+    if (n === 6) return "sat";
+  }
+
+  // Texte long (au cas où)
+  if (s === "monday") return "mon";
+  if (s === "tuesday") return "tue";
+  if (s === "wednesday") return "wed";
+  if (s === "thursday") return "thu";
+  if (s === "friday") return "fri";
+  if (s === "saturday") return "sat";
+  if (s === "sunday") return "sun";
+
+  return "";
 }
 function normalizeTimeFromDirectus(v: any): string {
   // Directus time usually: "18:00:00" → we keep "18:00"
@@ -1006,15 +1041,15 @@ try {
     if (d === 5) return "fri";
     return "sat";
   }
-function parseTimeToMinutesFlexible(t){
+function parseTimeToMinutes(t){
   const s = String(t || "").trim();
 
-  // "18h00"
-  let m = s.match(/^(\d{1,2})h(\d{2})$/i);
+  // "18:00" ou "18:00:00"
+  let m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (m) return Number(m[1]) * 60 + Number(m[2]);
 
-  // "18:00" or "18:00:00"
-  m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  // "18h00"
+  m = s.match(/^(\d{1,2})h(\d{2})$/i);
   if (m) return Number(m[1]) * 60 + Number(m[2]);
 
   return null;
@@ -1072,7 +1107,7 @@ function parseTimeToMinutesFlexible(t){
     const day = dayKey();
     const schedule = getSchedule();
     const items = (schedule[day] || [])
-      .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
+      .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
       .filter(x => x.min !== null)
       .sort((a,b) => a.min - b.min);
     const now = new Date();
@@ -1117,7 +1152,7 @@ function parseTimeToMinutesFlexible(t){
       let nextDay = "";
       for (const dk of rotate){
         const arr = (schedule[dk] || [])
-          .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
+          .map(x => ({...x, min: parseTimeToMinutes(x.time)}))
           .filter(x => x.min !== null)
           .sort((a,b) => a.min - b.min);
         if (arr.length){
@@ -1186,7 +1221,7 @@ function parseTimeToMinutesFlexible(t){
             </div>
             <div class="min-w-0 flex-1">
               <div class="text-cyan-300 font-bold text-xl md:text-2xl">
-                ${esc(first.time)}
+                ${esc(first.time)} <span class="text-white/50 font-medium">(CET)</span>
               </div>
               <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
                 ${esc(firstDisplayTitle)}
@@ -1242,7 +1277,7 @@ function parseTimeToMinutesFlexible(t){
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center justify-between gap-2">
                         <div class="text-cyan-300 font-bold text-sm">
-                          ${esc(x.time)}
+                          ${esc(x.time)} <span class="text-white/50 font-medium">(CET)</span>
                         </div>
                       </div>
                       <div class="mt-1 text-white font-semibold text-sm truncate">
