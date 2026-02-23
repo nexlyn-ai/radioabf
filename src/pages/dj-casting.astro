@@ -1,0 +1,452 @@
+---
+import Base from "../layouts/Base.astro";
+
+export const prerender = false;
+---
+
+<Base
+  title="DJ Guest Casting — ABF Club | RadioABF"
+  description="Apply to join the ABF Club as a guest DJ. Send your socials, a mix link (Mixcloud/SoundCloud), and your info — we’ll review it."
+  canonical="/dj-casting"
+  image="/og-image.jpg"
+>
+  <!-- HERO -->
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 sm:p-8 mb-6 shadow-2xl">
+    <div class="pointer-events-none absolute -top-44 -left-44 w-[620px] h-[620px] rounded-full bg-cyan-500/16 blur-[140px]"></div>
+    <div class="pointer-events-none absolute -bottom-44 -right-44 w-[620px] h-[620px] rounded-full bg-blue-600/14 blur-[140px]"></div>
+    <div class="pointer-events-none absolute inset-0 abfNoise"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+        <span class="abfPulseDot" aria-hidden="true"></span>
+        ABF Club • Guest Casting
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+        Apply as a <span class="text-cyan-200">Guest DJ</span>
+      </h1>
+
+      <p class="text-white/70 mt-3 max-w-2xl">
+        Drop at least one social link and one mix link (Mixcloud / SoundCloud / YouTube).
+        We review submissions and contact you if it’s a match.
+      </p>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        <span class="abfChip abfChip--guest">guest</span>
+        <span class="abfChip abfChipCountry">ABF</span>
+        <span class="abfChip abfChip--resident">curated</span>
+        <span class="abfChip abfChip--team">community</span>
+      </div>
+
+      <div class="mt-6">
+        <a href="/artists" class="abfBackBtn" aria-label="Back to artists">
+          <span aria-hidden="true">←</span>
+          Back to artists
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORM CARD -->
+  <section class="abfCard relative overflow-hidden rounded-3xl">
+    <div class="abfCardRing pointer-events-none absolute inset-0"></div>
+    <div class="pointer-events-none absolute inset-0 abfNoise opacity-60"></div>
+
+    <div class="relative p-6 md:p-8">
+      <div class="flex items-center justify-between gap-3 mb-5">
+        <div class="text-sm text-white/55 uppercase tracking-wider">
+          Guest DJ Application
+        </div>
+        <div class="text-xs text-white/50">
+          The DJs’ Frequency
+        </div>
+      </div>
+
+      <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-7"></div>
+
+      <!-- Feedback -->
+      <div id="castingFeedback" class="hidden mb-6 text-sm font-medium px-4 py-3 rounded-xl border"></div>
+
+      <form id="djCastingForm" class="grid grid-cols-1 md:grid-cols-2 gap-4" novalidate>
+        <!-- Honeypot (anti-spam) -->
+        <div class="hidden">
+          <label>
+            Do not fill
+            <input type="text" name="company" autocomplete="off" />
+          </label>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="abfLabel" for="name">DJ / Artist name *</label>
+          <input id="name" name="name" class="abfInput" type="text" required maxlength="80" placeholder="Your stage name" />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="email">Email *</label>
+          <input id="email" name="email" class="abfInput" type="email" required maxlength="120" placeholder="you@email.com" />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="country_code">Country (ISO2)</label>
+          <input id="country_code" name="country_code" class="abfInput" type="text" maxlength="2" placeholder="FR" />
+          <div class="abfHint">Example: FR, BE, DE, US…</div>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="abfLabel" for="mix_link">Mix link *</label>
+          <input
+            id="mix_link"
+            name="mix_link"
+            class="abfInput"
+            type="url"
+            required
+            maxlength="250"
+            placeholder="https://mixcloud.com/... or https://soundcloud.com/... or https://youtube.com/..."
+          />
+          <div class="abfHint">A link to your best representative mix (public link).</div>
+        </div>
+
+        <!-- Socials: at least one is required (we enforce in JS) -->
+        <div class="md:col-span-2">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <label class="abfLabel m-0">Social links (at least one) *</label>
+            <span class="text-xs text-white/45">Facebook / Instagram / X / Website…</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="abfLabel" for="facebook">Facebook</label>
+          <input id="facebook" name="facebook" class="abfInput" type="url" maxlength="250" placeholder="https://facebook.com/..." />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="instagram">Instagram</label>
+          <input id="instagram" name="instagram" class="abfInput" type="url" maxlength="250" placeholder="https://instagram.com/..." />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="soundcloud">SoundCloud</label>
+          <input id="soundcloud" name="soundcloud" class="abfInput" type="url" maxlength="250" placeholder="https://soundcloud.com/..." />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="mixcloud">Mixcloud</label>
+          <input id="mixcloud" name="mixcloud" class="abfInput" type="url" maxlength="250" placeholder="https://mixcloud.com/..." />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="youtube">YouTube</label>
+          <input id="youtube" name="youtube" class="abfInput" type="url" maxlength="250" placeholder="https://youtube.com/..." />
+        </div>
+
+        <div>
+          <label class="abfLabel" for="x">X</label>
+          <input id="x" name="x" class="abfInput" type="url" maxlength="250" placeholder="https://x.com/..." />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="abfLabel" for="website">Website</label>
+          <input id="website" name="website" class="abfInput" type="url" maxlength="250" placeholder="https://your-site.com" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="abfLabel" for="message">Short message</label>
+          <textarea
+            id="message"
+            name="message"
+            class="abfTextarea"
+            rows="5"
+            maxlength="1200"
+            placeholder="Your style, references, preferred formats (guest show / mix / takeover), availability…"
+          ></textarea>
+        </div>
+
+        <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-2">
+          <label class="abfCheck">
+            <input type="checkbox" name="consent" required />
+            <span>I agree to be contacted by RadioABF about this application.</span>
+          </label>
+
+          <button type="submit" class="abfSubmit">
+            <span class="abfSubmitDot" aria-hidden="true"></span>
+            Send application →
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <style is:inline>
+    .abfNoise{
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      background-size: 220px 220px;
+      mix-blend-mode: overlay;
+      opacity: .10;
+    }
+
+    .abfPulseDot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(47,194,255,0.95);
+      box-shadow: 0 0 0 0 rgba(47,194,255,0.45);
+      animation: abfPulse 1.6s infinite;
+    }
+    @keyframes abfPulse{
+      0%{ box-shadow: 0 0 0 0 rgba(47,194,255,0.45); }
+      70%{ box-shadow: 0 0 0 14px rgba(47,194,255,0); }
+      100%{ box-shadow: 0 0 0 0 rgba(47,194,255,0); }
+    }
+
+    .abfCard{
+      border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(135deg,
+        rgba(255,255,255,0.12),
+        rgba(255,255,255,0.07) 40%,
+        rgba(10,31,51,0.18));
+      backdrop-filter: blur(18px) saturate(150%);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      box-shadow:
+        0 22px 70px rgba(0,0,0,0.45),
+        0 0 0 1px rgba(47,194,255,0.10) inset;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .abfCardRing{
+      background: radial-gradient(900px 260px at 20% 0%,
+        rgba(47,194,255,0.18),
+        rgba(255,255,255,0.06) 45%,
+        rgba(255,255,255,0.03) 100%);
+      opacity: .95;
+    }
+
+    .abfBackBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.86);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      transition: 160ms;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .abfBackBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(47,194,255,0.22);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 22px 60px rgba(47,194,255,0.10);
+    }
+
+    /* Chips (same vibe as artists) */
+    .abfChip{
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      line-height: 1;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.82);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display:inline-flex;
+      align-items:center;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .abfChip--resident{
+      border-color: rgba(34, 211, 238, 0.30);
+      background: rgba(34, 211, 238, 0.10);
+      color: rgba(34, 211, 238, 0.95);
+      box-shadow: 0 18px 45px rgba(34, 211, 238, 0.08);
+    }
+    .abfChip--team{
+      border-color: rgba(167, 139, 250, 0.30);
+      background: rgba(167, 139, 250, 0.10);
+      color: rgba(199, 178, 255, 0.95);
+      box-shadow: 0 18px 45px rgba(167, 139, 250, 0.08);
+    }
+    .abfChip--guest{
+      border-color: rgba(251, 191, 36, 0.30);
+      background: rgba(251, 191, 36, 0.10);
+      color: rgba(251, 191, 36, 0.95);
+      box-shadow: 0 18px 45px rgba(251, 191, 36, 0.06);
+    }
+    .abfChipCountry{
+      border-color: rgba(47,194,255,0.28);
+      background: rgba(47,194,255,0.10);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 18px 45px rgba(47,194,255,0.10);
+    }
+
+    /* Inputs */
+    .abfLabel{
+      display:block;
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.60);
+    }
+    .abfHint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+    }
+    .abfInput, .abfTextarea{
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      padding: 12px 14px;
+      outline: none;
+      transition: 160ms;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .abfTextarea{ padding: 14px; }
+    .abfInput::placeholder, .abfTextarea::placeholder{ color: rgba(255,255,255,0.38); }
+    .abfInput:focus, .abfTextarea:focus{
+      border-color: rgba(47,194,255,0.32);
+      box-shadow: 0 0 0 1px rgba(47,194,255,0.12) inset, 0 18px 50px rgba(47,194,255,0.10);
+    }
+
+    .abfCheck{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.70);
+      user-select:none;
+    }
+    .abfCheck input{ margin-top: 3px; }
+
+    .abfSubmit{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(47,194,255,0.28);
+      background: rgba(47,194,255,0.12);
+      color: rgba(47,194,255,0.98);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      transition: 160ms;
+      box-shadow: 0 22px 60px rgba(47,194,255,0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .abfSubmit:hover{
+      transform: translateY(-1px);
+      background: rgba(47,194,255,0.16);
+      box-shadow: 0 28px 70px rgba(47,194,255,0.16);
+    }
+    .abfSubmit:disabled{
+      opacity: .55;
+      cursor: not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+    .abfSubmitDot{
+      width:8px; height:8px;
+      border-radius:999px;
+      background: rgba(47,194,255,0.95);
+      box-shadow: 0 0 18px rgba(47,194,255,0.35);
+    }
+  </style>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      const form = document.getElementById("djCastingForm");
+      const feedback = document.getElementById("castingFeedback");
+
+      function showFeedback(ok, msg) {
+        if (!feedback) return;
+        feedback.classList.remove("hidden");
+        feedback.className = "mb-6 text-sm font-medium px-4 py-3 rounded-xl border";
+        if (ok) {
+          feedback.classList.add("border-cyan-400/30", "bg-cyan-500/10", "text-cyan-200");
+        } else {
+          feedback.classList.add("border-rose-400/30", "bg-rose-500/10", "text-rose-200");
+        }
+        feedback.textContent = msg;
+      }
+
+      function atLeastOneSocial(fd) {
+        const keys = ["facebook","instagram","x","website","soundcloud","mixcloud","youtube"];
+        return keys.some(k => String(fd.get(k) || "").trim().length > 0);
+      }
+
+      if (!form) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+
+        // Honeypot
+        if (String(fd.get("company") || "").trim()) return;
+
+        const name = String(fd.get("name") || "").trim();
+        const email = String(fd.get("email") || "").trim();
+        const mix = String(fd.get("mix_link") || "").trim();
+        const consent = fd.get("consent") ? true : false;
+
+        if (!name || !email || !mix) {
+          showFeedback(false, "Please fill in name, email and your mix link.");
+          return;
+        }
+        if (!atLeastOneSocial(fd)) {
+          showFeedback(false, "Please provide at least one social link (Facebook / Instagram / X / Website…).");
+          return;
+        }
+        if (!consent) {
+          showFeedback(false, "Consent is required to submit the application.");
+          return;
+        }
+
+        const payload = Object.fromEntries(fd.entries());
+        // Normalize country
+        payload.country_code = String(payload.country_code || "").trim().toUpperCase();
+
+        const btn = form.querySelector("button[type='submit']");
+        if (btn) btn.disabled = true;
+
+        try {
+          const res = await fetch("/api/dj-casting", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            showFeedback(false, data?.error || "Submission failed. Please try again.");
+            if (btn) btn.disabled = false;
+            return;
+          }
+
+          showFeedback(true, "Application sent! Thanks — we’ll review it and get back to you if it’s a match.");
+          form.reset();
+        } catch {
+          showFeedback(false, "Network error. Please try again in a moment.");
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</Base>
