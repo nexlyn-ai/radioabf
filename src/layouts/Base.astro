@@ -444,6 +444,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         left: 23px;
         background: rgba(47,194,255,0.95);
       }
+	  
+	  /* ===================== STATUS BADGE (CASTING) ===================== */
+@keyframes abfCastingPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(47,194,255,.45); transform: translateZ(0) scale(1); }
+  60%  { box-shadow: 0 0 0 10px rgba(47,194,255,0); transform: translateZ(0) scale(1.03); }
+  100% { box-shadow: 0 0 0 0 rgba(47,194,255,0); transform: translateZ(0) scale(1); }
+}
+
+.abfStatusCasting{
+  border-color: rgba(47,194,255,0.45) !important;
+  background: linear-gradient(90deg, rgba(20,92,143,0.55), rgba(47,194,255,0.28)) !important;
+  color: rgba(210,245,255,0.95) !important;
+  animation: abfCastingPulse 1.15s ease-out infinite;
+}
+	  
          </style>
     <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
     <script is:inline>
@@ -1103,14 +1118,23 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         function fmtApply(){
           try { window.ABF_FMT?.apply(document); } catch {}
         }
-        function setStatus(text){
-          const a = $("npStatus");
-          const b = $("npStatusMobile");
-          if (a) a.textContent = text;
-          if (b) b.textContent = text;
-          const fsStatus = $("fsStatus");
-          if (fsStatus) fsStatus.textContent = text;
-        }
+      function setStatus(text){
+  const a = $("npStatus");
+  const b = $("npStatusMobile");
+  const fsStatus = $("fsStatus");
+
+  const isCasting = String(text || "").toUpperCase().includes("CASTING");
+
+  const apply = (el) => {
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle("abfStatusCasting", isCasting);
+  };
+
+  apply(a);
+  apply(b);
+  apply(fsStatus);
+}
         function pulseLogo(){
           const logo = document.getElementById("abfBrandLogo");
           if (!logo) return;
@@ -1529,12 +1553,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         function isLiveNow(){
           return !S.isStopped && !audio.paused;
         }
-        function computeStatus(){
-          if (S.isStopped) return "stopped";
-          if (audio.paused) return "paused";
-          if (audio.muted || audio.volume <= 0.0001) return "muted";
-          return "live";
-        }
+function computeStatus(){
+  if (window.__abfCasting) return "CASTING…";
+  if (S.isStopped) return "stopped";
+  if (audio.paused) return "paused";
+  if (audio.muted || audio.volume <= 0.0001) return "muted";
+  return "live";
+}
         function syncFullscreenUI(){
           const fa = $("fsArtist");
           const ft = $("fsTitle");
