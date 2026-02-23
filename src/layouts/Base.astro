@@ -1903,6 +1903,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
+   {
+  v: "3.3.7",
+  d: "Feb 23, 2026",
+  t: "Programs fully migrated to Directus with dynamic schedule rendering across Homepage and Programs page. Global timezone upgrade implemented: all schedule times now display Paris local time (auto CET/CEST detection) alongside UTC for worldwide clarity. Removed hardcoded timezone suffixes and refined On Air logic for cleaner, production-ready rendering."
+  },
   {
   v: "3.3.6",
   d: "Feb 21, 2026",
