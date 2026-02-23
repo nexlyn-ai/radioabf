@@ -1149,18 +1149,19 @@ function formatWorldTimeLabel(timeHHMM){
   if (minsParis == null) return esc(timeHHMM || "");
 
   const now = new Date();
-  const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris"); // CET/CEST auto
+  const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris");
 
   const utcMins = minsParis - offset;
   const utcHHMM = minutesToHHMM(utcMins);
 
-  const sign = offset >= 0 ? "+" : "-";
-  const abs = Math.abs(offset);
-  const oh = Math.floor(abs / 60);
-  const om = abs % 60;
-  const offStr = `UTC${sign}${oh}${om ? ":" + String(om).padStart(2,"0") : ""}`;
+  const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
 
-  return `${esc(minutesToHHMM(minsParis))} <span class="text-white/50 font-medium">Paris (${offStr})</span> <span class="text-white/30">•</span> <span class="text-white/70 font-semibold">${esc(utcHHMM)} UTC</span>`;
+  return (
+    minutesToHHMM(minsParis) + " " + tzLabel +
+    ' <span class="text-white/60 font-medium">(Paris)</span>' +
+    ' <span class="text-white/30">•</span> ' +
+    '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
+  );
 }
 
   function renderOnAirTonight(){

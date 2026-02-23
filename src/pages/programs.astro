@@ -90,7 +90,7 @@ function normalizeDay(v: any): string {
   return "";
 }
 
-// ✅ audience mondiale: "18:00 (CET)" + support HH:MM:SS / HH:MM
+// ✅ keep only HH:MM (timezone handled client-side for world audience)
 function normalizeTime(v: any): string {
   const t = safeStr(v).trim();
   if (!t) return "";
@@ -99,13 +99,13 @@ function normalizeTime(v: any): string {
   if (m) {
     const hh = m[1].padStart(2, "0");
     const mm = m[2].padStart(2, "0");
-    return `${hh}:${mm} (CET)`;
+    return `${hh}:${mm}`;
   }
 
   return t;
 }
 
-// ✅ parse minutes from "18:00 (CET)" (or any string containing HH:MM)
+// ✅ parse minutes from "18:00" (or any string containing HH:MM)
 function parseTimeToMinutes(t: string): number {
   const m = safeStr(t).match(/(\d{1,2})\s*:\s*(\d{2})/);
   if (!m) return 0;
@@ -121,7 +121,7 @@ function buildScheduleFromOccurrences(rows: Occurrence[]) {
     const day = normalizeDay((row as any).day_of_week);
     if (!day) continue;
 
-    const time = normalizeTime((row as any).start_time) || "00:00 (CET)";
+    const time = normalizeTime((row as any).start_time) || "00:00";
 
     const p = row.program || null;
     const title = safeStr(p?.title) || "Untitled program";
@@ -332,6 +332,73 @@ try {
           .replace(/'/g, "&#039;");
       }
 
+      // --------- WORLD TIME (Paris -> UTC) ----------
+      function parseTimeToMinutesFlexible(t){
+        const s = String(t || "").trim();
+        const m = s.match(/^(\d{1,2})[:h](\d{2})(?::\d{2})?$/i);
+        if (!m) return null;
+        const hh = Number(m[1]);
+        const mm = Number(m[2]);
+        return hh * 60 + mm;
+      }
+
+      function minutesToHHMM(min){
+        const m = ((min % 1440) + 1440) % 1440;
+        const hh = Math.floor(m / 60);
+        const mm = m % 60;
+        return String(hh).padStart(2,"0") + ":" + String(mm).padStart(2,"0");
+      }
+
+      function getTimeZoneOffsetMinutes(date, timeZone){
+        const dtf = new Intl.DateTimeFormat("en-US", {
+          timeZone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+
+        const parts = Object.fromEntries(
+          dtf.formatToParts(date).map(p => [p.type, p.value])
+        );
+
+        const asUTC = Date.UTC(
+          Number(parts.year),
+          Number(parts.month) - 1,
+          Number(parts.day),
+          Number(parts.hour),
+          Number(parts.minute),
+          Number(parts.second)
+        );
+
+        return Math.round((asUTC - date.getTime()) / 60000);
+      }
+
+      function formatWorldTimeLabel(timeHHMM){
+  const minsParis = parseTimeToMinutesFlexible(timeHHMM);
+  if (minsParis == null) return escapeHtml(timeHHMM);
+
+  const now = new Date();
+  const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris"); // minutes vs UTC
+
+  // Paris -> UTC
+  const utcMins = minsParis - offset;
+  const utcHHMM = minutesToHHMM(utcMins);
+
+  // CET/CEST label (simple, correct for the *current* season)
+  const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
+
+  // Example: 00:00 CET (Paris) • 23:00 UTC
+  return (
+    minutesToHHMM(minsParis) + " " + tzLabel + ' <span class="text-white/60 font-medium">(Paris)</span>' +
+    ' <span class="text-white/30">•</span> ' +
+    '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
+  );
+}
+
       function parseTimeToMinutes(t) {
         const m = String(t || "").match(/(\d{1,2})\s*:\s*(\d{2})/);
         if (!m) return 0;
@@ -402,7 +469,8 @@ try {
       }
 
       function card(item, onAir) {
-        const time   = escapeHtml(item?.time ?? "");
+        const timeRaw = item?.time ?? "";
+        const time   = formatWorldTimeLabel(timeRaw);
         const title  = escapeHtml(item?.title ?? "");
         const desc   = escapeHtml(item?.desc ?? "");
         const rawImg = String(item?.img ?? "");
@@ -471,7 +539,9 @@ try {
         setActiveDay(day);
 
         const schedule = getSchedule();
-        const items = (schedule?.[day] || []).slice().sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        const items = (schedule?.[day] || []).slice().sort(
+          (a, b) => parseTimeToMinutesFlexible(a.time) - parseTimeToMinutesFlexible(b.time)
+        );
 
         if (items.length === 0) {
           list.innerHTML = '<div class="text-white/50">No schedule found.</div>';
