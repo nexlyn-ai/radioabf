@@ -1,7 +1,46 @@
 ---
 import Base from "../../layouts/Base.astro";
-import artists from "../../data/artists.json";
+import { directusGet, directusAsset } from "../../lib/directus";
+
+export const prerender = false;
+
+type Artist = {
+  id: number;
+  status?: string | null;
+  slug: string;
+  name: string;
+  categories?: string[] | null;
+  genres?: string[] | null;
+  portrait?: string | null; // directus file id
+  hero?: string | null;     // directus file id
+};
+
+type DirectusListResp<T> = { data: T[] };
+
+const fields = [
+  "id",
+  "status",
+  "slug",
+  "name",
+  "categories",
+  "genres",
+  "portrait",
+  "hero",
+].join(",");
+
+let artists: Artist[] = [];
+try {
+  const resp = await directusGet<DirectusListResp<Artist>>(
+    `/items/artists?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&sort=name`
+  );
+  artists = resp?.data ?? [];
+} catch {
+  artists = [];
+}
+
+const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
 ---
+
 <Base
   title="Artists — RadioABF"
   description="Meet the DJs and artists of RadioABF on radioabf.com — Alternative Bass Fréquence."
@@ -75,7 +114,7 @@ import artists from "../../data/artists.json";
                           group-hover:scale-105 transition duration-300">
                 {a.portrait ? (
                   <img
-                    src={a.portrait}
+                    src={fileUrl(a.portrait)}
                     alt={a.name}
                     class="w-full h-full object-cover"
                     loading="lazy"

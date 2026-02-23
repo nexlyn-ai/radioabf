@@ -1,40 +1,88 @@
 ---
 import Base from "../../layouts/Base.astro";
-import artists from "../../data/artists.json";
+import { directusGet, directusAsset } from "../../lib/directus";
 
-// Build all pages
-export async function getStaticPaths() {
-  return artists.map((a) => ({ params: { slug: a.slug } }));
-}
+export const prerender = false;
+
+type Artist = {
+  id: number;
+  status?: string | null;
+  slug: string;
+  name: string;
+  categories?: string[] | null;
+  genres?: string[] | null;
+  portrait?: string | null; // directus file id
+  hero?: string | null;     // directus file id
+  bio?: string | null;
+
+  instagram?: string | null;
+  facebook?: string | null;
+  soundcloud?: string | null;
+  mixcloud?: string | null;
+  youtube?: string | null;
+  x?: string | null;
+  website?: string | null;
+};
+
+type DirectusListResp<T> = { data: T[] };
 
 const { slug } = Astro.params;
-const artist = artists.find((a) => a.slug === slug);
 
-if (!artist) throw new Error(`Unknown artist slug: ${slug}`);
+const fields = [
+  "id",
+  "status",
+  "slug",
+  "name",
+  "categories",
+  "genres",
+  "portrait",
+  "hero",
+  "bio",
+  "instagram",
+  "facebook",
+  "soundcloud",
+  "mixcloud",
+  "youtube",
+  "x",
+  "website",
+].join(",");
 
-// Load local HTML bio as RAW string (works with .html files)
-const bios = import.meta.glob("../../content/artists/*.html", { as: "raw", eager: true });
-const bioKey = `../../content/artists/${slug}.html`;
-const bioHtml = (bios[bioKey] as string) || "";
+let artist: Artist | null = null;
 
-// Meta (clean)
+try {
+  const resp = await directusGet<DirectusListResp<Artist>>(
+    `/items/artists?fields=${encodeURIComponent(fields)}&filter[slug][_eq]=${encodeURIComponent(
+      String(slug || "")
+    )}&limit=1`
+  );
+  artist = (resp?.data && resp.data[0]) ? resp.data[0] : null;
+} catch {
+  artist = null;
+}
+
+if (!artist || artist.status !== "published") {
+  // simple: throw to produce 404-like behavior in SSR context
+  throw new Error(`Unknown or unpublished artist slug: ${slug}`);
+}
+
+const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
+
 const pageTitle = `${artist.name} — RadioABF`;
 const pageDesc =
-  (artist as any)?.description && String((artist as any).description).trim()
-    ? String((artist as any).description).trim()
+  (artist.bio && String(artist.bio).replace(/<[^>]*>/g, "").trim())
+    ? String(artist.bio).replace(/<[^>]*>/g, "").trim().slice(0, 160)
     : `Discover ${artist.name} on RadioABF — Alternative Bass Fréquence.`;
-const canonical = `/artists/${slug}`;
-const image = (artist as any)?.portrait || "/og-image.jpg";
+const canonical = `/artists/${artist.slug}`;
+const image = artist.portrait ? fileUrl(artist.portrait) : "/og-image.jpg";
 
-// Social (optional in artists.json)
 const social = {
-  instagram: (artist as any)?.instagram || "",
-  facebook: (artist as any)?.facebook || "",
-  soundcloud: (artist as any)?.soundcloud || "",
-  mixcloud: (artist as any)?.mixcloud || "",
-  youtube: (artist as any)?.youtube || "",
-  x: (artist as any)?.x || (artist as any)?.twitter || "",
-  website: (artist as any)?.website || "",
+  instagram: artist.instagram || "",
+  facebook: artist.facebook || "",
+  soundcloud: artist.soundcloud || "",
+  mixcloud: artist.mixcloud || "",
+  youtube: artist.youtube || "",
+  x: artist.x || "",
+  website: artist.website || "",
 };
 
 const hasSocial = Object.values(social).some((v) => String(v || "").trim().length > 0);
@@ -96,7 +144,7 @@ function safeUrl(u: string) {
             <div class="w-full aspect-square bg-gradient-to-br from-[#1F7DB8] to-[#2FC2FF]">
               {artist.portrait ? (
                 <img
-                  src={artist.portrait}
+                  src={fileUrl(artist.portrait)}
                   alt={artist.name}
                   class="abfPortrait w-full h-full object-cover"
                   loading="eager"
@@ -209,7 +257,7 @@ function safeUrl(u: string) {
                    prose-a:no-underline hover:prose-a:underline
                    prose-headings:text-white"
           >
-            <Fragment set:html={bioHtml || `<p class="text-white/60">No bio yet.</p>`} />
+            <Fragment set:html={artist.bio || `<p class="text-white/60">No bio yet.</p>`} />
           </article>
         </div>
       </div>
@@ -218,7 +266,6 @@ function safeUrl(u: string) {
   </section>
 
   <style is:inline>
-    /* subtle noise like premium cards */
     .abfNoise{
       background-image:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
@@ -227,7 +274,6 @@ function safeUrl(u: string) {
       opacity: .10;
     }
 
-    /* Premium glass cards */
     .abfCard{
       border: 1px solid rgba(255,255,255,0.14);
       background: linear-gradient(135deg,
@@ -249,7 +295,6 @@ function safeUrl(u: string) {
         0 0 0 1px rgba(47,194,255,0.14) inset;
     }
 
-    /* Gradient ring overlay */
     .abfCardRing{
       background: radial-gradient(900px 260px at 20% 0%,
         rgba(47,194,255,0.18),
@@ -258,7 +303,6 @@ function safeUrl(u: string) {
       opacity: .95;
     }
 
-    /* Portrait premium */
     .abfPortraitWrap{ position: relative; }
     .abfPortrait{
       transition: transform .25s ease, opacity .25s ease;
@@ -282,7 +326,6 @@ function safeUrl(u: string) {
       text-shadow: 0 12px 26px rgba(0,0,0,0.45);
     }
 
-    /* Categories */
     .abfCat{
       padding: 7px 10px;
       border-radius: 999px;
@@ -297,7 +340,6 @@ function safeUrl(u: string) {
       -webkit-backdrop-filter: blur(10px);
     }
 
-    /* Social buttons premium */
     .abfSoc{
       display:inline-flex;
       align-items:center;
@@ -328,7 +370,6 @@ function safeUrl(u: string) {
       transform: translateY(-1px);
     }
 
-    /* hero polish */
     .abfHero{
       box-shadow:
         0 24px 90px rgba(0,0,0,0.55),

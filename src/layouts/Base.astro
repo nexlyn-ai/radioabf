@@ -1928,6 +1928,11 @@ function computeStatus(){
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
+    {
+  v: "3.3.8",
+  d: "Feb 23, 2026",
+  t: "Artists fully migrated to Directus. The /artists listing and dynamic profile pages now fetch published content directly from the CMS. Portraits are served via Directus Files, local JSON and legacy HTML bios removed from runtime. Public API permissions configured for published artists only. Production-ready headless integration completed."
+   },		
    {
   v: "3.3.7",
   d: "Feb 23, 2026",
