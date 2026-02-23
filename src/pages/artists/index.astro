@@ -12,7 +12,7 @@ type Artist = {
   categories?: string[] | null;
   genres?: string[] | null;
   portrait?: string | null; // directus file id
-  hero?: string | null;     // directus file id
+  country_code?: string | null;
 };
 
 type DirectusListResp<T> = { data: T[] };
@@ -25,20 +25,37 @@ const fields = [
   "categories",
   "genres",
   "portrait",
-  "hero",
+  "country_code",
 ].join(",");
 
 let artists: Artist[] = [];
+
 try {
   const resp = await directusGet<DirectusListResp<Artist>>(
-    `/items/artists?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&sort=name`
+    `/items/artists?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&sort=name&limit=200`
   );
   artists = resp?.data ?? [];
 } catch {
   artists = [];
 }
 
+const totalDjs = artists.length;
+
 const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
+
+const countryCodeOf = (a: Artist) =>
+  a.country_code ? String(a.country_code).trim().toUpperCase() : "";
+
+const normCats = (a: Artist) => (a.categories || []).map((x) => String(x || "").trim()).filter(Boolean);
+
+// Keep stable ordering for category chips (optional but looks premium)
+const catOrder = (c: string) => {
+  const k = c.toLowerCase();
+  if (k === "resident") return 1;
+  if (k === "team") return 2;
+  if (k === "guest") return 3;
+  return 9;
+};
 ---
 
 <Base
@@ -47,44 +64,58 @@ const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
   canonical="/artists"
   image="/og-image.jpg"
 >
-  <!-- HERO avec filtres en bas -->
+  <!-- HERO -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
     <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
     <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
     <div class="relative z-10">
       <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
         Artists
       </div>
+
       <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
         Meet the DJs of <span class="text-cyan-200">RadioABF</span>
       </h1>
+
       <p class="text-white/65 mt-3 max-w-2xl">
         Residents, guests and the ABF team — explore each profile.
       </p>
 
-      <!-- Filtres placés en bas de la hero -->
-      <div class="mt-8">
+      <!-- bottom row -->
+      <div class="mt-8 flex items-end justify-between gap-3 flex-wrap">
         <div class="flex flex-wrap gap-2">
           <button class="abfFilterBtn active" data-filter="all" type="button">All</button>
           <button class="abfFilterBtn" data-filter="resident" type="button">Resident</button>
           <button class="abfFilterBtn" data-filter="guest" type="button">Guest</button>
           <button class="abfFilterBtn" data-filter="team" type="button">Team</button>
         </div>
+
+        <div class="abfTotalBadge" aria-label={`${totalDjs} DJs total`}>
+          <span class="abfTotalDot" aria-hidden="true"></span>
+          <span class="abfTotalNum">{totalDjs}</span>
+          <span class="abfTotalTxt">DJs</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Grande carte contenant uniquement la grille des artistes -->
+  <!-- GRID -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
-    <!-- Glows -->
     <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
     <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
     <div class="relative z-10">
       <div id="artistsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {
-          artists.map((a) => (
+        {artists.map((a) => {
+          const cc = countryCodeOf(a);
+          const cats = normCats(a).sort((x, y) => catOrder(x) - catOrder(y));
+
+          // guarantee 1 line: show up to 2 cats, country always last
+          const catsShown = cats.slice(0, 2);
+
+          return (
             <a
               href={`/artists/${a.slug}`}
               class="group relative rounded-3xl border border-white/15
@@ -96,16 +127,14 @@ const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
                      p-5 flex gap-4 items-center
                      overflow-hidden
                      shadow-xl shadow-black/40"
-              data-cats={(a.categories || []).join(",")}
+              data-cats={cats.join(",")}
             >
-              <!-- Cyan tech glow -->
               <div class="pointer-events-none absolute inset-0 rounded-3xl
                           bg-gradient-to-tr
                           from-cyan-400/15 via-transparent to-blue-400/15
                           opacity-60 group-hover:opacity-100
-                          transition duration-500">
-              </div>
-              <!-- Portrait -->
+                          transition duration-500"></div>
+
               <div class="relative w-20 h-20 rounded-2xl
                           border border-white/20
                           bg-gradient-to-br from-[#1F7DB8] to-[#2FC2FF]
@@ -122,36 +151,86 @@ const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
                   />
                 ) : null}
               </div>
-              <!-- Info -->
+
               <div class="min-w-0 flex-1 relative z-10">
-                <div class="font-semibold text-white truncate
-                            group-hover:text-cyan-200
-                            transition duration-200 text-lg">
+                <div class="font-semibold text-white truncate group-hover:text-cyan-200 transition duration-200 text-lg">
                   {a.name}
                 </div>
-                <div class="mt-3 flex flex-wrap gap-2">
-                  {(a.categories || []).map((c) => (
-                    <span class="px-2.5 py-1 rounded-xl text-[10px]
-                                 border border-white/15
-                                 bg-white/10 text-white/80
-                                 uppercase tracking-wider backdrop-blur-md">
+
+                <div class="abfChipsRow mt-3">
+                  {catsShown.map((c) => (
+                    <span class={`abfChip ${`abfChip--${String(c).toLowerCase()}`}`} title={c}>
                       {c}
                     </span>
                   ))}
+
+                  {cc ? (
+                    <span class="abfChip abfChipCountry" title={cc} aria-label={`Country ${cc}`}>
+                      {cc}
+                    </span>
+                  ) : null}
                 </div>
               </div>
-              <!-- Arrow -->
+
               <div class="relative z-10 text-white/50 group-hover:text-white transition text-xl">
                 →
               </div>
             </a>
-          ))
-        }
+          );
+        })}
       </div>
     </div>
   </section>
 
-  <!-- Filter styles -->
+  <!-- ✅ ABF CLUB CTA moved to bottom (unchanged block) -->
+  <section class="abfCta relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-7 mt-6 shadow-2xl">
+    <div class="pointer-events-none absolute -top-48 -left-48 w-[620px] h-[620px] rounded-full bg-cyan-500/14 blur-[140px]"></div>
+    <div class="pointer-events-none absolute -bottom-48 -right-48 w-[620px] h-[620px] rounded-full bg-blue-600/14 blur-[140px]"></div>
+    <div class="pointer-events-none absolute inset-0 abfCtaRing"></div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-8">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase">
+          <span class="abfPulseDot" aria-hidden="true"></span>
+          ABF Club • Guest Casting Open
+        </div>
+
+        <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold leading-tight">
+          Want to join the <span class="text-cyan-200">ABF Club</span> as a Guest DJ?
+        </h2>
+
+        <p class="text-white/70 mt-3 max-w-3xl">
+          We’re always scouting for bold electronic selectors — exclusive guest mixes, special shows and community spotlights.
+          Send us your best set and become part of the ABF sound.
+        </p>
+
+        <div class="mt-5 flex flex-wrap gap-2">
+          <span class="abfCtaChip">Worldwide</span>
+          <span class="abfCtaChip">Guest sets</span>
+          <span class="abfCtaChip">Curated weekly</span>
+          <span class="abfCtaChip">ABF spotlight</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap lg:flex-col lg:items-end lg:gap-3">
+        <a href="/dedications" class="abfCtaBtn" aria-label="Contact RadioABF">
+          <span class="abfCtaBtnDot" aria-hidden="true"></span>
+          Contact us
+          <span aria-hidden="true">→</span>
+        </a>
+
+        <a href="/programs" class="abfCtaBtnGhost" aria-label="See programs">
+          Explore shows
+          <span aria-hidden="true">→</span>
+        </a>
+
+        <div class="abfCtaHint" aria-hidden="true">
+          Response time: best-effort
+        </div>
+      </div>
+    </div>
+  </section>
+
   <style is:inline>
     .abfFilterBtn{
       padding: 10px 14px;
@@ -165,19 +244,208 @@ const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
       letter-spacing: .08em;
       text-transform: uppercase;
     }
-    .abfFilterBtn:hover{
-      background: rgba(255,255,255,0.12);
-      color: white;
-    }
+    .abfFilterBtn:hover{ background: rgba(255,255,255,0.12); color: white; }
     .abfFilterBtn.active{
       background: linear-gradient(90deg, rgba(20,92,143,0.95), rgba(47,194,255,0.95));
       border-color: rgba(47,194,255,0.35);
       color: white;
       box-shadow: 0 20px 45px rgba(47,194,255,0.15);
     }
+
+    /* One-line chips row */
+    .abfChipsRow{
+      display:flex;
+      align-items:center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    /* Base chip */
+    .abfChip{
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      line-height: 1;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.82);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display:inline-flex;
+      align-items:center;
+      white-space: nowrap;
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 0 0 auto;
+    }
+
+    /* ✅ Category colors (not the same blue) */
+    .abfChip--resident{
+      border-color: rgba(34, 211, 238, 0.30);   /* cyan */
+      background: rgba(34, 211, 238, 0.10);
+      color: rgba(34, 211, 238, 0.95);
+      box-shadow: 0 18px 45px rgba(34, 211, 238, 0.08);
+    }
+    .abfChip--team{
+      border-color: rgba(167, 139, 250, 0.30);  /* violet */
+      background: rgba(167, 139, 250, 0.10);
+      color: rgba(199, 178, 255, 0.95);
+      box-shadow: 0 18px 45px rgba(167, 139, 250, 0.08);
+    }
+    .abfChip--guest{
+      border-color: rgba(251, 191, 36, 0.30);   /* amber */
+      background: rgba(251, 191, 36, 0.10);
+      color: rgba(251, 191, 36, 0.95);
+      box-shadow: 0 18px 45px rgba(251, 191, 36, 0.06);
+    }
+
+    /* Country chip (always last + cyan vibe) */
+    .abfChipCountry{
+      border-color: rgba(47,194,255,0.28);
+      background: rgba(47,194,255,0.10);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 18px 45px rgba(47,194,255,0.10);
+      max-width: 60px;
+      margin-left: auto;
+    }
+
+    /* Total DJs badge */
+    .abfTotalBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .abfTotalDot{
+      width:8px; height:8px;
+      border-radius: 999px;
+      background: rgba(47,194,255,0.95);
+      box-shadow: 0 0 18px rgba(47,194,255,0.35);
+    }
+    .abfTotalNum{ font-weight: 900; letter-spacing: .06em; }
+    .abfTotalTxt{
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.65);
+    }
+
+    /* CTA card (UNCHANGED styles) */
+    .abfCta{
+      border-color: rgba(255,255,255,0.12);
+      box-shadow:
+        0 24px 90px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(47,194,255,0.07) inset;
+    }
+    .abfCtaRing{
+      background: radial-gradient(900px 260px at 20% 0%,
+        rgba(47,194,255,0.18),
+        rgba(255,255,255,0.06) 45%,
+        rgba(255,255,255,0.03) 100%);
+      opacity: .95;
+      animation: abfRing 3.8s ease-in-out infinite;
+    }
+    @keyframes abfRing{
+      0%,100%{ opacity:.70; transform: translateY(0); }
+      50%{ opacity:1; transform: translateY(-2px); }
+    }
+    .abfPulseDot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: rgba(47,194,255,0.95);
+      box-shadow: 0 0 0 0 rgba(47,194,255,0.45);
+      animation: abfPulse 1.6s infinite;
+    }
+    @keyframes abfPulse{
+      0%{ box-shadow: 0 0 0 0 rgba(47,194,255,0.45); }
+      70%{ box-shadow: 0 0 0 14px rgba(47,194,255,0); }
+      100%{ box-shadow: 0 0 0 0 rgba(47,194,255,0); }
+    }
+    .abfCtaChip{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.80);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .abfCtaBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(47,194,255,0.28);
+      background: rgba(47,194,255,0.12);
+      color: rgba(47,194,255,0.98);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      transition: 160ms;
+      box-shadow: 0 22px 60px rgba(47,194,255,0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .abfCtaBtn:hover{
+      transform: translateY(-1px);
+      background: rgba(47,194,255,0.16);
+      box-shadow: 0 28px 70px rgba(47,194,255,0.16);
+    }
+    .abfCtaBtnDot{
+      width:8px; height:8px;
+      border-radius:999px;
+      background: rgba(47,194,255,0.95);
+      box-shadow: 0 0 18px rgba(47,194,255,0.35);
+    }
+    .abfCtaBtnGhost{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 11px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.86);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      transition: 160ms;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .abfCtaBtnGhost:hover{
+      transform: translateY(-1px);
+      border-color: rgba(47,194,255,0.22);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 22px 60px rgba(47,194,255,0.10);
+    }
+    .abfCtaHint{
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: .06em;
+    }
   </style>
 
-  <!-- Filter script -->
   <script is:inline data-astro-rerun>
     (() => {
       const btns = Array.from(document.querySelectorAll(".abfFilterBtn"));
@@ -190,9 +458,7 @@ const fileUrl = (id?: string | null) => (id ? directusAsset(id) : "");
           card.style.display = show ? "" : "none";
         });
       };
-      btns.forEach(b => {
-        b.onclick = () => setActive(b.dataset.filter || "all");
-      });
+      btns.forEach(b => { b.onclick = () => setActive(b.dataset.filter || "all"); });
       setActive("all");
     })();
   </script>

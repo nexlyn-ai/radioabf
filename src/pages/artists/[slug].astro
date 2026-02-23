@@ -12,7 +12,7 @@ type Artist = {
   categories?: string[] | null;
   genres?: string[] | null;
   portrait?: string | null; // directus file id
-  hero?: string | null;     // directus file id
+  hero?: string | null;     // directus file id (optional)
   bio?: string | null;
 
   instagram?: string | null;
@@ -22,6 +22,8 @@ type Artist = {
   youtube?: string | null;
   x?: string | null;
   website?: string | null;
+
+  country_code?: string | null;
 };
 
 type DirectusListResp<T> = { data: T[] };
@@ -45,6 +47,7 @@ const fields = [
   "youtube",
   "x",
   "website",
+  "country_code",
 ].join(",");
 
 let artist: Artist | null = null;
@@ -61,7 +64,6 @@ try {
 }
 
 if (!artist || artist.status !== "published") {
-  // simple: throw to produce 404-like behavior in SSR context
   throw new Error(`Unknown or unpublished artist slug: ${slug}`);
 }
 
@@ -93,6 +95,20 @@ function safeUrl(u: string) {
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
   return "https://" + s.replace(/^\/+/, "");
 }
+
+const countryCode = artist.country_code ? String(artist.country_code).trim().toUpperCase() : "";
+
+// category ordering + colors (same as index)
+const catOrder = (c: string) => {
+  const k = String(c || "").trim().toLowerCase();
+  if (k === "resident") return 1;
+  if (k === "team") return 2;
+  if (k === "guest") return 3;
+  return 9;
+};
+
+const catsAll = (artist.categories || []).map((c) => String(c || "").trim()).filter(Boolean).sort((a, b) => catOrder(a) - catOrder(b));
+const catsShown = catsAll.slice(0, 2); // keep 1-line guarantee, country always last
 ---
 
 <Base
@@ -101,12 +117,6 @@ function safeUrl(u: string) {
   canonical={canonical}
   image={image}
 >
-  <!-- TOP NAV -->
-  <section class="mb-5 flex items-center justify-between gap-3">
-    <a href="/artists" class="text-white/60 hover:text-cyan-200 transition text-sm">← Back to artists</a>
-    <a href="/programs" class="text-white/60 hover:text-cyan-200 transition text-sm">Programs →</a>
-  </section>
-
   <!-- HERO (premium) -->
   <section class="abfHero relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 sm:p-8 mb-6 shadow-2xl">
     <div class="pointer-events-none absolute -top-40 -left-40 w-[560px] h-[560px] rounded-full bg-cyan-500/18 blur-[130px]"></div>
@@ -126,6 +136,14 @@ function safeUrl(u: string) {
       <p class="text-white/65 mt-3 max-w-2xl">
         Residents, guests and the ABF team — discover the story, style and identity behind the decks.
       </p>
+
+      <!-- Back button (like news) -->
+      <div class="mt-6">
+        <a href="/artists" class="abfBackBtn" aria-label="Back to artists">
+          <span aria-hidden="true">←</span>
+          Back to artists
+        </a>
+      </div>
     </div>
   </section>
 
@@ -155,23 +173,30 @@ function safeUrl(u: string) {
             <div class="abfPortraitShine pointer-events-none absolute inset-0"></div>
           </div>
 
-          <!-- name + cats -->
+          <!-- name -->
           <div class="mt-4">
             <div class="abfName text-xl font-extrabold leading-tight text-white">
               {artist.name}
             </div>
 
-            <div class="mt-3 flex flex-wrap gap-2">
-              {(artist.categories || []).map((c) => (
-                <span class="abfCat">
+            <!-- ✅ BADGES (1 line) -->
+            <div class="abfChipsRow mt-4">
+              {catsShown.map((c) => (
+                <span class={`abfChip abfChip--${c.toLowerCase()}`} title={c}>
                   {c}
                 </span>
               ))}
+
+              {countryCode ? (
+                <span class="abfChip abfChipCountry" title={countryCode} aria-label={`Country ${countryCode}`}>
+                  {countryCode}
+                </span>
+              ) : null}
             </div>
           </div>
 
           <!-- SOCIAL -->
-          <div class="mt-6">
+          <div class="mt-7">
             <div class="text-[11px] text-white/55 uppercase tracking-wider mb-3">
               Social
             </div>
@@ -179,44 +204,82 @@ function safeUrl(u: string) {
             {hasSocial ? (
               <div class="flex flex-wrap gap-2">
                 {social.instagram ? (
-                  <a class="abfSoc" href={safeUrl(social.instagram)} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                    <span class="abfSocDot"></span> Instagram
+                  <a class="abfIconBtn" href={safeUrl(social.instagram)} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M7.5 2.75h9A4.75 4.75 0 0 1 21.25 7.5v9A4.75 4.75 0 0 1 16.5 21.25h-9A4.75 4.75 0 0 1 2.75 16.5v-9A4.75 4.75 0 0 1 7.5 2.75Z" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M12 16.2a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Z" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M17.4 6.7h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
 
                 {social.facebook ? (
-                  <a class="abfSoc" href={safeUrl(social.facebook)} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                    <span class="abfSocDot"></span> Facebook
+                  <a class="abfIconBtn" href={safeUrl(social.facebook)} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M14 8.8V7.4c0-.7.3-1.2 1.3-1.2H17V3.2h-2.2C12.4 3.2 11 4.7 11 7.1v1.7H9v3h2V21h3v-9.2h2.6l.4-3H14Z" fill="currentColor"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
 
                 {social.soundcloud ? (
-                  <a class="abfSoc" href={safeUrl(social.soundcloud)} target="_blank" rel="noopener noreferrer" aria-label="SoundCloud">
-                    <span class="abfSocDot"></span> SoundCloud
+                  <a class="abfIconBtn" href={safeUrl(social.soundcloud)} target="_blank" rel="noopener noreferrer" aria-label="SoundCloud">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M7.2 12.3v6.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M9.7 10.7v7.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M12.1 9.6v8.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M14.6 10.3c.3-.1.7-.2 1.1-.2 1.8 0 3.3 1.5 3.3 3.3s-1.5 3.3-3.3 3.3H12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
 
                 {social.mixcloud ? (
-                  <a class="abfSoc" href={safeUrl(social.mixcloud)} target="_blank" rel="noopener noreferrer" aria-label="Mixcloud">
-                    <span class="abfSocDot"></span> Mixcloud
+                  <a class="abfIconBtn" href={safeUrl(social.mixcloud)} target="_blank" rel="noopener noreferrer" aria-label="Mixcloud">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 8.6c1.7-1.7 4.5-1.7 6.2 0L12 10.4l1.8-1.8c1.7-1.7 4.5-1.7 6.2 0v6.8H4V8.6Z" stroke="currentColor" stroke-width="1.6" />
+                        <path d="M8 15.4V9.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                        <path d="M16 15.4V9.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
 
                 {social.youtube ? (
-                  <a class="abfSoc" href={safeUrl(social.youtube)} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                    <span class="abfSocDot"></span> YouTube
+                  <a class="abfIconBtn" href={safeUrl(social.youtube)} target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M20.4 7.4a3 3 0 0 0-2.1-2.1C16.6 4.8 12 4.8 12 4.8s-4.6 0-6.3.5A3 3 0 0 0 3.6 7.4 31.6 31.6 0 0 0 3.2 12c0 1.5.1 3.1.4 4.6a3 3 0 0 0 2.1 2.1c1.7.5 6.3.5 6.3.5s4.6 0 6.3-.5a3 3 0 0 0 2.1-2.1c.3-1.5.4-3.1.4-4.6s-.1-3.1-.4-4.6Z" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M10.4 9.3 15 12l-4.6 2.7V9.3Z" fill="currentColor"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
 
                 {social.x ? (
-                  <a class="abfSoc" href={safeUrl(social.x)} target="_blank" rel="noopener noreferrer" aria-label="X">
-                    <span class="abfSocDot"></span> X
+                  <a class="abfIconBtn" href={safeUrl(social.x)} target="_blank" rel="noopener noreferrer" aria-label="X">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M6.2 18.8 10.7 13.6m3 4.2L17.8 18.8m-7.1-8.4L6.2 5.2m11.6 0-6 7.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
 
                 {social.website ? (
-                  <a class="abfSoc" href={safeUrl(social.website)} target="_blank" rel="noopener noreferrer" aria-label="Website">
-                    <span class="abfSocDot"></span> Website
+                  <a class="abfIconBtn" href={safeUrl(social.website)} target="_blank" rel="noopener noreferrer" aria-label="Website">
+                    <span class="abfIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M3 12h18" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M12 3c2.4 2.6 2.4 15.4 0 18-2.4-2.6-2.4-15.4 0-18Z" stroke="currentColor" stroke-width="1.6"/>
+                      </svg>
+                    </span>
                   </a>
                 ) : null}
               </div>
@@ -246,11 +309,13 @@ function safeUrl(u: string) {
             </div>
           </div>
 
-          <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6"></div>
+          <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-7"></div>
 
           <article
             class="prose prose-invert max-w-none
                    prose-p:text-white/80
+                   prose-p:leading-relaxed
+                   prose-p:my-4
                    prose-li:text-white/80
                    prose-strong:text-white
                    prose-a:text-cyan-200
@@ -266,6 +331,7 @@ function safeUrl(u: string) {
   </section>
 
   <style is:inline>
+    /* subtle noise like premium cards */
     .abfNoise{
       background-image:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
@@ -274,6 +340,7 @@ function safeUrl(u: string) {
       opacity: .10;
     }
 
+    /* Premium glass cards */
     .abfCard{
       border: 1px solid rgba(255,255,255,0.14);
       background: linear-gradient(135deg,
@@ -295,6 +362,7 @@ function safeUrl(u: string) {
         0 0 0 1px rgba(47,194,255,0.14) inset;
     }
 
+    /* Gradient ring overlay */
     .abfCardRing{
       background: radial-gradient(900px 260px at 20% 0%,
         rgba(47,194,255,0.18),
@@ -303,6 +371,7 @@ function safeUrl(u: string) {
       opacity: .95;
     }
 
+    /* Portrait premium */
     .abfPortraitWrap{ position: relative; }
     .abfPortrait{
       transition: transform .25s ease, opacity .25s ease;
@@ -326,54 +395,125 @@ function safeUrl(u: string) {
       text-shadow: 0 12px 26px rgba(0,0,0,0.45);
     }
 
-    .abfCat{
-      padding: 7px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.10);
-      color: rgba(255,255,255,0.82);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+    /* hero polish */
+    .abfHero{
+      box-shadow:
+        0 24px 90px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(47,194,255,0.08) inset;
     }
 
-    .abfSoc{
+    /* Back button (like news) */
+    .abfBackBtn{
       display:inline-flex;
       align-items:center;
       gap:10px;
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 10px 14px;
+      border-radius: 16px;
       border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.08);
       color: rgba(255,255,255,0.86);
       font-size: 12px;
-      font-weight: 800;
-      letter-spacing: .06em;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
       transition: 160ms;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
-    .abfSocDot{
-      width:8px; height:8px;
-      border-radius: 999px;
-      background: rgba(47,194,255,0.95);
-      box-shadow: 0 0 18px rgba(47,194,255,0.35);
+    .abfBackBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(47,194,255,0.22);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 22px 60px rgba(47,194,255,0.10);
     }
-    .abfSoc:hover{
+
+    /* Social icon buttons */
+    .abfIconBtn{
+      width: 44px;
+      height: 44px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.86);
+      transition: 160ms;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+    .abfIconBtn:hover{
       background: rgba(255,255,255,0.14);
       border-color: rgba(47,194,255,0.30);
       color: rgba(47,194,255,0.95);
       box-shadow: 0 18px 40px rgba(47,194,255,0.12);
       transform: translateY(-1px);
     }
+    .abfIcon{
+      width: 20px;
+      height: 20px;
+      display:block;
+    }
+    .abfIcon svg{
+      width: 20px;
+      height: 20px;
+      display:block;
+    }
 
-    .abfHero{
-      box-shadow:
-        0 24px 90px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(47,194,255,0.08) inset;
+    /* ✅ BADGES (same logic as index) */
+    .abfChipsRow{
+      display:flex;
+      align-items:center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    .abfChip{
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      line-height: 1;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.82);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display:inline-flex;
+      align-items:center;
+      white-space: nowrap;
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 0 0 auto;
+    }
+    .abfChip--resident{
+      border-color: rgba(34, 211, 238, 0.30);
+      background: rgba(34, 211, 238, 0.10);
+      color: rgba(34, 211, 238, 0.95);
+      box-shadow: 0 18px 45px rgba(34, 211, 238, 0.08);
+    }
+    .abfChip--team{
+      border-color: rgba(167, 139, 250, 0.30);
+      background: rgba(167, 139, 250, 0.10);
+      color: rgba(199, 178, 255, 0.95);
+      box-shadow: 0 18px 45px rgba(167, 139, 250, 0.08);
+    }
+    .abfChip--guest{
+      border-color: rgba(251, 191, 36, 0.30);
+      background: rgba(251, 191, 36, 0.10);
+      color: rgba(251, 191, 36, 0.95);
+      box-shadow: 0 18px 45px rgba(251, 191, 36, 0.06);
+    }
+    .abfChipCountry{
+      border-color: rgba(47,194,255,0.28);
+      background: rgba(47,194,255,0.10);
+      color: rgba(47,194,255,0.95);
+      box-shadow: 0 18px 45px rgba(47,194,255,0.10);
+      max-width: 60px;
+      margin-left: auto;
     }
   </style>
 </Base>
