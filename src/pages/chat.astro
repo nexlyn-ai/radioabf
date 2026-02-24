@@ -10,7 +10,7 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- ✅ HERO (same typography as /music, but compact + login card inside hero, no duplicate card below) -->
+    <!-- ✅ HERO compact (music typography) + join card inside -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-4 sm:p-5 mb-4 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
@@ -32,7 +32,7 @@ export const prerender = false;
               Join the room, talk with listeners, and stay connected during shows.
             </p>
 
-            <!-- ✅ badges bottom-left -->
+            <!-- ✅ badges bottom-left + ✅ hero room badge that updates -->
             <div class="flex items-center gap-2 flex-wrap mt-4">
               <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
@@ -45,8 +45,10 @@ export const prerender = false;
                 online
               </span>
 
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
-                Smart scroll
+              <!-- ✅ HERO room badge -->
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-white/50"></span>
+                #<span id="abfChatHeroRoomLabel" class="font-semibold">General</span>
               </span>
 
               <span class="text-xs text-white/60">
@@ -57,7 +59,7 @@ export const prerender = false;
             <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
           </div>
 
-          <!-- ✅ RIGHT: Join card back in hero -->
+          <!-- RIGHT: Join card -->
           <div class="w-full sm:w-[320px] flex-shrink-0">
             <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-4">
               <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
@@ -78,7 +80,6 @@ export const prerender = false;
                   <option value="support">Support</option>
                 </select>
 
-                <!-- ✅ join effects like earlier -->
                 <button id="abfChatJoin" class="abfBtn abfBtnPrimary w-full" type="button">
                   Join
                   <span class="abfBtnShine"></span>
@@ -137,18 +138,9 @@ export const prerender = false;
     .no-scrollbar::-webkit-scrollbar{ display:none; }
     .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
 
-    /* =========================
-       Chat UI (scoped)
-       ========================= */
-    #abfChatPageRoot{
-      --abf-border: rgba(255,255,255,.10);
-      --abf-text: rgba(232,242,255,.95);
-      --abf-muted: rgba(232,242,255,.62);
-      color: var(--abf-text);
-    }
+    #abfChatPageRoot{ color: rgba(232,242,255,.95); }
     #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Inputs aligned with site */
     #abfChatPageRoot .abfInput{
       appearance: none;
       border: 1px solid rgba(255,255,255,0.12);
@@ -174,7 +166,6 @@ export const prerender = false;
       color: rgba(232,242,255,.95);
     }
 
-    /* Buttons + shine effects */
     #abfChatPageRoot .abfBtn{
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
@@ -236,7 +227,6 @@ export const prerender = false;
       80%,100%{ transform: translateX(120%); opacity:.20; }
     }
 
-    /* Chat shell */
     #abfChatPageRoot .abfChatShell{
       border-radius: 22px;
       border: 1px solid rgba(255,255,255,.10);
@@ -282,7 +272,6 @@ export const prerender = false;
       scroll-behavior: smooth;
     }
 
-    /* Messages */
     #abfChatPageRoot .abfMsgRow{
       display:flex;
       gap: 10px;
@@ -371,7 +360,6 @@ export const prerender = false;
       background: rgba(255,255,255,.05);
     }
 
-    /* Composer */
     #abfChatPageRoot .abfComposer{
       display:flex;
       gap: 10px;
@@ -393,7 +381,6 @@ export const prerender = false;
       padding: 0 16px;
     }
 
-    /* Emoji picker */
     #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
     #abfChatPageRoot .abfEmojiBtn{
       height: 42px;
@@ -475,12 +462,6 @@ export const prerender = false;
       #abfChatPageRoot .abfBubble{ max-width: 86%; }
       #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
     }
-
-    @media (prefers-reduced-motion: reduce){
-      #abfChatPageRoot .abfMsgRow{ animation: none !important; }
-      #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
-      #abfChatPageRoot .abfBtnShine{ animation: none !important; }
-    }
   </style>
 
   <script is:inline>
@@ -497,6 +478,7 @@ export const prerender = false;
       const statusEl = $("abfChatStatus");
       const errEl = $("abfChatError");
       const roomLabelEl = $("abfChatRoomLabel");
+      const heroRoomEl = $("abfChatHeroRoomLabel");
       const scrollBtn = $("abfChatScrollBtn");
       const onlineEl = $("abfChatOnline");
 
@@ -548,6 +530,12 @@ export const prerender = false;
       function roomLabel(room){
         const r = String(room || "").toLowerCase();
         return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
+      }
+
+      function setRoomLabels(room){
+        const label = roomLabel(room);
+        if (roomLabelEl) roomLabelEl.textContent = label;
+        if (heroRoomEl) heroRoomEl.textContent = label;
       }
 
       function hashTo01(str){
@@ -646,9 +634,40 @@ export const prerender = false;
         onlineEl.textContent = seen.size ? String(seen.size) : "—";
       }, 8000);
 
+      function ensureConnected(){
+        if (!ws || ws.readyState !== 1) connect();
+      }
+
+      // ✅ NEW: switch room immediately (auto re-join)
+      function switchRoom(newRoom){
+        currentRoom = newRoom || "general";
+        setRoomLabels(currentRoom);
+
+        if (!ws || ws.readyState !== 1){
+          connect();
+          // join will happen when user clicks join; avoid auto join without socket
+          return;
+        }
+
+        if (!myPseudo){
+          myPseudo = (pseudoEl.value || "").trim() || guest();
+        }
+
+        joined = false;
+        seen.clear();
+        onlineEl.textContent = "—";
+
+        // clear log on room change (clean UX)
+        logEl.innerHTML = "";
+        sysLine(`switching to <b>#${esc(roomLabel(currentRoom))}</b>…`);
+
+        ws.send(JSON.stringify({ type:"join", pseudo: myPseudo, room: currentRoom }));
+      }
+
       function connect(){
         showErr("");
         joined = false;
+
         try { ws?.close(); } catch {}
         ws = new WebSocket(WS_URL);
 
@@ -676,7 +695,7 @@ export const prerender = false;
           if (m.type === "joined") {
             joined = true;
             currentRoom = m.room || currentRoom;
-            roomLabelEl.textContent = roomLabel(currentRoom);
+            setRoomLabels(currentRoom);
 
             sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
 
@@ -719,27 +738,25 @@ export const prerender = false;
         });
       }
 
-      function ensureConnected(){
-        if (!ws || ws.readyState !== 1) connect();
-      }
-
       function join(){
         showErr("");
         ensureConnected();
 
-        const pseudo = (pseudoEl.value || "").trim() || guest();
-        const room = roomEl.value;
+        myPseudo = (pseudoEl.value || "").trim() || guest();
+        currentRoom = roomEl.value || "general";
+        setRoomLabels(currentRoom);
 
-        myPseudo = pseudo;
-        currentRoom = room;
-        roomLabelEl.textContent = roomLabel(currentRoom);
-
+        joined = false;
         seen.clear();
         onlineEl.textContent = "—";
 
+        // clean join UX
+        logEl.innerHTML = "";
+        sysLine(`joining <b>#${esc(roomLabel(currentRoom))}</b>…`);
+
         setTimeout(() => {
           if (!ws || ws.readyState !== 1) return showErr("Not connected.");
-          ws.send(JSON.stringify({ type:"join", pseudo, room }));
+          ws.send(JSON.stringify({ type:"join", pseudo: myPseudo, room: currentRoom }));
         }, 80);
       }
 
@@ -757,6 +774,7 @@ export const prerender = false;
         msgEl.focus();
       }
 
+      // Emoji picker
       const EMOJIS = [
         "😀","😄","😁","😅","😂","🤣","😊","😍",
         "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
@@ -802,7 +820,6 @@ export const prerender = false;
         const isOpen = !emojiPanel.classList.contains("hidden");
         setEmojiOpen(!isOpen);
       });
-
       emojiClose.addEventListener("click", () => setEmojiOpen(false));
 
       document.addEventListener("click", (e) => {
@@ -812,7 +829,6 @@ export const prerender = false;
         if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
         setEmojiOpen(false);
       });
-
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") setEmojiOpen(false);
       });
@@ -825,13 +841,19 @@ export const prerender = false;
         updateScrollState();
       });
 
+      // ✅ IMPORTANT: changing room updates both labels + auto rejoin if already joined
       roomEl.addEventListener("change", () => {
-        roomLabelEl.textContent = roomLabel(roomEl.value);
+        const next = roomEl.value || "general";
+        setRoomLabels(next);
+        if (joined && ws && ws.readyState === 1) switchRoom(next);
       });
 
       joinBtn.addEventListener("click", join);
       sendBtn.addEventListener("click", send);
       msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+
+      // init labels at load
+      setRoomLabels(currentRoom);
 
       setStatus("Connecting…", false);
       connect();
