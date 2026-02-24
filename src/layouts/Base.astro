@@ -1936,6 +1936,11 @@ function computeStatus(){
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
+	{
+  v: "3.3.9",
+  d: "Feb 24, 2026",
+  t: "Dual contact system implemented. Added DJ Casting form (Directus collection + Flow + SMTP via Zoho) with automated applicant confirmation and internal ABF notification. Added global Contact modal (Astro + Brevo API) integrated in the footer for direct messages to RadioABF. Domain authentication (DKIM + DMARC) configured for compliant email delivery. Production-ready messaging pipeline fully operational."
+	},	
     {
   v: "3.3.8",
   d: "Feb 23, 2026",
