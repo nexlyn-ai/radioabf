@@ -10,21 +10,19 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- ✅ HERO (ultra compact, but bigger title like /music) -->
+    <!-- ✅ HERO -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-2 sm:p-3 mb-2 shadow-2xl">
       <div class="pointer-events-none absolute -top-44 -left-44 w-[520px] h-[520px] rounded-full bg-cyan-500/12 blur-[140px]"></div>
       <div class="pointer-events-none absolute -bottom-44 -right-44 w-[520px] h-[520px] rounded-full bg-blue-600/12 blur-[140px]"></div>
 
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-3 flex-wrap">
-          <!-- LEFT -->
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 text-[10px] tracking-widest text-white/60 uppercase mb-1">
               <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
               Live Chat
             </div>
 
-            <!-- ✅ bigger title (without increasing hero padding) -->
             <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
               RadioABF <span class="text-cyan-200">Chat</span>
             </h1>
@@ -33,7 +31,6 @@ export const prerender = false;
               Join the chat, talk with listeners, and stay connected during shows.
             </p>
 
-            <!-- ✅ badges (micro) -->
             <div class="flex items-center gap-2 flex-wrap mt-2">
               <span class="text-[10px] text-white/70 border border-white/10 bg-white/5 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-2">
                 <span id="abfChatHeroBadgeDot" class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
@@ -58,7 +55,6 @@ export const prerender = false;
             <div id="abfChatError" class="mt-1 text-[10px] text-red-300 hidden"></div>
           </div>
 
-          <!-- RIGHT: Join card (micro) -->
           <div class="w-full sm:w-[280px] flex-shrink-0">
             <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-2.5">
               <div class="text-[10px] text-white/60 uppercase tracking-wider mb-2">
@@ -80,6 +76,7 @@ export const prerender = false;
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </section>
@@ -128,51 +125,30 @@ export const prerender = false;
 
   <style>
     .tabular-nums { font-variant-numeric: tabular-nums; }
-
-    #abfChatPageRoot{
-      --abf-border: rgba(255,255,255,.10);
-      --abf-text: rgba(232,242,255,.95);
-      --abf-muted: rgba(232,242,255,.62);
-      color: var(--abf-text);
-    }
+    #abfChatPageRoot{ --abf-text: rgba(232,242,255,.95); color: var(--abf-text); }
     #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Inputs aligned with site (smaller) */
     #abfChatPageRoot .abfInput{
-      appearance: none;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.9);
-      border-radius: 14px;
-      padding: 8px 10px;
-      font-size: 11px;
-      outline: none;
-      transition: 150ms ease;
-      height: 36px;
+      appearance:none; border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9);
+      border-radius:14px; padding:8px 10px; font-size:11px; outline:none;
+      transition:150ms ease; height:36px;
     }
     #abfChatPageRoot .abfInput:focus{
       border-color: rgba(47,194,255,0.35);
       box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
     }
 
-    /* Buttons (smaller) */
     #abfChatPageRoot .abfBtn{
-      border: 1px solid rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.9);
-      border-radius: 14px;
-      padding: 8px 12px;
-      font-size: 11px;
-      font-weight: 900;
-      transition: 160ms ease;
-      position: relative;
-      user-select: none;
-      height: 36px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap: 8px;
-      overflow: hidden;
+      border-radius:14px; padding:8px 12px;
+      font-size:11px; font-weight:900;
+      transition:160ms ease; position:relative;
+      user-select:none; height:36px;
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px; overflow:hidden;
     }
     #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
     #abfChatPageRoot .abfBtn:active{ transform: translateY(1px); }
@@ -192,24 +168,14 @@ export const prerender = false;
     #abfChatPageRoot .abfBtnGhost{
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.12);
-      font-weight: 800;
-      padding: 0 10px;
-      height: 30px;
-      border-radius: 12px;
-      font-size: 10px;
-    }
-    #abfChatPageRoot .abfBtnGhost:hover{
-      background: rgba(255,255,255,.08);
-      transform: translateY(-1px);
+      font-weight:800;
+      padding:0 10px; height:30px; border-radius:12px; font-size:10px;
     }
 
     #abfChatPageRoot .abfBtnShine{
-      pointer-events:none;
-      position:absolute;
-      inset:-2px;
+      pointer-events:none; position:absolute; inset:-2px;
       background: radial-gradient(600px 100px at 0% 50%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
-      transform: translateX(-60%);
-      opacity: .55;
+      transform: translateX(-60%); opacity:.55;
       animation: abfShine 4.6s ease-in-out infinite;
     }
     @keyframes abfShine{
@@ -218,85 +184,57 @@ export const prerender = false;
       80%,100%{ transform: translateX(120%); opacity:.20; }
     }
 
-    /* Chat shell */
     #abfChatPageRoot .abfChatShell{
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,.10);
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.10);
       background: rgba(5,11,20,.64);
       backdrop-filter: blur(14px);
       box-shadow: 0 18px 60px rgba(0,0,0,.45);
-      overflow: hidden;
+      overflow:hidden;
     }
+
     #abfChatPageRoot .abfChatTopBar{
-      display:flex;
-      align-items:center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 5px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:5px 10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.14);
-      min-height: 40px;
+      min-height:40px;
     }
     #abfChatPageRoot .abfChatTopLeft{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 11px;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:11px;
     }
 
     #abfChatPageRoot .abfRoomPill{
-      display:inline-flex;
-      align-items:center;
-      gap: 6px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(52,211,153,.22);
+      display:inline-flex; align-items:center; gap:6px;
+      padding:5px 9px; border-radius:999px;
+      border:1px solid rgba(52,211,153,.22);
       background: rgba(52,211,153,.08);
       box-shadow: 0 10px 30px rgba(52,211,153,.06);
       color: rgba(232,242,255,.90);
-      font-weight: 900;
-      letter-spacing: .02em;
-      font-size: 11px;
+      font-weight:900; letter-spacing:.02em; font-size:11px;
     }
-
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
-    /* ✅ smaller chat window (reduced again) */
     #abfChatPageRoot .abfChatLog{
       height: min(34vh, 260px);
-      overflow: auto;
-      padding: 10px 10px 12px;
+      overflow:auto;
+      padding:10px 10px 12px;
       background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.10));
-      scroll-behavior: smooth;
+      scroll-behavior:smooth;
     }
 
-    /* Messages (NO avatar / initials) */
-    #abfChatPageRoot .abfMsgRow{
-      display:flex;
-      gap: 0;
-      align-items: flex-end;
-      margin: 0 0 10px;
-      animation: abfIn .18s ease-out both;
-    }
-    @keyframes abfIn{
-      from{ opacity:0; transform: translateY(6px); }
-      to{ opacity:1; transform: translateY(0); }
-    }
-    #abfChatPageRoot .abfMsgRow.self{ justify-content: flex-end; }
-    #abfChatPageRoot .abfAvatar{ display:none !important; }
+    #abfChatPageRoot .abfMsgRow{ display:flex; margin:0 0 10px; animation:abfIn .18s ease-out both; }
+    @keyframes abfIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+    #abfChatPageRoot .abfMsgRow.self{ justify-content:flex-end; }
 
-    /* ✅ meta + message inline */
     #abfChatPageRoot .abfBubble{
       max-width: min(760px, 96%);
-      border-radius: 16px;
-      padding: 8px 10px;
-      border: 1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:8px 10px;
+      border:1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
-      display:flex;
-      align-items: baseline;
-      gap: 10px;
+      display:flex; align-items:baseline; gap:10px;
     }
     #abfChatPageRoot .abfMsgRow.self .abfBubble{
       background: linear-gradient(180deg, rgba(56,189,248,.16), rgba(56,189,248,.07));
@@ -304,143 +242,92 @@ export const prerender = false;
     }
 
     #abfChatPageRoot .abfMeta{
-      display:inline-flex;
-      align-items: baseline;
-      gap: 7px;
-      margin: 0;
-      font-size: 10px;
-      color: rgba(232,242,255,.70);
-      flex: 0 0 auto;
-      white-space: nowrap;
+      display:inline-flex; align-items:baseline; gap:7px;
+      font-size:10px; color: rgba(232,242,255,.70);
+      white-space:nowrap; flex:0 0 auto;
     }
     #abfChatPageRoot .abfUserDot{
-      width: 7px;
-      height: 7px;
-      border-radius: 99px;
-      display:inline-block;
+      width:7px; height:7px; border-radius:99px; display:inline-block;
       box-shadow: 0 0 0 4px rgba(255,255,255,.06);
       transform: translateY(1px);
-      flex: 0 0 auto;
     }
-    #abfChatPageRoot .abfName{ font-weight: 900; }
-    #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
+    #abfChatPageRoot .abfName{ font-weight:900; }
+    #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight:700; }
 
     #abfChatPageRoot .abfText{
-      font-size: 12px;
-      line-height: 1.25;
+      font-size:12px; line-height:1.25;
       color: rgba(232,242,255,.92);
       word-break: break-word;
       white-space: pre-wrap;
-      flex: 1 1 auto;
-      min-width: 0;
+      flex:1 1 auto; min-width:0;
     }
 
     #abfChatPageRoot .abfSys{
-      margin: 8px 0 10px;
-      text-align: center;
+      margin:8px 0 10px;
+      text-align:center;
       color: rgba(232,242,255,.55);
-      font-size: 10px;
-      letter-spacing: .02em;
+      font-size:10px;
+      letter-spacing:.02em;
     }
     #abfChatPageRoot .abfSys span{
       display:inline-block;
-      padding: 5px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
+      padding:5px 9px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
     }
 
-    /* Composer */
     #abfChatPageRoot .abfComposer{
-      display:flex;
-      gap: 8px;
-      padding: 7px 10px;
-      border-top: 1px solid rgba(255,255,255,.10);
+      display:flex; gap:8px;
+      padding:7px 10px;
+      border-top:1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.14);
-      position: sticky;
-      bottom: 0;
-      align-items: center;
-    }
-    #abfChatPageRoot .abfComposerInput{
-      flex: 1;
-      height: 36px;
-      border-radius: 14px;
-      font-size: 10px;
-    }
-    #abfChatPageRoot .abfSendBtn{
-      height: 36px;
-      border-radius: 14px;
-      padding: 0 14px;
-    }
-
-    /* Emoji picker */
-    #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
-    #abfChatPageRoot .abfEmojiBtn{
-      height: 36px;
-      width: 42px;
-      padding: 0;
-      border-radius: 14px;
-      font-size: 16px;
-      display:flex;
+      position:sticky; bottom:0;
       align-items:center;
-      justify-content:center;
+    }
+    #abfChatPageRoot .abfComposerInput{ flex:1; height:36px; border-radius:14px; font-size:10px; }
+    #abfChatPageRoot .abfSendBtn{ height:36px; border-radius:14px; padding:0 14px; }
+
+    #abfChatPageRoot .abfEmojiWrap{ position:relative; }
+    #abfChatPageRoot .abfEmojiBtn{
+      height:36px; width:42px; padding:0;
+      border-radius:14px; font-size:16px;
+      display:flex; align-items:center; justify-content:center;
     }
     #abfChatPageRoot .abfEmojiPanel{
-      position: absolute;
-      bottom: calc(100% + 10px);
-      left: 0;
-      width: 270px;
-      max-width: min(78vw, 320px);
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.14);
+      position:absolute; bottom: calc(100% + 10px); left:0;
+      width:270px; max-width: min(78vw, 320px);
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
       background: rgba(5,11,20,.92);
       backdrop-filter: blur(14px);
       box-shadow: 0 18px 60px rgba(0,0,0,.55);
-      overflow: hidden;
-      z-index: 30;
+      overflow:hidden; z-index:30;
     }
     #abfChatPageRoot .abfEmojiHeader{
-      display:flex;
-      align-items:center;
-      justify-content: space-between;
-      padding: 8px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.10);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
     }
     #abfChatPageRoot .abfEmojiTitle{
-      font-size: 11px;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      color: rgba(232,242,255,.72);
-      font-weight: 900;
+      font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+      color: rgba(232,242,255,.72); font-weight:900;
     }
     #abfChatPageRoot .abfEmojiClose{
-      height: 28px;
-      width: 32px;
-      padding: 0;
-      border-radius: 12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 900;
+      height:28px; width:32px; padding:0; border-radius:12px;
+      display:flex; align-items:center; justify-content:center; font-weight:900;
     }
     #abfChatPageRoot .abfEmojiGrid{
-      padding: 10px;
-      display:grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 6px;
+      padding:10px;
+      display:grid; grid-template-columns: repeat(8, 1fr); gap:6px;
     }
     #abfChatPageRoot .abfEmojiItem{
-      height: 28px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.10);
+      height:28px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor: pointer;
-      user-select: none;
-      font-size: 16px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; user-select:none; font-size:16px;
       transition: transform .10s ease, background .10s ease, border-color .10s ease;
     }
     #abfChatPageRoot .abfEmojiItem:hover{
@@ -449,428 +336,461 @@ export const prerender = false;
       border-color: rgba(56,189,248,.28);
     }
 
-    @media (max-width: 640px){
-      #abfChatPageRoot .abfChatLog{ padding: 10px 9px 12px; height: min(40vh, 300px); }
-      #abfChatPageRoot .abfBubble{ max-width: 98%; }
-      #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
-    }
-
     @media (prefers-reduced-motion: reduce){
-      #abfChatPageRoot .abfMsgRow{ animation: none !important; }
-      #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
-      #abfChatPageRoot .abfBtnShine{ animation: none !important; }
+      #abfChatPageRoot .abfMsgRow{ animation:none !important; }
+      #abfChatPageRoot .abfChatLog{ scroll-behavior:auto; }
+      #abfChatPageRoot .abfBtnShine{ animation:none !important; }
     }
   </style>
 
   <script is:inline>
     (() => {
       const WS_URL = "wss://chat.radioabf.com/ws";
-      const $ = (id) => document.getElementById(id);
+      const CURRENT_ROOM = "general";
 
-      const pseudoEl = $("abfChatPseudo");
-      const joinBtn = $("abfChatJoin");
-      const logEl = $("abfChatLog");
-      const msgEl = $("abfChatMsg");
-      const sendBtn = $("abfChatSend");
-      const statusEl = $("abfChatStatus");
-      const errEl = $("abfChatError");
-      const roomLabelEl = $("abfChatRoomLabel");
-      const scrollBtn = $("abfChatScrollBtn");
-      const onlineEl = $("abfChatOnline");
-      const roomPillEl = $("abfChatRoomPill");
+      // ✅ store one instance globally so we can teardown/re-init cleanly with Astro transitions
+      const KEY = "__ABF_CHAT__";
 
-      const heroDot = $("abfChatHeroBadgeDot");
-      const heroText = $("abfChatHeroBadgeText");
+      function teardown(){
+        const inst = window[KEY];
+        if (!inst) return;
 
-      const emojiBtn = $("abfChatEmojiBtn");
-      const emojiPanel = $("abfChatEmojiPanel");
-      const emojiGrid = $("abfChatEmojiGrid");
-      const emojiClose = $("abfChatEmojiClose");
+        try { inst.manualClosed = true; } catch {}
+        try { inst.clearReconnect && inst.clearReconnect(); } catch {}
+        try { inst.clearIntervalId && clearInterval(inst.clearIntervalId); } catch {}
+        try { inst.ws && inst.ws.close(); } catch {}
+        try { inst.ws = null; } catch {}
 
-      let ws = null;
-      let joined = false;
-      let myPseudo = "";
-      const currentRoom = "general"; // ✅ single room
-      let stickToBottom = true;
-
-      let pendingJoin = null; // { pseudo, room }
-      let reconnectTimer = null;
-      let reconnectAttempt = 0;
-      let manualClosed = false;
-
-      const ONLINE_TTL_MS = 1000 * 60 * 3;
-      const seen = new Map();
-
-      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-
-      const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
-
-      function setStatus(t, ok=false){
-        statusEl.textContent = t;
-        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
+        window[KEY] = null;
       }
 
-      function showErr(t=""){
-        if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
-        errEl.classList.remove("hidden");
-        errEl.textContent = t;
-      }
+      function init(){
+        // ✅ only run if we're on /chat DOM
+        const root = document.getElementById("abfChatPageRoot");
+        if (!root) return;
 
-      function nowHHMM(ts){
-        try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
-        catch{ return ""; }
-      }
+        // ✅ if old instance exists (from previous nav), kill it
+        teardown();
 
-      function hashTo01(str){
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i++){
-          h ^= str.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0) / 4294967295;
-      }
+        const $ = (id) => document.getElementById(id);
 
-      function nameColor(pseudo, isSelf=false){
-        if (isSelf) return "rgba(56,189,248,.98)";
-        const t = hashTo01((pseudo || "listener").toLowerCase());
-        const hue = 185 + Math.round(t * 95);
-        return `hsla(${hue}, 92%, 72%, .98)`;
-      }
+        const pseudoEl = $("abfChatPseudo");
+        const joinBtn = $("abfChatJoin");
+        const logEl = $("abfChatLog");
+        const msgEl = $("abfChatMsg");
+        const sendBtn = $("abfChatSend");
+        const statusEl = $("abfChatStatus");
+        const errEl = $("abfChatError");
+        const scrollBtn = $("abfChatScrollBtn");
+        const onlineEl = $("abfChatOnline");
 
-      function updateHeroBadge(){
-        if (!heroDot || !heroText) return;
-        heroText.textContent = "GENERAL";
-        heroDot.style.background = "rgb(52 211 153)";
-        heroDot.classList.remove("animate-pulse");
-      }
+        const heroDot = $("abfChatHeroBadgeDot");
+        const heroText = $("abfChatHeroBadgeText");
 
-      function updateRoomUI(){
-        if (roomLabelEl) roomLabelEl.textContent = "General";
-        if (roomPillEl) roomPillEl.setAttribute("data-room", "general");
-        updateHeroBadge();
-      }
+        const emojiBtn = $("abfChatEmojiBtn");
+        const emojiPanel = $("abfChatEmojiPanel");
+        const emojiGrid = $("abfChatEmojiGrid");
+        const emojiClose = $("abfChatEmojiClose");
 
-      function shouldStick(){
-        const threshold = 56;
-        return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
-      }
+        let ws = null;
+        let joined = false;
+        let myPseudo = "";
+        let stickToBottom = true;
 
-      function scrollToLatest(force=false){
-        if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
-      }
+        let pendingJoin = null; // { pseudo, room }
+        let reconnectTimer = null;
+        let reconnectAttempt = 0;
+        let manualClosed = false;
 
-      function updateScrollState(){
-        stickToBottom = shouldStick();
-        if (!stickToBottom) scrollBtn.classList.remove("hidden");
-        else scrollBtn.classList.add("hidden");
-      }
+        const ONLINE_TTL_MS = 1000 * 60 * 3;
+        const seen = new Map();
 
-      function sysLine(html){
-        const div = document.createElement("div");
-        div.className = "abfSys";
-        div.innerHTML = `<span>${html}</span>`;
-        logEl.appendChild(div);
-        scrollToLatest();
-      }
+        const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+          "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+        }[c]));
 
-      function msgBubble({ pseudo, message, created_at }){
-        const isSelf = myPseudo && pseudo === myPseudo;
+        const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
 
-        const row = document.createElement("div");
-        row.className = "abfMsgRow" + (isSelf ? " self" : "");
-
-        const bubble = document.createElement("div");
-        bubble.className = "abfBubble";
-
-        const meta = document.createElement("div");
-        meta.className = "abfMeta";
-        const t = nowHHMM(created_at);
-
-        const c = nameColor(pseudo, isSelf);
-
-        meta.innerHTML = `
-          <span class="abfTime">${esc(t)}</span>
-          <span class="abfTime">•</span>
-          <span class="abfUserDot" style="background:${c}"></span>
-          <span class="abfName" style="color:${c}">${esc(pseudo || "Listener")}</span>
-        `;
-
-        const txt = document.createElement("div");
-        txt.className = "abfText";
-        txt.innerHTML = esc(message);
-
-        bubble.appendChild(meta);
-        bubble.appendChild(txt);
-
-        row.appendChild(bubble);
-        logEl.appendChild(row);
-        scrollToLatest();
-      }
-
-      function touchSeen(pseudo){
-        if (!pseudo) return;
-        seen.set(pseudo, Date.now());
-        pruneSeen();
-        onlineEl.textContent = String(seen.size);
-      }
-
-      function pruneSeen(){
-        const now = Date.now();
-        for (const [k, v] of seen.entries()){
-          if (now - v > ONLINE_TTL_MS) seen.delete(k);
-        }
-      }
-
-      setInterval(() => {
-        pruneSeen();
-        onlineEl.textContent = seen.size ? String(seen.size) : "—";
-      }, 8000);
-
-      function hardCloseWs(){
-        try { ws && ws.close(); } catch {}
-        ws = null;
-        joined = false;
-      }
-
-      function clearReconnect(){
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-      }
-
-      function scheduleReconnect(){
-        clearReconnect();
-        if (manualClosed) return;
-
-        reconnectAttempt = Math.min(reconnectAttempt + 1, 8);
-        const delay = Math.min(12000, 600 + reconnectAttempt * 900);
-
-        setStatus(`Reconnecting…`, false);
-        reconnectTimer = setTimeout(() => {
-          connectFresh(false);
-        }, delay);
-      }
-
-      function connectFresh(resetAttempt=true){
-        showErr("");
-        joined = false;
-        manualClosed = false;
-
-        if (resetAttempt){
-          reconnectAttempt = 0;
-          clearReconnect();
+        function setStatus(t, ok=false){
+          if (!statusEl) return;
+          statusEl.textContent = t;
+          statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
         }
 
-        hardCloseWs();
-        ws = new WebSocket(WS_URL);
+        function showErr(t=""){
+          if (!errEl) return;
+          if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
+          errEl.classList.remove("hidden");
+          errEl.textContent = t;
+        }
 
-        ws.addEventListener("open", () => {
-          setStatus("Connected", true);
-          sysLine(`connected`);
+        function nowHHMM(ts){
+          try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+          catch{ return ""; }
+        }
 
-          const want = pendingJoin || (myPseudo ? { pseudo: myPseudo, room: currentRoom } : null);
-
-          if (want && ws && ws.readyState === 1){
-            ws.send(JSON.stringify({ type:"join", pseudo: want.pseudo, room: want.room }));
+        function hashTo01(str){
+          let h = 2166136261;
+          for (let i = 0; i < str.length; i++){
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
           }
-        });
+          return (h >>> 0) / 4294967295;
+        }
 
-        ws.addEventListener("close", () => {
-          setStatus("Disconnected", false);
-          sysLine(`disconnected`);
+        function nameColor(pseudo, isSelf=false){
+          if (isSelf) return "rgba(56,189,248,.98)";
+          const t = hashTo01((pseudo || "listener").toLowerCase());
+          const hue = 185 + Math.round(t * 95);
+          return `hsla(${hue}, 92%, 72%, .98)`;
+        }
+
+        function updateHeroBadge(){
+          if (!heroDot || !heroText) return;
+          heroText.textContent = "GENERAL";
+          heroDot.style.background = "rgb(52 211 153)";
+          heroDot.classList.remove("animate-pulse");
+        }
+
+        function shouldStick(){
+          if (!logEl) return true;
+          const threshold = 56;
+          return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
+        }
+
+        function scrollToLatest(force=false){
+          if (!logEl) return;
+          if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateScrollState(){
+          if (!logEl || !scrollBtn) return;
+          stickToBottom = shouldStick();
+          if (!stickToBottom) scrollBtn.classList.remove("hidden");
+          else scrollBtn.classList.add("hidden");
+        }
+
+        function sysLine(html){
+          if (!logEl) return;
+          const div = document.createElement("div");
+          div.className = "abfSys";
+          div.innerHTML = `<span>${html}</span>`;
+          logEl.appendChild(div);
+          scrollToLatest();
+        }
+
+        function msgBubble({ pseudo, message, created_at }){
+          if (!logEl) return;
+          const isSelf = myPseudo && pseudo === myPseudo;
+
+          const row = document.createElement("div");
+          row.className = "abfMsgRow" + (isSelf ? " self" : "");
+
+          const bubble = document.createElement("div");
+          bubble.className = "abfBubble";
+
+          const meta = document.createElement("div");
+          meta.className = "abfMeta";
+          const t = nowHHMM(created_at);
+          const c = nameColor(pseudo, isSelf);
+
+          meta.innerHTML = `
+            <span class="abfTime">${esc(t)}</span>
+            <span class="abfTime">•</span>
+            <span class="abfUserDot" style="background:${c}"></span>
+            <span class="abfName" style="color:${c}">${esc(pseudo || "Listener")}</span>
+          `;
+
+          const txt = document.createElement("div");
+          txt.className = "abfText";
+          txt.innerHTML = esc(message);
+
+          bubble.appendChild(meta);
+          bubble.appendChild(txt);
+          row.appendChild(bubble);
+          logEl.appendChild(row);
+          scrollToLatest();
+        }
+
+        function touchSeen(pseudo){
+          if (!pseudo) return;
+          seen.set(pseudo, Date.now());
+          pruneSeen();
+          if (onlineEl) onlineEl.textContent = String(seen.size);
+        }
+
+        function pruneSeen(){
+          const now = Date.now();
+          for (const [k, v] of seen.entries()){
+            if (now - v > ONLINE_TTL_MS) seen.delete(k);
+          }
+        }
+
+        const intervalId = setInterval(() => {
+          pruneSeen();
+          if (onlineEl) onlineEl.textContent = seen.size ? String(seen.size) : "—";
+        }, 8000);
+
+        function hardCloseWs(){
+          try { ws && ws.close(); } catch {}
+          ws = null;
           joined = false;
-          scheduleReconnect();
-        });
+        }
 
-        ws.addEventListener("error", () => {
-          showErr("WebSocket error (TLS/DNS/proxy).");
-        });
+        function clearReconnect(){
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
 
-        ws.addEventListener("message", (e) => {
+        function scheduleReconnect(){
+          clearReconnect();
+          if (manualClosed) return;
+
+          reconnectAttempt = Math.min(reconnectAttempt + 1, 8);
+          const delay = Math.min(12000, 600 + reconnectAttempt * 900);
+
+          setStatus("Reconnecting…", false);
+          reconnectTimer = setTimeout(() => {
+            connectFresh(false);
+          }, delay);
+        }
+
+        function connectFresh(resetAttempt=true){
           showErr("");
-          let m; try { m = JSON.parse(e.data); } catch { return; }
+          joined = false;
+          manualClosed = false;
 
-          if (m.type === "hello") return;
-
-          if (m.type === "joined") {
-            joined = true;
+          if (resetAttempt){
             reconnectAttempt = 0;
             clearReconnect();
+          }
 
-            // ✅ always general
-            updateRoomUI();
+          hardCloseWs();
 
-            // clean: clear and render content
-            logEl.innerHTML = "";
-            sysLine(`joined <b>#General</b> as <b>${esc(m.pseudo)}</b>`);
-
-            (m.history || []).forEach((h) => {
-              if (!h) return;
-              touchSeen(h.pseudo);
-              msgBubble({
-                pseudo: h.pseudo || "Listener",
-                message: h.message || "",
-                created_at: h.created_at || Date.now(),
-              });
-            });
-
-            stickToBottom = true;
-            scrollToLatest(true);
-            updateScrollState();
+          try {
+            ws = new WebSocket(WS_URL);
+          } catch {
+            showErr("WebSocket init failed.");
+            scheduleReconnect();
             return;
           }
 
-          if (m.type === "presence") {
-            const p = m.pseudo || "Listener";
-            const c = nameColor(p, false);
-            const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
-            sysLine(ev);
-            touchSeen(p);
-            return;
-          }
+          ws.addEventListener("open", () => {
+            setStatus("Connected", true);
+            sysLine("connected");
 
-          if (m.type === "msg") {
-            touchSeen(m.pseudo);
-            msgBubble({
-              pseudo: m.pseudo || "Listener",
-              message: m.message || "",
-              created_at: m.created_at || Date.now(),
-            });
-            return;
-          }
-
-          if (m.type === "error") showErr("Error: " + m.code);
-        });
-      }
-
-      function join(){
-        showErr("");
-
-        const pseudo = (pseudoEl?.value || "").trim() || guest();
-
-        myPseudo = pseudo;
-        pendingJoin = { pseudo, room: currentRoom };
-
-        seen.clear();
-        onlineEl.textContent = "—";
-
-        // force fresh connect & join
-        connectFresh(true);
-      }
-
-      function send(){
-        showErr("");
-        if (!ws || ws.readyState !== 1) return showErr("Not connected.");
-        if (!joined) return showErr("Join first.");
-        const text = (msgEl.value || "").trim();
-        if (!text) return;
-
-        ws.send(JSON.stringify({ type:"msg", message: text }));
-        touchSeen(myPseudo);
-
-        msgEl.value = "";
-        msgEl.focus();
-      }
-
-      const EMOJIS = [
-        "😀","😄","😁","😅","😂","🤣","😊","😍",
-        "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
-        "👍","👎","👏","🙏","🔥","💎","✨","⚡",
-        "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
-        "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
-      ];
-
-      function setEmojiOpen(open){
-        if (open) emojiPanel.classList.remove("hidden");
-        else emojiPanel.classList.add("hidden");
-      }
-
-      function insertAtCursor(input, text){
-        const start = input.selectionStart ?? input.value.length;
-        const end = input.selectionEnd ?? input.value.length;
-        const before = input.value.slice(0, start);
-        const after = input.value.slice(end);
-        input.value = before + text + after;
-        const pos = start + text.length;
-        input.setSelectionRange(pos, pos);
-        input.focus();
-      }
-
-      function buildEmojiGrid(){
-        emojiGrid.innerHTML = "";
-        EMOJIS.forEach((e) => {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "abfEmojiItem";
-          b.textContent = e;
-          b.addEventListener("click", () => {
-            insertAtCursor(msgEl, e);
-            setEmojiOpen(false);
+            const want = pendingJoin || (myPseudo ? { pseudo: myPseudo, room: CURRENT_ROOM } : null);
+            if (want && ws && ws.readyState === 1){
+              ws.send(JSON.stringify({ type:"join", pseudo: want.pseudo, room: want.room }));
+            }
           });
-          emojiGrid.appendChild(b);
-        });
-      }
 
-      buildEmojiGrid();
+          ws.addEventListener("close", () => {
+            setStatus("Disconnected", false);
+            sysLine("disconnected");
+            joined = false;
+            scheduleReconnect();
+          });
 
-      emojiBtn.addEventListener("click", () => {
-        const isOpen = !emojiPanel.classList.contains("hidden");
-        setEmojiOpen(!isOpen);
-      });
+          ws.addEventListener("error", () => {
+            showErr("WebSocket error (TLS/DNS/proxy).");
+          });
 
-      emojiClose.addEventListener("click", () => setEmojiOpen(false));
+          ws.addEventListener("message", (e) => {
+            showErr("");
+            let m; try { m = JSON.parse(e.data); } catch { return; }
 
-      document.addEventListener("click", (e) => {
-        const t = e.target;
-        if (!t) return;
-        if (emojiPanel.classList.contains("hidden")) return;
-        if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
-        setEmojiOpen(false);
-      });
+            if (m.type === "hello") return;
 
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") setEmojiOpen(false);
-      });
+            if (m.type === "joined") {
+              joined = true;
+              reconnectAttempt = 0;
+              clearReconnect();
+              updateHeroBadge();
 
-      logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
+              if (logEl) logEl.innerHTML = "";
+              sysLine(`joined <b>#General</b> as <b>${esc(m.pseudo)}</b>`);
 
-      scrollBtn.addEventListener("click", () => {
-        stickToBottom = true;
-        scrollToLatest(true);
-        updateScrollState();
-      });
+              (m.history || []).forEach((h) => {
+                if (!h) return;
+                touchSeen(h.pseudo);
+                msgBubble({
+                  pseudo: h.pseudo || "Listener",
+                  message: h.message || "",
+                  created_at: h.created_at || Date.now(),
+                });
+              });
 
-      joinBtn.addEventListener("click", join);
-      sendBtn.addEventListener("click", send);
-      msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+              stickToBottom = true;
+              scrollToLatest(true);
+              updateScrollState();
+              return;
+            }
 
-      // ✅ Astro view transitions / SPA nav:
-      function onVisible(){
-        if (document.visibilityState !== "visible") return;
-        if (!ws || ws.readyState === 3){
-          connectFresh(false);
-        } else if (ws.readyState !== 1){
-          setTimeout(() => {
-            if (!ws || ws.readyState !== 1) connectFresh(false);
-          }, 600);
+            if (m.type === "presence") {
+              const p = m.pseudo || "Listener";
+              const c = nameColor(p, false);
+              sysLine(`<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`);
+              touchSeen(p);
+              return;
+            }
+
+            if (m.type === "msg") {
+              touchSeen(m.pseudo);
+              msgBubble({
+                pseudo: m.pseudo || "Listener",
+                message: m.message || "",
+                created_at: m.created_at || Date.now(),
+              });
+              return;
+            }
+
+            if (m.type === "error") showErr("Error: " + m.code);
+          });
         }
+
+        function join(){
+          showErr("");
+          const pseudo = (pseudoEl?.value || "").trim() || guest();
+          myPseudo = pseudo;
+
+          seen.clear();
+          if (onlineEl) onlineEl.textContent = "—";
+
+          pendingJoin = { pseudo, room: CURRENT_ROOM };
+          connectFresh(true);
+        }
+
+        function send(){
+          showErr("");
+          if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+          if (!joined) return showErr("Join first.");
+          const text = (msgEl?.value || "").trim();
+          if (!text) return;
+
+          ws.send(JSON.stringify({ type:"msg", message: text }));
+          touchSeen(myPseudo);
+
+          msgEl.value = "";
+          msgEl.focus();
+        }
+
+        const EMOJIS = [
+          "😀","😄","😁","😅","😂","🤣","😊","😍",
+          "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
+          "👍","👎","👏","🙏","🔥","💎","✨","⚡",
+          "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
+          "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
+        ];
+
+        function setEmojiOpen(open){
+          if (!emojiPanel) return;
+          if (open) emojiPanel.classList.remove("hidden");
+          else emojiPanel.classList.add("hidden");
+        }
+
+        function insertAtCursor(input, text){
+          if (!input) return;
+          const start = input.selectionStart ?? input.value.length;
+          const end = input.selectionEnd ?? input.value.length;
+          const before = input.value.slice(0, start);
+          const after = input.value.slice(end);
+          input.value = before + text + after;
+          const pos = start + text.length;
+          input.setSelectionRange(pos, pos);
+          input.focus();
+        }
+
+        function buildEmojiGrid(){
+          if (!emojiGrid) return;
+          emojiGrid.innerHTML = "";
+          EMOJIS.forEach((e) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "abfEmojiItem";
+            b.textContent = e;
+            b.addEventListener("click", () => {
+              insertAtCursor(msgEl, e);
+              setEmojiOpen(false);
+            });
+            emojiGrid.appendChild(b);
+          });
+        }
+
+        buildEmojiGrid();
+
+        // ✅ bind listeners (fresh DOM each nav)
+        joinBtn?.addEventListener("click", join);
+        sendBtn?.addEventListener("click", send);
+        msgEl?.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+
+        logEl?.addEventListener("scroll", () => updateScrollState(), { passive: true });
+        scrollBtn?.addEventListener("click", () => {
+          stickToBottom = true;
+          scrollToLatest(true);
+          updateScrollState();
+        });
+
+        emojiBtn?.addEventListener("click", () => {
+          const isOpen = !emojiPanel.classList.contains("hidden");
+          setEmojiOpen(!isOpen);
+        });
+        emojiClose?.addEventListener("click", () => setEmojiOpen(false));
+        document.addEventListener("click", (e) => {
+          const t = e.target;
+          if (!t || !emojiPanel || !emojiBtn) return;
+          if (emojiPanel.classList.contains("hidden")) return;
+          if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
+          setEmojiOpen(false);
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") setEmojiOpen(false);
+        });
+
+        // ✅ auto-reconnect when tab comes back
+        function onVisible(){
+          if (document.visibilityState !== "visible") return;
+          if (!ws || ws.readyState === 3) connectFresh(false);
+        }
+        document.addEventListener("visibilitychange", onVisible);
+        window.addEventListener("focus", onVisible);
+
+        setStatus("Connecting…", false);
+        updateHeroBadge();
+        connectFresh(true);
+        requestAnimationFrame(() => updateScrollState());
+
+        // expose for teardown (Astro swap)
+        window[KEY] = {
+          ws,
+          manualClosed,
+          clearReconnect,
+          clearIntervalId: intervalId,
+        };
+
+        // keep KEY instance updated when ws changes
+        const sync = () => {
+          if (!window[KEY]) return;
+          window[KEY].ws = ws;
+          window[KEY].manualClosed = manualClosed;
+          window[KEY].clearReconnect = clearReconnect;
+        };
+        const syncTimer = setInterval(sync, 500);
+        window[KEY].syncTimer = syncTimer;
       }
 
-      document.addEventListener("visibilitychange", onVisible);
-      window.addEventListener("pageshow", onVisible);
-      window.addEventListener("focus", onVisible);
+      // ✅ Astro View Transitions hooks
+      // - astro:page-load fires on initial load + every client-side navigation
+      // - astro:before-swap fires right before Astro replaces the DOM
+      document.addEventListener("astro:page-load", init);
+      document.addEventListener("astro:before-swap", teardown);
 
-      window.addEventListener("pagehide", () => {
-        manualClosed = true;
-        clearReconnect();
-        try { ws && ws.close(); } catch {}
-      });
-
-      setStatus("Connecting…", false);
-      updateRoomUI();
-      connectFresh(true);
-      requestAnimationFrame(() => updateScrollState());
+      // fallback (no transitions)
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
     })();
   </script>
 </Base>
