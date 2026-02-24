@@ -30,14 +30,14 @@ export const prerender = false;
             </h1>
 
             <p class="text-white/65 mt-1 max-w-2xl text-[12px] leading-snug">
-              Join the room, talk with listeners, and stay connected during shows.
+              Join the chat, talk with listeners, and stay connected during shows.
             </p>
 
             <!-- ✅ badges (micro) -->
             <div class="flex items-center gap-2 flex-wrap mt-2">
               <span class="text-[10px] text-white/70 border border-white/10 bg-white/5 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-2">
-                <span id="abfChatHeroBadgeDot" class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                <span id="abfChatHeroBadgeText">ON AIR</span>
+                <span id="abfChatHeroBadgeDot" class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+                <span id="abfChatHeroBadgeText">GENERAL</span>
               </span>
 
               <span class="text-[10px] text-white/70 border border-white/10 bg-white/5 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-2">
@@ -62,14 +62,14 @@ export const prerender = false;
           <div class="w-full sm:w-[280px] flex-shrink-0">
             <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-2.5">
               <div class="text-[10px] text-white/60 uppercase tracking-wider mb-2">
-                Join a room
+                Join chat
               </div>
 
               <div class="space-y-2">
                 <input
                   id="abfChatPseudo"
                   class="abfInput w-full"
-                  placeholder="Pseudo (optionnel)"
+                  placeholder="Pseudo (optional)"
                   maxlength="24"
                 />
 
@@ -153,14 +153,6 @@ export const prerender = false;
     #abfChatPageRoot .abfInput:focus{
       border-color: rgba(47,194,255,0.35);
       box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
-    }
-    #abfChatPageRoot .abfSelect{
-      background: rgba(10,31,51,.72);
-      color: rgba(232,242,255,.95);
-    }
-    #abfChatPageRoot select.abfSelect option{
-      background: #0B1726;
-      color: rgba(232,242,255,.95);
     }
 
     /* Buttons (smaller) */
@@ -259,27 +251,13 @@ export const prerender = false;
       gap: 6px;
       padding: 5px 9px;
       border-radius: 999px;
-      border: 1px solid rgba(56,189,248,.18);
-      background: rgba(56,189,248,.10);
+      border: 1px solid rgba(52,211,153,.22);
+      background: rgba(52,211,153,.08);
+      box-shadow: 0 10px 30px rgba(52,211,153,.06);
       color: rgba(232,242,255,.90);
       font-weight: 900;
       letter-spacing: .02em;
       font-size: 11px;
-    }
-    #abfChatPageRoot .abfRoomPill[data-room="onair"]{
-      border-color: rgba(56,189,248,.42);
-      background: linear-gradient(180deg, rgba(56,189,248,.22), rgba(56,189,248,.10));
-      box-shadow: 0 10px 30px rgba(56,189,248,.10);
-    }
-    #abfChatPageRoot .abfRoomPill[data-room="support"]{
-      border-color: rgba(251,191,36,.28);
-      background: rgba(251,191,36,.10);
-      box-shadow: 0 10px 30px rgba(251,191,36,.08);
-    }
-    #abfChatPageRoot .abfRoomPill[data-room="general"]{
-      border-color: rgba(52,211,153,.22);
-      background: rgba(52,211,153,.08);
-      box-shadow: 0 10px 30px rgba(52,211,153,.06);
     }
 
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
@@ -306,11 +284,9 @@ export const prerender = false;
       to{ opacity:1; transform: translateY(0); }
     }
     #abfChatPageRoot .abfMsgRow.self{ justify-content: flex-end; }
-
-    /* ✅ avatar removed */
     #abfChatPageRoot .abfAvatar{ display:none !important; }
 
-    /* ✅ message inline with meta: bubble is a single line (wrap if needed) */
+    /* ✅ meta + message inline */
     #abfChatPageRoot .abfBubble{
       max-width: min(760px, 96%);
       border-radius: 16px;
@@ -327,7 +303,6 @@ export const prerender = false;
       border-color: rgba(56,189,248,.24);
     }
 
-    /* ✅ meta single row */
     #abfChatPageRoot .abfMeta{
       display:inline-flex;
       align-items: baseline;
@@ -350,7 +325,6 @@ export const prerender = false;
     #abfChatPageRoot .abfName{ font-weight: 900; }
     #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
 
-    /* ✅ message inline with meta */
     #abfChatPageRoot .abfText{
       font-size: 12px;
       line-height: 1.25;
@@ -494,7 +468,6 @@ export const prerender = false;
       const $ = (id) => document.getElementById(id);
 
       const pseudoEl = $("abfChatPseudo");
-      const roomEl = $("abfChatRoom");
       const joinBtn = $("abfChatJoin");
       const logEl = $("abfChatLog");
       const msgEl = $("abfChatMsg");
@@ -506,8 +479,8 @@ export const prerender = false;
       const onlineEl = $("abfChatOnline");
       const roomPillEl = $("abfChatRoomPill");
 
-      const heroDot = document.getElementById("abfChatHeroBadgeDot");
-      const heroText = document.getElementById("abfChatHeroBadgeText");
+      const heroDot = $("abfChatHeroBadgeDot");
+      const heroText = $("abfChatHeroBadgeText");
 
       const emojiBtn = $("abfChatEmojiBtn");
       const emojiPanel = $("abfChatEmojiPanel");
@@ -517,7 +490,7 @@ export const prerender = false;
       let ws = null;
       let joined = false;
       let myPseudo = "";
-      let currentRoom = (roomEl?.value || "general").toLowerCase();
+      const currentRoom = "general"; // ✅ single room
       let stickToBottom = true;
 
       let pendingJoin = null; // { pseudo, room }
@@ -550,11 +523,6 @@ export const prerender = false;
         catch{ return ""; }
       }
 
-      function roomLabel(room){
-        const r = String(room || "").toLowerCase();
-        return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
-      }
-
       function hashTo01(str){
         let h = 2166136261;
         for (let i = 0; i < str.length; i++){
@@ -571,30 +539,17 @@ export const prerender = false;
         return `hsla(${hue}, 92%, 72%, .98)`;
       }
 
-      function updateHeroBadge(room){
+      function updateHeroBadge(){
         if (!heroDot || !heroText) return;
-        const r = String(room || "general").toLowerCase();
-
-        if (r === "onair"){
-          heroText.textContent = "ON AIR";
-          heroDot.style.background = "rgb(103 232 249)";
-          heroDot.classList.add("animate-pulse");
-        } else if (r === "support"){
-          heroText.textContent = "SUPPORT";
-          heroDot.style.background = "rgb(251 191 36)";
-          heroDot.classList.remove("animate-pulse");
-        } else {
-          heroText.textContent = "GENERAL";
-          heroDot.style.background = "rgb(52 211 153)";
-          heroDot.classList.remove("animate-pulse");
-        }
+        heroText.textContent = "GENERAL";
+        heroDot.style.background = "rgb(52 211 153)";
+        heroDot.classList.remove("animate-pulse");
       }
 
-      function updateRoomUI(room){
-        const r = String(room || "general").toLowerCase();
-        roomLabelEl.textContent = roomLabel(r);
-        if (roomPillEl) roomPillEl.setAttribute("data-room", r);
-        updateHeroBadge(r);
+      function updateRoomUI(){
+        if (roomLabelEl) roomLabelEl.textContent = "General";
+        if (roomPillEl) roomPillEl.setAttribute("data-room", "general");
+        updateHeroBadge();
       }
 
       function shouldStick(){
@@ -635,7 +590,6 @@ export const prerender = false;
 
         const c = nameColor(pseudo, isSelf);
 
-        // ✅ time + separator + dot + pseudo, then message inline (same line)
         meta.innerHTML = `
           <span class="abfTime">${esc(t)}</span>
           <span class="abfTime">•</span>
@@ -689,7 +643,6 @@ export const prerender = false;
         clearReconnect();
         if (manualClosed) return;
 
-        // exponential-ish backoff with cap
         reconnectAttempt = Math.min(reconnectAttempt + 1, 8);
         const delay = Math.min(12000, 600 + reconnectAttempt * 900);
 
@@ -716,7 +669,6 @@ export const prerender = false;
           setStatus("Connected", true);
           sysLine(`connected`);
 
-          // auto re-join last known room if we already joined previously OR a pendingJoin exists
           const want = pendingJoin || (myPseudo ? { pseudo: myPseudo, room: currentRoom } : null);
 
           if (want && ws && ws.readyState === 1){
@@ -746,12 +698,12 @@ export const prerender = false;
             reconnectAttempt = 0;
             clearReconnect();
 
-            currentRoom = (m.room || currentRoom || "general").toLowerCase();
-            updateRoomUI(currentRoom);
+            // ✅ always general
+            updateRoomUI();
 
-            // clean switch: clear and render room content only
+            // clean: clear and render content
             logEl.innerHTML = "";
-            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
+            sysLine(`joined <b>#General</b> as <b>${esc(m.pseudo)}</b>`);
 
             (m.history || []).forEach((h) => {
               if (!h) return;
@@ -795,27 +747,22 @@ export const prerender = false;
       function join(){
         showErr("");
 
-        const pseudo = (pseudoEl.value || "").trim() || guest();
-        const room = (roomEl.value || "general").toLowerCase();
+        const pseudo = (pseudoEl?.value || "").trim() || guest();
 
         myPseudo = pseudo;
-        currentRoom = room;
-
-        updateRoomUI(currentRoom);
+        pendingJoin = { pseudo, room: currentRoom };
 
         seen.clear();
         onlineEl.textContent = "—";
 
-        pendingJoin = { pseudo, room };
-
-        // force fresh connect & join (clean switch)
+        // force fresh connect & join
         connectFresh(true);
       }
 
       function send(){
         showErr("");
         if (!ws || ws.readyState !== 1) return showErr("Not connected.");
-        if (!joined) return showErr("Join a room first.");
+        if (!joined) return showErr("Join first.");
         const text = (msgEl.value || "").trim();
         if (!text) return;
 
@@ -894,23 +841,16 @@ export const prerender = false;
         updateScrollState();
       });
 
-      roomEl.addEventListener("change", () => {
-        currentRoom = (roomEl.value || "general").toLowerCase();
-        updateRoomUI(currentRoom);
-      });
-
       joinBtn.addEventListener("click", join);
       sendBtn.addEventListener("click", send);
       msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
 
-      // ✅ Important for Astro view transitions / SPA nav:
-      // when page becomes visible again, reconnect if needed
+      // ✅ Astro view transitions / SPA nav:
       function onVisible(){
         if (document.visibilityState !== "visible") return;
-        if (!ws || ws.readyState === 3){ // CLOSED
+        if (!ws || ws.readyState === 3){
           connectFresh(false);
-        } else if (ws.readyState !== 1){ // CONNECTING/CLOSING
-          // let it finish; if still not open after a moment, reconnect
+        } else if (ws.readyState !== 1){
           setTimeout(() => {
             if (!ws || ws.readyState !== 1) connectFresh(false);
           }, 600);
@@ -918,12 +858,9 @@ export const prerender = false;
       }
 
       document.addEventListener("visibilitychange", onVisible);
-
-      // also handle back/forward cache and focus
       window.addEventListener("pageshow", onVisible);
       window.addEventListener("focus", onVisible);
 
-      // cleanup on unload to avoid ghost sockets
       window.addEventListener("pagehide", () => {
         manualClosed = true;
         clearReconnect();
@@ -931,7 +868,7 @@ export const prerender = false;
       });
 
       setStatus("Connecting…", false);
-      updateRoomUI(currentRoom);
+      updateRoomUI();
       connectFresh(true);
       requestAnimationFrame(() => updateScrollState());
     })();
