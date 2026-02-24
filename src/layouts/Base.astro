@@ -522,12 +522,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           </a>
           <!-- Desktop nav -->
         <nav class="hidden md:flex items-center gap-2">
+<nav class="hidden md:flex items-center gap-2">
   <a href="/" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Home</a>
   <a href="/news" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
   <a href="/music" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Music</a>
   <a href="/programs" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Programs</a>
   <a href="/artists" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Artists</a>
   <a href="/videos" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Videos</a>
+  <a href="/chat" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Chat</a>
+
 </nav>
           <!-- Mobile button -->
           <button
@@ -546,17 +549,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
   id="mobileNav"
   class="md:hidden hidden absolute left-0 right-0 top-full mt-3 p-3 rounded-2xl border border-white/10 bg-[#050B14]/95 backdrop-blur-xl shadow-2xl"
 >
-  <div class="grid gap-1">
-    <a href="/" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Home</a>
-    <a href="/news" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
-    <a href="/music" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
-    <a href="/programs" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Programs</a>
-    <a href="/artists" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Artists</a>
-    <!-- ✅ NEW -->
-    <a href="/videos" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Videos</a>
-  </div>
-</nav>
-      </div>
+ <div class="grid gap-1">
+  <a href="/" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Home</a>
+  <a href="/news" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
+  <a href="/music" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
+  <a href="/programs" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Programs</a>
+  <a href="/artists" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Artists</a>
+  <a href="/videos" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Videos</a>
+  <a href="/chat" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Chat</a>
+
+</div>
     </div>
   </div>
   <script is:inline data-astro-rerun>
