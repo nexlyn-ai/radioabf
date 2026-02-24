@@ -1,78 +1,232 @@
 ---
 import Base from "../layouts/Base.astro";
+export const prerender = false;
 ---
 
 <Base
   title="Chat — RadioABF"
-  description="Chat with the RadioABF team."
+  description="Live chat on RadioABF."
   canonical="/chat"
+  image="/og-image.jpg"
 >
-  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
-    <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-    <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+  <div id="abfChatPageRoot">
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl mb-6">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
 
-    <div class="relative z-10">
-      <div class="flex items-center gap-3 mb-3 text-sm tracking-widest text-white/60 uppercase">
-        <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-        Live chat
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3 mb-2 text-xs tracking-widest text-white/60 uppercase">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Live Chat
+            </div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+              RadioABF Chat
+            </h1>
+            <p class="mt-2 text-white/70 max-w-2xl">
+              Join the room, talk with listeners, and stay connected during shows.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <input id="abfChatPseudo" class="abfChatInput" placeholder="Pseudo (optionnel)" maxlength="24" />
+            <select id="abfChatRoom" class="abfChatInput">
+              <option value="general">general</option>
+              <option value="onair">onair</option>
+              <option value="support">support</option>
+            </select>
+            <button id="abfChatJoin" class="abfChatBtn">Join</button>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between flex-wrap gap-3">
+          <div class="text-xs text-white/60">
+            Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+          </div>
+          <div id="abfChatError" class="text-xs text-red-300 hidden"></div>
+        </div>
       </div>
+    </section>
 
-      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-        Chat with <span class="text-cyan-200">RadioABF</span>
-      </h1>
+    <section class="rounded-3xl border border-white/10 bg-[#050B14]/70 backdrop-blur-xl shadow-2xl overflow-hidden">
+      <div id="abfChatLog" class="abfChatLog"></div>
 
-      <p class="text-white/65 mt-3 max-w-2xl">
-        A team member will reply as soon as possible. You can keep listening while you chat 🙂
-      </p>
-
-      <div class="mt-5 flex flex-wrap gap-3">
-        <button
-          id="openChatBtn"
-          type="button"
-          class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
-                 px-5 py-3 rounded-xl text-sm font-semibold
-                 shadow-lg shadow-cyan-500/25 hover:scale-[1.01] transition"
-        >
-          Open chat
-        </button>
-
-        <a
-          href="/"
-          class="border border-white/20 px-5 py-3 rounded-xl text-sm text-white/80 hover:bg-white/5 transition"
-        >
-          Back home
-        </a>
+      <div class="p-4 md:p-5 border-t border-white/10 flex gap-2">
+        <input id="abfChatMsg" class="abfChatInput flex-1" placeholder="Message…" />
+        <button id="abfChatSend" class="abfChatBtn">Send</button>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
-  <script is:inline data-astro-rerun>
+  <style>
+    /* scoped to /chat */
+    #abfChatPageRoot .abfChatInput{
+      height:38px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:rgba(232,242,255,.95);
+      padding:0 12px;
+      outline:none;
+    }
+    #abfChatPageRoot .abfChatInput:focus{
+      border-color: rgba(56,189,248,.55);
+      box-shadow: 0 0 0 3px rgba(56,189,248,.18);
+    }
+    #abfChatPageRoot .abfChatBtn{
+      height:38px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(56,189,248,.18);
+      color:rgba(232,242,255,.95);
+      font-weight:800;
+      padding:0 14px;
+      white-space:nowrap;
+    }
+    #abfChatPageRoot .abfChatBtn:hover{ background:rgba(56,189,248,.26); }
+
+    #abfChatPageRoot .abfChatLog{
+      height:min(62vh, 560px);
+      overflow:auto;
+      padding:14px;
+      background: rgba(0,0,0,.22);
+    }
+    #abfChatPageRoot .abfChatLine{
+      font-size:14px;
+      line-height:1.35;
+      margin:0 0 10px;
+      color: rgba(232,242,255,.92);
+      word-break: break-word;
+    }
+    #abfChatPageRoot .abfChatMuted{ color: rgba(232,242,255,.55); }
+    #abfChatPageRoot .abfChatTime{ color: rgba(232,242,255,.42); margin-right:6px; }
+  </style>
+
+  <script is:inline>
     (() => {
-      const isChatRoute = () => window.location.pathname === "/chat";
+      const WS_URL = "wss://chat.radioabf.com/ws";
+      const $ = (id) => document.getElementById(id);
 
-      function tryOpen(){
-        // Crisp est async: on push dans la queue, c’est OK même si Crisp n’est pas encore prêt
-        window.$crisp = window.$crisp || [];
-        if (!isChatRoute()) return;
+      const pseudoEl = $("abfChatPseudo");
+      const roomEl = $("abfChatRoom");
+      const joinBtn = $("abfChatJoin");
+      const logEl = $("abfChatLog");
+      const msgEl = $("abfChatMsg");
+      const sendBtn = $("abfChatSend");
+      const statusEl = $("abfChatStatus");
+      const errEl = $("abfChatError");
 
-        // show + open
-        window.$crisp.push(["do", "chat:show"]);
-        window.$crisp.push(["do", "chat:open"]);
+      let ws = null;
+      let joined = false;
+
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+
+      const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
+
+      function setStatus(t, ok=false){
+        statusEl.textContent = t;
+        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
       }
 
-      function bind(){
-        const btn = document.getElementById("openChatBtn");
-        if (btn && !btn.dataset.bound){
-          btn.dataset.bound = "1";
-          btn.addEventListener("click", tryOpen);
-        }
-        // auto-open à l’arrivée
-        tryOpen();
+      function showErr(t=""){
+        if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
+        errEl.classList.remove("hidden");
+        errEl.textContent = t;
       }
 
-      bind();
-      document.addEventListener("astro:page-load", bind);
-      document.addEventListener("astro:after-swap", bind);
+      function addLine(html){
+        const div = document.createElement("div");
+        div.className = "abfChatLine";
+        div.innerHTML = html;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function connect(){
+        showErr("");
+        joined = false;
+        try { ws?.close(); } catch {}
+        ws = new WebSocket(WS_URL);
+
+        ws.addEventListener("open", () => {
+          setStatus("Connected", true);
+          addLine(`<span class="abfChatMuted">— connected —</span>`);
+        });
+
+        ws.addEventListener("close", () => {
+          setStatus("Disconnected", false);
+          addLine(`<span class="abfChatMuted">— disconnected —</span>`);
+          joined = false;
+        });
+
+        ws.addEventListener("error", () => {
+          showErr("WebSocket error (TLS/DNS/proxy).");
+        });
+
+        ws.addEventListener("message", (e) => {
+          showErr("");
+          let m; try { m = JSON.parse(e.data); } catch { return; }
+
+          if (m.type === "hello") return;
+
+          if (m.type === "joined") {
+            joined = true;
+            addLine(`<span class="abfChatMuted">— joined <b>#${esc(m.room)}</b> as <b>${esc(m.pseudo)}</b> —</span>`);
+            (m.history || []).forEach((h) => {
+              const t = new Date(h.created_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+              addLine(`<span class="abfChatTime">[${esc(t)}]</span> <b>${esc(h.pseudo)}</b>: ${esc(h.message)}`);
+            });
+            return;
+          }
+
+          if (m.type === "presence") {
+            addLine(`<span class="abfChatMuted">— ${esc(m.pseudo)} ${esc(m.event)} —</span>`);
+            return;
+          }
+
+          if (m.type === "msg") {
+            const t = new Date(m.created_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+            addLine(`<span class="abfChatTime">[${esc(t)}]</span> <b>${esc(m.pseudo)}</b>: ${esc(m.message)}`);
+            return;
+          }
+
+          if (m.type === "error") showErr("Error: " + m.code);
+        });
+      }
+
+      function ensureConnected(){
+        if (!ws || ws.readyState !== 1) connect();
+      }
+
+      function join(){
+        ensureConnected();
+        const pseudo = (pseudoEl.value || "").trim() || guest();
+        const room = roomEl.value;
+        setTimeout(() => {
+          if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+          ws.send(JSON.stringify({ type:"join", pseudo, room }));
+        }, 100);
+      }
+
+      function send(){
+        showErr("");
+        if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+        if (!joined) return showErr("Join a room first.");
+        const text = (msgEl.value || "").trim();
+        if (!text) return;
+        ws.send(JSON.stringify({ type:"msg", message: text }));
+        msgEl.value = "";
+      }
+
+      joinBtn.addEventListener("click", join);
+      sendBtn.addEventListener("click", send);
+      msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+
+      setStatus("Connecting…", false);
+      connect();
     })();
   </script>
 </Base>
