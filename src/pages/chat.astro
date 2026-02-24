@@ -12,52 +12,98 @@ export const prerender = false;
   <div id="abfChatPageRoot">
     <!-- ✅ HERO (same typography/structure as /music hero) -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
-      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-      <div class="relative z-10">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-          <div class="min-w-0">
-            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-              Live Chat
-            </div>
+  <div class="relative z-10">
+    <div class="flex items-start justify-between gap-6 flex-wrap">
 
-            <!-- ✅ same title scale/typo as /music -->
-            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-              RadioABF <span class="text-cyan-200">Chat</span>
-            </h1>
+      <!-- LEFT SIDE -->
+      <div class="min-w-0 flex-1">
 
-            <p class="text-white/65 mt-3 max-w-2xl">
-              Join the room, talk with listeners, and stay connected during shows.
-            </p>
+        <!-- Kicker -->
+        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+          Live Chat
+        </div>
 
-            <div class="mt-4 text-xs text-white/60">
-              Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
-            </div>
-            <div id="abfChatError" class="mt-2 text-xs text-red-300 hidden"></div>
+        <!-- SAME TYPO AS MUSIC -->
+        <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+          RadioABF <span class="text-cyan-200">Chat</span>
+        </h1>
+
+        <p class="text-white/65 mt-3 max-w-2xl">
+          Join the room, talk with listeners, and stay connected during shows.
+        </p>
+
+        <!-- ✅ BADGES NOW BOTTOM LEFT -->
+        <div class="flex items-center gap-2 flex-wrap mt-6">
+
+          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+            ON AIR
+          </span>
+
+          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+            <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
+            online
+          </span>
+
+          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
+            Smart scroll
+          </span>
+
+          <span class="text-xs text-white/60">
+            Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+          </span>
+
+        </div>
+
+        <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
+
+      </div>
+
+      <!-- ✅ RIGHT SIDE LOGIN CARD (back in hero) -->
+      <div class="w-full sm:w-[320px] flex-shrink-0">
+
+        <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-5">
+
+          <div class="text-sm text-white/60 uppercase tracking-wider mb-4">
+            Join a room
           </div>
 
-          <!-- ✅ right side "pills" (same as /music), keeps ON AIR + online -->
-          <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
-            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none inline-flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
-              ON AIR
-            </span>
+          <div class="space-y-3">
 
-            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none inline-flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
-              <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
-              online
-            </span>
+            <input
+              id="abfChatPseudo"
+              class="abfInput w-full"
+              placeholder="Pseudo (optionnel)"
+              maxlength="24"
+            />
 
-            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-              Smart scroll
-            </span>
+            <select id="abfChatRoom" class="abfInput w-full">
+              <option value="general">General</option>
+              <option value="onair">Onair</option>
+              <option value="support">Support</option>
+            </select>
+
+            <button
+              id="abfChatJoin"
+              class="abfBtn abfBtnPrimary w-full"
+              type="button"
+            >
+              Join
+            </button>
+
           </div>
         </div>
+
       </div>
-    </section>
+
+    </div>
+  </div>
+</section>
 
     <!-- CHAT (unchanged content, premium shell) -->
     <section class="abfChatShell">
