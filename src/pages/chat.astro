@@ -10,68 +10,56 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- HERO -->
-    <section class="abfChatHero">
-      <div class="abfGlow abfGlowA"></div>
-      <div class="abfGlow abfGlowB"></div>
+    <!-- ✅ HERO (same typography/structure as /music hero) -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-      <div class="abfHeroInner">
-        <div class="abfHeroLeft">
-          <div class="abfHeroKicker">
-            <span class="abfDot"></span>
-            <span>Live Chat</span>
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Live Chat
+            </div>
 
-            <span class="abfOnAirBadge" title="Live room activity">
-              <span class="abfOnAirPulse"></span>
+            <!-- ✅ same title scale/typo as /music -->
+            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+              RadioABF <span class="text-cyan-200">Chat</span>
+            </h1>
+
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Join the room, talk with listeners, and stay connected during shows.
+            </p>
+
+            <div class="mt-4 text-xs text-white/60">
+              Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+            </div>
+            <div id="abfChatError" class="mt-2 text-xs text-red-300 hidden"></div>
+          </div>
+
+          <!-- ✅ right side "pills" (same as /music), keeps ON AIR + online -->
+          <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none inline-flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
               ON AIR
             </span>
 
-            <span class="abfOnlinePill" title="Estimated online listeners in room">
-              <span class="abfOnlineIcon"></span>
-              <span id="abfChatOnline">—</span>
-              <span class="abfOnlineText">online</span>
+            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none inline-flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+              <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
+              online
             </span>
-          </div>
 
-          <h1 class="abfHeroTitle">RadioABF Chat</h1>
-          <p class="abfHeroSub">
-            Join the room, talk with listeners, and stay connected during shows.
-          </p>
-
-          <div class="abfHeroStatusRow">
-            <div class="abfHeroStatus">
-              Status: <span id="abfChatStatus" class="abfStatus">Connecting…</span>
-            </div>
-            <div id="abfChatError" class="abfError hidden"></div>
-          </div>
-        </div>
-
-        <div class="abfHeroRight">
-          <div class="abfJoinCard">
-            <div class="abfJoinRow">
-              <label class="abfLabel" for="abfChatPseudo">Pseudo</label>
-              <input id="abfChatPseudo" class="abfInput" placeholder="Pseudo (optionnel)" maxlength="24" />
-            </div>
-
-            <div class="abfJoinRow">
-              <label class="abfLabel" for="abfChatRoom">Room</label>
-              <select id="abfChatRoom" class="abfInput abfSelect">
-                <option value="general">General</option>
-                <option value="onair">Onair</option>
-                <option value="support">Support</option>
-              </select>
-            </div>
-
-            <button id="abfChatJoin" class="abfBtn abfBtnPrimary">
-              Join
-              <span class="abfBtnShine"></span>
-            </button>
+            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+              Smart scroll
+            </span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CHAT -->
+    <!-- CHAT (unchanged content, premium shell) -->
     <section class="abfChatShell">
       <div class="abfChatTopBar">
         <div class="abfChatTopLeft">
@@ -79,9 +67,11 @@ export const prerender = false;
           <span class="abfMuted">•</span>
           <span class="abfMuted">Premium ABF UI</span>
         </div>
-        <button id="abfChatScrollBtn" class="abfBtn abfBtnGhost hidden" title="Scroll to latest">
-          Latest
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="abfChatScrollBtn" class="abfBtn abfBtnGhost hidden" title="Scroll to latest">
+            Latest
+          </button>
+        </div>
       </div>
 
       <div id="abfChatLog" class="abfChatLog" aria-live="polite"></div>
@@ -111,216 +101,74 @@ export const prerender = false;
         </button>
       </div>
     </section>
+
+    <!-- ✅ Join card moved UNDER hero (keeps everything else intact) -->
+    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
+      <div class="space-y-6">
+        <!-- (empty left column for now — keeps layout similar to other pages) -->
+      </div>
+
+      <aside class="space-y-6">
+        <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
+          <div class="p-5 border-b border-white/10">
+            <div class="text-sm text-white/60 uppercase tracking-wider">Join a room</div>
+            <div class="text-xs text-white/50 mt-1">Choose your nickname and salon</div>
+          </div>
+          <div class="p-5">
+            <div class="grid grid-cols-1 gap-3">
+              <input id="abfChatPseudo" class="abfInput" placeholder="Pseudo (optionnel)" maxlength="24" />
+              <select id="abfChatRoom" class="abfInput abfSelect">
+                <option value="general">General</option>
+                <option value="onair">Onair</option>
+                <option value="support">Support</option>
+              </select>
+              <button id="abfChatJoin" class="abfBtn abfBtnPrimaryWide" type="button">
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
   </div>
 
   <style>
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
     /* =========================
-       Premium ABF Chat UI
-       Scoped to /chat only
+       Chat UI (scoped)
        ========================= */
     #abfChatPageRoot{
       --abf-border: rgba(255,255,255,.10);
       --abf-text: rgba(232,242,255,.95);
       --abf-muted: rgba(232,242,255,.62);
-      --abf-faint: rgba(232,242,255,.42);
-      --abf-cyan: rgba(56,189,248,1);
-      --abf-good: rgba(124,252,179,.95);
       --abf-warn: rgba(255,148,148,.92);
       color: var(--abf-text);
     }
-
-    /* HERO (compact) */
-    #abfChatPageRoot .abfChatHero{
-      position: relative;
-      overflow: hidden;
-      border-radius: 22px;
-      border: 1px solid var(--abf-border);
-      background: linear-gradient(180deg, rgba(10,31,51,.96), rgba(5,11,20,.72));
-      padding: 14px;
-      box-shadow: 0 18px 60px rgba(0,0,0,.45);
-      margin-bottom: 12px;
-    }
-    #abfChatPageRoot .abfGlow{
-      pointer-events:none;
-      position:absolute;
-      width: 680px;
-      height: 680px;
-      border-radius: 999px;
-      filter: blur(130px);
-      opacity: .85;
-    }
-    #abfChatPageRoot .abfGlowA{ top:-420px; left:-420px; background: rgba(56,189,248,.24); }
-    #abfChatPageRoot .abfGlowB{ bottom:-460px; right:-420px; background: rgba(37,99,235,.22); }
-
-    #abfChatPageRoot .abfHeroInner{
-      position: relative;
-      z-index: 1;
-      display:flex;
-      gap: 12px;
-      align-items: stretch;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-    #abfChatPageRoot .abfHeroLeft{ min-width: 260px; flex: 1 1 360px; }
-    #abfChatPageRoot .abfHeroRight{ flex: 0 1 300px; min-width: 260px; }
-
-    #abfChatPageRoot .abfHeroKicker{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 12px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: rgba(232,242,255,.62);
-      margin-bottom: 8px;
-    }
-    #abfChatPageRoot .abfDot{
-      width: 8px; height: 8px; border-radius: 99px;
-      background: rgba(56,189,248,.9);
-      box-shadow: 0 0 0 6px rgba(56,189,248,.12);
-      animation: abfPulse 1.8s ease-in-out infinite;
-    }
-    @keyframes abfPulse{
-      0%,100%{ transform: scale(1); opacity: .95;}
-      50%{ transform: scale(1.2); opacity: .65;}
-    }
-
-    #abfChatPageRoot .abfOnAirBadge{
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(56,189,248,.22);
-      background: rgba(56,189,248,.10);
-      color: rgba(232,242,255,.92);
-      font-weight: 800;
-      letter-spacing: .12em;
-    }
-    #abfChatPageRoot .abfOnAirPulse{
-      width: 8px; height: 8px; border-radius: 99px;
-      background: rgba(56,189,248,1);
-      box-shadow: 0 0 0 0 rgba(56,189,248,.45);
-      animation: abfRing 1.8s ease-out infinite;
-    }
-    @keyframes abfRing{
-      0%{ box-shadow: 0 0 0 0 rgba(56,189,248,.40); }
-      70%{ box-shadow: 0 0 0 10px rgba(56,189,248,0); }
-      100%{ box-shadow: 0 0 0 0 rgba(56,189,248,0); }
-    }
-
-    #abfChatPageRoot .abfOnlinePill{
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color: rgba(232,242,255,.86);
-      font-weight: 800;
-      letter-spacing: .06em;
-    }
-    #abfChatPageRoot .abfOnlineIcon{
-      width: 10px; height: 10px; border-radius: 99px;
-      background: rgba(124,252,179,.95);
-      box-shadow: 0 0 0 6px rgba(124,252,179,.10);
-    }
-    #abfChatPageRoot .abfOnlineText{ color: rgba(232,242,255,.62); font-weight: 700; }
-
-    /* Hero typography aligned to site vibe */
-    #abfChatPageRoot .abfHeroTitle{
-      font-size: 26px;
-      line-height: 1.10;
-      font-weight: 900;
-      margin: 0;
-      letter-spacing: -.02em;
-      color: rgba(255,255,255,.96);
-    }
-    #abfChatPageRoot .abfHeroSub{
-      margin-top: 8px;
-      color: rgba(232,242,255,.72);
-      max-width: 56ch;
-      font-size: 13px;
-    }
-
-    #abfChatPageRoot .abfHeroStatusRow{
-      margin-top: 10px;
-      display:flex;
-      align-items:center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    #abfChatPageRoot .abfHeroStatus{ font-size: 12px; color: rgba(232,242,255,.62); }
-    #abfChatPageRoot .abfStatus{ font-weight: 800; color: rgba(232,242,255,.84); }
-    #abfChatPageRoot .abfError{
-      font-size: 12px;
-      color: var(--abf-warn);
-      font-weight: 700;
-    }
     #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Join card */
-    #abfChatPageRoot .abfJoinCard{
-      height: 100%;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(5,11,20,.50);
-      backdrop-filter: blur(12px);
-      padding: 10px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-      display:flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #abfChatPageRoot .abfJoinRow{ display:flex; flex-direction: column; gap: 5px; }
-    #abfChatPageRoot .abfLabel{
-      font-size: 11px;
-      color: rgba(232,242,255,.55);
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-
-    /* Inputs + buttons */
+    /* Inputs/buttons aligned with site ABF inputs */
     #abfChatPageRoot .abfInput{
-      height: 36px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: rgba(232,242,255,.95);
-      padding: 0 12px;
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
       outline: none;
-      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+      transition: 150ms ease;
+      height: 42px;
     }
     #abfChatPageRoot .abfInput:focus{
-      border-color: rgba(56,189,248,.55);
-      box-shadow: 0 0 0 4px rgba(56,189,248,.16);
-      background: rgba(255,255,255,.07);
+      border-color: rgba(47,194,255,0.35);
+      box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
     }
-
-    /* Select visibility fix */
     #abfChatPageRoot .abfSelect{
       background: rgba(10,31,51,.72);
       color: rgba(232,242,255,.95);
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      padding-right: 34px;
-      background-image:
-        linear-gradient(45deg, transparent 50%, rgba(232,242,255,.75) 50%),
-        linear-gradient(135deg, rgba(232,242,255,.75) 50%, transparent 50%),
-        linear-gradient(to right, transparent, transparent);
-      background-position:
-        calc(100% - 18px) 50%,
-        calc(100% - 12px) 50%,
-        0 0;
-      background-size:
-        6px 6px,
-        6px 6px,
-        100% 100%;
-      background-repeat: no-repeat;
     }
     #abfChatPageRoot select.abfSelect option{
       background: #0B1726;
@@ -328,41 +176,42 @@ export const prerender = false;
     }
 
     #abfChatPageRoot .abfBtn{
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      transition: 150ms ease;
       position: relative;
-      height: 36px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.14);
-      color: rgba(232,242,255,.95);
-      font-weight: 900;
-      padding: 0 14px;
-      white-space: nowrap;
-      transition: transform .12s ease, background .12s ease, box-shadow .12s ease, border-color .12s ease;
       user-select: none;
+      height: 42px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
     }
-    #abfChatPageRoot .abfBtn:active{ transform: translateY(1px) scale(.99); }
-
+    #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
     #abfChatPageRoot .abfBtnPrimary{
-      background: linear-gradient(180deg, rgba(56,189,248,.24), rgba(56,189,248,.12));
-      border-color: rgba(56,189,248,.30);
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      background: rgba(56,189,248,.16);
+      border-color: rgba(56,189,248,.22);
       overflow:hidden;
     }
     #abfChatPageRoot .abfBtnPrimary:hover{
-      background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(56,189,248,.14));
-      border-color: rgba(56,189,248,.42);
-      box-shadow: 0 14px 40px rgba(0,0,0,.32);
-      transform: translateY(-1px);
+      background: rgba(56,189,248,.22);
+      border-color: rgba(56,189,248,.30);
     }
+    #abfChatPageRoot .abfBtnPrimaryWide{ width: 100%; }
     #abfChatPageRoot .abfBtnGhost{
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.12);
       font-weight: 800;
       padding: 0 12px;
+      height: 36px;
+      border-radius: 12px;
     }
-    #abfChatPageRoot .abfBtnGhost:hover{
-      background: rgba(255,255,255,.08);
-      transform: translateY(-1px);
-    }
+
     #abfChatPageRoot .abfBtnShine{
       pointer-events:none;
       position:absolute;
@@ -416,7 +265,7 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
-    /* Chat log (compact) */
+    /* Chat log */
     #abfChatPageRoot .abfChatLog{
       height: min(52vh, 420px);
       overflow: auto;
@@ -425,7 +274,7 @@ export const prerender = false;
       scroll-behavior: smooth;
     }
 
-    /* Message rows */
+    /* Messages */
     #abfChatPageRoot .abfMsgRow{
       display:flex;
       gap: 10px;
@@ -441,7 +290,6 @@ export const prerender = false;
       flex-direction: row-reverse;
     }
 
-    /* Avatars simple clean */
     #abfChatPageRoot .abfAvatar{
       width: 34px;
       height: 34px;
@@ -471,12 +319,10 @@ export const prerender = false;
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
       position: relative;
-      transform-origin: bottom left;
     }
     #abfChatPageRoot .abfMsgRow.self .abfBubble{
       background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.08));
       border-color: rgba(56,189,248,.26);
-      transform-origin: bottom right;
     }
 
     #abfChatPageRoot .abfMeta{
@@ -487,8 +333,6 @@ export const prerender = false;
       color: rgba(232,242,255,.70);
       font-size: 12px;
     }
-
-    /* ✅ colored dot next to name */
     #abfChatPageRoot .abfUserDot{
       width: 8px;
       height: 8px;
@@ -498,11 +342,7 @@ export const prerender = false;
       transform: translateY(1px);
       flex: 0 0 auto;
     }
-
-    #abfChatPageRoot .abfName{
-      font-weight: 900;
-      color: rgba(232,242,255,.92);
-    }
+    #abfChatPageRoot .abfName{ font-weight: 900; }
     #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
     #abfChatPageRoot .abfText{
       font-size: 14px;
@@ -541,23 +381,20 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfComposerInput{
       flex: 1;
-      height: 40px;
+      height: 42px;
       border-radius: 14px;
     }
     #abfChatPageRoot .abfSendBtn{
-      height: 40px;
+      height: 42px;
       border-radius: 14px;
       padding: 0 16px;
     }
 
     /* Emoji picker */
-    #abfChatPageRoot .abfEmojiWrap{
-      position: relative;
-      flex: 0 0 auto;
-    }
+    #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
     #abfChatPageRoot .abfEmojiBtn{
-      height: 40px;
-      width: 44px;
+      height: 42px;
+      width: 46px;
       padding: 0;
       border-radius: 14px;
       font-size: 18px;
@@ -630,23 +467,14 @@ export const prerender = false;
       border-color: rgba(56,189,248,.28);
     }
 
-    /* Mobile tuning */
     @media (max-width: 640px){
-      #abfChatPageRoot .abfChatHero{ padding: 12px; border-radius: 20px; }
-      #abfChatPageRoot .abfHeroTitle{ font-size: 24px; }
-      #abfChatPageRoot .abfChatShell{ border-radius: 20px; }
       #abfChatPageRoot .abfChatLog{ padding: 12px 10px 14px; height: min(56vh, 440px); }
       #abfChatPageRoot .abfAvatar{ width: 30px; height: 30px; flex-basis: 30px; font-size: 12px; }
       #abfChatPageRoot .abfBubble{ max-width: 86%; }
-      #abfChatPageRoot .abfEmojiPanel{ left: 0; }
       #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
     }
 
-    /* Reduced motion */
     @media (prefers-reduced-motion: reduce){
-      #abfChatPageRoot .abfDot,
-      #abfChatPageRoot .abfOnAirPulse,
-      #abfChatPageRoot .abfBtnShine,
       #abfChatPageRoot .abfMsgRow{ animation: none !important; }
       #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
     }
@@ -679,8 +507,6 @@ export const prerender = false;
       let joined = false;
       let myPseudo = "";
       let currentRoom = roomEl.value || "general";
-
-      // smart scroll state
       let stickToBottom = true;
 
       // online estimate (unique pseudos seen recently)
@@ -695,7 +521,7 @@ export const prerender = false;
 
       function setStatus(t, ok=false){
         statusEl.textContent = t;
-        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(232,242,255,.78)";
+        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
       }
 
       function showErr(t=""){
@@ -724,7 +550,6 @@ export const prerender = false;
         return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
       }
 
-      // deterministic hash -> 0..1
       function hashTo01(str){
         let h = 2166136261;
         for (let i = 0; i < str.length; i++){
@@ -734,11 +559,11 @@ export const prerender = false;
         return (h >>> 0) / 4294967295;
       }
 
-      // Username color (ABF palette, no yellow/green)
+      // ABF palette (cyan -> violet), self stays cyan
       function nameColor(pseudo, isSelf=false){
-        if (isSelf) return "rgba(56,189,248,.98)"; // self = ABF cyan
+        if (isSelf) return "rgba(56,189,248,.98)";
         const t = hashTo01((pseudo || "listener").toLowerCase());
-        const hue = 185 + Math.round(t * 95); // 185..280 (cyan -> violet)
+        const hue = 185 + Math.round(t * 95); // 185..280
         return `hsla(${hue}, 92%, 72%, .98)`;
       }
 
@@ -986,7 +811,6 @@ export const prerender = false;
 
       emojiClose.addEventListener("click", () => setEmojiOpen(false));
 
-      // close on click outside
       document.addEventListener("click", (e) => {
         const t = e.target;
         if (!t) return;
@@ -995,15 +819,12 @@ export const prerender = false;
         setEmojiOpen(false);
       });
 
-      // close on Escape
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") setEmojiOpen(false);
       });
 
-      // Existing listeners
-      logEl.addEventListener("scroll", () => {
-        updateScrollState();
-      }, { passive: true });
+      // listeners
+      logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
 
       scrollBtn.addEventListener("click", () => {
         stickToBottom = true;
@@ -1021,7 +842,6 @@ export const prerender = false;
 
       setStatus("Connecting…", false);
       connect();
-
       requestAnimationFrame(() => updateScrollState());
     })();
   </script>
