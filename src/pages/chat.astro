@@ -18,8 +18,9 @@ export const prerender = false;
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-3 flex-wrap">
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2 text-[10px] tracking-widest text-white/60 uppercase mb-1">
-              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            <!-- ✅ bigger "Live Chat" label -->
+            <div class="flex items-center gap-2 text-[11px] sm:text-[12px] tracking-widest text-white/60 uppercase mb-1">
+              <span class="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-pulse"></span>
               Live Chat
             </div>
 
@@ -114,7 +115,8 @@ export const prerender = false;
           </div>
         </div>
 
-        <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Message…" />
+        <!-- ✅ bigger typing font (input itself + placeholder) -->
+        <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Tapez votre message ici…" />
         <button id="abfChatSend" class="abfBtn abfBtnPrimary abfSendBtn">
           Send
           <span class="abfBtnShine"></span>
@@ -303,7 +305,19 @@ export const prerender = false;
       position:sticky; bottom:0;
       align-items:center;
     }
-    #abfChatPageRoot .abfComposerInput{ flex:1; height:36px; border-radius:14px; font-size:10px; }
+
+    /* ✅ bigger typing font */
+    #abfChatPageRoot .abfComposerInput{
+      flex:1;
+      height:36px;
+      border-radius:14px;
+      font-size: 13px; /* ✅ bigger when typing */
+    }
+    #abfChatPageRoot .abfComposerInput::placeholder{
+      font-size: 12px; /* ✅ bigger placeholder */
+      color: rgba(232,242,255,.55);
+    }
+
     #abfChatPageRoot .abfSendBtn{ height:36px; border-radius:14px; padding:0 14px; }
 
     #abfChatPageRoot .abfEmojiWrap{ position:relative; }
