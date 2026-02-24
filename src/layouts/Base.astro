@@ -562,6 +562,53 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
   </div>
 </nav>
 
+<script is:inline data-astro-rerun>
+(() => {
+
+  const btn = document.getElementById("navBtn");
+  const nav = document.getElementById("mobileNav");
+
+  if (!btn || !nav) return;
+
+  const isOpen = () => !nav.classList.contains("hidden");
+
+  const open = () => {
+    nav.classList.remove("hidden");
+    btn.setAttribute("aria-expanded", "true");
+  };
+
+  const close = () => {
+    nav.classList.add("hidden");
+    btn.setAttribute("aria-expanded", "false");
+  };
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isOpen() ? close() : open();
+  });
+
+  // Ferme si on clique ailleurs
+  document.addEventListener("click", (e) => {
+    if (!isOpen()) return;
+    if (e.target.closest("#mobileNav")) return;
+    if (e.target.closest("#navBtn")) return;
+    close();
+  });
+
+  // Ferme si on clique sur un lien
+  nav.addEventListener("click", (e) => {
+    if (e.target.closest("a")) close();
+  });
+
+  // Ferme en repassant desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 768) close();
+  });
+
+})();
+</script>
+
 </div> <!-- ✅ ferme .mx-auto -->
 </div> <!-- ✅ ferme bg wrapper -->
 </header>
