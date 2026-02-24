@@ -55,10 +55,10 @@ export const prerender = false;
 
             <div class="abfJoinRow">
               <label class="abfLabel" for="abfChatRoom">Room</label>
-              <select id="abfChatRoom" class="abfInput">
-                <option value="general">general</option>
-                <option value="onair">onair</option>
-                <option value="support">support</option>
+              <select id="abfChatRoom" class="abfInput abfSelect">
+                <option value="general">General</option>
+                <option value="onair">Onair</option>
+                <option value="support">Support</option>
               </select>
             </div>
 
@@ -79,7 +79,7 @@ export const prerender = false;
     <section class="abfChatShell">
       <div class="abfChatTopBar">
         <div class="abfChatTopLeft">
-          <span class="abfRoomPill">#<span id="abfChatRoomLabel">general</span></span>
+          <span class="abfRoomPill">#<span id="abfChatRoomLabel">General</span></span>
           <span class="abfMuted">•</span>
           <span class="abfMuted">Premium ABF UI</span>
         </div>
@@ -123,16 +123,16 @@ export const prerender = false;
       color: var(--abf-text);
     }
 
-    /* HERO */
+    /* HERO (reduced height) */
     #abfChatPageRoot .abfChatHero{
       position: relative;
       overflow: hidden;
-      border-radius: 24px;
+      border-radius: 22px;
       border: 1px solid var(--abf-border);
       background: linear-gradient(180deg, rgba(10,31,51,.96), rgba(5,11,20,.72));
-      padding: 18px;
+      padding: 14px;
       box-shadow: 0 18px 60px rgba(0,0,0,.45);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     #abfChatPageRoot .abfGlow{
       pointer-events:none;
@@ -150,13 +150,13 @@ export const prerender = false;
       position: relative;
       z-index: 1;
       display:flex;
-      gap: 14px;
+      gap: 12px;
       align-items: stretch;
       justify-content: space-between;
       flex-wrap: wrap;
     }
     #abfChatPageRoot .abfHeroLeft{ min-width: 260px; flex: 1 1 360px; }
-    #abfChatPageRoot .abfHeroRight{ flex: 0 1 320px; min-width: 260px; }
+    #abfChatPageRoot .abfHeroRight{ flex: 0 1 300px; min-width: 260px; }
 
     #abfChatPageRoot .abfHeroKicker{
       display:flex;
@@ -224,21 +224,21 @@ export const prerender = false;
     #abfChatPageRoot .abfOnlineText{ color: rgba(232,242,255,.62); font-weight: 700; }
 
     #abfChatPageRoot .abfHeroTitle{
-      font-size: 28px;
+      font-size: 24px;
       line-height: 1.08;
       font-weight: 900;
       margin: 0;
       letter-spacing: -.02em;
     }
     #abfChatPageRoot .abfHeroSub{
-      margin-top: 10px;
+      margin-top: 8px;
       color: rgba(232,242,255,.72);
       max-width: 56ch;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     #abfChatPageRoot .abfHeroStatusRow{
-      margin-top: 12px;
+      margin-top: 10px;
       display:flex;
       align-items:center;
       justify-content: space-between;
@@ -254,20 +254,20 @@ export const prerender = false;
     }
     #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Join card */
+    /* Join card (more rectangular + thinner height) */
     #abfChatPageRoot .abfJoinCard{
       height: 100%;
-      border-radius: 20px;
+      border-radius: 16px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(5,11,20,.50);
       backdrop-filter: blur(12px);
-      padding: 12px;
+      padding: 10px;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
       display:flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
-    #abfChatPageRoot .abfJoinRow{ display:flex; flex-direction: column; gap: 6px; }
+    #abfChatPageRoot .abfJoinRow{ display:flex; flex-direction: column; gap: 5px; }
     #abfChatPageRoot .abfLabel{
       font-size: 11px;
       color: rgba(232,242,255,.55);
@@ -277,8 +277,8 @@ export const prerender = false;
 
     /* Inputs + buttons */
     #abfChatPageRoot .abfInput{
-      height: 40px;
-      border-radius: 14px;
+      height: 36px;
+      border-radius: 12px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
       color: rgba(232,242,255,.95);
@@ -292,10 +292,37 @@ export const prerender = false;
       background: rgba(255,255,255,.07);
     }
 
+    /* Select menu visibility fix (no white background, readable options) */
+    #abfChatPageRoot .abfSelect{
+      background: rgba(10,31,51,.72);
+      color: rgba(232,242,255,.95);
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 34px;
+      background-image:
+        linear-gradient(45deg, transparent 50%, rgba(232,242,255,.75) 50%),
+        linear-gradient(135deg, rgba(232,242,255,.75) 50%, transparent 50%),
+        linear-gradient(to right, transparent, transparent);
+      background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%,
+        0 0;
+      background-size:
+        6px 6px,
+        6px 6px,
+        100% 100%;
+      background-repeat: no-repeat;
+    }
+    #abfChatPageRoot select.abfSelect option{
+      background: #0B1726;
+      color: rgba(232,242,255,.95);
+    }
+
     #abfChatPageRoot .abfBtn{
       position: relative;
-      height: 40px;
-      border-radius: 14px;
+      height: 36px;
+      border-radius: 12px;
       border: 1px solid rgba(255,255,255,.14);
       color: rgba(232,242,255,.95);
       font-weight: 900;
@@ -347,11 +374,12 @@ export const prerender = false;
       margin-top: 2px;
       font-size: 12px;
       color: rgba(232,242,255,.55);
+      display: none; /* reduced hero height */
     }
 
     /* Chat shell */
     #abfChatPageRoot .abfChatShell{
-      border-radius: 24px;
+      border-radius: 22px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(5,11,20,.64);
       backdrop-filter: blur(14px);
@@ -363,7 +391,7 @@ export const prerender = false;
       align-items:center;
       justify-content: space-between;
       gap: 10px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-bottom: 1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.14);
     }
@@ -387,10 +415,11 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
+    /* Chat log (smaller to fit one page better) */
     #abfChatPageRoot .abfChatLog{
-      height: min(62vh, 560px);
+      height: min(52vh, 420px);
       overflow: auto;
-      padding: 14px 12px 18px;
+      padding: 12px 12px 14px;
       background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.10));
       scroll-behavior: smooth;
     }
@@ -459,7 +488,7 @@ export const prerender = false;
       white-space: pre-wrap;
     }
 
-    /* System lines (joined/disconnected/presence) */
+    /* System lines */
     #abfChatPageRoot .abfSys{
       margin: 8px 0 12px;
       text-align: center;
@@ -479,7 +508,7 @@ export const prerender = false;
     #abfChatPageRoot .abfComposer{
       display:flex;
       gap: 10px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-top: 1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.14);
       position: sticky;
@@ -487,21 +516,21 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfComposerInput{
       flex: 1;
-      height: 44px;
-      border-radius: 16px;
+      height: 40px;
+      border-radius: 14px;
     }
     #abfChatPageRoot .abfSendBtn{
-      height: 44px;
-      border-radius: 16px;
+      height: 40px;
+      border-radius: 14px;
       padding: 0 16px;
     }
 
     /* Mobile tuning */
     @media (max-width: 640px){
-      #abfChatPageRoot .abfChatHero{ padding: 14px; border-radius: 20px; }
-      #abfChatPageRoot .abfHeroTitle{ font-size: 24px; }
+      #abfChatPageRoot .abfChatHero{ padding: 12px; border-radius: 20px; }
+      #abfChatPageRoot .abfHeroTitle{ font-size: 22px; }
       #abfChatPageRoot .abfChatShell{ border-radius: 20px; }
-      #abfChatPageRoot .abfChatLog{ padding: 12px 10px 16px; height: min(66vh, 560px); }
+      #abfChatPageRoot .abfChatLog{ padding: 12px 10px 14px; height: min(56vh, 440px); }
       #abfChatPageRoot .abfAvatar{ width: 30px; height: 30px; flex-basis: 30px; font-size: 12px; }
       #abfChatPageRoot .abfBubble{ max-width: 86%; }
     }
@@ -569,14 +598,14 @@ export const prerender = false;
         }catch{ return ""; }
       }
 
-      function hashColor(str){
-        // simple deterministic hash -> hue
-        let h = 0;
-        for (let i=0; i<str.length; i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
-        const hue = h % 360;
-        // produce two close hues for a subtle premium gradient
-        const hue2 = (hue + 28) % 360;
-        return { hue, hue2 };
+      // deterministic hash -> 0..1
+      function hashTo01(str){
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++){
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0) / 4294967295;
       }
 
       function initials(p){
@@ -588,12 +617,23 @@ export const prerender = false;
         return (a + (b || "")).toUpperCase().slice(0,2);
       }
 
+      // lock avatar hues to ABF cyan/blue range (no yellow)
       function avatarStyle(pseudo){
-        const { hue, hue2 } = hashColor(pseudo || "radioabf");
-        // keep within cool-ish range by nudging towards cyan/blue if needed
-        const h1 = (hue + 180) % 360;
-        const h2 = (hue2 + 180) % 360;
-        return `background: radial-gradient(16px 16px at 30% 30%, hsla(${h1},90%,70%,.95), hsla(${h2},90%,50%,.95));`;
+        const t = hashTo01((pseudo || "radioabf").toLowerCase());
+        const hue1 = 185 + Math.round(t * 30);       // 185..215
+        const hue2 = 195 + Math.round((1 - t) * 25); // 195..220
+        return `
+          background:
+            radial-gradient(18px 18px at 28% 28%,
+              hsla(${hue1}, 92%, 68%, .96),
+              hsla(${hue2}, 92%, 46%, .96)
+            );
+        `.trim();
+      }
+
+      function roomLabel(room){
+        const r = String(room || "").toLowerCase();
+        return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
       }
 
       function shouldStick(){
@@ -705,10 +745,10 @@ export const prerender = false;
           if (m.type === "joined") {
             joined = true;
             currentRoom = m.room || currentRoom;
-            roomLabelEl.textContent = currentRoom;
-            sysLine(`joined <b>#${esc(currentRoom)}</b> as <b>${esc(m.pseudo)}</b>`);
+            roomLabelEl.textContent = roomLabel(currentRoom);
 
-            // history -> bubbles
+            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
+
             (m.history || []).forEach((h) => {
               if (!h) return;
               touchSeen(h.pseudo);
@@ -719,14 +759,12 @@ export const prerender = false;
               });
             });
 
-            // ensure we stick to bottom after join
             stickToBottom = true;
             scrollToLatest(true);
             return;
           }
 
           if (m.type === "presence") {
-            // event: joined/left etc.
             const ev = `${esc(m.pseudo)} ${esc(m.event)}`;
             sysLine(ev);
             touchSeen(m.pseudo);
@@ -754,11 +792,14 @@ export const prerender = false;
       function join(){
         showErr("");
         ensureConnected();
+
         const pseudo = (pseudoEl.value || "").trim() || guest();
         const room = roomEl.value;
+
         myPseudo = pseudo;
         currentRoom = room;
-        roomLabelEl.textContent = currentRoom;
+
+        roomLabelEl.textContent = roomLabel(currentRoom);
 
         // reset online estimator per room change
         seen.clear();
@@ -778,7 +819,6 @@ export const prerender = false;
         if (!text) return;
 
         ws.send(JSON.stringify({ type:"msg", message: text }));
-        // optimistic touch (keeps online warm)
         touchSeen(myPseudo);
 
         msgEl.value = "";
@@ -798,7 +838,7 @@ export const prerender = false;
 
       // reflect room selection in header immediately
       roomEl.addEventListener("change", () => {
-        roomLabelEl.textContent = roomEl.value;
+        roomLabelEl.textContent = roomLabel(roomEl.value);
       });
 
       joinBtn.addEventListener("click", join);
@@ -808,7 +848,6 @@ export const prerender = false;
       setStatus("Connecting…", false);
       connect();
 
-      // initial scroll state
       requestAnimationFrame(() => updateScrollState());
     })();
   </script>
