@@ -228,7 +228,7 @@ export const prerender = false;
     @keyframes abfIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
     #abfChatPageRoot .abfMsgRow.self{ justify-content:flex-end; }
 
-    /* ✅ one-line bubbles */
+    /* ✅ one-line bubbles (no wrap) */
     #abfChatPageRoot .abfBubble{
       max-width: min(760px, 96%);
       border-radius:16px;
@@ -237,9 +237,9 @@ export const prerender = false;
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
       display:flex;
-      align-items:center;      /* ✅ center for 1-line */
+      align-items:center;
       gap:10px;
-      white-space: nowrap;     /* ✅ force 1 line */
+      white-space: nowrap;
     }
     #abfChatPageRoot .abfMsgRow.self .abfBubble{
       background: linear-gradient(180deg, rgba(56,189,248,.16), rgba(56,189,248,.07));
@@ -259,13 +259,14 @@ export const prerender = false;
     #abfChatPageRoot .abfName{ font-weight:900; }
     #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight:700; }
 
-    /* ✅ one-line text with ellipsis */
+    /* ✅ one-line text, INLINE (prevents line break) */
     #abfChatPageRoot .abfText{
+      display:inline;
       font-size:12px; line-height:1.25;
       color: rgba(232,242,255,.92);
-      white-space: nowrap;       /* ✅ */
-      overflow: hidden;          /* ✅ */
-      text-overflow: ellipsis;   /* ✅ */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       flex:1 1 auto; min-width:0;
     }
 
@@ -502,7 +503,7 @@ export const prerender = false;
           const t = nowHHMM(created_at);
           const c = nameColor(pseudo, isSelf);
 
-          // ✅ 1-line format: 22:45 • Loic : message
+          // ✅ exact 1-line meta: 22:45 • Loic Molo :
           meta.innerHTML = `
             <span class="abfTime">${esc(t)}</span>
             <span class="abfTime">•</span>
@@ -511,9 +512,10 @@ export const prerender = false;
             <span class="abfTime">:</span>
           `;
 
-          const txt = document.createElement("div");
+          // ✅ IMPORTANT: inline SPAN, not DIV (prevents line-break)
+          const txt = document.createElement("span");
           txt.className = "abfText";
-          txt.innerHTML = esc(message);
+          txt.textContent = String(message || "");
 
           bubble.appendChild(meta);
           bubble.appendChild(txt);
