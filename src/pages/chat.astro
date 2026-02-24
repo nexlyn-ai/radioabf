@@ -33,10 +33,7 @@ export const prerender = false;
             </span>
           </div>
 
-          <!-- ✅ Match hero title style used elsewhere (music/videos) -->
-          <h1 class="abfHeroTitle">
-            RadioABF Chat
-          </h1>
+          <h1 class="abfHeroTitle">RadioABF Chat</h1>
           <p class="abfHeroSub">
             Join the room, talk with listeners, and stay connected during shows.
           </p>
@@ -91,6 +88,22 @@ export const prerender = false;
 
       <!-- composer -->
       <div class="abfComposer">
+        <div class="abfEmojiWrap">
+          <button id="abfChatEmojiBtn" class="abfBtn abfBtnGhost abfEmojiBtn" type="button" title="Emoji">
+            😊
+          </button>
+
+          <div id="abfChatEmojiPanel" class="abfEmojiPanel hidden" role="dialog" aria-label="Emoji picker">
+            <div class="abfEmojiHeader">
+              <div class="abfEmojiTitle">Emojis</div>
+              <button id="abfChatEmojiClose" class="abfBtn abfBtnGhost abfEmojiClose" type="button" title="Close">
+                ✕
+              </button>
+            </div>
+            <div id="abfChatEmojiGrid" class="abfEmojiGrid"></div>
+          </div>
+        </div>
+
         <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Message…" />
         <button id="abfChatSend" class="abfBtn abfBtnPrimary abfSendBtn">
           Send
@@ -116,7 +129,7 @@ export const prerender = false;
       color: var(--abf-text);
     }
 
-    /* HERO (reduced height) */
+    /* HERO (compact) */
     #abfChatPageRoot .abfChatHero{
       position: relative;
       overflow: hidden;
@@ -216,7 +229,7 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfOnlineText{ color: rgba(232,242,255,.62); font-weight: 700; }
 
-    /* ✅ Match site hero typography: same scale/weight as other pages */
+    /* Hero typography aligned to site vibe */
     #abfChatPageRoot .abfHeroTitle{
       font-size: 26px;
       line-height: 1.10;
@@ -249,7 +262,7 @@ export const prerender = false;
     }
     #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Join card (more rectangular + thinner height) */
+    /* Join card */
     #abfChatPageRoot .abfJoinCard{
       height: 100%;
       border-radius: 16px;
@@ -287,7 +300,7 @@ export const prerender = false;
       background: rgba(255,255,255,.07);
     }
 
-    /* Select menu visibility fix */
+    /* Select visibility fix */
     #abfChatPageRoot .abfSelect{
       background: rgba(10,31,51,.72);
       color: rgba(232,242,255,.95);
@@ -403,7 +416,7 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
-    /* Chat log (smaller to fit one page better) */
+    /* Chat log (compact) */
     #abfChatPageRoot .abfChatLog{
       height: min(52vh, 420px);
       overflow: auto;
@@ -428,7 +441,7 @@ export const prerender = false;
       flex-direction: row-reverse;
     }
 
-    /* ✅ Avatars: simple clean badge (no gradients, no bands) */
+    /* Avatars simple clean */
     #abfChatPageRoot .abfAvatar{
       width: 34px;
       height: 34px;
@@ -443,7 +456,7 @@ export const prerender = false;
       font-weight: 900;
       letter-spacing: .02em;
       color: rgba(232,242,255,.92);
-      background: rgba(255,255,255,.08); /* no stripes */
+      background: rgba(255,255,255,.08);
     }
     #abfChatPageRoot .abfMsgRow.self .abfAvatar{
       background: rgba(56,189,248,.14);
@@ -465,6 +478,7 @@ export const prerender = false;
       border-color: rgba(56,189,248,.26);
       transform-origin: bottom right;
     }
+
     #abfChatPageRoot .abfMeta{
       display:flex;
       align-items: baseline;
@@ -473,7 +487,22 @@ export const prerender = false;
       color: rgba(232,242,255,.70);
       font-size: 12px;
     }
-    #abfChatPageRoot .abfName{ font-weight: 900; color: rgba(232,242,255,.92); }
+
+    /* ✅ colored dot next to name */
+    #abfChatPageRoot .abfUserDot{
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      display:inline-block;
+      box-shadow: 0 0 0 5px rgba(255,255,255,.06);
+      transform: translateY(1px);
+      flex: 0 0 auto;
+    }
+
+    #abfChatPageRoot .abfName{
+      font-weight: 900;
+      color: rgba(232,242,255,.92);
+    }
     #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
     #abfChatPageRoot .abfText{
       font-size: 14px;
@@ -508,6 +537,7 @@ export const prerender = false;
       background: rgba(0,0,0,.14);
       position: sticky;
       bottom: 0;
+      align-items: center;
     }
     #abfChatPageRoot .abfComposerInput{
       flex: 1;
@@ -520,6 +550,86 @@ export const prerender = false;
       padding: 0 16px;
     }
 
+    /* Emoji picker */
+    #abfChatPageRoot .abfEmojiWrap{
+      position: relative;
+      flex: 0 0 auto;
+    }
+    #abfChatPageRoot .abfEmojiBtn{
+      height: 40px;
+      width: 44px;
+      padding: 0;
+      border-radius: 14px;
+      font-size: 18px;
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #abfChatPageRoot .abfEmojiPanel{
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      width: 280px;
+      max-width: min(78vw, 320px);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(5,11,20,.92);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      overflow: hidden;
+      z-index: 30;
+    }
+    #abfChatPageRoot .abfEmojiHeader{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    #abfChatPageRoot .abfEmojiTitle{
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(232,242,255,.72);
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfEmojiClose{
+      height: 30px;
+      width: 34px;
+      padding: 0;
+      border-radius: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfEmojiGrid{
+      padding: 10px;
+      display:grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    #abfChatPageRoot .abfEmojiItem{
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor: pointer;
+      user-select: none;
+      font-size: 18px;
+      transition: transform .10s ease, background .10s ease, border-color .10s ease;
+    }
+    #abfChatPageRoot .abfEmojiItem:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.08);
+      border-color: rgba(56,189,248,.28);
+    }
+
     /* Mobile tuning */
     @media (max-width: 640px){
       #abfChatPageRoot .abfChatHero{ padding: 12px; border-radius: 20px; }
@@ -528,6 +638,8 @@ export const prerender = false;
       #abfChatPageRoot .abfChatLog{ padding: 12px 10px 14px; height: min(56vh, 440px); }
       #abfChatPageRoot .abfAvatar{ width: 30px; height: 30px; flex-basis: 30px; font-size: 12px; }
       #abfChatPageRoot .abfBubble{ max-width: 86%; }
+      #abfChatPageRoot .abfEmojiPanel{ left: 0; }
+      #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
     }
 
     /* Reduced motion */
@@ -556,6 +668,12 @@ export const prerender = false;
       const roomLabelEl = $("abfChatRoomLabel");
       const scrollBtn = $("abfChatScrollBtn");
       const onlineEl = $("abfChatOnline");
+
+      // emoji UI
+      const emojiBtn = $("abfChatEmojiBtn");
+      const emojiPanel = $("abfChatEmojiPanel");
+      const emojiGrid = $("abfChatEmojiGrid");
+      const emojiClose = $("abfChatEmojiClose");
 
       let ws = null;
       let joined = false;
@@ -606,6 +724,24 @@ export const prerender = false;
         return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
       }
 
+      // deterministic hash -> 0..1
+      function hashTo01(str){
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++){
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0) / 4294967295;
+      }
+
+      // Username color (ABF palette, no yellow/green)
+      function nameColor(pseudo, isSelf=false){
+        if (isSelf) return "rgba(56,189,248,.98)"; // self = ABF cyan
+        const t = hashTo01((pseudo || "listener").toLowerCase());
+        const hue = 185 + Math.round(t * 95); // 185..280 (cyan -> violet)
+        return `hsla(${hue}, 92%, 72%, .98)`;
+      }
+
       function shouldStick(){
         const threshold = 64;
         return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
@@ -623,16 +759,17 @@ export const prerender = false;
         else scrollBtn.classList.add("hidden");
       }
 
-      function sysLine(text){
+      function sysLine(html){
         const div = document.createElement("div");
         div.className = "abfSys";
-        div.innerHTML = `<span>${text}</span>`;
+        div.innerHTML = `<span>${html}</span>`;
         logEl.appendChild(div);
         scrollToLatest();
       }
 
       function msgBubble({ pseudo, message, created_at }){
         const isSelf = myPseudo && pseudo === myPseudo;
+
         const row = document.createElement("div");
         row.className = "abfMsgRow" + (isSelf ? " self" : "");
 
@@ -646,7 +783,13 @@ export const prerender = false;
         const meta = document.createElement("div");
         meta.className = "abfMeta";
         const t = nowHHMM(created_at);
-        meta.innerHTML = `<span class="abfName">${esc(pseudo)}</span><span class="abfTime">• ${esc(t)}</span>`;
+
+        const c = nameColor(pseudo, isSelf);
+        meta.innerHTML = `
+          <span class="abfUserDot" style="background:${c}"></span>
+          <span class="abfName" style="color:${c}">${esc(pseudo)}</span>
+          <span class="abfTime">• ${esc(t)}</span>
+        `;
 
         const txt = document.createElement("div");
         txt.className = "abfText";
@@ -733,9 +876,11 @@ export const prerender = false;
           }
 
           if (m.type === "presence") {
-            const ev = `${esc(m.pseudo)} ${esc(m.event)}`;
+            const p = m.pseudo || "Listener";
+            const c = nameColor(p, false);
+            const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
             sysLine(ev);
-            touchSeen(m.pseudo);
+            touchSeen(p);
             return;
           }
 
@@ -792,6 +937,70 @@ export const prerender = false;
         msgEl.focus();
       }
 
+      // Emoji picker
+      const EMOJIS = [
+        "😀","😄","😁","😅","😂","🤣","😊","😍",
+        "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
+        "👍","👎","👏","🙏","🔥","💎","✨","⚡",
+        "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
+        "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
+      ];
+
+      function setEmojiOpen(open){
+        if (open) emojiPanel.classList.remove("hidden");
+        else emojiPanel.classList.add("hidden");
+      }
+
+      function insertAtCursor(input, text){
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        const before = input.value.slice(0, start);
+        const after = input.value.slice(end);
+        input.value = before + text + after;
+        const pos = start + text.length;
+        input.setSelectionRange(pos, pos);
+        input.focus();
+      }
+
+      function buildEmojiGrid(){
+        emojiGrid.innerHTML = "";
+        EMOJIS.forEach((e) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "abfEmojiItem";
+          b.textContent = e;
+          b.addEventListener("click", () => {
+            insertAtCursor(msgEl, e);
+            setEmojiOpen(false);
+          });
+          emojiGrid.appendChild(b);
+        });
+      }
+
+      buildEmojiGrid();
+
+      emojiBtn.addEventListener("click", () => {
+        const isOpen = !emojiPanel.classList.contains("hidden");
+        setEmojiOpen(!isOpen);
+      });
+
+      emojiClose.addEventListener("click", () => setEmojiOpen(false));
+
+      // close on click outside
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (emojiPanel.classList.contains("hidden")) return;
+        if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
+        setEmojiOpen(false);
+      });
+
+      // close on Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setEmojiOpen(false);
+      });
+
+      // Existing listeners
       logEl.addEventListener("scroll", () => {
         updateScrollState();
       }, { passive: true });
