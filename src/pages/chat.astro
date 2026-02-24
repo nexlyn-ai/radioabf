@@ -10,75 +10,62 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- ✅ HERO (ultra compact, but bigger title like /music) -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-2 sm:p-3 mb-2 shadow-2xl">
-      <div class="pointer-events-none absolute -top-44 -left-44 w-[520px] h-[520px] rounded-full bg-cyan-500/12 blur-[140px]"></div>
-      <div class="pointer-events-none absolute -bottom-44 -right-44 w-[520px] h-[520px] rounded-full bg-blue-600/12 blur-[140px]"></div>
-
+    <!-- HERO agrandi / style music-videos -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-8 md:p-10 mb-6 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/20 blur-[140px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[580px] h-[580px] rounded-full bg-blue-600/20 blur-[140px]"></div>
       <div class="relative z-10">
-        <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div class="flex items-start justify-between gap-6 flex-wrap">
           <!-- LEFT -->
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2 text-[10px] tracking-widest text-white/60 uppercase mb-1">
-              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+            <div class="flex items-center gap-4 text-base sm:text-lg tracking-widest text-white/60 uppercase mb-4">
+              <span class="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></span>
               Live Chat
             </div>
-
-            <!-- ✅ bigger title (without increasing hero padding) -->
-            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-              RadioABF <span class="text-cyan-200">Chat</span>
+            <h1 class="text-5xl sm:text-6xl md:text-7xl font-black leading-tight tracking-tight">
+              RadioABF <span class="text-cyan-300/95 drop-shadow-[0_4px_12px_rgba(34,211,238,0.4)]">Chat</span>
             </h1>
-
-            <p class="text-white/65 mt-1 max-w-2xl text-[12px] leading-snug">
-              Join the room, talk with listeners, and stay connected during shows.
+            <p class="text-white/70 mt-4 md:mt-5 text-lg sm:text-xl max-w-3xl leading-relaxed">
+              Rejoins le salon, discute avec les auditeurs et reste connecté pendant les lives.
             </p>
-
-            <!-- ✅ badges (micro) -->
-            <div class="flex items-center gap-2 flex-wrap mt-2">
-              <span class="text-[10px] text-white/70 border border-white/10 bg-white/5 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-2">
-                <span id="abfChatHeroBadgeDot" class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                <span id="abfChatHeroBadgeText">ON AIR</span>
+            <div class="flex items-center gap-3 flex-wrap mt-5 md:mt-6">
+              <span class="text-sm sm:text-base text-white/80 border border-white/15 bg-white/8 px-4 py-2.5 rounded-2xl inline-flex items-center gap-2.5 shadow-sm">
+                <span class="w-3 h-3 rounded-full bg-cyan-300 animate-pulse"></span>
+                ON AIR
               </span>
-
-              <span class="text-[10px] text-white/70 border border-white/10 bg-white/5 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
-                <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
+              <span class="text-sm sm:text-base text-white/80 border border-white/15 bg-white/8 px-4 py-2.5 rounded-2xl inline-flex items-center gap-2.5 shadow-sm">
+                <span class="w-3 h-3 rounded-full bg-emerald-400/90"></span>
+                <span id="abfChatOnline" class="tabular-nums font-bold">—</span>
                 online
               </span>
-
-              <span class="text-[10px] text-white/70 border border-white/10 bg-white/5 px-2.5 py-1.5 rounded-xl">
+              <span class="text-sm sm:text-base text-white/75 border border-white/15 bg-white/6 px-4 py-2.5 rounded-2xl shadow-sm">
                 Smart scroll
               </span>
-
-              <span class="text-[10px] text-white/60">
-                Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+              <span class="text-sm text-white/70">
+                Status: <span id="abfChatStatus" class="font-bold">Connecting…</span>
               </span>
             </div>
-
-            <div id="abfChatError" class="mt-1 text-[10px] text-red-300 hidden"></div>
+            <div id="abfChatError" class="mt-4 text-sm text-red-300 hidden"></div>
           </div>
 
-          <!-- RIGHT: Join card (micro) -->
-          <div class="w-full sm:w-[280px] flex-shrink-0">
-            <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-2.5">
-              <div class="text-[10px] text-white/60 uppercase tracking-wider mb-2">
+          <!-- RIGHT: Join card -->
+          <div class="w-full sm:w-[320px] flex-shrink-0">
+            <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-4">
+              <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
                 Join a room
               </div>
-
-              <div class="space-y-2">
+              <div class="space-y-3">
                 <input
                   id="abfChatPseudo"
                   class="abfInput w-full"
                   placeholder="Pseudo (optionnel)"
                   maxlength="24"
                 />
-
                 <select id="abfChatRoom" class="abfInput w-full abfSelect">
                   <option value="general">General</option>
                   <option value="onair">Onair</option>
                   <option value="support">Support</option>
                 </select>
-
                 <button id="abfChatJoin" class="abfBtn abfBtnPrimary w-full" type="button">
                   Join
                   <span class="abfBtnShine"></span>
@@ -94,7 +81,7 @@ export const prerender = false;
     <section class="abfChatShell">
       <div class="abfChatTopBar">
         <div class="abfChatTopLeft">
-          <span id="abfChatRoomPill" class="abfRoomPill" data-room="general">#<span id="abfChatRoomLabel">General</span></span>
+          <span class="abfRoomPill"><span id="abfChatRoomPill">#general</span></span>
           <span class="abfMuted">•</span>
           <span class="abfMuted">Premium ABF UI</span>
         </div>
@@ -102,16 +89,13 @@ export const prerender = false;
           Latest
         </button>
       </div>
-
       <div id="abfChatLog" class="abfChatLog" aria-live="polite"></div>
 
-      <!-- composer -->
       <div class="abfComposer">
         <div class="abfEmojiWrap">
           <button id="abfChatEmojiBtn" class="abfBtn abfBtnGhost abfEmojiBtn" type="button" title="Emoji">
             😊
           </button>
-
           <div id="abfChatEmojiPanel" class="abfEmojiPanel hidden" role="dialog" aria-label="Emoji picker">
             <div class="abfEmojiHeader">
               <div class="abfEmojiTitle">Emojis</div>
@@ -122,7 +106,6 @@ export const prerender = false;
             <div id="abfChatEmojiGrid" class="abfEmojiGrid"></div>
           </div>
         </div>
-
         <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Message…" />
         <button id="abfChatSend" class="abfBtn abfBtnPrimary abfSendBtn">
           Send
@@ -134,106 +117,112 @@ export const prerender = false;
 
   <style>
     .tabular-nums { font-variant-numeric: tabular-nums; }
+    .no-scrollbar::-webkit-scrollbar { display:none; }
+    .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
 
-    #abfChatPageRoot{
+    #abfChatPageRoot {
       --abf-border: rgba(255,255,255,.10);
       --abf-text: rgba(232,242,255,.95);
       --abf-muted: rgba(232,242,255,.62);
       color: var(--abf-text);
     }
-    #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Inputs aligned with site (smaller) */
-    #abfChatPageRoot .abfInput{
+    #abfChatPageRoot .hidden { display:none !important; }
+
+    #abfChatPageRoot .abfInput {
       appearance: none;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.9);
       border-radius: 14px;
-      padding: 8px 10px;
-      font-size: 11px;
+      padding: 10px 12px;
+      font-size: 12px;
       outline: none;
       transition: 150ms ease;
-      height: 36px;
+      height: 40px;
     }
-    #abfChatPageRoot .abfInput:focus{
+
+    #abfChatPageRoot .abfInput:focus {
       border-color: rgba(47,194,255,0.35);
       box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
     }
-    #abfChatPageRoot .abfSelect{
+
+    #abfChatPageRoot .abfSelect {
       background: rgba(10,31,51,.72);
       color: rgba(232,242,255,.95);
     }
-    #abfChatPageRoot select.abfSelect option{
+
+    #abfChatPageRoot select.abfSelect option {
       background: #0B1726;
       color: rgba(232,242,255,.95);
     }
 
-    /* Buttons (smaller) */
-    #abfChatPageRoot .abfBtn{
+    #abfChatPageRoot .abfBtn {
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.9);
       border-radius: 14px;
-      padding: 8px 12px;
-      font-size: 11px;
+      padding: 10px 14px;
+      font-size: 12px;
       font-weight: 900;
       transition: 160ms ease;
       position: relative;
       user-select: none;
-      height: 36px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       gap: 8px;
       overflow: hidden;
     }
-    #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
-    #abfChatPageRoot .abfBtn:active{ transform: translateY(1px); }
 
-    #abfChatPageRoot .abfBtnPrimary{
-      background: linear-gradient(180deg, rgba(56,189,248,.22), rgba(56,189,248,.10));
+    #abfChatPageRoot .abfBtn:hover { background: rgba(255,255,255,0.10); }
+    #abfChatPageRoot .abfBtn:active { transform: translateY(1px); }
+
+    #abfChatPageRoot .abfBtnPrimary {
+      background: linear-gradient(180deg, rgba(56,189,248,.24), rgba(56,189,248,.12));
       border-color: rgba(56,189,248,.30);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
-    #abfChatPageRoot .abfBtnPrimary:hover{
-      background: linear-gradient(180deg, rgba(56,189,248,.28), rgba(56,189,248,.12));
+
+    #abfChatPageRoot .abfBtnPrimary:hover {
+      background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(56,189,248,.14));
       border-color: rgba(56,189,248,.42);
       box-shadow: 0 14px 40px rgba(0,0,0,.32);
       transform: translateY(-1px);
     }
 
-    #abfChatPageRoot .abfBtnGhost{
+    #abfChatPageRoot .abfBtnGhost {
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.12);
       font-weight: 800;
-      padding: 0 10px;
-      height: 30px;
+      padding: 0 12px;
+      height: 34px;
       border-radius: 12px;
-      font-size: 10px;
     }
-    #abfChatPageRoot .abfBtnGhost:hover{
+
+    #abfChatPageRoot .abfBtnGhost:hover {
       background: rgba(255,255,255,.08);
       transform: translateY(-1px);
     }
 
-    #abfChatPageRoot .abfBtnShine{
-      pointer-events:none;
-      position:absolute;
-      inset:-2px;
+    #abfChatPageRoot .abfBtnShine {
+      pointer-events: none;
+      position: absolute;
+      inset: -2px;
       background: radial-gradient(600px 100px at 0% 50%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
       transform: translateX(-60%);
       opacity: .55;
       animation: abfShine 4.6s ease-in-out infinite;
     }
-    @keyframes abfShine{
-      0%, 20%{ transform: translateX(-60%); opacity:.30; }
-      50%{ transform: translateX(40%); opacity:.65; }
-      80%,100%{ transform: translateX(120%); opacity:.20; }
+
+    @keyframes abfShine {
+      0%, 20% { transform: translateX(-60%); opacity:.30; }
+      50% { transform: translateX(40%); opacity:.65; }
+      80%,100% { transform: translateX(120%); opacity:.20; }
     }
 
-    /* Chat shell */
-    #abfChatPageRoot .abfChatShell{
+    #abfChatPageRoot .abfChatShell {
       border-radius: 22px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(5,11,20,.64);
@@ -241,187 +230,183 @@ export const prerender = false;
       box-shadow: 0 18px 60px rgba(0,0,0,.45);
       overflow: hidden;
     }
-    #abfChatPageRoot .abfChatTopBar{
-      display:flex;
-      align-items:center;
+
+    #abfChatPageRoot .abfChatTopBar {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 5px 10px;
+      padding: 6px 10px;
       border-bottom: 1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.14);
-      min-height: 40px;
-    }
-    #abfChatPageRoot .abfChatTopLeft{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 11px;
     }
 
-    #abfChatPageRoot .abfRoomPill{
-      display:inline-flex;
-      align-items:center;
+    #abfChatPageRoot .abfChatTopLeft {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    #abfChatPageRoot .abfRoomPill {
+      display: inline-flex;
+      align-items: center;
       gap: 6px;
-      padding: 5px 9px;
+      padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid rgba(56,189,248,.18);
       background: rgba(56,189,248,.10);
       color: rgba(232,242,255,.90);
       font-weight: 900;
-      letter-spacing: .02em;
-      font-size: 11px;
-    }
-    #abfChatPageRoot .abfRoomPill[data-room="onair"]{
-      border-color: rgba(56,189,248,.42);
-      background: linear-gradient(180deg, rgba(56,189,248,.22), rgba(56,189,248,.10));
-      box-shadow: 0 10px 30px rgba(56,189,248,.10);
-    }
-    #abfChatPageRoot .abfRoomPill[data-room="support"]{
-      border-color: rgba(251,191,36,.28);
-      background: rgba(251,191,36,.10);
-      box-shadow: 0 10px 30px rgba(251,191,36,.08);
-    }
-    #abfChatPageRoot .abfRoomPill[data-room="general"]{
-      border-color: rgba(52,211,153,.22);
-      background: rgba(52,211,153,.08);
-      box-shadow: 0 10px 30px rgba(52,211,153,.06);
     }
 
-    #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
+    #abfChatPageRoot .abfMuted { color: rgba(232,242,255,.55); }
 
-    /* ✅ smaller chat window (reduced again) */
-    #abfChatPageRoot .abfChatLog{
-      height: min(34vh, 260px);
+    #abfChatPageRoot .abfChatLog {
+      height: min(44vh, 330px);
       overflow: auto;
-      padding: 10px 10px 12px;
+      padding: 10px 12px 12px;
       background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.10));
       scroll-behavior: smooth;
     }
 
-    /* Messages (NO avatar / initials) */
-    #abfChatPageRoot .abfMsgRow{
-      display:flex;
-      gap: 0;
-      align-items: flex-end;
+    #abfChatPageRoot .abfMsgRow {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
       margin: 0 0 10px;
       animation: abfIn .18s ease-out both;
     }
-    @keyframes abfIn{
-      from{ opacity:0; transform: translateY(6px); }
-      to{ opacity:1; transform: translateY(0); }
+
+    @keyframes abfIn {
+      from { opacity:0; transform: translateY(6px); }
+      to { opacity:1; transform: translateY(0); }
     }
-    #abfChatPageRoot .abfMsgRow.self{ justify-content: flex-end; }
 
-    /* ✅ avatar removed */
-    #abfChatPageRoot .abfAvatar{ display:none !important; }
+    #abfChatPageRoot .abfMsgRow.self { flex-direction: row-reverse; }
 
-    /* ✅ message inline with meta: bubble is a single line (wrap if needed) */
-    #abfChatPageRoot .abfBubble{
+    #abfChatPageRoot .abfAvatar { display:none !important; }
+
+    #abfChatPageRoot .abfBubble {
+      width: 100%;
       max-width: min(760px, 96%);
       border-radius: 16px;
       padding: 8px 10px;
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
-      display:flex;
-      align-items: baseline;
-      gap: 10px;
-    }
-    #abfChatPageRoot .abfMsgRow.self .abfBubble{
-      background: linear-gradient(180deg, rgba(56,189,248,.16), rgba(56,189,248,.07));
-      border-color: rgba(56,189,248,.24);
     }
 
-    /* ✅ meta single row */
-    #abfChatPageRoot .abfMeta{
-      display:inline-flex;
-      align-items: baseline;
-      gap: 7px;
-      margin: 0;
-      font-size: 10px;
-      color: rgba(232,242,255,.70);
-      flex: 0 0 auto;
-      white-space: nowrap;
+    #abfChatPageRoot .abfMsgRow.self .abfBubble {
+      background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.08));
+      border-color: rgba(56,189,248,.26);
     }
-    #abfChatPageRoot .abfUserDot{
-      width: 7px;
-      height: 7px;
-      border-radius: 99px;
-      display:inline-block;
-      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
-      transform: translateY(1px);
-      flex: 0 0 auto;
-    }
-    #abfChatPageRoot .abfName{ font-weight: 900; }
-    #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
 
-    /* ✅ message inline with meta */
-    #abfChatPageRoot .abfText{
-      font-size: 12px;
-      line-height: 1.25;
+    /* Ligne message unique + wrap naturel */
+    #abfChatPageRoot .abfLine {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 11px;
+      color: rgba(232,242,255,.72);
+      flex-wrap: wrap;
+      line-height: 1.35;
+    }
+
+    #abfChatPageRoot .abfTime {
+      color: rgba(232,242,255,.50);
+      font-weight: 800;
+      letter-spacing: .02em;
+      flex-shrink: 0;
+      min-width: 42px;
+    }
+
+    #abfChatPageRoot .abfPseudo {
+      font-weight: 900;
       color: rgba(232,242,255,.92);
-      word-break: break-word;
-      white-space: pre-wrap;
-      flex: 1 1 auto;
-      min-width: 0;
+      flex-shrink: 0;
     }
 
-    #abfChatPageRoot .abfSys{
+    #abfChatPageRoot .abfPseudo::before {
+      content: "• ";
+      color: rgba(232,242,255,.42);
+      font-weight: 900;
+    }
+
+    #abfChatPageRoot .abfText {
+      font-size: 10.5px;           /* police réduite */
+      line-height: 1.35;
+      color: rgba(232,242,255,.92);
+      flex: 1 1 auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    #abfChatPageRoot .abfMsgRow.self .abfText {
+      color: rgba(232,242,255,.95);
+    }
+
+    #abfChatPageRoot .abfSys {
       margin: 8px 0 10px;
       text-align: center;
       color: rgba(232,242,255,.55);
-      font-size: 10px;
+      font-size: 10.5px;
       letter-spacing: .02em;
     }
-    #abfChatPageRoot .abfSys span{
-      display:inline-block;
-      padding: 5px 9px;
+
+    #abfChatPageRoot .abfSys span {
+      display: inline-block;
+      padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
     }
 
-    /* Composer */
-    #abfChatPageRoot .abfComposer{
-      display:flex;
-      gap: 8px;
-      padding: 7px 10px;
+    #abfChatPageRoot .abfComposer {
+      display: flex;
+      gap: 10px;
+      padding: 8px 10px;
       border-top: 1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.14);
       position: sticky;
       bottom: 0;
       align-items: center;
     }
-    #abfChatPageRoot .abfComposerInput{
+
+    #abfChatPageRoot .abfComposerInput {
       flex: 1;
-      height: 36px;
+      height: 40px;
       border-radius: 14px;
-      font-size: 10px;
-    }
-    #abfChatPageRoot .abfSendBtn{
-      height: 36px;
-      border-radius: 14px;
-      padding: 0 14px;
+      font-size: 11px;
+      padding: 10px 12px;
     }
 
-    /* Emoji picker */
-    #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
-    #abfChatPageRoot .abfEmojiBtn{
-      height: 36px;
-      width: 42px;
+    #abfChatPageRoot .abfSendBtn {
+      height: 40px;
+      border-radius: 14px;
+      padding: 0 16px;
+    }
+
+    #abfChatPageRoot .abfEmojiWrap { position: relative; flex: 0 0 auto; }
+
+    #abfChatPageRoot .abfEmojiBtn {
+      height: 40px;
+      width: 46px;
       padding: 0;
       border-radius: 14px;
-      font-size: 16px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #abfChatPageRoot .abfEmojiPanel{
+
+    #abfChatPageRoot .abfEmojiPanel {
       position: absolute;
       bottom: calc(100% + 10px);
       left: 0;
-      width: 270px;
+      width: 280px;
       max-width: min(78vw, 320px);
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,.14);
@@ -431,70 +416,75 @@ export const prerender = false;
       overflow: hidden;
       z-index: 30;
     }
-    #abfChatPageRoot .abfEmojiHeader{
-      display:flex;
-      align-items:center;
+
+    #abfChatPageRoot .abfEmojiHeader {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
       padding: 8px 10px;
       border-bottom: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
     }
-    #abfChatPageRoot .abfEmojiTitle{
-      font-size: 11px;
+
+    #abfChatPageRoot .abfEmojiTitle {
+      font-size: 12px;
       letter-spacing: .14em;
       text-transform: uppercase;
       color: rgba(232,242,255,.72);
       font-weight: 900;
     }
-    #abfChatPageRoot .abfEmojiClose{
-      height: 28px;
-      width: 32px;
+
+    #abfChatPageRoot .abfEmojiClose {
+      height: 30px;
+      width: 34px;
       padding: 0;
       border-radius: 12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 900;
     }
-    #abfChatPageRoot .abfEmojiGrid{
+
+    #abfChatPageRoot .abfEmojiGrid {
       padding: 10px;
-      display:grid;
+      display: grid;
       grid-template-columns: repeat(8, 1fr);
       gap: 6px;
     }
-    #abfChatPageRoot .abfEmojiItem{
-      height: 28px;
+
+    #abfChatPageRoot .abfEmojiItem {
+      height: 30px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       user-select: none;
-      font-size: 16px;
+      font-size: 18px;
       transition: transform .10s ease, background .10s ease, border-color .10s ease;
     }
-    #abfChatPageRoot .abfEmojiItem:hover{
+
+    #abfChatPageRoot .abfEmojiItem:hover {
       transform: translateY(-1px);
       background: rgba(255,255,255,.08);
       border-color: rgba(56,189,248,.28);
     }
 
-    @media (max-width: 640px){
-      #abfChatPageRoot .abfChatLog{ padding: 10px 9px 12px; height: min(40vh, 300px); }
-      #abfChatPageRoot .abfBubble{ max-width: 98%; }
-      #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
+    @media (max-width: 640px) {
+      #abfChatPageRoot .abfChatLog { padding: 10px 10px 12px; height: min(48vh, 360px); }
+      #abfChatPageRoot .abfEmojiGrid { grid-template-columns: repeat(7, 1fr); }
     }
 
-    @media (prefers-reduced-motion: reduce){
-      #abfChatPageRoot .abfMsgRow{ animation: none !important; }
-      #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
-      #abfChatPageRoot .abfBtnShine{ animation: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      #abfChatPageRoot .abfMsgRow { animation: none !important; }
+      #abfChatPageRoot .abfChatLog { scroll-behavior: auto; }
+      #abfChatPageRoot .abfBtnShine { animation: none !important; }
     }
   </style>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
     (() => {
       const WS_URL = "wss://chat.radioabf.com/ws";
       const $ = (id) => document.getElementById(id);
@@ -507,37 +497,30 @@ export const prerender = false;
       const sendBtn = $("abfChatSend");
       const statusEl = $("abfChatStatus");
       const errEl = $("abfChatError");
-      const roomLabelEl = $("abfChatRoomLabel");
       const scrollBtn = $("abfChatScrollBtn");
       const onlineEl = $("abfChatOnline");
       const roomPillEl = $("abfChatRoomPill");
-
-      const heroDot = document.getElementById("abfChatHeroBadgeDot");
-      const heroText = document.getElementById("abfChatHeroBadgeText");
-
       const emojiBtn = $("abfChatEmojiBtn");
       const emojiPanel = $("abfChatEmojiPanel");
       const emojiGrid = $("abfChatEmojiGrid");
       const emojiClose = $("abfChatEmojiClose");
 
-      let ws = null;
-      let joined = false;
-      let myPseudo = "";
-      let currentRoom = (roomEl?.value || "general").toLowerCase();
-      let stickToBottom = true;
+      if (!pseudoEl || !roomEl || !joinBtn || !logEl || !msgEl || !sendBtn || !statusEl || !errEl || !roomPillEl) return;
 
-      let pendingJoin = null; // { pseudo, room }
-      let reconnectTimer = null;
-      let reconnectAttempt = 0;
-      let manualClosed = false;
-
+      const G = (window.__abfChat = window.__abfChat || {});
+      G.ws = G.ws || null;
+      G.joined = G.joined || false;
+      G.myPseudo = G.myPseudo || "";
+      G.currentRoom = G.currentRoom || (roomEl.value || "general");
+      G.stickToBottom = G.stickToBottom ?? true;
+      G.manualClosed = G.manualClosed ?? false;
+      G.recoTimer = G.recoTimer || 0;
+      G.recoTry = G.recoTry || 0;
+      G.lastVisibleTry = G.lastVisibleTry || 0;
       const ONLINE_TTL_MS = 1000 * 60 * 3;
-      const seen = new Map();
+      G.seen = G.seen || new Map();
 
-      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
       const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
 
       function setStatus(t, ok=false){
@@ -558,63 +541,26 @@ export const prerender = false;
 
       function roomLabel(room){
         const r = String(room || "").toLowerCase();
-        return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
+        return r || "general";
       }
 
-      function hashTo01(str){
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i++){
-          h ^= str.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0) / 4294967295;
-      }
-
-      function nameColor(pseudo, isSelf=false){
-        if (isSelf) return "rgba(56,189,248,.98)";
-        const t = hashTo01((pseudo || "listener").toLowerCase());
-        const hue = 185 + Math.round(t * 95);
-        return `hsla(${hue}, 92%, 72%, .98)`;
-      }
-
-      function updateHeroBadge(room){
-        if (!heroDot || !heroText) return;
-        const r = String(room || "general").toLowerCase();
-
-        if (r === "onair"){
-          heroText.textContent = "ON AIR";
-          heroDot.style.background = "rgb(103 232 249)";
-          heroDot.classList.add("animate-pulse");
-        } else if (r === "support"){
-          heroText.textContent = "SUPPORT";
-          heroDot.style.background = "rgb(251 191 36)";
-          heroDot.classList.remove("animate-pulse");
-        } else {
-          heroText.textContent = "GENERAL";
-          heroDot.style.background = "rgb(52 211 153)";
-          heroDot.classList.remove("animate-pulse");
-        }
-      }
-
-      function updateRoomUI(room){
-        const r = String(room || "general").toLowerCase();
-        roomLabelEl.textContent = roomLabel(r);
-        if (roomPillEl) roomPillEl.setAttribute("data-room", r);
-        updateHeroBadge(r);
+      function setRoomPill(room){
+        const r = roomLabel(room);
+        roomPillEl.textContent = `#${r}`;
       }
 
       function shouldStick(){
-        const threshold = 56;
+        const threshold = 64;
         return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
       }
 
       function scrollToLatest(force=false){
-        if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
+        if (force || G.stickToBottom) logEl.scrollTop = logEl.scrollHeight;
       }
 
       function updateScrollState(){
-        stickToBottom = shouldStick();
-        if (!stickToBottom) scrollBtn.classList.remove("hidden");
+        G.stickToBottom = shouldStick();
+        if (!G.stickToBottom) scrollBtn.classList.remove("hidden");
         else scrollBtn.classList.add("hidden");
       }
 
@@ -627,35 +573,31 @@ export const prerender = false;
       }
 
       function msgBubble({ pseudo, message, created_at }){
-        const isSelf = myPseudo && pseudo === myPseudo;
-
+        const isSelf = G.myPseudo && pseudo === G.myPseudo;
         const row = document.createElement("div");
         row.className = "abfMsgRow" + (isSelf ? " self" : "");
-
         const bubble = document.createElement("div");
         bubble.className = "abfBubble";
+        const line = document.createElement("div");
+        line.className = "abfLine";
 
-        const meta = document.createElement("div");
-        meta.className = "abfMeta";
-        const t = nowHHMM(created_at);
+        const t = document.createElement("span");
+        t.className = "abfTime";
+        t.textContent = nowHHMM(created_at);
 
-        const c = nameColor(pseudo, isSelf);
-
-        // ✅ time + separator + dot + pseudo, then message inline (same line)
-        meta.innerHTML = `
-          <span class="abfTime">${esc(t)}</span>
-          <span class="abfTime">•</span>
-          <span class="abfUserDot" style="background:${c}"></span>
-          <span class="abfName" style="color:${c}">${esc(pseudo || "Listener")}</span>
-        `;
-
-        const txt = document.createElement("div");
+        const txt = document.createElement("span");
         txt.className = "abfText";
-        txt.innerHTML = esc(message);
+        txt.textContent = String(message || "");
 
-        bubble.appendChild(meta);
-        bubble.appendChild(txt);
+        const name = document.createElement("span");
+        name.className = "abfPseudo";
+        name.textContent = String(pseudo || "Listener");
 
+        line.appendChild(t);
+        line.appendChild(txt);
+        line.appendChild(name);
+
+        bubble.appendChild(line);
         row.appendChild(bubble);
         logEl.appendChild(row);
         scrollToLatest();
@@ -663,102 +605,88 @@ export const prerender = false;
 
       function touchSeen(pseudo){
         if (!pseudo) return;
-        seen.set(pseudo, Date.now());
+        G.seen.set(pseudo, Date.now());
         pruneSeen();
-        onlineEl.textContent = String(seen.size);
+        onlineEl.textContent = String(G.seen.size);
       }
 
       function pruneSeen(){
         const now = Date.now();
-        for (const [k, v] of seen.entries()){
-          if (now - v > ONLINE_TTL_MS) seen.delete(k);
+        for (const [k, v] of G.seen.entries()){
+          if (now - v > ONLINE_TTL_MS) G.seen.delete(k);
         }
       }
 
-      setInterval(() => {
-        pruneSeen();
-        onlineEl.textContent = seen.size ? String(seen.size) : "—";
-      }, 8000);
-
-      function hardCloseWs(){
-        try { ws && ws.close(); } catch {}
-        ws = null;
-        joined = false;
+      if (!G.__seenTimer){
+        G.__seenTimer = setInterval(() => {
+          pruneSeen();
+          onlineEl.textContent = G.seen.size ? String(G.seen.size) : "—";
+        }, 8000);
       }
 
       function clearReconnect(){
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = null;
+        if (G.recoTimer){ clearTimeout(G.recoTimer); G.recoTimer = 0; }
       }
 
       function scheduleReconnect(){
-        clearReconnect();
-        if (manualClosed) return;
-
-        // exponential-ish backoff with cap
-        reconnectAttempt = Math.min(reconnectAttempt + 1, 8);
-        const delay = Math.min(12000, 600 + reconnectAttempt * 900);
-
-        setStatus(`Reconnecting…`, false);
-        reconnectTimer = setTimeout(() => {
+        if (G.manualClosed) return;
+        if (G.recoTimer) return;
+        const base = 900;
+        const max = 8000;
+        const wait = Math.min(max, base * Math.pow(1.55, Math.min(8, G.recoTry++)));
+        G.recoTimer = setTimeout(() => {
+          G.recoTimer = 0;
           connectFresh(false);
-        }, delay);
+        }, wait);
       }
 
-      function connectFresh(resetAttempt=true){
-        showErr("");
-        joined = false;
-        manualClosed = false;
-
-        if (resetAttempt){
-          reconnectAttempt = 0;
-          clearReconnect();
+      function connectFresh(showConnectedLine=true){
+        if (G.ws) {
+          try { G.ws.close(); } catch(e) {}
+          G.ws = null;
         }
 
-        hardCloseWs();
-        ws = new WebSocket(WS_URL);
+        G.ws = new WebSocket(WS_URL);
+        setStatus("Connecting…", false);
 
-        ws.addEventListener("open", () => {
+        G.ws.addEventListener("open", () => {
           setStatus("Connected", true);
-          sysLine(`connected`);
+          if (showConnectedLine) sysLine(`connected`);
 
-          // auto re-join last known room if we already joined previously OR a pendingJoin exists
-          const want = pendingJoin || (myPseudo ? { pseudo: myPseudo, room: currentRoom } : null);
-
-          if (want && ws && ws.readyState === 1){
-            ws.send(JSON.stringify({ type:"join", pseudo: want.pseudo, room: want.room }));
+          if (G.myPseudo && G.currentRoom && G.ws.readyState === WebSocket.OPEN) {
+            try {
+              G.ws.send(JSON.stringify({
+                type: "join",
+                pseudo: G.myPseudo,
+                room: G.currentRoom
+              }));
+            } catch {}
           }
         });
 
-        ws.addEventListener("close", () => {
+        G.ws.addEventListener("close", () => {
           setStatus("Disconnected", false);
           sysLine(`disconnected`);
-          joined = false;
+          G.joined = false;
           scheduleReconnect();
         });
 
-        ws.addEventListener("error", () => {
+        G.ws.addEventListener("error", () => {
           showErr("WebSocket error (TLS/DNS/proxy).");
+          scheduleReconnect();
         });
 
-        ws.addEventListener("message", (e) => {
+        G.ws.addEventListener("message", (e) => {
           showErr("");
-          let m; try { m = JSON.parse(e.data); } catch { return; }
+          let m;
+          try { m = JSON.parse(e.data); } catch { return; }
 
           if (m.type === "hello") return;
-
           if (m.type === "joined") {
-            joined = true;
-            reconnectAttempt = 0;
-            clearReconnect();
-
-            currentRoom = (m.room || currentRoom || "general").toLowerCase();
-            updateRoomUI(currentRoom);
-
-            // clean switch: clear and render room content only
-            logEl.innerHTML = "";
-            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
-
+            G.joined = true;
+            G.currentRoom = m.room || G.currentRoom;
+            setRoomPill(G.currentRoom);
+            sysLine(`joined <b>${esc(`#${roomLabel(G.currentRoom)}`)}</b> as <b>${esc(m.pseudo)}</b>`);
             (m.history || []).forEach((h) => {
               if (!h) return;
               touchSeen(h.pseudo);
@@ -768,22 +696,17 @@ export const prerender = false;
                 created_at: h.created_at || Date.now(),
               });
             });
-
-            stickToBottom = true;
+            G.stickToBottom = true;
             scrollToLatest(true);
             updateScrollState();
             return;
           }
-
           if (m.type === "presence") {
             const p = m.pseudo || "Listener";
-            const c = nameColor(p, false);
-            const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
-            sysLine(ev);
+            sysLine(`${esc(p)} ${esc(m.event)}`);
             touchSeen(p);
             return;
           }
-
           if (m.type === "msg") {
             touchSeen(m.pseudo);
             msgBubble({
@@ -793,45 +716,61 @@ export const prerender = false;
             });
             return;
           }
-
           if (m.type === "error") showErr("Error: " + m.code);
         });
       }
 
+      function ensureConnected(){
+        if (!G.ws || G.ws.readyState === WebSocket.CLOSED) connectFresh(false);
+      }
+
       function join(){
         showErr("");
-
+        ensureConnected();
         const pseudo = (pseudoEl.value || "").trim() || guest();
-        const room = (roomEl.value || "general").toLowerCase();
+        const room = roomEl.value || "general";
 
-        myPseudo = pseudo;
-        currentRoom = room;
+        G.myPseudo = pseudo;
+        G.currentRoom = room;
+        setRoomPill(G.currentRoom);
 
-        updateRoomUI(currentRoom);
-
-        seen.clear();
+        logEl.innerHTML = "";
+        G.seen.clear();
         onlineEl.textContent = "—";
+        G.joined = false;
 
-        pendingJoin = { pseudo, room };
+        const sendJoin = () => {
+          if (!G.ws || G.ws.readyState !== WebSocket.OPEN) return;
+          try { G.ws.send(JSON.stringify({ type:"join", pseudo, room })); } catch {}
+        };
 
-        // force fresh connect & join (clean switch)
-        connectFresh(true);
+        if (G.ws && G.ws.readyState === WebSocket.OPEN) {
+          sendJoin();
+        } else {
+          const t0 = Date.now();
+          const tick = () => {
+            if (!G.ws) return;
+            if (G.ws.readyState === WebSocket.OPEN) return sendJoin();
+            if (Date.now() - t0 > 2500) return showErr("Not connected.");
+            requestAnimationFrame(tick);
+          };
+          tick();
+        }
       }
 
       function send(){
         showErr("");
-        if (!ws || ws.readyState !== 1) return showErr("Not connected.");
-        if (!joined) return showErr("Join a room first.");
+        if (!G.ws || G.ws.readyState !== WebSocket.OPEN) return showErr("Not connected.");
+        if (!G.joined) return showErr("Join a room first.");
         const text = (msgEl.value || "").trim();
         if (!text) return;
-
-        ws.send(JSON.stringify({ type:"msg", message: text }));
-        touchSeen(myPseudo);
-
+        try { G.ws.send(JSON.stringify({ type:"msg", message: text })); } catch {}
+        touchSeen(G.myPseudo);
         msgEl.value = "";
         msgEl.focus();
       }
 
+      // Emojis
       const EMOJIS = [
         "😀","😄","😁","😅","😂","🤣","😊","😍",
         "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
@@ -895,50 +834,39 @@ export const prerender = false;
       logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
 
       scrollBtn.addEventListener("click", () => {
-        stickToBottom = true;
+        G.stickToBottom = true;
         scrollToLatest(true);
         updateScrollState();
       });
 
-      roomEl.addEventListener("change", () => {
-        currentRoom = (roomEl.value || "general").toLowerCase();
-        updateRoomUI(currentRoom);
-      });
+      roomEl.addEventListener("change", () => setRoomPill(roomEl.value));
 
       joinBtn.addEventListener("click", join);
       sendBtn.addEventListener("click", send);
       msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
 
-      // ✅ Important for Astro view transitions / SPA nav:
-      // when page becomes visible again, reconnect if needed
+      setRoomPill(G.currentRoom || roomEl.value || "general");
+
+      connectFresh(true);
+
       function onVisible(){
         if (document.visibilityState !== "visible") return;
-        if (!ws || ws.readyState === 3){ // CLOSED
+        const now = Date.now();
+        if (now - G.lastVisibleTry < 1400) return;
+        G.lastVisibleTry = now;
+        if (!G.ws || G.ws.readyState >= WebSocket.CLOSING) {
           connectFresh(false);
-        } else if (ws.readyState !== 1){ // CONNECTING/CLOSING
-          // let it finish; if still not open after a moment, reconnect
-          setTimeout(() => {
-            if (!ws || ws.readyState !== 1) connectFresh(false);
-          }, 600);
         }
       }
 
       document.addEventListener("visibilitychange", onVisible);
 
-      // also handle back/forward cache and focus
-      window.addEventListener("pageshow", onVisible);
-      window.addEventListener("focus", onVisible);
-
-      // cleanup on unload to avoid ghost sockets
       window.addEventListener("pagehide", () => {
-        manualClosed = true;
+        G.manualClosed = true;
         clearReconnect();
-        try { ws && ws.close(); } catch {}
+        try { if (G.ws) G.ws.close(); } catch {}
       });
 
-      setStatus("Connecting…", false);
-      updateRoomUI(currentRoom);
-      connectFresh(true);
       requestAnimationFrame(() => updateScrollState());
     })();
   </script>
