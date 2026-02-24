@@ -10,62 +10,62 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- ✅ HERO -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-4 sm:p-5 mb-4 shadow-2xl">
+    <!-- ✅ HERO (compact like /programs) -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-3 sm:p-4 mb-3 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
       <div class="relative z-10">
-        <div class="flex items-start justify-between gap-6 flex-wrap">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
           <!-- LEFT -->
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+            <div class="flex items-center gap-3 text-[11px] tracking-widest text-white/60 uppercase mb-2">
               <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
               Live Chat
             </div>
 
-            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+            <h1 class="text-2xl sm:text-3xl font-extrabold leading-tight">
               RadioABF <span class="text-cyan-200">Chat</span>
             </h1>
 
-            <p class="text-white/65 mt-3 max-w-2xl">
+            <p class="text-white/65 mt-2 max-w-2xl text-sm">
               Join the room, talk with listeners, and stay connected during shows.
             </p>
 
-            <!-- ✅ badges bottom-left -->
-            <div class="flex items-center gap-2 flex-wrap mt-4">
+            <!-- ✅ badges (compact) -->
+            <div class="flex items-center gap-2 flex-wrap mt-3">
               <!-- ✅ dynamic badge -->
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+              <span class="text-[11px] text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
                 <span id="abfChatHeroBadgeDot" class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
                 <span id="abfChatHeroBadgeText">ON AIR</span>
               </span>
 
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+              <span class="text-[11px] text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
                 <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
                 online
               </span>
 
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
+              <span class="text-[11px] text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
                 Smart scroll
               </span>
 
-              <span class="text-xs text-white/60">
+              <span class="text-[11px] text-white/60">
                 Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
               </span>
             </div>
 
-            <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
+            <div id="abfChatError" class="mt-2 text-[11px] text-red-300 hidden"></div>
           </div>
 
-          <!-- RIGHT: Join card -->
-          <div class="w-full sm:w-[320px] flex-shrink-0">
-            <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-4">
-              <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
+          <!-- RIGHT: Join card (compact) -->
+          <div class="w-full sm:w-[300px] flex-shrink-0">
+            <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-3">
+              <div class="text-[11px] text-white/60 uppercase tracking-wider mb-2">
                 Join a room
               </div>
 
-              <div class="space-y-3">
+              <div class="space-y-2">
                 <input
                   id="abfChatPseudo"
                   class="abfInput w-full"
@@ -160,7 +160,7 @@ export const prerender = false;
       font-size: 12px;
       outline: none;
       transition: 150ms ease;
-      height: 42px;
+      height: 40px; /* slightly tighter */
     }
     #abfChatPageRoot .abfInput:focus{
       border-color: rgba(47,194,255,0.35);
@@ -187,7 +187,7 @@ export const prerender = false;
       transition: 160ms ease;
       position: relative;
       user-select: none;
-      height: 42px;
+      height: 40px; /* tighter */
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -214,8 +214,9 @@ export const prerender = false;
       border-color: rgba(255,255,255,.12);
       font-weight: 800;
       padding: 0 12px;
-      height: 36px;
+      height: 34px;
       border-radius: 12px;
+      font-size: 11px;
     }
     #abfChatPageRoot .abfBtnGhost:hover{
       background: rgba(255,255,255,.08);
@@ -251,9 +252,10 @@ export const prerender = false;
       align-items:center;
       justify-content: space-between;
       gap: 10px;
-      padding: 8px 10px;
+      padding: 6px 10px; /* tighter */
       border-bottom: 1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.14);
+      min-height: 44px; /* consistent bar height */
     }
     #abfChatPageRoot .abfChatTopLeft{
       display:flex;
@@ -263,7 +265,6 @@ export const prerender = false;
       font-size: 12px;
     }
 
-    /* ✅ Room pill base */
     #abfChatPageRoot .abfRoomPill{
       display:inline-flex;
       align-items:center;
@@ -275,9 +276,8 @@ export const prerender = false;
       color: rgba(232,242,255,.90);
       font-weight: 900;
       letter-spacing: .02em;
+      font-size: 12px;
     }
-
-    /* ✅ Room pill variants (dynamic #onair look) */
     #abfChatPageRoot .abfRoomPill[data-room="onair"]{
       border-color: rgba(56,189,248,.42);
       background: linear-gradient(180deg, rgba(56,189,248,.22), rgba(56,189,248,.10));
@@ -408,7 +408,7 @@ export const prerender = false;
       flex: 1;
       height: 42px;
       border-radius: 14px;
-      font-size: 11px; /* ✅ smaller prompt font */
+      font-size: 11px; /* smaller prompt font */
     }
     #abfChatPageRoot .abfSendBtn{
       height: 42px;
@@ -538,6 +538,9 @@ export const prerender = false;
       let currentRoom = roomEl.value || "general";
       let stickToBottom = true;
 
+      // ✅ join is now connection-scoped => always reconnect on join
+      let pendingJoin = null; // { pseudo, room }
+
       const ONLINE_TTL_MS = 1000 * 60 * 3;
       const seen = new Map();
 
@@ -599,15 +602,15 @@ export const prerender = false;
 
         if (r === "onair"){
           heroText.textContent = "ON AIR";
-          heroDot.style.background = "rgb(103 232 249)"; // cyan-300
+          heroDot.style.background = "rgb(103 232 249)";
           heroDot.classList.add("animate-pulse");
         } else if (r === "support"){
           heroText.textContent = "SUPPORT";
-          heroDot.style.background = "rgb(251 191 36)"; // amber-400
+          heroDot.style.background = "rgb(251 191 36)";
           heroDot.classList.remove("animate-pulse");
         } else {
           heroText.textContent = "GENERAL";
-          heroDot.style.background = "rgb(52 211 153)"; // emerald-400
+          heroDot.style.background = "rgb(52 211 153)";
           heroDot.classList.remove("animate-pulse");
         }
       }
@@ -661,7 +664,7 @@ export const prerender = false;
 
         const c = nameColor(pseudo, isSelf);
 
-        /* ✅ time left • pseudo right (with dot) */
+        // ✅ time left • pseudo right
         meta.innerHTML = `
           <span class="abfTime">${esc(t)}</span>
           <span class="abfTime">•</span>
@@ -702,15 +705,34 @@ export const prerender = false;
         onlineEl.textContent = seen.size ? String(seen.size) : "—";
       }, 8000);
 
-      function connect(){
+      function hardCloseWs(){
+        try{
+          ws && ws.close();
+        }catch{}
+        ws = null;
+        joined = false;
+      }
+
+      function connectFresh(){
         showErr("");
         joined = false;
-        try { ws?.close(); } catch {}
+
+        // ✅ always new socket
+        hardCloseWs();
         ws = new WebSocket(WS_URL);
 
         ws.addEventListener("open", () => {
           setStatus("Connected", true);
           sysLine(`connected`);
+
+          // ✅ if a join is pending, send it right now (guaranteed correct room)
+          if (pendingJoin && ws && ws.readyState === 1){
+            ws.send(JSON.stringify({
+              type: "join",
+              pseudo: pendingJoin.pseudo,
+              room: pendingJoin.room
+            }));
+          }
         });
 
         ws.addEventListener("close", () => {
@@ -731,10 +753,17 @@ export const prerender = false;
 
           if (m.type === "joined") {
             joined = true;
-            currentRoom = m.room || currentRoom;
 
+            currentRoom = m.room || currentRoom;
             updateRoomUI(currentRoom);
 
+            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
+
+            // reset log for clean room switch feeling
+            // (optional: comment this out if you prefer keeping old room lines)
+            logEl.innerHTML = "";
+
+            // re-add the joined line after clear
             sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
 
             (m.history || []).forEach((h) => {
@@ -776,29 +805,27 @@ export const prerender = false;
         });
       }
 
-      function ensureConnected(){
-        if (!ws || ws.readyState !== 1) connect();
-      }
-
       function join(){
         showErr("");
-        ensureConnected();
 
         const pseudo = (pseudoEl.value || "").trim() || guest();
-        const room = roomEl.value;
+        const room = (roomEl.value || "general").toLowerCase();
 
         myPseudo = pseudo;
         currentRoom = room;
 
+        // ✅ update UI immediately
         updateRoomUI(currentRoom);
 
+        // reset online estimator per room
         seen.clear();
         onlineEl.textContent = "—";
 
-        setTimeout(() => {
-          if (!ws || ws.readyState !== 1) return showErr("Not connected.");
-          ws.send(JSON.stringify({ type:"join", pseudo, room }));
-        }, 80);
+        // ✅ IMPORTANT: make this join the ONLY one that will be sent after open
+        pendingJoin = { pseudo, room };
+
+        // ✅ always reconnect for reliable room switch
+        connectFresh();
       }
 
       function send(){
@@ -892,8 +919,9 @@ export const prerender = false;
       msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
 
       setStatus("Connecting…", false);
-      updateRoomUI(currentRoom); // ✅ boot UI sync
-      connect();
+      updateRoomUI(currentRoom);
+      // ✅ keep initial connect (no join) so status works, but doesn’t lock a room
+      connectFresh();
       requestAnimationFrame(() => updateScrollState());
     })();
   </script>
