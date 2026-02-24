@@ -520,8 +520,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               </div>
             </div>
           </a>
-          <!-- Desktop nav -->
-        <nav class="hidden md:flex items-center gap-2">
+<!-- Desktop nav -->
 <nav class="hidden md:flex items-center gap-2">
   <a href="/" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Home</a>
   <a href="/news" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
@@ -530,77 +529,43 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
   <a href="/artists" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Artists</a>
   <a href="/videos" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Videos</a>
   <a href="/chat" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Chat</a>
-
 </nav>
-          <!-- Mobile button -->
-          <button
-            id="navBtn"
-            type="button"
-            class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
-            aria-label="Open menu"
-            aria-expanded="false"
-            aria-controls="mobileNav"
-          >
-            ☰
-          </button>
-        </div>
-        <!-- ✅ Mobile nav: ABSOLUTE dropdown (ne pousse plus la page) -->
-        <nav
+
+<!-- Mobile button -->
+<button
+  id="navBtn"
+  type="button"
+  class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+  aria-label="Open menu"
+  aria-expanded="false"
+  aria-controls="mobileNav"
+>
+  ☰
+</button>
+
+</div> <!-- ✅ ferme flex justify-between -->
+</div> <!-- ✅ ferme relative -->
+
+<!-- ✅ Mobile nav: ABSOLUTE dropdown -->
+<nav
   id="mobileNav"
   class="md:hidden hidden absolute left-0 right-0 top-full mt-3 p-3 rounded-2xl border border-white/10 bg-[#050B14]/95 backdrop-blur-xl shadow-2xl"
 >
- <div class="grid gap-1">
-  <a href="/" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Home</a>
-  <a href="/news" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
-  <a href="/music" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
-  <a href="/programs" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Programs</a>
-  <a href="/artists" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Artists</a>
-  <a href="/videos" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Videos</a>
-  <a href="/chat" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Chat</a>
-
-</div>
-    </div>
+  <div class="grid gap-1">
+    <a href="/" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Home</a>
+    <a href="/news" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
+    <a href="/music" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
+    <a href="/programs" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Programs</a>
+    <a href="/artists" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Artists</a>
+    <a href="/videos" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Videos</a>
+    <a href="/chat" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Chat</a>
   </div>
-  <script is:inline data-astro-rerun>
-    (() => {
-      const btn = document.getElementById("navBtn");
-      const nav = document.getElementById("mobileNav");
-      if (!btn || !nav) return;
-      const close = () => {
-        nav.classList.add("hidden");
-        btn.setAttribute("aria-expanded", "false");
-      };
-      btn.onclick = (e) => {
-        e.preventDefault();
-        const isOpen = !nav.classList.contains("hidden");
-        if (isOpen) close();
-        else {
-          nav.classList.remove("hidden");
-          btn.setAttribute("aria-expanded", "true");
-        }
-      };
-      // ✅ ferme quand on clique un lien
-      nav.addEventListener("click", (e) => {
-        const a = e.target?.closest?.("a");
-        if (a) close();
-      });
-      // ✅ ferme si clic ailleurs
-      document.addEventListener("click", (e) => {
-        if (!nav.classList.contains("hidden")) {
-          const t = e.target;
-          if (!nav.contains(t) && t !== btn) close();
-        }
-      });
-      // ✅ ferme avec ESC
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") close();
-      });
-      // ✅ sur navigation Astro, on ferme
-      document.addEventListener("astro:after-swap", close);
-      document.addEventListener("astro:page-load", close);
-    })();
-  </script>
+</nav>
+
+</div> <!-- ✅ ferme .mx-auto -->
+</div> <!-- ✅ ferme bg wrapper -->
 </header>
+
 <!-- DEDICATIONS BAR (global) -->
 <div class="dedications-bar" transition:persist="dedications">
   <div class="dedications-inner">
