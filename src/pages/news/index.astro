@@ -290,34 +290,46 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     </section>
   </div>
 
-  <script is:inline>
-    // year dropdown
+ <script type="module">
+  import { navigate } from "astro:transitions/client";
+
+  function bindNewsUI() {
+    // YEAR dropdown
     const sel = document.getElementById("yearSelect");
-    if (sel) {
+    if (sel && !sel.dataset.bound) {
+      sel.dataset.bound = "1";
       sel.addEventListener("change", (e) => {
-        const v = e.target.value;
-        if (v) window.location.href = v;
+        const v = e.target?.value;
+        if (v) navigate(v); // ✅ SPA navigation -> ne coupe pas l'audio
       });
     }
+
     // back-to-top bump
     const btt = document.getElementById("backToTopBtn");
     const pager = document.getElementById("pagerBar");
-    function bumpBtt(){
+
+    function bumpBtt() {
       if (!btt || !pager) return;
       const r = pager.getBoundingClientRect();
       const vh = window.innerHeight;
       const overlapZone = 120;
       const distFromBottom = vh - r.bottom;
-      if (distFromBottom < overlapZone) {
-        btt.style.transform = "translateY(-78px)";
-      } else {
-        btt.style.transform = "";
-      }
+      if (distFromBottom < overlapZone) btt.style.transform = "translateY(-78px)";
+      else btt.style.transform = "";
     }
+
     bumpBtt();
     window.addEventListener("scroll", bumpBtt, { passive: true });
     window.addEventListener("resize", bumpBtt);
-  </script>
+  }
+
+  // ✅ 1er chargement
+  bindNewsUI();
+
+  // ✅ Re-bind après chaque navigation Astro (swap)
+  document.addEventListener("astro:page-load", bindNewsUI);
+  document.addEventListener("astro:after-swap", bindNewsUI);
+</script>
 
   <style is:inline>
     .abfPageWrap {
