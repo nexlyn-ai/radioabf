@@ -213,14 +213,17 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
           <!-- YEAR FILTER -->
           <div class="flex items-center gap-2 flex-none">
             <span class="text-xs text-white/55 uppercase tracking-wider">Year</span>
-            <select id="yearSelect" class="px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-white text-sm">
-              <option value={linkWithYear("all")} selected={!selectedYear}>All</option>
-              {years.map((y) => (
-                <option value={linkWithYear(String(y))} selected={selectedYear === y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+            <select
+  id="yearSelect"
+  class="px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-white text-sm"
+>
+  <option value="all" selected={!selectedYear}>All</option>
+  {years.map((y) => (
+    <option value={String(y)} selected={selectedYear === y}>
+      {y}
+    </option>
+  ))}
+</select>
           </div>
         </div>
       </div>
@@ -290,43 +293,55 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     </section>
   </div>
 
- <script type="module">
+<script type="module">
   import { navigate } from "astro:transitions/client";
 
   function bindNewsUI() {
-    // YEAR dropdown
     const sel = document.getElementById("yearSelect");
     if (sel && !sel.dataset.bound) {
       sel.dataset.bound = "1";
+
+      // ✅ force la valeur en fonction de l'URL (important après swap)
+      const sp = new URLSearchParams(window.location.search);
+      sel.value = sp.get("year") || "all";
+
       sel.addEventListener("change", (e) => {
-        const v = e.target?.value;
-        if (v) navigate(v); // ✅ SPA navigation -> ne coupe pas l'audio
+        const year = e.target.value; // "all" ou "2025"
+        const u = new URL(window.location.href);
+
+        // toujours revenir à page 1 quand on change de filtre
+        u.searchParams.set("page", "1");
+
+        if (year === "all") u.searchParams.delete("year");
+        else u.searchParams.set("year", year);
+
+        // ✅ navigation SPA si possible, sinon fallback
+        const href = u.pathname + "?" + u.searchParams.toString();
+        try {
+          navigate(href);
+        } catch {
+          window.location.href = href;
+        }
       });
     }
 
-    // back-to-top bump
+    // back-to-top bump (inchangé)
     const btt = document.getElementById("backToTopBtn");
     const pager = document.getElementById("pagerBar");
-
     function bumpBtt() {
       if (!btt || !pager) return;
       const r = pager.getBoundingClientRect();
       const vh = window.innerHeight;
       const overlapZone = 120;
       const distFromBottom = vh - r.bottom;
-      if (distFromBottom < overlapZone) btt.style.transform = "translateY(-78px)";
-      else btt.style.transform = "";
+      btt.style.transform = distFromBottom < overlapZone ? "translateY(-78px)" : "";
     }
-
     bumpBtt();
     window.addEventListener("scroll", bumpBtt, { passive: true });
     window.addEventListener("resize", bumpBtt);
   }
 
-  // ✅ 1er chargement
   bindNewsUI();
-
-  // ✅ Re-bind après chaque navigation Astro (swap)
   document.addEventListener("astro:page-load", bindNewsUI);
   document.addEventListener("astro:after-swap", bindNewsUI);
 </script>
