@@ -1696,12 +1696,16 @@ function computeStatus(){
               audio.pause();
               S.isStopped = false;
             } else {
-              S.isStopped = false;
-            
-              // On ne recharge QUE si on était vraiment arrêté ou si y a pas de source
-              if (S.isStopped || !audio.src || audio.src === "") {
-                audio.load();
-              }
+             const wasStopped = !!S.isStopped;
+			 const hasSrc = !!audio.src;
+
+			// On recharge uniquement si on était vraiment arrêté
+			// ou si aucune source n’est définie
+			if (wasStopped || !hasSrc) {
+			   audio.load();
+			}
+
+			S.isStopped = false;
             
               try {
                 await audio.play();
@@ -1868,6 +1872,10 @@ function computeStatus(){
 
       <button id="purgeBtn" type="button" class="abfFooterLinkBtn" aria-label="Purge local data" title="Purge local data">
         Purge
+      </button>
+	  
+	  <button id="openContact" type="button" class="abfFooterLinkBtn" aria-label="Contact RadioABF" title="Contact">
+      Contact
       </button>
 
       <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
@@ -2087,6 +2095,152 @@ function computeStatus(){
         });
       })();
     </script>
+	
+<script is:inline data-astro-rerun>
+(() => {
+
+  function initContact(){
+
+    const contactModal = document.getElementById("contactModal");
+    const openContact = document.getElementById("openContact");
+    const contactClose = document.getElementById("contactClose");
+    const ctCancel = document.getElementById("ctCancel");
+    const form = document.getElementById("contactForm");
+    const feedback = document.getElementById("contactFeedback");
+    const btnSend = document.getElementById("ctSend");
+
+    if (!contactModal || !openContact || !contactClose || !form || !feedback) {
+      return false;
+    }
+
+    // évite double binding
+    if (contactModal.dataset.bound === "1") return true;
+    contactModal.dataset.bound = "1";
+
+    const lockScroll = (on) => {
+      document.documentElement.style.overflow = on ? "hidden" : "";
+    };
+
+    const open = () => {
+      contactModal.setAttribute("aria-hidden","false");
+      lockScroll(true);
+    };
+
+    const close = () => {
+      contactModal.setAttribute("aria-hidden","true");
+      lockScroll(false);
+    };
+
+    function showFeedback(ok, msg){
+      feedback.classList.remove("hidden");
+      feedback.className = "text-sm font-medium px-4 py-3 rounded-xl border";
+
+      if (ok){
+        feedback.classList.add("border-cyan-400/30","bg-cyan-400/10","text-cyan-200");
+      } else {
+        feedback.classList.add("border-red-500/35","bg-red-500/10","text-red-200");
+      }
+
+      feedback.textContent = msg;
+    }
+
+    openContact.addEventListener("click", (e) => {
+      e.preventDefault();
+      feedback.classList.add("hidden");
+      open();
+    });
+
+    contactClose.addEventListener("click", (e) => {
+      e.preventDefault();
+      close();
+    });
+
+    if (ctCancel){
+      ctCancel.addEventListener("click", (e) => {
+        e.preventDefault();
+        close();
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t?.dataset?.close === "contact") close();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" &&
+          contactModal.getAttribute("aria-hidden") === "false") {
+        close();
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = String(document.getElementById("ctName")?.value || "").trim();
+      const email = String(document.getElementById("ctEmail")?.value || "").trim();
+      const subject = String(document.getElementById("ctSubject")?.value || "").trim();
+      const message = String(document.getElementById("ctMessage")?.value || "").trim();
+      const page = window.location?.href || "";
+
+      if (!name || !email || !message){
+        showFeedback(false, "Please fill in name, email and message.");
+        return;
+      }
+
+      try{
+        if (btnSend){
+          btnSend.disabled = true;
+          btnSend.textContent = "Sending…";
+        }
+
+        const res = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name, email, subject, message, page }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data?.ok){
+          showFeedback(true, "Message sent! Thanks — we’ll get back to you soon.");
+          form.reset();
+          setTimeout(() => close(), 900);
+        } else {
+          showFeedback(false, data?.error || "Unable to send message. Please try again.");
+        }
+
+      } catch {
+        showFeedback(false, "Network error. Please try again.");
+      } finally {
+        if (btnSend){
+          btnSend.disabled = false;
+          btnSend.textContent = "Send";
+        }
+      }
+    });
+
+    document.addEventListener("astro:after-swap", close);
+    document.addEventListener("astro:page-load", close);
+
+    return true;
+  }
+
+  function boot(){
+    if (initContact()) return;
+    requestAnimationFrame(() => initContact());
+    setTimeout(() => initContact(), 50);
+    setTimeout(() => initContact(), 250);
+  }
+
+  boot();
+  document.addEventListener("DOMContentLoaded", boot);
+  document.addEventListener("astro:page-load", boot);
+  document.addEventListener("astro:after-swap", boot);
+
+})();
+</script>	
+	
     <!-- ================= COOKIE CONSENT LOGIC (GA4) ================= -->
     <script is:inline data-astro-rerun>
       (() => {
@@ -2664,7 +2818,102 @@ function computeStatus(){
   document.addEventListener("astro:after-swap", boot);
 })();
 </script>
-  </body>
+
+<!-- ================= CONTACT MODAL ================= -->
+<div id="contactModal" class="abfModal" aria-hidden="true">
+  <div class="abfModalBackdrop" data-close="contact"></div>
+
+  <div class="abfModalWrap">
+    <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Contact RadioABF">
+      <div class="abfModalTop">
+        <div class="abfModalTitle">Contact</div>
+        <button class="abfModalClose" id="contactClose" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="abfModalBody">
+        <div class="text-sm text-white/75 leading-relaxed">
+          <p class="text-white/85 font-semibold">
+            Send a message to the ABF team.
+          </p>
+          <p class="abfMuted">
+            We usually reply within 24–72h depending on the volume.
+          </p>
+        </div>
+
+        <form id="contactForm" class="mt-4 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-white/60 mb-2">Your name</label>
+              <input
+                id="ctName"
+                name="name"
+                type="text"
+                maxlength="60"
+                required
+                class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+                placeholder="Your name"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs text-white/60 mb-2">Your email</label>
+              <input
+                id="ctEmail"
+                name="email"
+                type="email"
+                maxlength="120"
+                required
+                class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs text-white/60 mb-2">Subject</label>
+            <input
+              id="ctSubject"
+              name="subject"
+              type="text"
+              maxlength="120"
+              class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+              placeholder="What’s this about?"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-white/60 mb-2">Message</label>
+            <textarea
+              id="ctMessage"
+              name="message"
+              rows="6"
+              maxlength="2000"
+              required
+              class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+              placeholder="Write your message…"
+            ></textarea>
+            <div class="text-[11px] text-white/40 mt-2">Max 2000 characters.</div>
+          </div>
+
+          <div id="contactFeedback" class="hidden text-sm font-medium px-4 py-3 rounded-xl border"></div>
+
+          <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
+            <button id="ctCancel" type="button" class="abfBtn">Cancel</button>
+            <button id="ctSend" type="submit" class="abfBtn abfBtnPrimary">
+              Send
+            </button>
+          </div>
+
+          <div class="abfMuted pt-1">
+            This will send an email directly to <span class="text-white/70">contact@radioabf.com</span>.
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+ 
 <!-- ================= DEDICATION MODAL ================= -->
 <div
   id="dedicationModal"
@@ -2719,7 +2968,7 @@ function computeStatus(){
        <textarea
   id="dedMessage"
   name="message"
-  maxlength="280"
+  maxlength="300"
   rows="5"
   class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
   placeholder="Your message"
@@ -2756,4 +3005,5 @@ function computeStatus(){
     </form>
   </div>
 </div>
+ </body>
 </html>
