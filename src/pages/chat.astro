@@ -10,7 +10,7 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- ✅ HERO (same typography as /music, but compact + login card inside hero, no duplicate card below) -->
+    <!-- ✅ HERO -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-4 sm:p-5 mb-4 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
@@ -34,9 +34,10 @@ export const prerender = false;
 
             <!-- ✅ badges bottom-left -->
             <div class="flex items-center gap-2 flex-wrap mt-4">
+              <!-- ✅ dynamic badge -->
               <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
-                ON AIR
+                <span id="abfChatHeroBadgeDot" class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                <span id="abfChatHeroBadgeText">ON AIR</span>
               </span>
 
               <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
@@ -57,7 +58,7 @@ export const prerender = false;
             <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
           </div>
 
-          <!-- ✅ RIGHT: Join card back in hero -->
+          <!-- RIGHT: Join card -->
           <div class="w-full sm:w-[320px] flex-shrink-0">
             <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-4">
               <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
@@ -78,7 +79,6 @@ export const prerender = false;
                   <option value="support">Support</option>
                 </select>
 
-                <!-- ✅ join effects like earlier -->
                 <button id="abfChatJoin" class="abfBtn abfBtnPrimary w-full" type="button">
                   Join
                   <span class="abfBtnShine"></span>
@@ -94,7 +94,8 @@ export const prerender = false;
     <section class="abfChatShell">
       <div class="abfChatTopBar">
         <div class="abfChatTopLeft">
-          <span class="abfRoomPill">#<span id="abfChatRoomLabel">General</span></span>
+          <!-- ✅ dynamic pill -->
+          <span id="abfChatRoomPill" class="abfRoomPill" data-room="general">#<span id="abfChatRoomLabel">General</span></span>
           <span class="abfMuted">•</span>
           <span class="abfMuted">Premium ABF UI</span>
         </div>
@@ -261,6 +262,8 @@ export const prerender = false;
       flex-wrap: wrap;
       font-size: 12px;
     }
+
+    /* ✅ Room pill base */
     #abfChatPageRoot .abfRoomPill{
       display:inline-flex;
       align-items:center;
@@ -271,7 +274,26 @@ export const prerender = false;
       background: rgba(56,189,248,.10);
       color: rgba(232,242,255,.90);
       font-weight: 900;
+      letter-spacing: .02em;
     }
+
+    /* ✅ Room pill variants (dynamic #onair look) */
+    #abfChatPageRoot .abfRoomPill[data-room="onair"]{
+      border-color: rgba(56,189,248,.42);
+      background: linear-gradient(180deg, rgba(56,189,248,.22), rgba(56,189,248,.10));
+      box-shadow: 0 10px 30px rgba(56,189,248,.10);
+    }
+    #abfChatPageRoot .abfRoomPill[data-room="support"]{
+      border-color: rgba(251,191,36,.28);
+      background: rgba(251,191,36,.10);
+      box-shadow: 0 10px 30px rgba(251,191,36,.08);
+    }
+    #abfChatPageRoot .abfRoomPill[data-room="general"]{
+      border-color: rgba(52,211,153,.22);
+      background: rgba(52,211,153,.08);
+      box-shadow: 0 10px 30px rgba(52,211,153,.06);
+    }
+
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
     #abfChatPageRoot .abfChatLog{
@@ -386,6 +408,7 @@ export const prerender = false;
       flex: 1;
       height: 42px;
       border-radius: 14px;
+      font-size: 11px; /* ✅ smaller prompt font */
     }
     #abfChatPageRoot .abfSendBtn{
       height: 42px;
@@ -484,397 +507,394 @@ export const prerender = false;
   </style>
 
   <script is:inline>
-  (() => {
-    const WS_URL = "wss://chat.radioabf.com/ws";
-    const $ = (id) => document.getElementById(id);
+    (() => {
+      const WS_URL = "wss://chat.radioabf.com/ws";
+      const $ = (id) => document.getElementById(id);
 
-    const pseudoEl = $("abfChatPseudo");
-    const roomEl = $("abfChatRoom");
-    const joinBtn = $("abfChatJoin");
-    const logEl = $("abfChatLog");
-    const msgEl = $("abfChatMsg");
-    const sendBtn = $("abfChatSend");
-    const statusEl = $("abfChatStatus");
-    const errEl = $("abfChatError");
-    const roomLabelEl = $("abfChatRoomLabel");
-    const scrollBtn = $("abfChatScrollBtn");
-    const onlineEl = $("abfChatOnline");
+      const pseudoEl = $("abfChatPseudo");
+      const roomEl = $("abfChatRoom");
+      const joinBtn = $("abfChatJoin");
+      const logEl = $("abfChatLog");
+      const msgEl = $("abfChatMsg");
+      const sendBtn = $("abfChatSend");
+      const statusEl = $("abfChatStatus");
+      const errEl = $("abfChatError");
+      const roomLabelEl = $("abfChatRoomLabel");
+      const scrollBtn = $("abfChatScrollBtn");
+      const onlineEl = $("abfChatOnline");
+      const roomPillEl = $("abfChatRoomPill");
 
-    const emojiBtn = $("abfChatEmojiBtn");
-    const emojiPanel = $("abfChatEmojiPanel");
-    const emojiGrid = $("abfChatEmojiGrid");
-    const emojiClose = $("abfChatEmojiClose");
+      const heroDot = document.getElementById("abfChatHeroBadgeDot");
+      const heroText = document.getElementById("abfChatHeroBadgeText");
 
-    let ws = null;
-    let joined = false;
-    let myPseudo = "";
-    let currentRoom = roomEl.value || "general";
-    let stickToBottom = true;
+      const emojiBtn = $("abfChatEmojiBtn");
+      const emojiPanel = $("abfChatEmojiPanel");
+      const emojiGrid = $("abfChatEmojiGrid");
+      const emojiClose = $("abfChatEmojiClose");
 
-    // ✅ pending join when WS isn't open yet
-    let pendingJoin = null;
+      let ws = null;
+      let joined = false;
+      let myPseudo = "";
+      let currentRoom = roomEl.value || "general";
+      let stickToBottom = true;
 
-    const ONLINE_TTL_MS = 1000 * 60 * 3;
-    const seen = new Map();
+      const ONLINE_TTL_MS = 1000 * 60 * 3;
+      const seen = new Map();
 
-    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
 
-    const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
+      const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
 
-    function setStatus(t, ok=false){
-      statusEl.textContent = t;
-      statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
-    }
-
-    function showErr(t=""){
-      if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
-      errEl.classList.remove("hidden");
-      errEl.textContent = t;
-    }
-
-    function nowHHMM(ts){
-      try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
-      catch{ return ""; }
-    }
-
-    function initials(p){
-      const s = (p || "").trim();
-      if (!s) return "AB";
-      const parts = s.split(/\s+/).filter(Boolean);
-      const a = parts[0]?.[0] || "A";
-      const b = parts.length > 1 ? (parts[1]?.[0] || "") : (parts[0]?.[1] || "");
-      return (a + (b || "")).toUpperCase().slice(0,2);
-    }
-
-    function roomLabel(room){
-      const r = String(room || "").toLowerCase();
-      return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
-    }
-
-    function hashTo01(str){
-      let h = 2166136261;
-      for (let i = 0; i < str.length; i++){
-        h ^= str.charCodeAt(i);
-        h = Math.imul(h, 16777619);
+      function setStatus(t, ok=false){
+        statusEl.textContent = t;
+        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
       }
-      return (h >>> 0) / 4294967295;
-    }
 
-    function nameColor(pseudo, isSelf=false){
-      if (isSelf) return "rgba(56,189,248,.98)";
-      const t = hashTo01((pseudo || "listener").toLowerCase());
-      const hue = 185 + Math.round(t * 95);
-      return `hsla(${hue}, 92%, 72%, .98)`;
-    }
-
-    function shouldStick(){
-      const threshold = 64;
-      return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
-    }
-
-    function scrollToLatest(force=false){
-      if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    function updateScrollState(){
-      stickToBottom = shouldStick();
-      if (!stickToBottom) scrollBtn.classList.remove("hidden");
-      else scrollBtn.classList.add("hidden");
-    }
-
-    function sysLine(html){
-      const div = document.createElement("div");
-      div.className = "abfSys";
-      div.innerHTML = `<span>${html}</span>`;
-      logEl.appendChild(div);
-      scrollToLatest();
-    }
-
-    function msgBubble({ pseudo, message, created_at }){
-      const isSelf = myPseudo && pseudo === myPseudo;
-
-      const row = document.createElement("div");
-      row.className = "abfMsgRow" + (isSelf ? " self" : "");
-
-      const av = document.createElement("div");
-      av.className = "abfAvatar";
-      av.textContent = initials(pseudo);
-
-      const bubble = document.createElement("div");
-      bubble.className = "abfBubble";
-
-      const meta = document.createElement("div");
-      meta.className = "abfMeta";
-      const t = nowHHMM(created_at);
-
-      const c = nameColor(pseudo, isSelf);
-      meta.innerHTML = `
-        <span class="abfUserDot" style="background:${c}"></span>
-        <span class="abfName" style="color:${c}">${esc(pseudo)}</span>
-        <span class="abfTime">• ${esc(t)}</span>
-      `;
-
-      const txt = document.createElement("div");
-      txt.className = "abfText";
-      txt.innerHTML = esc(message);
-
-      bubble.appendChild(meta);
-      bubble.appendChild(txt);
-
-      row.appendChild(av);
-      row.appendChild(bubble);
-
-      logEl.appendChild(row);
-      scrollToLatest();
-    }
-
-    function touchSeen(pseudo){
-      if (!pseudo) return;
-      seen.set(pseudo, Date.now());
-      pruneSeen();
-      onlineEl.textContent = String(seen.size);
-    }
-
-    function pruneSeen(){
-      const now = Date.now();
-      for (const [k, v] of seen.entries()){
-        if (now - v > ONLINE_TTL_MS) seen.delete(k);
+      function showErr(t=""){
+        if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
+        errEl.classList.remove("hidden");
+        errEl.textContent = t;
       }
-    }
 
-    setInterval(() => {
-      pruneSeen();
-      onlineEl.textContent = seen.size ? String(seen.size) : "—";
-    }, 8000);
+      function nowHHMM(ts){
+        try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+        catch{ return ""; }
+      }
 
-    // ✅ CLEAN RESET when switching rooms
-    function resetRoomUI(){
-      // purge previous room content (this is the core fix)
-      logEl.innerHTML = "";
-      seen.clear();
-      onlineEl.textContent = "—";
-      joined = false;
-      stickToBottom = true;
-      scrollBtn.classList.add("hidden");
-    }
+      function initials(p){
+        const s = (p || "").trim();
+        if (!s) return "AB";
+        const parts = s.split(/\s+/).filter(Boolean);
+        const a = parts[0]?.[0] || "A";
+        const b = parts.length > 1 ? (parts[1]?.[0] || "") : (parts[0]?.[1] || "");
+        return (a + (b || "")).toUpperCase().slice(0,2);
+      }
 
-    function connect(){
-      showErr("");
-      joined = false;
+      function roomLabel(room){
+        const r = String(room || "").toLowerCase();
+        return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
+      }
 
-      try { ws?.close(); } catch {}
-      ws = new WebSocket(WS_URL);
-
-      ws.addEventListener("open", () => {
-        setStatus("Connected", true);
-        sysLine(`connected`);
-
-        // ✅ if user clicked Join while not connected yet
-        if (pendingJoin){
-          try {
-            ws.send(JSON.stringify(pendingJoin));
-          } catch {}
-          pendingJoin = null;
+      function hashTo01(str){
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++){
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
         }
-      });
+        return (h >>> 0) / 4294967295;
+      }
 
-      ws.addEventListener("close", () => {
-        setStatus("Disconnected", false);
-        sysLine(`disconnected`);
-        joined = false;
-      });
+      function nameColor(pseudo, isSelf=false){
+        if (isSelf) return "rgba(56,189,248,.98)";
+        const t = hashTo01((pseudo || "listener").toLowerCase());
+        const hue = 185 + Math.round(t * 95);
+        return `hsla(${hue}, 92%, 72%, .98)`;
+      }
 
-      ws.addEventListener("error", () => {
-        showErr("WebSocket error (TLS/DNS/proxy).");
-      });
+      function updateHeroBadge(room){
+        if (!heroDot || !heroText) return;
+        const r = String(room || "general").toLowerCase();
 
-      ws.addEventListener("message", (e) => {
+        if (r === "onair"){
+          heroText.textContent = "ON AIR";
+          heroDot.style.background = "rgb(103 232 249)"; // cyan-300
+          heroDot.classList.add("animate-pulse");
+        } else if (r === "support"){
+          heroText.textContent = "SUPPORT";
+          heroDot.style.background = "rgb(251 191 36)"; // amber-400
+          heroDot.classList.remove("animate-pulse");
+        } else {
+          heroText.textContent = "GENERAL";
+          heroDot.style.background = "rgb(52 211 153)"; // emerald-400
+          heroDot.classList.remove("animate-pulse");
+        }
+      }
+
+      function updateRoomUI(room){
+        const r = String(room || "general").toLowerCase();
+        roomLabelEl.textContent = roomLabel(r);
+        if (roomPillEl) roomPillEl.setAttribute("data-room", r);
+        updateHeroBadge(r);
+      }
+
+      function shouldStick(){
+        const threshold = 64;
+        return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
+      }
+
+      function scrollToLatest(force=false){
+        if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function updateScrollState(){
+        stickToBottom = shouldStick();
+        if (!stickToBottom) scrollBtn.classList.remove("hidden");
+        else scrollBtn.classList.add("hidden");
+      }
+
+      function sysLine(html){
+        const div = document.createElement("div");
+        div.className = "abfSys";
+        div.innerHTML = `<span>${html}</span>`;
+        logEl.appendChild(div);
+        scrollToLatest();
+      }
+
+      function msgBubble({ pseudo, message, created_at }){
+        const isSelf = myPseudo && pseudo === myPseudo;
+
+        const row = document.createElement("div");
+        row.className = "abfMsgRow" + (isSelf ? " self" : "");
+
+        const av = document.createElement("div");
+        av.className = "abfAvatar";
+        av.textContent = initials(pseudo);
+
+        const bubble = document.createElement("div");
+        bubble.className = "abfBubble";
+
+        const meta = document.createElement("div");
+        meta.className = "abfMeta";
+        const t = nowHHMM(created_at);
+
+        const c = nameColor(pseudo, isSelf);
+
+        /* ✅ time left • pseudo right (with dot) */
+        meta.innerHTML = `
+          <span class="abfTime">${esc(t)}</span>
+          <span class="abfTime">•</span>
+          <span class="abfUserDot" style="background:${c}"></span>
+          <span class="abfName" style="color:${c}">${esc(pseudo)}</span>
+        `;
+
+        const txt = document.createElement("div");
+        txt.className = "abfText";
+        txt.innerHTML = esc(message);
+
+        bubble.appendChild(meta);
+        bubble.appendChild(txt);
+
+        row.appendChild(av);
+        row.appendChild(bubble);
+
+        logEl.appendChild(row);
+        scrollToLatest();
+      }
+
+      function touchSeen(pseudo){
+        if (!pseudo) return;
+        seen.set(pseudo, Date.now());
+        pruneSeen();
+        onlineEl.textContent = String(seen.size);
+      }
+
+      function pruneSeen(){
+        const now = Date.now();
+        for (const [k, v] of seen.entries()){
+          if (now - v > ONLINE_TTL_MS) seen.delete(k);
+        }
+      }
+
+      setInterval(() => {
+        pruneSeen();
+        onlineEl.textContent = seen.size ? String(seen.size) : "—";
+      }, 8000);
+
+      function connect(){
         showErr("");
-        let m; try { m = JSON.parse(e.data); } catch { return; }
+        joined = false;
+        try { ws?.close(); } catch {}
+        ws = new WebSocket(WS_URL);
 
-        if (m.type === "hello") return;
-
-        if (m.type === "joined") {
-          joined = true;
-          currentRoom = m.room || currentRoom;
-          roomLabelEl.textContent = roomLabel(currentRoom);
-
-          sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
-
-          (m.history || []).forEach((h) => {
-            if (!h) return;
-            touchSeen(h.pseudo);
-            msgBubble({
-              pseudo: h.pseudo || "Listener",
-              message: h.message || "",
-              created_at: h.created_at || Date.now(),
-            });
-          });
-
-          stickToBottom = true;
-          scrollToLatest(true);
-          updateScrollState();
-          return;
-        }
-
-        if (m.type === "presence") {
-          const p = m.pseudo || "Listener";
-          const c = nameColor(p, false);
-          const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
-          sysLine(ev);
-          touchSeen(p);
-          return;
-        }
-
-        if (m.type === "msg") {
-          touchSeen(m.pseudo);
-          msgBubble({
-            pseudo: m.pseudo || "Listener",
-            message: m.message || "",
-            created_at: m.created_at || Date.now(),
-          });
-          return;
-        }
-
-        if (m.type === "error") showErr("Error: " + m.code);
-      });
-    }
-
-    function ensureConnected(){
-      if (!ws || ws.readyState !== 1) connect();
-    }
-
-    function join(){
-      showErr("");
-
-      const pseudo = (pseudoEl.value || "").trim() || guest();
-      const room = roomEl.value || "general";
-
-      // ✅ if switching rooms while already in one, reset UI first
-      const switchingRoom = joined && currentRoom && room && currentRoom !== room;
-
-      myPseudo = pseudo;
-      currentRoom = room;
-      roomLabelEl.textContent = roomLabel(currentRoom);
-
-      // ✅ ALWAYS reset the log so the new room doesn't appear "inside" the old one
-      resetRoomUI();
-
-      // optional UX
-      try { emojiPanel.classList.add("hidden"); } catch {}
-
-      // ✅ reconnect when switching rooms (clean server-side state)
-      if (switchingRoom && ws && (ws.readyState === 0 || ws.readyState === 1)){
-        try { ws.close(); } catch {}
-      }
-
-      ensureConnected();
-
-      const payload = { type:"join", pseudo, room };
-
-      // if open → send now, else queue until open
-      if (ws && ws.readyState === 1){
-        try { ws.send(JSON.stringify(payload)); } catch {}
-      } else {
-        pendingJoin = payload;
-      }
-    }
-
-    function send(){
-      showErr("");
-      if (!ws || ws.readyState !== 1) return showErr("Not connected.");
-      if (!joined) return showErr("Join a room first.");
-      const text = (msgEl.value || "").trim();
-      if (!text) return;
-
-      ws.send(JSON.stringify({ type:"msg", message: text }));
-      touchSeen(myPseudo);
-
-      msgEl.value = "";
-      msgEl.focus();
-    }
-
-    const EMOJIS = [
-      "😀","😄","😁","😅","😂","🤣","😊","😍",
-      "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
-      "👍","👎","👏","🙏","🔥","💎","✨","⚡",
-      "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
-      "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
-    ];
-
-    function setEmojiOpen(open){
-      if (open) emojiPanel.classList.remove("hidden");
-      else emojiPanel.classList.add("hidden");
-    }
-
-    function insertAtCursor(input, text){
-      const start = input.selectionStart ?? input.value.length;
-      const end = input.selectionEnd ?? input.value.length;
-      const before = input.value.slice(0, start);
-      const after = input.value.slice(end);
-      input.value = before + text + after;
-      const pos = start + text.length;
-      input.setSelectionRange(pos, pos);
-      input.focus();
-    }
-
-    function buildEmojiGrid(){
-      emojiGrid.innerHTML = "";
-      EMOJIS.forEach((e) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "abfEmojiItem";
-        b.textContent = e;
-        b.addEventListener("click", () => {
-          insertAtCursor(msgEl, e);
-          setEmojiOpen(false);
+        ws.addEventListener("open", () => {
+          setStatus("Connected", true);
+          sysLine(`connected`);
         });
-        emojiGrid.appendChild(b);
+
+        ws.addEventListener("close", () => {
+          setStatus("Disconnected", false);
+          sysLine(`disconnected`);
+          joined = false;
+        });
+
+        ws.addEventListener("error", () => {
+          showErr("WebSocket error (TLS/DNS/proxy).");
+        });
+
+        ws.addEventListener("message", (e) => {
+          showErr("");
+          let m; try { m = JSON.parse(e.data); } catch { return; }
+
+          if (m.type === "hello") return;
+
+          if (m.type === "joined") {
+            joined = true;
+            currentRoom = m.room || currentRoom;
+
+            updateRoomUI(currentRoom);
+
+            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
+
+            (m.history || []).forEach((h) => {
+              if (!h) return;
+              touchSeen(h.pseudo);
+              msgBubble({
+                pseudo: h.pseudo || "Listener",
+                message: h.message || "",
+                created_at: h.created_at || Date.now(),
+              });
+            });
+
+            stickToBottom = true;
+            scrollToLatest(true);
+            updateScrollState();
+            return;
+          }
+
+          if (m.type === "presence") {
+            const p = m.pseudo || "Listener";
+            const c = nameColor(p, false);
+            const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
+            sysLine(ev);
+            touchSeen(p);
+            return;
+          }
+
+          if (m.type === "msg") {
+            touchSeen(m.pseudo);
+            msgBubble({
+              pseudo: m.pseudo || "Listener",
+              message: m.message || "",
+              created_at: m.created_at || Date.now(),
+            });
+            return;
+          }
+
+          if (m.type === "error") showErr("Error: " + m.code);
+        });
+      }
+
+      function ensureConnected(){
+        if (!ws || ws.readyState !== 1) connect();
+      }
+
+      function join(){
+        showErr("");
+        ensureConnected();
+
+        const pseudo = (pseudoEl.value || "").trim() || guest();
+        const room = roomEl.value;
+
+        myPseudo = pseudo;
+        currentRoom = room;
+
+        updateRoomUI(currentRoom);
+
+        seen.clear();
+        onlineEl.textContent = "—";
+
+        setTimeout(() => {
+          if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+          ws.send(JSON.stringify({ type:"join", pseudo, room }));
+        }, 80);
+      }
+
+      function send(){
+        showErr("");
+        if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+        if (!joined) return showErr("Join a room first.");
+        const text = (msgEl.value || "").trim();
+        if (!text) return;
+
+        ws.send(JSON.stringify({ type:"msg", message: text }));
+        touchSeen(myPseudo);
+
+        msgEl.value = "";
+        msgEl.focus();
+      }
+
+      const EMOJIS = [
+        "😀","😄","😁","😅","😂","🤣","😊","😍",
+        "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
+        "👍","👎","👏","🙏","🔥","💎","✨","⚡",
+        "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
+        "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
+      ];
+
+      function setEmojiOpen(open){
+        if (open) emojiPanel.classList.remove("hidden");
+        else emojiPanel.classList.add("hidden");
+      }
+
+      function insertAtCursor(input, text){
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        const before = input.value.slice(0, start);
+        const after = input.value.slice(end);
+        input.value = before + text + after;
+        const pos = start + text.length;
+        input.setSelectionRange(pos, pos);
+        input.focus();
+      }
+
+      function buildEmojiGrid(){
+        emojiGrid.innerHTML = "";
+        EMOJIS.forEach((e) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "abfEmojiItem";
+          b.textContent = e;
+          b.addEventListener("click", () => {
+            insertAtCursor(msgEl, e);
+            setEmojiOpen(false);
+          });
+          emojiGrid.appendChild(b);
+        });
+      }
+
+      buildEmojiGrid();
+
+      emojiBtn.addEventListener("click", () => {
+        const isOpen = !emojiPanel.classList.contains("hidden");
+        setEmojiOpen(!isOpen);
       });
-    }
 
-    buildEmojiGrid();
+      emojiClose.addEventListener("click", () => setEmojiOpen(false));
 
-    emojiBtn.addEventListener("click", () => {
-      const isOpen = !emojiPanel.classList.contains("hidden");
-      setEmojiOpen(!isOpen);
-    });
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (emojiPanel.classList.contains("hidden")) return;
+        if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
+        setEmojiOpen(false);
+      });
 
-    emojiClose.addEventListener("click", () => setEmojiOpen(false));
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setEmojiOpen(false);
+      });
 
-    document.addEventListener("click", (e) => {
-      const t = e.target;
-      if (!t) return;
-      if (emojiPanel.classList.contains("hidden")) return;
-      if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
-      setEmojiOpen(false);
-    });
+      logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") setEmojiOpen(false);
-    });
+      scrollBtn.addEventListener("click", () => {
+        stickToBottom = true;
+        scrollToLatest(true);
+        updateScrollState();
+      });
 
-    logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
+      roomEl.addEventListener("change", () => {
+        updateRoomUI(roomEl.value);
+      });
 
-    scrollBtn.addEventListener("click", () => {
-      stickToBottom = true;
-      scrollToLatest(true);
-      updateScrollState();
-    });
+      joinBtn.addEventListener("click", join);
+      sendBtn.addEventListener("click", send);
+      msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
 
-    roomEl.addEventListener("change", () => {
-      roomLabelEl.textContent = roomLabel(roomEl.value);
-    });
-
-    joinBtn.addEventListener("click", join);
-    sendBtn.addEventListener("click", send);
-    msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
-
-    setStatus("Connecting…", false);
-    connect();
-    requestAnimationFrame(() => updateScrollState());
-  })();
-</script>
+      setStatus("Connecting…", false);
+      updateRoomUI(currentRoom); // ✅ boot UI sync
+      connect();
+      requestAnimationFrame(() => updateScrollState());
+    })();
+  </script>
 </Base>
