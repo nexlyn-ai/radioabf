@@ -4,1121 +4,845 @@ export const prerender = false;
 ---
 
 <Base
-  title="Music Portal — RadioABF"
-  description="Live track history, manual covers priority, and real-time weekly votes by the ABF community."
-  canonical="/music"
+  title="Chat — RadioABF"
+  description="Live chat on RadioABF."
+  canonical="/chat"
   image="/og-image.jpg"
 >
-  <div id="musicPageRoot">
+  <div id="abfChatPageRoot">
+    <!-- ✅ HERO (same typography/structure as /music hero) -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-4 flex-wrap">
           <div class="min-w-0">
             <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
               <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-              Music Portal
+              Live Chat
             </div>
+
+            <!-- ✅ same title scale/typo as /music -->
             <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-			Music & Charts <span class="text-cyan-200">by RadioABF</span>
-			</h1>
-			<p class="text-white/65 mt-3 max-w-2xl">
-			Now playing, full history, and weekly community charts — updated live.
-			</p>
+              RadioABF <span class="text-cyan-200">Chat</span>
+            </h1>
+
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Join the room, talk with listeners, and stay connected during shows.
+            </p>
+
+            <div class="mt-4 text-xs text-white/60">
+              Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+            </div>
+            <div id="abfChatError" class="mt-2 text-xs text-red-300 hidden"></div>
           </div>
+
+          <!-- ✅ right side "pills" (same as /music), keeps ON AIR + online -->
           <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
-            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-              Vote: 1 / track / day
+            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none inline-flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+              ON AIR
             </span>
-            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-              Covers: Directus → iTunes
+
+            <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none inline-flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+              <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
+              online
             </span>
+
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-              Updates every 8s
+              Smart scroll
             </span>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
-      <div class="space-y-6">
-        <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-          <div class="p-5 md:p-6 border-b border-white/10">
-            <div class="flex items-center justify-between gap-4 flex-wrap">
-              <div class="min-w-0">
-                <div class="text-sm text-white/60 uppercase tracking-wider">Now playing</div>
-                <div class="text-xs text-white/50 mt-1">Live metadata • clean titles • voting enabled</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <div
-                  id="npLiveBadge"
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider"
-                >
-                  <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
-                  LIVE
-                </div>
-                <div
-                  id="npCoverSource"
-                  class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums"
-                  aria-label="Cover source"
-                >
-                  —
-                </div>
-                <div
-                  id="npTimeBadge"
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs font-semibold tabular-nums"
-                  aria-label="Now playing time"
-                >
-                  <span class="w-2 h-2 rounded-full bg-cyan-300/80"></span>
-                  <span id="musicTime">--:--</span>
-                </div>
-              </div>
+    <!-- CHAT (unchanged content, premium shell) -->
+    <section class="abfChatShell">
+      <div class="abfChatTopBar">
+        <div class="abfChatTopLeft">
+          <span class="abfRoomPill">#<span id="abfChatRoomLabel">General</span></span>
+          <span class="abfMuted">•</span>
+          <span class="abfMuted">Premium ABF UI</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="abfChatScrollBtn" class="abfBtn abfBtnGhost hidden" title="Scroll to latest">
+            Latest
+          </button>
+        </div>
+      </div>
+
+      <div id="abfChatLog" class="abfChatLog" aria-live="polite"></div>
+
+      <!-- composer -->
+      <div class="abfComposer">
+        <div class="abfEmojiWrap">
+          <button id="abfChatEmojiBtn" class="abfBtn abfBtnGhost abfEmojiBtn" type="button" title="Emoji">
+            😊
+          </button>
+
+          <div id="abfChatEmojiPanel" class="abfEmojiPanel hidden" role="dialog" aria-label="Emoji picker">
+            <div class="abfEmojiHeader">
+              <div class="abfEmojiTitle">Emojis</div>
+              <button id="abfChatEmojiClose" class="abfBtn abfBtnGhost abfEmojiClose" type="button" title="Close">
+                ✕
+              </button>
             </div>
-            <div class="mt-5 rounded-3xl border border-white/10 bg-white/5 overflow-hidden">
-              <div class="p-4 md:p-5 flex flex-col sm:flex-row gap-5 items-center sm:items-stretch">
-                <div class="flex-none">
-                  <div
-                    id="musicCoverWrapper"
-                    class="abfCover w-24 h-24 md:w-28 md:h-28 rounded-2xl border border-white/10 overflow-hidden shadow-xl bg-black/20"
-                  >
-                    <img id="musicCover" class="hidden w-full h-full object-cover" alt="Current cover" />
-                    <div class="abfCoverFallback w-full h-full grid place-items-center">
-                      <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" class="w-16 h-16 opacity-90" />
-                    </div>
-                  </div>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div id="musicArtist" class="text-xl md:text-2xl font-extrabold text-white truncate leading-tight">—</div>
-                  <div id="musicTitle" class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
-                </div>
-                <button
-                  id="nowVoteBtn"
-                  class="voteBtnMini flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white/85 transition inline-flex items-center gap-2"
-                  type="button"
-                  aria-label="Vote for now playing"
-                >
-                  👍 <span class="tabular-nums font-semibold" id="nowVoteCount">0</span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="p-4 md:p-6">
-            <div class="flex items-center justify-between gap-4 mb-4">
-              <div class="text-sm text-white/60 uppercase tracking-wider">Last played</div>
-              <div class="text-xs text-white/50">Tap 👍 to vote</div>
-            </div>
-            <div
-              id="historyTable"
-              class="space-y-3 max-h-[70vh] xl:max-h-none overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
-            ></div>
-            <div id="historyEmpty" class="text-white/55 text-sm hidden">
-              Start the player to load history.
-            </div>
+            <div id="abfChatEmojiGrid" class="abfEmojiGrid"></div>
           </div>
         </div>
 
-        <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-          <div class="p-5 border-b border-white/10">
-            <div class="text-sm text-white/60 uppercase tracking-wider">Search airplay time</div>
-            <div class="text-xs text-white/50 mt-1">Find closest track by date and time</div>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-3">
-              <input id="airDate" type="date" class="abfInput" aria-label="Air date" placeholder="Select date" />
-              <input id="airTime" type="time" class="abfInput" aria-label="Air time" placeholder="Select time" />
-              <button id="airSearchBtn" type="button" class="abfBtn">Search</button>
-            </div>
-            <div id="airSearchResult" class="mt-4"></div>
-          </div>
-        </div>
+        <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Message…" />
+        <button id="abfChatSend" class="abfBtn abfBtnPrimary abfSendBtn">
+          Send
+          <span class="abfBtnShine"></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ✅ Join card moved UNDER hero (keeps everything else intact) -->
+    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
+      <div class="space-y-6">
+        <!-- (empty left column for now — keeps layout similar to other pages) -->
       </div>
 
       <aside class="space-y-6">
         <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-          <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
-            <div class="min-w-0">
-              <div class="text-sm text-white/60 uppercase tracking-wider">Top this week</div>
-              <div class="text-xs text-white/50 mt-1">Community votes • real-time updates</div>
-            </div>
-            <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
-              Week <span id="weekThis" class="tabular-nums">—</span>
-            </div>
+          <div class="p-5 border-b border-white/10">
+            <div class="text-sm text-white/60 uppercase tracking-wider">Join a room</div>
+            <div class="text-xs text-white/50 mt-1">Choose your nickname and salon</div>
           </div>
-          <div class="p-4 md:p-5">
-            <ol id="topThisWeek" class="space-y-3"></ol>
-            <div id="topThisEmpty" class="text-white/55 text-sm hidden">
-              No votes yet — be the first 🙂
+          <div class="p-5">
+            <div class="grid grid-cols-1 gap-3">
+              <input id="abfChatPseudo" class="abfInput" placeholder="Pseudo (optionnel)" maxlength="24" />
+              <select id="abfChatRoom" class="abfInput abfSelect">
+                <option value="general">General</option>
+                <option value="onair">Onair</option>
+                <option value="support">Support</option>
+              </select>
+              <button id="abfChatJoin" class="abfBtn abfBtnPrimaryWide" type="button">
+                Join
+              </button>
             </div>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-          <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
-            <div class="min-w-0">
-              <div class="text-sm text-white/60 uppercase tracking-wider">Last week</div>
-              <div class="text-xs text-white/50 mt-1">Top 5 snapshot</div>
-            </div>
-            <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
-              Week <span id="weekPrev" class="tabular-nums">—</span>
-            </div>
-          </div>
-          <div class="p-4 md:p-5">
-            <ol id="topPrevWeek" class="space-y-3"></ol>
-            <div id="topPrevEmpty" class="text-white/55 text-sm hidden">
-              No data for last week yet.
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
-          <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
-          <div class="p-6 relative">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
-              <div class="text-xs text-white/50 uppercase tracking-wider">How it works</div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
-                  Current <span id="howWeekThis" class="tabular-nums">—</span>
-                </span>
-                <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
-                  Previous <span id="howWeekPrev" class="tabular-nums">—</span>
-                </span>
-              </div>
-            </div>
-            <div class="mt-2 font-extrabold text-lg leading-tight">Community voting + covers system</div>
-            <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2 list-disc pl-5">
-              <li><strong>1 vote per track per day.</strong><br>Every listener helps shape the weekly ABF chart.</li>
-              <li><strong>ABF CLUB shows are not votable.</strong><br>Only individual tracks count toward the charts.</li>
-              <li><strong>Covers system:</strong><br>Directus first when a cover is manually uploaded,<br>otherwise automatic iTunes fallback.</li>
-              <li><strong>Weekly rankings reset every Monday (ISO week).</strong><br>Fresh chart, fresh competition.</li>
-            </ul>
-            <p class="mt-4 text-sm text-white/80 italic">
-              “Your votes power the ABF weekly chart — live, transparent, community-driven.”
-            </p>
           </div>
         </div>
       </aside>
     </section>
-
-    <style>
-      .tabular-nums { font-variant-numeric: tabular-nums; }
-      .scrollbar-thin::-webkit-scrollbar { width: 6px; }
-      .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-      .scrollbar-thin::-webkit-scrollbar-thumb {
-        background-color: rgba(255,255,255,0.2);
-        border-radius: 9999px;
-      }
-      .abfInput {
-        appearance: none;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.9);
-        border-radius: 14px;
-        padding: 10px 12px;
-        font-size: 12px;
-        outline: none;
-      }
-      .abfInput:focus {
-        border-color: rgba(47,194,255,0.35);
-        box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
-      }
-      .abfBtn {
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.9);
-        border-radius: 14px;
-        padding: 10px 14px;
-        font-size: 12px;
-        font-weight: 800;
-        transition: 150ms ease;
-      }
-      .abfBtn:hover { background: rgba(255,255,255,0.10); }
-      .voteBtnMini { white-space: nowrap; }
-      .abfVotedRow {
-        opacity: 0.72;
-        filter: saturate(0.65) brightness(0.92);
-      }
-      .abfVotedRow .voteBtn,
-      .voteBtnMini.is-voted {
-        opacity: 0.55 !important;
-        cursor: not-allowed !important;
-        background: rgba(255,255,255,0.03) !important;
-      }
-      #npCoverSource.directus {
-        background: rgba(168,85,247,0.12);
-        border-color: rgba(168,85,247,0.3);
-        color: rgba(216,180,254,0.95);
-      }
-      #npCoverSource.itunes {
-        background: rgba(236,72,153,0.12);
-        border-color: rgba(236,72,153,0.3);
-        color: rgba(249,168,212,0.95);
-      }
-      #npCoverSource.other,
-      #npCoverSource.none {
-        background: rgba(255,255,255,0.05);
-        border-color: rgba(255,255,255,0.15);
-        color: rgba(255,255,255,0.8);
-      }
-      .no-scrollbar::-webkit-scrollbar{ display:none; }
-      .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-    </style>
-
-    <script is:inline data-astro-rerun>
-(() => {
-  const ROUTE = "/music";
-  const KEY = "__abfMusicPortal";
-  const DAY = 24 * 60 * 60 * 1000;
-  const VOTED_KEY = "abf_voted_tracks";
-  const HISTORY_KEY = "abf_history";
-  const state = (window[KEY] = window[KEY] || {
-    bound: false,
-    timer: null,
-    inFlight: false,
-    lastRenderAt: 0,
-    lastHistory: [],
-    search: { date: "", time: "" },
-    searchBound: false,
-  });
-
-  function loadVotedTracks() {
-    try {
-      const raw = localStorage.getItem(VOTED_KEY) || "{}";
-      const voted = JSON.parse(raw);
-      const now = nowTs();
-      for (const k in voted) {
-        if (now - voted[k] >= DAY) delete voted[k];
-      }
-      localStorage.setItem(VOTED_KEY, JSON.stringify(voted));
-      return voted;
-    } catch {
-      return {};
-    }
-  }
-
-  function markVoted(norm) {
-    const voted = loadVotedTracks();
-    voted[norm] = nowTs();
-    localStorage.setItem(VOTED_KEY, JSON.stringify(voted));
-  }
-
-  function isVoted(norm) {
-    const voted = loadVotedTracks();
-    const last = voted[norm] || 0;
-    return (nowTs() - last) < DAY;
-  }
-
-  function isMusicRoute() { return window.location.pathname === ROUTE; }
-  function getRoot() { return document.getElementById("musicPageRoot"); }
-  function nowTs() { return Date.now(); }
-
-  function getISOWeekId(d = new Date()){
-    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const dayNum = date.getUTCDay() || 7;
-    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-    return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
-  }
-
-  function getPrevISOWeekId(){
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return getISOWeekId(d);
-  }
-
-  function esc(s){
-    return String(s || "")
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#039;");
-  }
-
-  function fmtTime(ts){
-    if (!ts) return "--:--";
-    const d = new Date(ts);
-    const hh = String(d.getHours()).padStart(2,"0");
-    const mm = String(d.getMinutes()).padStart(2,"0");
-    return `${hh}:${mm}`;
-  }
-
-  function stripTitleSuffixes(input){
-    let s = String(input || "").trim();
-    if (!s) return "";
-    const rx = /\s*[\(\[]\s*(?:(?:extended|original|radio|club|album|single|clean|explicit|short|long)\s*)?(?:mix|edit|version|remix|re\-mix|rework|bootleg|instrumental|acapella|a\s*cappella|dub|vip|remaster(?:ed)?|mono|stereo)\b[^)\]]*[\)\]]\s*/gi;
-    s = s.replace(rx, " ");
-    return s.replace(/\s{2,}/g, " ").trim();
-  }
-
-  function splitTrack(entry){
-    const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
-    const idx = s.indexOf(" - ");
-    if (idx === -1) return { artist: s.trim(), title: "" };
-    return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
-  }
-
-  function normKey(artist, title){
-    return (String(artist || "") + " - " + String(title || ""))
-      .toLowerCase()
-      .replace(/\u00A0/g, " ")
-      .replace(/\s+/g, " ")
-      .replace(/[“”"']/g, "")
-      .trim();
-  }
-
-  function rawKey(artist, title){
-    const a = String(artist || "").trim();
-    const t = String(title || "").trim();
-    return `${a} - ${t}`.trim();
-  }
-
-  function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
-
-  function titleCaseEN(input){
-    const s = String(input || "").trim();
-    if (!s) return "—";
-    const lowerWords = new Set([
-      "a","an","the","and","but","or","nor","for","so","yet",
-      "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
-    ]);
-    const parts = s.split(/(\s+)/);
-    return parts.map((chunk, idx) => {
-      if (/^\s+$/.test(chunk)) return chunk;
-      const word = chunk;
-      if (word === word.toUpperCase() && /[A-Z]/.test(word) && word.length <= 6) return word;
-      const hyParts = word.split("-");
-      const rebuilt = hyParts.map((w, hIdx) => {
-        const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
-        const lower = cleaned.toLowerCase();
-        const isFirst = idx === 0 && hIdx === 0;
-        const isLast = idx === parts.length - 1 && hIdx === hyParts.length - 1;
-        if (!cleaned) return w;
-        if (!isFirst && !isLast && lowerWords.has(lower)) return w.replace(cleaned, lower);
-        const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
-        return w.replace(cleaned, cap);
-      });
-      return rebuilt.join("-");
-    }).join("");
-  }
-
-  function isBlockedShow(artist){
-    return /^abf\s*club\b/i.test(String(artist || "").trim());
-  }
-
-  function blockedVoteMsg(){
-    alert("Voting is disabled for ABF CLUB shows. Please vote for tracks only 🙂");
-  }
-
-  function loadHistory(){
-    let raw = [];
-    try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-    catch{ raw = []; }
-    return (raw || []).map((x) => {
-      if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
-      if (x && typeof x === "object" && typeof x.t === "string") {
-        return { t: x.t, ts: Number(x.ts) || 0, cover_url: String(x.cover_url || "") };
-      }
-      return null;
-    }).filter(Boolean);
-  }
-
-  async function fetchServerNowPlaying(limit = 80){
-    try{
-      const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
-      const data = await res.json().catch(()=> ({}));
-      if (!data?.ok) return [];
-      const out = [];
-      if (data?.now){
-        const rawNow = String(data?.now?.raw || "").trim();
-        const a = String(data?.now?.artist || "").trim();
-        const t = String(data?.now?.title || "").trim();
-        const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
-        if (raw){
-          out.push({
-            t: raw,
-            ts: Number(data?.now?.played_at_ms) ||
-                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
-            cover_url: String(data?.now?.cover_url || ""),
-            cover_source: String(data?.now?.cover_source || "")
-          });
-        }
-      }
-      if (Array.isArray(data?.history)){
-        for (const row of data.history){
-          const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
-          if (!raw) continue;
-          out.push({
-            t: raw,
-            ts: Number(row?.played_at_ms) ||
-                (row?.played_at ? new Date(row.played_at).getTime() : 0),
-            cover_url: String(row?.cover_url || ""),
-            cover_source: String(row?.cover_source || "")
-          });
-        }
-      }
-      const seen = new Set();
-      const deduped = [];
-      for (const item of out){
-        const k = String(item.t || "").toLowerCase();
-        if (!k || seen.has(k)) continue;
-        seen.add(k);
-        deduped.push(item);
-      }
-      return deduped.slice(0, limit);
-    }catch{
-      return [];
-    }
-  }
-
-  function setCover(url, root){
-    const img = root?.querySelector("#musicCover");
-    if (!img) return;
-    const u = String(url || "").trim();
-    if (u){
-      img.src = u;
-      img.classList.remove("hidden");
-    } else {
-      img.removeAttribute("src");
-      img.classList.add("hidden");
-    }
-  }
-
-  // ✅ FIX: return "none" when there's no cover URL so the badge can display "No cover"
-  function inferCoverSource(coverUrl, explicitSource){
-    const src = String(explicitSource || "").toLowerCase().trim();
-    const u = String(coverUrl || "").toLowerCase().trim();
-
-    if (src.includes("directus")) return "directus";
-    if (src.includes("itunes") || src.includes("apple")) return "itunes";
-    if (u.includes("mzstatic.com")) return "itunes";
-    if (u.includes("/assets/") || u.includes("directus")) return "directus";
-
-    if (!u) return "none"; // <-- show "No cover"
-    return "other";
-  }
-
-  function setCoverSourceBadge(root, coverUrl, explicitSource){
-    const el = root?.querySelector("#npCoverSource");
-    if (!el) return;
-
-    const kind = inferCoverSource(coverUrl, explicitSource);
-
-    // Always show badge for "none" too
-    el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
-    el.textContent =
-      kind === "directus" ? "Directus cover" :
-      kind === "itunes"   ? "iTunes cover"   :
-      "No cover";
-
-    if (kind === "directus") el.classList.add("directus");
-    if (kind === "itunes") el.classList.add("itunes");
-    if (kind === "other") el.classList.add("other");
-    if (kind === "none") el.classList.add("none");
-
-    el.classList.remove("hidden");
-  }
-
-  function coverHtmlByUrl(url, sizeClass = "w-12 h-12 rounded-2xl"){
-    const u = String(url || "").trim();
-    return `
-      <div class="abfCover ${sizeClass} border border-white/10 overflow-hidden flex-none bg-black/20">
-        <img src="${u ? esc(u) : ""}" alt="" class="${u ? "w-full h-full object-cover" : "hidden"}" loading="lazy" decoding="async" />
-        <div class="abfCoverFallback w-full h-full grid place-items-center">
-          <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" class="w-8 h-8 opacity-90" />
-        </div>
-      </div>
-    `;
-  }
-
-  function LAST_PLAYED_LIMIT(){ return 19; }
-
-  const VOTES_TTL_MS = 10_000;
-  function votesCacheKey(week){ return `votes:${week}`; }
-
-  async function apiGetTopWeek(week){
-    const k = votesCacheKey(week);
-    window.__abfVotesCache = window.__abfVotesCache || {};
-    const c = window.__abfVotesCache[k];
-    const now = nowTs();
-    if (c && now < c.exp) return c.payload || { top: [] };
-    try{
-      const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
-      const data = await res.json().catch(() => ({}));
-      const top = Array.isArray(data?.top) ? data.top : [];
-      const payload = { top };
-      window.__abfVotesCache[k] = { exp: now + VOTES_TTL_MS, payload };
-      return payload;
-    }catch{
-      return { top: [] };
-    }
-  }
-
-  async function apiVote(trackKeyRaw, artist = "", title = ""){
-    const week = getISOWeekId();
-    const res = await fetch("/api/vote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ week, track_key: trackKeyRaw, artist, title }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data?.ok === false){
-      return { ok: false, status: res.status, error: data?.error || `HTTP ${res.status}`, reason: data?.reason || "" };
-    }
-    return { ok: true, status: res.status, week: data?.week || week, count: data?.count };
-  }
-
-  function voteErrorToast(r){
-    if (r?.status === 429){
-      alert("You already voted today. Come back in 24h 🙂");
-      return;
-    }
-    if (r?.status === 409 || r?.reason === "cooldown"){
-      alert("You already voted for this track. Come back in 24h 🙂");
-      return;
-    }
-    alert(`Vote failed: ${r?.error || "Unknown error"}`);
-  }
-
-  function buildVoteIndex(topRows){
-    const exact = Object.create(null);
-    const lower = Object.create(null);
-    const byNorm = Object.create(null);
-    for (const row of (topRows || [])){
-      const tk = String(row?.track_key || "").trim();
-      const c = Number(row?.count || 0);
-      if (!tk) continue;
-      exact[tk] = c;
-      lower[tk.toLowerCase()] = c;
-      const sp = splitTrack(tk);
-      const n = normKey(sp.artist, sp.title);
-      if (n) byNorm[n] = c;
-    }
-    return {
-      getCount(trackKeyRaw, artistMaybe, titleMaybe){
-        const k = String(trackKeyRaw || "").trim();
-        if (k && exact[k] != null) return exact[k];
-        if (k && lower[k.toLowerCase()] != null) return lower[k.toLowerCase()];
-        const sp = k ? splitTrack(k) : { artist: String(artistMaybe||""), title: String(titleMaybe||"") };
-        const n = normKey(sp.artist, sp.title);
-        if (n && byNorm[n] != null) return byNorm[n];
-        return 0;
-      }
-    };
-  }
-
-  function toLocalKey(ts){
-    const d = new Date(ts);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2,"0");
-    const dd = String(d.getDate()).padStart(2,"0");
-    const hh = String(d.getHours()).padStart(2,"0");
-    const mi = String(d.getMinutes()).padStart(2,"0");
-    return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
-  }
-
-function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10) {
-  if (!dateStr || !timeStr) return null;
-
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const [hh, mi] = timeStr.split(":").map(Number);
-  if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
-
-  // ✅ IMPORTANT: inputs date/time are LOCAL time (Europe/Paris), so build a LOCAL timestamp
-  const targetLocal = new Date(y, m - 1, d, hh, mi, 0, 0).getTime();
-  const tol = toleranceMinutes * 60 * 1000;
-
-  let best = null;
-  let bestDelta = Infinity;
-  let sameDayMatches = 0;
-
-  for (const entry of (history || [])) {
-    const ts = Number(entry?.ts || 0);
-    if (!ts) continue;
-
-    // ✅ Compare LOCAL day (not UTC)
-    const ed = new Date(ts);
-    const sameDay =
-      ed.getFullYear() === y &&
-      (ed.getMonth() + 1) === m &&
-      ed.getDate() === d;
-
-    if (!sameDay) continue;
-
-    sameDayMatches++;
-    const delta = Math.abs(ts - targetLocal);
-    if (delta < bestDelta) {
-      bestDelta = delta;
-      best = entry;
-    }
-  }
-
-  if (!best) {
-    console.log("Search:", {
-      dateStr,
-      timeStr,
-      targetLocal: new Date(targetLocal).toString(),
-      sameDayMatches,
-      result: "No match in the same local day",
-    });
-    return null;
-  }
-
-  console.log("Search:", {
-    dateStr,
-    timeStr,
-    targetLocal: new Date(targetLocal).toString(),
-    bestTs: best.ts,
-    bestDeltaMin: Math.round(bestDelta / 60000),
-    sameDayMatches,
-  });
-
-  return { best, bestDelta, within: bestDelta <= tol };
-}
-
-  function renderAirSearchResult(root, payload){
-    const box = root.querySelector("#airSearchResult");
-    if (!box) return;
-    box.classList.remove("hidden");
-    if (!payload){
-      box.innerHTML = `<div class="text-white/60 text-sm">No match found in that day.</div>`;
-      return;
-    }
-    const { best, bestDelta, within } = payload;
-    const t = splitTrack(best.t);
-    const time = fmtTime(best.ts);
-    const d = toLocalKey(best.ts).date;
-    const artist = upperArtist(String(t.artist || "—"));
-    const title = titleCaseEN(stripTitleSuffixes(String(t.title || "—")));
-    const deltaMin = Math.round(bestDelta / 60000);
-    box.innerHTML = `
-      <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <div class="flex items-center justify-between gap-3">
-          <div class="text-xs text-white/60">
-            ${within ? "Closest match found" : `Match found (time difference: ${deltaMin} min)`} •
-            <span class="tabular-nums">${esc(d)} ${esc(time)}</span>
-          </div>
-          <div class="text-xs text-white/45 tabular-nums">Δ ${deltaMin} min</div>
-        </div>
-        <div class="mt-2 font-extrabold text-white truncate">${esc(artist)}</div>
-        <div class="text-white/65 text-sm truncate">${esc(title)}</div>
-      </div>
-    `;
-  }
-
-  function bindAirSearchOnce(root){
-    if (!root || state.searchBound) return;
-    const dateEl = root.querySelector("#airDate");
-    const timeEl = root.querySelector("#airTime");
-    const btnEl = root.querySelector("#airSearchBtn");
-    if (!dateEl || !timeEl || !btnEl) return;
-    if (!dateEl.value){
-      const n = new Date();
-      const yyyy = n.getFullYear();
-      const mm = String(n.getMonth() + 1).padStart(2,"0");
-      const dd = String(n.getDate()).padStart(2,"0");
-      dateEl.value = `${yyyy}-${mm}-${dd}`;
-    }
-    if (!timeEl.value){
-      const n = new Date();
-      timeEl.value = `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
-    }
-    const run = () => {
-      state.search.date = dateEl.value || "";
-      state.search.time = timeEl.value || "";
-      const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 10);
-      renderAirSearchResult(root, payload);
-    };
-    btnEl.addEventListener("click", run);
-    dateEl.addEventListener("change", run);
-    timeEl.addEventListener("change", run);
-    state.searchBound = true;
-    run();
-  }
-
-  function badgeTimeBlue(text){
-    return `
-      <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 text-xs font-semibold tabular-nums">
-        <span class="w-2 h-2 rounded-full bg-cyan-300/80"></span>
-        ${esc(text || "--:--")}
-      </span>
-    `;
-  }
-
-  function rowHtml({ coverUrl, artist, title, time, count, blocked, voted, kNorm, kRaw, aRaw, tRaw }){
-    return `
-      <div class="abfHistoryRow ${voted ? "abfVotedRow" : ""} flex items-center justify-between gap-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          ${coverHtmlByUrl(coverUrl)}
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center justify-between gap-3">
-              <div class="font-extrabold text-white truncate">${esc(artist || "—")}</div>
-              ${badgeTimeBlue(time)}
-            </div>
-            <div class="text-white/65 text-sm truncate">${esc(title || "—")}</div>
-          </div>
-        </div>
-        <button
-          class="voteBtn flex-none bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-3 py-2 text-sm text-white/85 transition"
-          data-norm="${esc(kNorm)}"
-          data-raw="${esc(kRaw)}"
-          data-artist="${esc(aRaw || "")}"
-          data-title="${esc(tRaw || "")}"
-          data-blocked="${blocked ? "1" : "0"}"
-          data-voted="${voted ? "1" : "0"}"
-          type="button"
-          aria-label="Vote"
-          title="${blocked ? "Voting disabled for ABF CLUB" : (voted ? "Already voted today" : "Vote")}"
-          style="${(blocked || voted) ? "opacity:0.55;cursor:not-allowed;" : ""}"
-        >
-          👍 <span class="voteCount tabular-nums">${esc(String(count ?? 0))}</span>
-        </button>
-      </div>
-    `;
-  }
-
-  function rankBadgeClass(rank){
-    if (rank === 1) return "bg-amber-400/15 border-amber-300/30 text-amber-200";
-    if (rank === 2) return "bg-slate-200/10 border-slate-200/25 text-slate-100";
-    if (rank === 3) return "bg-orange-400/15 border-orange-300/30 text-orange-200";
-    return "bg-cyan-500/10 border-cyan-400/20 text-cyan-100";
-  }
-
-  function chartRowHtml(rank, coverUrl, artist, title, count, max){
-    const pct = Math.round((Number(count) / Math.max(1, Number(max))) * 100);
-    return `
-      <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition">
-        <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadgeClass(rank)} flex items-center justify-center text-sm font-extrabold tabular-nums">
-          ${rank}
-        </div>
-        ${coverHtmlByUrl(coverUrl)}
-        <div class="min-w-0 flex-1">
-          <div class="flex items-start gap-3">
-            <div class="min-w-0">
-              <div class="font-extrabold text-white truncate">${esc(artist)}</div>
-              <div class="text-white/65 text-sm truncate">${esc(title)}</div>
-            </div>
-            <div class="ml-auto flex-none text-sm text-white/90 font-extrabold tabular-nums">
-              ${esc(String(count))} <span class="text-white/50 font-normal">votes</span>
-            </div>
-          </div>
-          <div class="mt-3 h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]" style="width:${pct}%"></div>
-          </div>
-        </div>
-      </li>
-    `;
-  }
-
-  async function render(){
-    if (!isMusicRoute()) return;
-    const root = getRoot();
-    if (!root) return;
-    if (state.inFlight) return;
-    state.inFlight = true;
-    try{
-      const artistEl = root.querySelector("#musicArtist");
-      const titleEl = root.querySelector("#musicTitle");
-      const timeEl = root.querySelector("#musicTime");
-      const histEl = root.querySelector("#historyTable");
-      const histEmpty= root.querySelector("#historyEmpty");
-      const nowVoteBtn = root.querySelector("#nowVoteBtn");
-      const nowVoteCount = root.querySelector("#nowVoteCount");
-      const weekThisEl = root.querySelector("#weekThis");
-      const weekPrevEl = root.querySelector("#weekPrev");
-      const howWeekThisEl = root.querySelector("#howWeekThis");
-      const howWeekPrevEl = root.querySelector("#howWeekPrev");
-      const topThisEl = root.querySelector("#topThisWeek");
-      const topPrevEl = root.querySelector("#topPrevWeek");
-      const topThisEmpty = root.querySelector("#topThisEmpty");
-      const topPrevEmpty = root.querySelector("#topPrevEmpty");
-      const week = getISOWeekId();
-      const prevWeek = getPrevISOWeekId();
-      if (weekThisEl) weekThisEl.textContent = week.replace("-W"," W");
-      if (weekPrevEl) weekPrevEl.textContent = prevWeek.replace("-W"," W");
-      if (howWeekThisEl) howWeekThisEl.textContent = week.replace("-W"," W");
-      if (howWeekPrevEl) howWeekPrevEl.textContent = prevWeek.replace("-W"," W");
-      if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
-      let history = await fetchServerNowPlaying(80);
-      if (!history.length) history = loadHistory();
-      state.lastHistory = history || [];
-      if (!history.length){
-        artistEl.textContent = "—";
-        titleEl.textContent = "—";
-        if (timeEl) timeEl.textContent = "--:--";
-        setCover("", root);
-        setCoverSourceBadge(root, "", ""); // will show "No cover"
-        if (histEmpty) histEmpty.classList.remove("hidden");
-        histEl.innerHTML = "";
-        if (nowVoteBtn) nowVoteBtn.style.display = "none";
-        if (topThisEmpty) topThisEmpty.classList.remove("hidden");
-        if (topPrevEmpty) topPrevEmpty.classList.remove("hidden");
-        topThisEl.innerHTML = "";
-        topPrevEl.innerHTML = "";
-        return;
-      }
-      if (histEmpty) histEmpty.classList.add("hidden");
-      const coverByNorm = {};
-      for (const entry of history){
-        const t = splitTrack(entry.t);
-        const n = normKey(t.artist, t.title);
-        const u = String(entry.cover_url || "").trim();
-        if (n && u) coverByNorm[n] = u;
-      }
-      const currentEntry = history[0];
-      const current = splitTrack(currentEntry.t);
-      const nowArtistRaw = String(current.artist || "").trim();
-      const nowTitleRaw0 = String(current.title || "").trim();
-      const nowTitleClean = stripTitleSuffixes(nowTitleRaw0);
-      artistEl.textContent = upperArtist(nowArtistRaw || "—");
-      titleEl.textContent = titleCaseEN(nowTitleClean || "—");
-      const nowTime = fmtTime(currentEntry.ts);
-      if (timeEl) timeEl.textContent = nowTime;
-      const nowCover =
-        String(currentEntry.cover_url || "").trim() ||
-        (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
-      setCover(nowCover, root);
-      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || "")); // ✅ shows "No cover" if empty
-      const [{ top: topThis }, { top: topPrev }] = await Promise.all([
-        apiGetTopWeek(week),
-        apiGetTopWeek(prevWeek),
-      ]);
-      const voteIndex = buildVoteIndex(topThis || []);
-      const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
-      const nowKRaw = rawKey(nowArtistRaw, nowTitleRaw0);
-      const nowCount = voteIndex.getCount(nowKRaw, nowArtistRaw, nowTitleRaw0);
-      const nowBlocked = isBlockedShow(nowArtistRaw);
-      const nowAlready = isVoted(nowKNorm);
-      if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
-      if (nowVoteBtn){
-        nowVoteBtn.style.display = "inline-flex";
-        if (nowBlocked || nowAlready){
-          nowVoteBtn.classList.add("is-voted");
-          nowVoteBtn.style.opacity = "0.55";
-          nowVoteBtn.style.cursor = "not-allowed";
-        } else {
-          nowVoteBtn.classList.remove("is-voted");
-          nowVoteBtn.style.opacity = "1";
-          nowVoteBtn.style.cursor = "pointer";
-        }
-        nowVoteBtn.dataset.raw = nowKRaw;
-        nowVoteBtn.dataset.norm = nowKNorm;
-        nowVoteBtn.dataset.artist = nowArtistRaw;
-        nowVoteBtn.dataset.title = nowTitleRaw0;
-        nowVoteBtn.dataset.blocked = nowBlocked ? "1" : "0";
-        if (!nowVoteBtn.dataset.listenerAttached){
-          nowVoteBtn.dataset.listenerAttached = "true";
-          nowVoteBtn.addEventListener("click", async () => {
-            const root = getRoot();
-            if (!root) return;
-            const btn = root.querySelector("#nowVoteBtn");
-            if (!btn) return;
-            const blocked = btn.dataset.blocked === "1";
-            const kNorm = btn.dataset.norm || "";
-            const kRaw = btn.dataset.raw || "";
-            const a = btn.dataset.artist || "";
-            const t = btn.dataset.title || "";
-            if (blocked){
-              blockedVoteMsg();
-              return;
-            }
-            if (isVoted(kNorm)){
-              alert("You already voted for this track. Come back in 24h 🙂");
-              btn.classList.add("is-voted");
-              btn.style.opacity = "0.55";
-              btn.style.cursor = "not-allowed";
-              return;
-            }
-            btn.style.opacity = "0.7";
-            btn.style.cursor = "wait";
-            const r = await apiVote(kRaw, a, t);
-            if (!r.ok){
-              btn.style.opacity = "1";
-              btn.style.cursor = "pointer";
-              voteErrorToast(r);
-              return;
-            }
-            markVoted(kNorm);
-            const ck = votesCacheKey(getISOWeekId());
-            if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
-            btn.classList.add("is-voted");
-            btn.style.opacity = "0.55";
-            btn.style.cursor = "not-allowed";
-            render();
-          });
-        }
-      }
-      const limit = LAST_PLAYED_LIMIT();
-      const rows = history.slice(1, 1 + limit);
-      histEl.innerHTML = rows.map((entry) => {
-        const t = splitTrack(entry.t);
-        const aRaw = String(t.artist || "").trim();
-        const tRaw0 = String(t.title || "").trim();
-        const tClean = stripTitleSuffixes(tRaw0);
-        const kNorm = normKey(aRaw, tRaw0);
-        const kRaw = rawKey(aRaw, tRaw0);
-        const coverUrl =
-          String(entry.cover_url || "").trim() ||
-          (coverByNorm[normKey(aRaw, tRaw0)] || "");
-        const count = voteIndex.getCount(kRaw, aRaw, tRaw0);
-        const blocked = isBlockedShow(aRaw);
-        const voted = isVoted(kNorm);
-        return rowHtml({
-          coverUrl,
-          artist: upperArtist(aRaw || "—"),
-          title: titleCaseEN(tClean || "—"),
-          time: fmtTime(entry.ts),
-          count,
-          blocked,
-          voted,
-          kNorm,
-          kRaw,
-          aRaw,
-          tRaw: tRaw0
-        });
-      }).join("");
-      histEl.querySelectorAll(".voteBtn").forEach((btn) => {
-        const kNorm = btn.dataset.norm || "";
-        const kRaw = btn.dataset.raw || "";
-        const a = btn.dataset.artist || "";
-        const t0 = btn.dataset.title || "";
-        const blocked = btn.dataset.blocked === "1";
-        const countEl = btn.querySelector(".voteCount");
-        const c = voteIndex.getCount(kRaw, a, t0);
-        if (countEl) countEl.textContent = String(c);
-        const row = btn.closest(".abfHistoryRow");
-        const already = isVoted(kNorm);
-        if (blocked || already){
-          btn.classList.add("is-voted");
-          btn.style.opacity = "0.55";
-          btn.style.cursor = "not-allowed";
-          if (row) row.classList.add("abfVotedRow");
-          btn.onclick = blocked ? blockedVoteMsg : () => {
-            alert("You already voted for this track. Come back in 24h 🙂");
-          };
-        } else {
-          btn.classList.remove("is-voted");
-          btn.style.opacity = "1";
-          btn.style.cursor = "pointer";
-          if (row) row.classList.remove("abfVotedRow");
-          btn.onclick = async () => {
-            if (isVoted(kNorm)){
-              alert("You already voted for this track. Come back in 24h 🙂");
-              btn.classList.add("is-voted");
-              btn.style.opacity = "0.55";
-              btn.style.cursor = "not-allowed";
-              if (row) row.classList.add("abfVotedRow");
-              return;
-            }
-            btn.style.opacity = "0.7";
-            btn.style.cursor = "wait";
-            const r = await apiVote(kRaw || rawKey(a, t0), a, t0);
-            if (!r.ok){
-              btn.style.opacity = "1";
-              btn.style.cursor = "pointer";
-              voteErrorToast(r);
-              return;
-            }
-            markVoted(kNorm);
-            const ck = votesCacheKey(week);
-            if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
-            btn.classList.add("is-voted");
-            btn.style.opacity = "0.55";
-            btn.style.cursor = "not-allowed";
-            if (row) row.classList.add("abfVotedRow");
-            render();
-          };
-        }
-      });
-      const topThisSafe = (topThis || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
-        .slice(0, 10);
-      if (!topThisSafe.length){
-        if (topThisEmpty) topThisEmpty.classList.remove("hidden");
-        topThisEl.innerHTML = "";
-      } else {
-        if (topThisEmpty) topThisEmpty.classList.add("hidden");
-        const max = Math.max(...topThisSafe.map(x => Number(x.count || 0)), 1);
-        topThisEl.innerHTML = topThisSafe.map((row, idx) => {
-          const tk = String(row.track_key || "");
-          const sp = splitTrack(tk);
-          const aRaw = String(row.artist || "").trim() || sp.artist || "—";
-          const tRaw = String(row.title || "").trim() || sp.title || "—";
-          const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
-          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), titleCaseEN(stripTitleSuffixes(tRaw)), Number(row.count || 0), max);
-        }).join("");
-      }
-      const topPrevSafe = (topPrev || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
-        .slice(0, 5);
-      if (!topPrevSafe.length){
-        if (topPrevEmpty) topPrevEmpty.classList.remove("hidden");
-        topPrevEl.innerHTML = "";
-      } else {
-        if (topPrevEmpty) topPrevEmpty.classList.add("hidden");
-        const maxP = Math.max(...topPrevSafe.map(x => Number(x.count || 0)), 1);
-        topPrevEl.innerHTML = topPrevSafe.map((row, idx) => {
-          const tk = String(row.track_key || "");
-          const sp = splitTrack(tk);
-          const aRaw = String(row.artist || "").trim() || sp.artist || "—";
-          const tRaw = String(row.title || "").trim() || sp.title || "—";
-          const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
-          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), titleCaseEN(stripTitleSuffixes(tRaw)), Number(row.count || 0), maxP);
-        }).join("");
-      }
-      if (state.search?.date && state.search?.time){
-        const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 10);
-        renderAirSearchResult(root, payload);
-      }
-      state.lastRenderAt = nowTs();
-    } finally {
-      state.inFlight = false;
-    }
-  }
-
-  function stopTimer(){
-    if (state.timer) clearInterval(state.timer);
-    state.timer = null;
-  }
-
-  function startTimer(){
-    stopTimer();
-    state.timer = setInterval(() => {
-      if (state.inFlight) return;
-      render();
-    }, 8000);
-  }
-
-  function init(){
-    if (!isMusicRoute()) return;
-    const root = getRoot();
-    if (!root) return;
-    bindAirSearchOnce(root);
-    render();
-    startTimer();
-  }
-
-  if (!state.bound){
-    state.bound = true;
-    document.addEventListener("astro:page-load", init);
-    document.addEventListener("astro:after-swap", init);
-    document.addEventListener("astro:before-swap", () => {
-      stopTimer();
-    });
-    window.addEventListener("abf:history-updated", () => {
-      if (!isMusicRoute()) return;
-      render();
-    });
-    window.addEventListener("resize", () => {
-      if (!isMusicRoute()) return;
-      const t = nowTs();
-      if (t - state.lastRenderAt > 400) render();
-    });
-  }
-  init();
-})();
-    </script>
   </div>
+
+  <style>
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
+    /* =========================
+       Chat UI (scoped)
+       ========================= */
+    #abfChatPageRoot{
+      --abf-border: rgba(255,255,255,.10);
+      --abf-text: rgba(232,242,255,.95);
+      --abf-muted: rgba(232,242,255,.62);
+      --abf-warn: rgba(255,148,148,.92);
+      color: var(--abf-text);
+    }
+    #abfChatPageRoot .hidden{ display:none !important; }
+
+    /* Inputs/buttons aligned with site ABF inputs */
+    #abfChatPageRoot .abfInput{
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      outline: none;
+      transition: 150ms ease;
+      height: 42px;
+    }
+    #abfChatPageRoot .abfInput:focus{
+      border-color: rgba(47,194,255,0.35);
+      box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
+    }
+    #abfChatPageRoot .abfSelect{
+      background: rgba(10,31,51,.72);
+      color: rgba(232,242,255,.95);
+    }
+    #abfChatPageRoot select.abfSelect option{
+      background: #0B1726;
+      color: rgba(232,242,255,.95);
+    }
+
+    #abfChatPageRoot .abfBtn{
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      transition: 150ms ease;
+      position: relative;
+      user-select: none;
+      height: 42px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+    }
+    #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+    #abfChatPageRoot .abfBtnPrimary{
+      background: rgba(56,189,248,.16);
+      border-color: rgba(56,189,248,.22);
+      overflow:hidden;
+    }
+    #abfChatPageRoot .abfBtnPrimary:hover{
+      background: rgba(56,189,248,.22);
+      border-color: rgba(56,189,248,.30);
+    }
+    #abfChatPageRoot .abfBtnPrimaryWide{ width: 100%; }
+    #abfChatPageRoot .abfBtnGhost{
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.12);
+      font-weight: 800;
+      padding: 0 12px;
+      height: 36px;
+      border-radius: 12px;
+    }
+
+    #abfChatPageRoot .abfBtnShine{
+      pointer-events:none;
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(600px 100px at 0% 50%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
+      transform: translateX(-60%);
+      opacity: .55;
+      animation: abfShine 4.6s ease-in-out infinite;
+    }
+    @keyframes abfShine{
+      0%, 20%{ transform: translateX(-60%); opacity:.30; }
+      50%{ transform: translateX(40%); opacity:.65; }
+      80%,100%{ transform: translateX(120%); opacity:.20; }
+    }
+
+    /* Chat shell */
+    #abfChatPageRoot .abfChatShell{
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(5,11,20,.64);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      overflow: hidden;
+    }
+    #abfChatPageRoot .abfChatTopBar{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+    }
+    #abfChatPageRoot .abfChatTopLeft{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    #abfChatPageRoot .abfRoomPill{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,.18);
+      background: rgba(56,189,248,.10);
+      color: rgba(232,242,255,.90);
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
+
+    /* Chat log */
+    #abfChatPageRoot .abfChatLog{
+      height: min(52vh, 420px);
+      overflow: auto;
+      padding: 12px 12px 14px;
+      background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.10));
+      scroll-behavior: smooth;
+    }
+
+    /* Messages */
+    #abfChatPageRoot .abfMsgRow{
+      display:flex;
+      gap: 10px;
+      align-items: flex-end;
+      margin: 0 0 12px;
+      animation: abfIn .18s ease-out both;
+    }
+    @keyframes abfIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+    #abfChatPageRoot .abfMsgRow.self{
+      flex-direction: row-reverse;
+    }
+
+    #abfChatPageRoot .abfAvatar{
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+      flex: 0 0 34px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+      letter-spacing: .02em;
+      color: rgba(232,242,255,.92);
+      background: rgba(255,255,255,.08);
+    }
+    #abfChatPageRoot .abfMsgRow.self .abfAvatar{
+      background: rgba(56,189,248,.14);
+      border-color: rgba(56,189,248,.22);
+    }
+
+    #abfChatPageRoot .abfBubble{
+      max-width: min(720px, 82%);
+      border-radius: 18px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 12px 40px rgba(0,0,0,.22);
+      position: relative;
+    }
+    #abfChatPageRoot .abfMsgRow.self .abfBubble{
+      background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.08));
+      border-color: rgba(56,189,248,.26);
+    }
+
+    #abfChatPageRoot .abfMeta{
+      display:flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+      color: rgba(232,242,255,.70);
+      font-size: 12px;
+    }
+    #abfChatPageRoot .abfUserDot{
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      display:inline-block;
+      box-shadow: 0 0 0 5px rgba(255,255,255,.06);
+      transform: translateY(1px);
+      flex: 0 0 auto;
+    }
+    #abfChatPageRoot .abfName{ font-weight: 900; }
+    #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
+    #abfChatPageRoot .abfText{
+      font-size: 14px;
+      line-height: 1.35;
+      color: rgba(232,242,255,.92);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    /* System lines */
+    #abfChatPageRoot .abfSys{
+      margin: 8px 0 12px;
+      text-align: center;
+      color: rgba(232,242,255,.55);
+      font-size: 12px;
+      letter-spacing: .02em;
+    }
+    #abfChatPageRoot .abfSys span{
+      display:inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+    }
+
+    /* Composer */
+    #abfChatPageRoot .abfComposer{
+      display:flex;
+      gap: 10px;
+      padding: 8px 10px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      position: sticky;
+      bottom: 0;
+      align-items: center;
+    }
+    #abfChatPageRoot .abfComposerInput{
+      flex: 1;
+      height: 42px;
+      border-radius: 14px;
+    }
+    #abfChatPageRoot .abfSendBtn{
+      height: 42px;
+      border-radius: 14px;
+      padding: 0 16px;
+    }
+
+    /* Emoji picker */
+    #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
+    #abfChatPageRoot .abfEmojiBtn{
+      height: 42px;
+      width: 46px;
+      padding: 0;
+      border-radius: 14px;
+      font-size: 18px;
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #abfChatPageRoot .abfEmojiPanel{
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      width: 280px;
+      max-width: min(78vw, 320px);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(5,11,20,.92);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      overflow: hidden;
+      z-index: 30;
+    }
+    #abfChatPageRoot .abfEmojiHeader{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    #abfChatPageRoot .abfEmojiTitle{
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(232,242,255,.72);
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfEmojiClose{
+      height: 30px;
+      width: 34px;
+      padding: 0;
+      border-radius: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfEmojiGrid{
+      padding: 10px;
+      display:grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    #abfChatPageRoot .abfEmojiItem{
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor: pointer;
+      user-select: none;
+      font-size: 18px;
+      transition: transform .10s ease, background .10s ease, border-color .10s ease;
+    }
+    #abfChatPageRoot .abfEmojiItem:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.08);
+      border-color: rgba(56,189,248,.28);
+    }
+
+    @media (max-width: 640px){
+      #abfChatPageRoot .abfChatLog{ padding: 12px 10px 14px; height: min(56vh, 440px); }
+      #abfChatPageRoot .abfAvatar{ width: 30px; height: 30px; flex-basis: 30px; font-size: 12px; }
+      #abfChatPageRoot .abfBubble{ max-width: 86%; }
+      #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      #abfChatPageRoot .abfMsgRow{ animation: none !important; }
+      #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
+    }
+  </style>
+
+  <script is:inline>
+    (() => {
+      const WS_URL = "wss://chat.radioabf.com/ws";
+      const $ = (id) => document.getElementById(id);
+
+      const pseudoEl = $("abfChatPseudo");
+      const roomEl = $("abfChatRoom");
+      const joinBtn = $("abfChatJoin");
+      const logEl = $("abfChatLog");
+      const msgEl = $("abfChatMsg");
+      const sendBtn = $("abfChatSend");
+      const statusEl = $("abfChatStatus");
+      const errEl = $("abfChatError");
+      const roomLabelEl = $("abfChatRoomLabel");
+      const scrollBtn = $("abfChatScrollBtn");
+      const onlineEl = $("abfChatOnline");
+
+      // emoji UI
+      const emojiBtn = $("abfChatEmojiBtn");
+      const emojiPanel = $("abfChatEmojiPanel");
+      const emojiGrid = $("abfChatEmojiGrid");
+      const emojiClose = $("abfChatEmojiClose");
+
+      let ws = null;
+      let joined = false;
+      let myPseudo = "";
+      let currentRoom = roomEl.value || "general";
+      let stickToBottom = true;
+
+      // online estimate (unique pseudos seen recently)
+      const ONLINE_TTL_MS = 1000 * 60 * 3; // 3 minutes
+      const seen = new Map(); // pseudo -> lastSeenTs
+
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+
+      const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
+
+      function setStatus(t, ok=false){
+        statusEl.textContent = t;
+        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
+      }
+
+      function showErr(t=""){
+        if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
+        errEl.classList.remove("hidden");
+        errEl.textContent = t;
+      }
+
+      function nowHHMM(ts){
+        try{
+          return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+        }catch{ return ""; }
+      }
+
+      function initials(p){
+        const s = (p || "").trim();
+        if (!s) return "AB";
+        const parts = s.split(/\s+/).filter(Boolean);
+        const a = parts[0]?.[0] || "A";
+        const b = parts.length > 1 ? (parts[1]?.[0] || "") : (parts[0]?.[1] || "");
+        return (a + (b || "")).toUpperCase().slice(0,2);
+      }
+
+      function roomLabel(room){
+        const r = String(room || "").toLowerCase();
+        return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
+      }
+
+      function hashTo01(str){
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++){
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0) / 4294967295;
+      }
+
+      // ABF palette (cyan -> violet), self stays cyan
+      function nameColor(pseudo, isSelf=false){
+        if (isSelf) return "rgba(56,189,248,.98)";
+        const t = hashTo01((pseudo || "listener").toLowerCase());
+        const hue = 185 + Math.round(t * 95); // 185..280
+        return `hsla(${hue}, 92%, 72%, .98)`;
+      }
+
+      function shouldStick(){
+        const threshold = 64;
+        return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
+      }
+
+      function scrollToLatest(force=false){
+        if (force || stickToBottom){
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+      }
+
+      function updateScrollState(){
+        stickToBottom = shouldStick();
+        if (!stickToBottom) scrollBtn.classList.remove("hidden");
+        else scrollBtn.classList.add("hidden");
+      }
+
+      function sysLine(html){
+        const div = document.createElement("div");
+        div.className = "abfSys";
+        div.innerHTML = `<span>${html}</span>`;
+        logEl.appendChild(div);
+        scrollToLatest();
+      }
+
+      function msgBubble({ pseudo, message, created_at }){
+        const isSelf = myPseudo && pseudo === myPseudo;
+
+        const row = document.createElement("div");
+        row.className = "abfMsgRow" + (isSelf ? " self" : "");
+
+        const av = document.createElement("div");
+        av.className = "abfAvatar";
+        av.textContent = initials(pseudo);
+
+        const bubble = document.createElement("div");
+        bubble.className = "abfBubble";
+
+        const meta = document.createElement("div");
+        meta.className = "abfMeta";
+        const t = nowHHMM(created_at);
+
+        const c = nameColor(pseudo, isSelf);
+        meta.innerHTML = `
+          <span class="abfUserDot" style="background:${c}"></span>
+          <span class="abfName" style="color:${c}">${esc(pseudo)}</span>
+          <span class="abfTime">• ${esc(t)}</span>
+        `;
+
+        const txt = document.createElement("div");
+        txt.className = "abfText";
+        txt.innerHTML = esc(message);
+
+        bubble.appendChild(meta);
+        bubble.appendChild(txt);
+
+        row.appendChild(av);
+        row.appendChild(bubble);
+
+        logEl.appendChild(row);
+        scrollToLatest();
+      }
+
+      function touchSeen(pseudo){
+        if (!pseudo) return;
+        seen.set(pseudo, Date.now());
+        pruneSeen();
+        onlineEl.textContent = String(seen.size);
+      }
+
+      function pruneSeen(){
+        const now = Date.now();
+        for (const [k, v] of seen.entries()){
+          if (now - v > ONLINE_TTL_MS) seen.delete(k);
+        }
+      }
+
+      setInterval(() => {
+        pruneSeen();
+        onlineEl.textContent = seen.size ? String(seen.size) : "—";
+      }, 8000);
+
+      function connect(){
+        showErr("");
+        joined = false;
+
+        try { ws?.close(); } catch {}
+        ws = new WebSocket(WS_URL);
+
+        ws.addEventListener("open", () => {
+          setStatus("Connected", true);
+          sysLine(`connected`);
+        });
+
+        ws.addEventListener("close", () => {
+          setStatus("Disconnected", false);
+          sysLine(`disconnected`);
+          joined = false;
+        });
+
+        ws.addEventListener("error", () => {
+          showErr("WebSocket error (TLS/DNS/proxy).");
+        });
+
+        ws.addEventListener("message", (e) => {
+          showErr("");
+          let m; try { m = JSON.parse(e.data); } catch { return; }
+
+          if (m.type === "hello") return;
+
+          if (m.type === "joined") {
+            joined = true;
+            currentRoom = m.room || currentRoom;
+            roomLabelEl.textContent = roomLabel(currentRoom);
+
+            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
+
+            (m.history || []).forEach((h) => {
+              if (!h) return;
+              touchSeen(h.pseudo);
+              msgBubble({
+                pseudo: h.pseudo || "Listener",
+                message: h.message || "",
+                created_at: h.created_at || Date.now(),
+              });
+            });
+
+            stickToBottom = true;
+            scrollToLatest(true);
+            updateScrollState();
+            return;
+          }
+
+          if (m.type === "presence") {
+            const p = m.pseudo || "Listener";
+            const c = nameColor(p, false);
+            const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
+            sysLine(ev);
+            touchSeen(p);
+            return;
+          }
+
+          if (m.type === "msg") {
+            touchSeen(m.pseudo);
+            msgBubble({
+              pseudo: m.pseudo || "Listener",
+              message: m.message || "",
+              created_at: m.created_at || Date.now(),
+            });
+            return;
+          }
+
+          if (m.type === "error") showErr("Error: " + m.code);
+        });
+      }
+
+      function ensureConnected(){
+        if (!ws || ws.readyState !== 1) connect();
+      }
+
+      function join(){
+        showErr("");
+        ensureConnected();
+
+        const pseudo = (pseudoEl.value || "").trim() || guest();
+        const room = roomEl.value;
+
+        myPseudo = pseudo;
+        currentRoom = room;
+
+        roomLabelEl.textContent = roomLabel(currentRoom);
+
+        seen.clear();
+        onlineEl.textContent = "—";
+
+        setTimeout(() => {
+          if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+          ws.send(JSON.stringify({ type:"join", pseudo, room }));
+        }, 80);
+      }
+
+      function send(){
+        showErr("");
+        if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+        if (!joined) return showErr("Join a room first.");
+        const text = (msgEl.value || "").trim();
+        if (!text) return;
+
+        ws.send(JSON.stringify({ type:"msg", message: text }));
+        touchSeen(myPseudo);
+
+        msgEl.value = "";
+        msgEl.focus();
+      }
+
+      // Emoji picker
+      const EMOJIS = [
+        "😀","😄","😁","😅","😂","🤣","😊","😍",
+        "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
+        "👍","👎","👏","🙏","🔥","💎","✨","⚡",
+        "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
+        "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
+      ];
+
+      function setEmojiOpen(open){
+        if (open) emojiPanel.classList.remove("hidden");
+        else emojiPanel.classList.add("hidden");
+      }
+
+      function insertAtCursor(input, text){
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        const before = input.value.slice(0, start);
+        const after = input.value.slice(end);
+        input.value = before + text + after;
+        const pos = start + text.length;
+        input.setSelectionRange(pos, pos);
+        input.focus();
+      }
+
+      function buildEmojiGrid(){
+        emojiGrid.innerHTML = "";
+        EMOJIS.forEach((e) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "abfEmojiItem";
+          b.textContent = e;
+          b.addEventListener("click", () => {
+            insertAtCursor(msgEl, e);
+            setEmojiOpen(false);
+          });
+          emojiGrid.appendChild(b);
+        });
+      }
+
+      buildEmojiGrid();
+
+      emojiBtn.addEventListener("click", () => {
+        const isOpen = !emojiPanel.classList.contains("hidden");
+        setEmojiOpen(!isOpen);
+      });
+
+      emojiClose.addEventListener("click", () => setEmojiOpen(false));
+
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (emojiPanel.classList.contains("hidden")) return;
+        if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
+        setEmojiOpen(false);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setEmojiOpen(false);
+      });
+
+      // listeners
+      logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
+
+      scrollBtn.addEventListener("click", () => {
+        stickToBottom = true;
+        scrollToLatest(true);
+        updateScrollState();
+      });
+
+      roomEl.addEventListener("change", () => {
+        roomLabelEl.textContent = roomLabel(roomEl.value);
+      });
+
+      joinBtn.addEventListener("click", join);
+      sendBtn.addEventListener("click", send);
+      msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+
+      setStatus("Connecting…", false);
+      connect();
+      requestAnimationFrame(() => updateScrollState());
+    })();
+  </script>
 </Base>
