@@ -26,6 +26,7 @@ const selectedCat = catParamRaw === "radio" || catParamRaw === "music" ? catPara
 // YEAR FILTER
 const yearParam = url.searchParams.get("year");
 const selectedYear = yearParam && yearParam !== "all" ? Number(yearParam) : null;
+
 const yearStart = selectedYear
   ? new Date(Date.UTC(selectedYear, 0, 1, 0, 0, 0)).toISOString()
   : null;
@@ -38,7 +39,6 @@ const yearFilterParams = selectedYear
       // branch 0: published_at in [start, end)
       `filter[_or][0][_and][0][published_at][_gte]=${encodeURIComponent(yearStart!)}`,
       `filter[_or][0][_and][1][published_at][_lt]=${encodeURIComponent(yearEnd!)}`,
-
       // branch 1: published_at is null AND date_created in [start, end)
       `filter[_or][1][_and][0][published_at][_null]=true`,
       `filter[_or][1][_and][1][date_created][_gte]=${encodeURIComponent(yearStart!)}`,
@@ -127,6 +127,7 @@ function normalizeAggregateCount(v: any): number {
 
 const total = normalizeAggregateCount(totalResp?.data?.[0]?.count);
 const pageCount = Math.max(1, Math.ceil(total / PER_PAGE));
+
 const prev = page > 1 ? page - 1 : null;
 const next = page < pageCount ? page + 1 : null;
 
@@ -162,12 +163,11 @@ const fmtDate = (iso?: string | null) => {
 
 // CACHE
 const hasQuery = url.searchParams.toString().length > 0;
-
 // ✅ Cache only the plain /news (no filters)
 if (!hasQuery) {
   Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
 } else {
-  // ✅ Never cache filtered/paginated HTML (prevents “All” being reused)
+  // ✅ Never cache filtered/paginated HTML
   Astro.response.headers.set("Cache-Control", "no-store");
 }
 
@@ -197,7 +197,7 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
   </Fragment>
 
   <div class="abfPageWrap">
-    <!-- HERO – inchangé -->
+    <!-- HERO -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-7 sm:p-10 mb-10 shadow-2xl">
       <div class="absolute -top-40 -left-40 w-[520px] h-[520px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
       <div class="absolute -bottom-40 -right-40 w-[520px] h-[520px] bg-blue-600/20 rounded-full blur-[120px]"></div>
@@ -221,26 +221,25 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
               <a class={`catPill ${selectedCat === "music" ? "active" : ""}`} href={linkWithCat("music")}>Music</a>
             </div>
           </div>
+
           <!-- YEAR FILTER -->
           <div class="flex items-center gap-2 flex-none">
             <span class="text-xs text-white/55 uppercase tracking-wider">Year</span>
             <select
-  id="yearSelect"
-  class="px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-white text-sm"
->
-  <option value="all" selected={!selectedYear}>All</option>
-  {years.map((y) => (
-    <option value={String(y)} selected={selectedYear === y}>
-      {y}
-    </option>
-  ))}
-</select>
+              id="yearSelect"
+              class="px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-white text-sm"
+            >
+              <option value="all">All</option>
+              {years.map((y) => (
+                <option value={String(y)}>{y}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- GRANDE CARD UNIQUE pour les news + pagination -->
+    <!-- NEWS GRID + PAGINATION -->
     <section class="bigCard">
       <div class="glow a"></div>
       <div class="glow b"></div>
@@ -304,41 +303,56 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     </section>
   </div>
 
-<script type="module">
-  import { navigate } from "astro:transitions/client";
+  <script type="module">
+    import { navigate } from "astro:transitions/client";
 
-  function bindNewsUI() {
-    const sel = document.getElementById("yearSelect");
-    if (sel && !sel.dataset.bound) {
-      sel.dataset.bound = "1";
+    function syncAndBindYearSelect() {
+      const sel = document.getElementById("yearSelect");
+      if (!sel) return;
 
-      // ✅ force la valeur en fonction de l'URL (important après swap)
-      const sp = new URLSearchParams(window.location.search);
-      sel.value = sp.get("year") || "all";
+      // 1. Toujours forcer la valeur depuis l'URL actuelle
+      const params = new URLSearchParams(window.location.search);
+      const currentYear = params.get("year") || "all";
+      sel.value = currentYear;
 
-      sel.addEventListener("change", (e) => {
-        const year = e.target.value; // "all" ou "2025"
-        const u = new URL(window.location.href);
+      // 2. Gestion du changement
+      const changeHandler = (e) => {
+        const year = e.target.value;
 
-        // toujours revenir à page 1 quand on change de filtre
+        const u = new URL(window.location);
         u.searchParams.set("page", "1");
 
-        if (year === "all") u.searchParams.delete("year");
-        else u.searchParams.set("year", year);
+        if (year === "all") {
+          u.searchParams.delete("year");
+        } else {
+          u.searchParams.set("year", year);
+        }
 
-        // ✅ navigation SPA si possible, sinon fallback
-        const href = u.pathname + "?" + u.searchParams.toString();
+        const href = u.pathname + u.search.toString();
+
         try {
-          navigate(href);
+          navigate(href, { history: "replace" });
         } catch {
           window.location.href = href;
         }
-      });
+      };
+
+      // Éviter les doublons d'écouteurs
+      sel.removeEventListener("change", changeHandler);
+      sel.addEventListener("change", changeHandler);
     }
 
-    // back-to-top bump (inchangé)
+    // Appel initial
+    syncAndBindYearSelect();
+
+    // Après chaque transition Astro
+    document.addEventListener("astro:page-load", syncAndBindYearSelect);
+    document.addEventListener("astro:after-swap", syncAndBindYearSelect);
+
+    // Back-to-top bump (inchangé)
     const btt = document.getElementById("backToTopBtn");
     const pager = document.getElementById("pagerBar");
+
     function bumpBtt() {
       if (!btt || !pager) return;
       const r = pager.getBoundingClientRect();
@@ -347,15 +361,11 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       const distFromBottom = vh - r.bottom;
       btt.style.transform = distFromBottom < overlapZone ? "translateY(-78px)" : "";
     }
+
     bumpBtt();
     window.addEventListener("scroll", bumpBtt, { passive: true });
     window.addEventListener("resize", bumpBtt);
-  }
-
-  bindNewsUI();
-  document.addEventListener("astro:page-load", bindNewsUI);
-  document.addEventListener("astro:after-swap", bindNewsUI);
-</script>
+  </script>
 
   <style is:inline>
     .abfPageWrap {
@@ -364,8 +374,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       margin-left: auto;
       margin-right: auto;
     }
-
-    /* ── GRANDE CARD ── */
     .bigCard {
       position: relative;
       overflow: hidden;
@@ -376,11 +384,9 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       padding: 28px;
       box-shadow: 0 24px 70px rgba(0,0,0,.38);
     }
-
     @media (min-width: 640px) {
       .bigCard { padding: 36px; }
     }
-
     .glow {
       position: absolute;
       width: 520px;
@@ -392,8 +398,6 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     }
     .glow.a { top: -220px; left: -220px; background: rgba(34,211,238,.28); }
     .glow.b { bottom: -220px; right: -220px; background: rgba(59,130,246,.28); }
-
-    /* Le reste de tes styles reste identique */
     #yearSelect option{
       background: #050B14;
       color: #fff;
