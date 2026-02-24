@@ -105,15 +105,14 @@ export async function POST({ request }: { request: Request }) {
   const country_code = String(body.country_code || "").trim().toUpperCase().slice(0, 2);
   const message = String(body.message || "").trim().slice(0, 1200);
 
-  const payload = {
-    status: "published",
-    name,
-    email,
-    country_code: country_code || null,
-    mix_link,
-    ...socials,
-    message: message || null,
-  };
+const payload = {
+  name,
+  email,
+  country_code: country_code || null,
+  mix_link,
+  ...socials,
+  message: message || null,
+};
 
   const url = `${String(DIRECTUS_URL).replace(/\/+$/, "")}/items/${encodeURIComponent(COLLECTION)}`;
 
