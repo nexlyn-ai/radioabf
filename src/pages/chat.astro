@@ -10,42 +10,51 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- HERO agrandi / style music-videos -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-8 md:p-10 mb-6 shadow-2xl">
-      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/20 blur-[140px]"></div>
-      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[580px] h-[580px] rounded-full bg-blue-600/20 blur-[140px]"></div>
+    <!-- HERO -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-4 sm:p-5 mb-4 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
       <div class="relative z-10">
         <div class="flex items-start justify-between gap-6 flex-wrap">
           <!-- LEFT -->
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-4 text-base sm:text-lg tracking-widest text-white/60 uppercase mb-4">
-              <span class="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></span>
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
               Live Chat
             </div>
-            <h1 class="text-5xl sm:text-6xl md:text-7xl font-black leading-tight tracking-tight">
-              RadioABF <span class="text-cyan-300/95 drop-shadow-[0_4px_12px_rgba(34,211,238,0.4)]">Chat</span>
+
+            <!-- ✅ title bigger like /music (without enlarging hero) -->
+            <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight">
+              RadioABF <span class="text-cyan-200">Chat</span>
             </h1>
-            <p class="text-white/70 mt-4 md:mt-5 text-lg sm:text-xl max-w-3xl leading-relaxed">
-              Rejoins le salon, discute avec les auditeurs et reste connecté pendant les lives.
+
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Join the room, talk with listeners, and stay connected during shows.
             </p>
-            <div class="flex items-center gap-3 flex-wrap mt-5 md:mt-6">
-              <span class="text-sm sm:text-base text-white/80 border border-white/15 bg-white/8 px-4 py-2.5 rounded-2xl inline-flex items-center gap-2.5 shadow-sm">
-                <span class="w-3 h-3 rounded-full bg-cyan-300 animate-pulse"></span>
+
+            <div class="flex items-center gap-2 flex-wrap mt-4">
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
                 ON AIR
               </span>
-              <span class="text-sm sm:text-base text-white/80 border border-white/15 bg-white/8 px-4 py-2.5 rounded-2xl inline-flex items-center gap-2.5 shadow-sm">
-                <span class="w-3 h-3 rounded-full bg-emerald-400/90"></span>
-                <span id="abfChatOnline" class="tabular-nums font-bold">—</span>
+
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+                <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
                 online
               </span>
-              <span class="text-sm sm:text-base text-white/75 border border-white/15 bg-white/6 px-4 py-2.5 rounded-2xl shadow-sm">
+
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
                 Smart scroll
               </span>
-              <span class="text-sm text-white/70">
-                Status: <span id="abfChatStatus" class="font-bold">Connecting…</span>
+
+              <span class="text-xs text-white/60">
+                Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
               </span>
             </div>
-            <div id="abfChatError" class="mt-4 text-sm text-red-300 hidden"></div>
+
+            <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
           </div>
 
           <!-- RIGHT: Join card -->
@@ -54,6 +63,7 @@ export const prerender = false;
               <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
                 Join a room
               </div>
+
               <div class="space-y-3">
                 <input
                   id="abfChatPseudo"
@@ -61,11 +71,13 @@ export const prerender = false;
                   placeholder="Pseudo (optionnel)"
                   maxlength="24"
                 />
+
                 <select id="abfChatRoom" class="abfInput w-full abfSelect">
                   <option value="general">General</option>
                   <option value="onair">Onair</option>
                   <option value="support">Support</option>
                 </select>
+
                 <button id="abfChatJoin" class="abfBtn abfBtnPrimary w-full" type="button">
                   Join
                   <span class="abfBtnShine"></span>
@@ -81,6 +93,7 @@ export const prerender = false;
     <section class="abfChatShell">
       <div class="abfChatTopBar">
         <div class="abfChatTopLeft">
+          <!-- ✅ top bar badge in “#room” mode -->
           <span class="abfRoomPill"><span id="abfChatRoomPill">#general</span></span>
           <span class="abfMuted">•</span>
           <span class="abfMuted">Premium ABF UI</span>
@@ -89,13 +102,16 @@ export const prerender = false;
           Latest
         </button>
       </div>
+
       <div id="abfChatLog" class="abfChatLog" aria-live="polite"></div>
 
+      <!-- composer -->
       <div class="abfComposer">
         <div class="abfEmojiWrap">
           <button id="abfChatEmojiBtn" class="abfBtn abfBtnGhost abfEmojiBtn" type="button" title="Emoji">
             😊
           </button>
+
           <div id="abfChatEmojiPanel" class="abfEmojiPanel hidden" role="dialog" aria-label="Emoji picker">
             <div class="abfEmojiHeader">
               <div class="abfEmojiTitle">Emojis</div>
@@ -106,6 +122,8 @@ export const prerender = false;
             <div id="abfChatEmojiGrid" class="abfEmojiGrid"></div>
           </div>
         </div>
+
+        <!-- ✅ smaller font inside prompt input -->
         <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Message…" />
         <button id="abfChatSend" class="abfBtn abfBtnPrimary abfSendBtn">
           Send
@@ -117,19 +135,22 @@ export const prerender = false;
 
   <style>
     .tabular-nums { font-variant-numeric: tabular-nums; }
-    .no-scrollbar::-webkit-scrollbar { display:none; }
-    .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
 
-    #abfChatPageRoot {
+    /* =========================
+       Chat UI (scoped)
+       ========================= */
+    #abfChatPageRoot{
       --abf-border: rgba(255,255,255,.10);
       --abf-text: rgba(232,242,255,.95);
       --abf-muted: rgba(232,242,255,.62);
       color: var(--abf-text);
     }
+    #abfChatPageRoot .hidden{ display:none !important; }
 
-    #abfChatPageRoot .hidden { display:none !important; }
-
-    #abfChatPageRoot .abfInput {
+    /* Inputs aligned with site */
+    #abfChatPageRoot .abfInput{
       appearance: none;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
@@ -141,23 +162,21 @@ export const prerender = false;
       transition: 150ms ease;
       height: 40px;
     }
-
-    #abfChatPageRoot .abfInput:focus {
+    #abfChatPageRoot .abfInput:focus{
       border-color: rgba(47,194,255,0.35);
       box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
     }
-
-    #abfChatPageRoot .abfSelect {
+    #abfChatPageRoot .abfSelect{
       background: rgba(10,31,51,.72);
       color: rgba(232,242,255,.95);
     }
-
-    #abfChatPageRoot select.abfSelect option {
+    #abfChatPageRoot select.abfSelect option{
       background: #0B1726;
       color: rgba(232,242,255,.95);
     }
 
-    #abfChatPageRoot .abfBtn {
+    /* Buttons + shine effects */
+    #abfChatPageRoot .abfBtn{
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.9);
@@ -169,30 +188,28 @@ export const prerender = false;
       position: relative;
       user-select: none;
       height: 40px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       gap: 8px;
       overflow: hidden;
     }
+    #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+    #abfChatPageRoot .abfBtn:active{ transform: translateY(1px); }
 
-    #abfChatPageRoot .abfBtn:hover { background: rgba(255,255,255,0.10); }
-    #abfChatPageRoot .abfBtn:active { transform: translateY(1px); }
-
-    #abfChatPageRoot .abfBtnPrimary {
+    #abfChatPageRoot .abfBtnPrimary{
       background: linear-gradient(180deg, rgba(56,189,248,.24), rgba(56,189,248,.12));
       border-color: rgba(56,189,248,.30);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
-
-    #abfChatPageRoot .abfBtnPrimary:hover {
+    #abfChatPageRoot .abfBtnPrimary:hover{
       background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(56,189,248,.14));
       border-color: rgba(56,189,248,.42);
       box-shadow: 0 14px 40px rgba(0,0,0,.32);
       transform: translateY(-1px);
     }
 
-    #abfChatPageRoot .abfBtnGhost {
+    #abfChatPageRoot .abfBtnGhost{
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.12);
       font-weight: 800;
@@ -200,29 +217,28 @@ export const prerender = false;
       height: 34px;
       border-radius: 12px;
     }
-
-    #abfChatPageRoot .abfBtnGhost:hover {
+    #abfChatPageRoot .abfBtnGhost:hover{
       background: rgba(255,255,255,.08);
       transform: translateY(-1px);
     }
 
-    #abfChatPageRoot .abfBtnShine {
-      pointer-events: none;
-      position: absolute;
-      inset: -2px;
+    #abfChatPageRoot .abfBtnShine{
+      pointer-events:none;
+      position:absolute;
+      inset:-2px;
       background: radial-gradient(600px 100px at 0% 50%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
       transform: translateX(-60%);
       opacity: .55;
       animation: abfShine 4.6s ease-in-out infinite;
     }
-
-    @keyframes abfShine {
-      0%, 20% { transform: translateX(-60%); opacity:.30; }
-      50% { transform: translateX(40%); opacity:.65; }
-      80%,100% { transform: translateX(120%); opacity:.20; }
+    @keyframes abfShine{
+      0%, 20%{ transform: translateX(-60%); opacity:.30; }
+      50%{ transform: translateX(40%); opacity:.65; }
+      80%,100%{ transform: translateX(120%); opacity:.20; }
     }
 
-    #abfChatPageRoot .abfChatShell {
+    /* Chat shell */
+    #abfChatPageRoot .abfChatShell{
       border-radius: 22px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(5,11,20,.64);
@@ -230,28 +246,25 @@ export const prerender = false;
       box-shadow: 0 18px 60px rgba(0,0,0,.45);
       overflow: hidden;
     }
-
-    #abfChatPageRoot .abfChatTopBar {
-      display: flex;
-      align-items: center;
+    #abfChatPageRoot .abfChatTopBar{
+      display:flex;
+      align-items:center;
       justify-content: space-between;
       gap: 10px;
       padding: 6px 10px;
       border-bottom: 1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.14);
     }
-
-    #abfChatPageRoot .abfChatTopLeft {
-      display: flex;
-      align-items: center;
+    #abfChatPageRoot .abfChatTopLeft{
+      display:flex;
+      align-items:center;
       gap: 10px;
       flex-wrap: wrap;
       font-size: 12px;
     }
-
-    #abfChatPageRoot .abfRoomPill {
-      display: inline-flex;
-      align-items: center;
+    #abfChatPageRoot .abfRoomPill{
+      display:inline-flex;
+      align-items:center;
       gap: 6px;
       padding: 6px 10px;
       border-radius: 999px;
@@ -260,10 +273,10 @@ export const prerender = false;
       color: rgba(232,242,255,.90);
       font-weight: 900;
     }
+    #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
-    #abfChatPageRoot .abfMuted { color: rgba(232,242,255,.55); }
-
-    #abfChatPageRoot .abfChatLog {
+    /* ✅ reduce chat window height */
+    #abfChatPageRoot .abfChatLog{
       height: min(44vh, 330px);
       overflow: auto;
       padding: 10px 12px 12px;
@@ -271,24 +284,24 @@ export const prerender = false;
       scroll-behavior: smooth;
     }
 
-    #abfChatPageRoot .abfMsgRow {
-      display: flex;
+    /* Messages */
+    #abfChatPageRoot .abfMsgRow{
+      display:flex;
       gap: 10px;
-      align-items: flex-start;
+      align-items: flex-end;
       margin: 0 0 10px;
       animation: abfIn .18s ease-out both;
     }
-
-    @keyframes abfIn {
-      from { opacity:0; transform: translateY(6px); }
-      to { opacity:1; transform: translateY(0); }
+    @keyframes abfIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
     }
+    #abfChatPageRoot .abfMsgRow.self{ flex-direction: row-reverse; }
 
-    #abfChatPageRoot .abfMsgRow.self { flex-direction: row-reverse; }
+    /* ✅ remove initials avatars (LM etc.) */
+    #abfChatPageRoot .abfAvatar{ display:none !important; }
 
-    #abfChatPageRoot .abfAvatar { display:none !important; }
-
-    #abfChatPageRoot .abfBubble {
+    #abfChatPageRoot .abfBubble{
       width: 100%;
       max-width: min(760px, 96%);
       border-radius: 16px;
@@ -297,75 +310,66 @@ export const prerender = false;
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
     }
-
-    #abfChatPageRoot .abfMsgRow.self .abfBubble {
+    #abfChatPageRoot .abfMsgRow.self .abfBubble{
       background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.08));
       border-color: rgba(56,189,248,.26);
     }
 
-    /* Ligne message unique + wrap naturel */
-    #abfChatPageRoot .abfLine {
-      display: flex;
+    /* ✅ meta + message on ONE line:
+       time (left) • pseudo (right) — message in the middle */
+    #abfChatPageRoot .abfLine{
+      display:grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
       align-items: baseline;
-      gap: 8px;
-      font-size: 11px;
+      font-size: 12px;
       color: rgba(232,242,255,.72);
-      flex-wrap: wrap;
-      line-height: 1.35;
+      white-space: nowrap;
     }
-
-    #abfChatPageRoot .abfTime {
+    #abfChatPageRoot .abfTime{
       color: rgba(232,242,255,.50);
       font-weight: 800;
       letter-spacing: .02em;
-      flex-shrink: 0;
-      min-width: 42px;
     }
-
-    #abfChatPageRoot .abfPseudo {
+    #abfChatPageRoot .abfPseudo{
       font-weight: 900;
       color: rgba(232,242,255,.92);
-      flex-shrink: 0;
     }
-
-    #abfChatPageRoot .abfPseudo::before {
+    #abfChatPageRoot .abfPseudo::before{
       content: "• ";
       color: rgba(232,242,255,.42);
       font-weight: 900;
     }
-
-    #abfChatPageRoot .abfText {
-      font-size: 10.5px;           /* police réduite */
-      line-height: 1.35;
+    /* ✅ smaller chat text inside bubbles */
+    #abfChatPageRoot .abfText{
+      font-size: 12px;          /* reduced */
+      line-height: 1.25;
       color: rgba(232,242,255,.92);
-      flex: 1 1 auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-wrap: break-word;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
     }
+    #abfChatPageRoot .abfMsgRow.self .abfText{ color: rgba(232,242,255,.95); }
 
-    #abfChatPageRoot .abfMsgRow.self .abfText {
-      color: rgba(232,242,255,.95);
-    }
-
-    #abfChatPageRoot .abfSys {
+    #abfChatPageRoot .abfSys{
       margin: 8px 0 10px;
       text-align: center;
       color: rgba(232,242,255,.55);
-      font-size: 10.5px;
+      font-size: 12px;
       letter-spacing: .02em;
     }
-
-    #abfChatPageRoot .abfSys span {
-      display: inline-block;
+    #abfChatPageRoot .abfSys span{
+      display:inline-block;
       padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
     }
 
-    #abfChatPageRoot .abfComposer {
-      display: flex;
+    /* Composer */
+    #abfChatPageRoot .abfComposer{
+      display:flex;
       gap: 10px;
       padding: 8px 10px;
       border-top: 1px solid rgba(255,255,255,.10);
@@ -374,35 +378,33 @@ export const prerender = false;
       bottom: 0;
       align-items: center;
     }
-
-    #abfChatPageRoot .abfComposerInput {
+    /* ✅ smaller input font in prompt */
+    #abfChatPageRoot .abfComposerInput{
       flex: 1;
       height: 40px;
       border-radius: 14px;
-      font-size: 11px;
+      font-size: 11px;          /* reduced */
       padding: 10px 12px;
     }
-
-    #abfChatPageRoot .abfSendBtn {
+    #abfChatPageRoot .abfSendBtn{
       height: 40px;
       border-radius: 14px;
       padding: 0 16px;
     }
 
-    #abfChatPageRoot .abfEmojiWrap { position: relative; flex: 0 0 auto; }
-
-    #abfChatPageRoot .abfEmojiBtn {
+    /* Emoji picker */
+    #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
+    #abfChatPageRoot .abfEmojiBtn{
       height: 40px;
       width: 46px;
       padding: 0;
       border-radius: 14px;
       font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
-
-    #abfChatPageRoot .abfEmojiPanel {
+    #abfChatPageRoot .abfEmojiPanel{
       position: absolute;
       bottom: calc(100% + 10px);
       left: 0;
@@ -416,71 +418,65 @@ export const prerender = false;
       overflow: hidden;
       z-index: 30;
     }
-
-    #abfChatPageRoot .abfEmojiHeader {
-      display: flex;
-      align-items: center;
+    #abfChatPageRoot .abfEmojiHeader{
+      display:flex;
+      align-items:center;
       justify-content: space-between;
       padding: 8px 10px;
       border-bottom: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.04);
     }
-
-    #abfChatPageRoot .abfEmojiTitle {
+    #abfChatPageRoot .abfEmojiTitle{
       font-size: 12px;
       letter-spacing: .14em;
       text-transform: uppercase;
       color: rgba(232,242,255,.72);
       font-weight: 900;
     }
-
-    #abfChatPageRoot .abfEmojiClose {
+    #abfChatPageRoot .abfEmojiClose{
       height: 30px;
       width: 34px;
       padding: 0;
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       font-weight: 900;
     }
-
-    #abfChatPageRoot .abfEmojiGrid {
+    #abfChatPageRoot .abfEmojiGrid{
       padding: 10px;
-      display: grid;
+      display:grid;
       grid-template-columns: repeat(8, 1fr);
       gap: 6px;
     }
-
-    #abfChatPageRoot .abfEmojiItem {
+    #abfChatPageRoot .abfEmojiItem{
       height: 30px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       cursor: pointer;
       user-select: none;
       font-size: 18px;
       transition: transform .10s ease, background .10s ease, border-color .10s ease;
     }
-
-    #abfChatPageRoot .abfEmojiItem:hover {
+    #abfChatPageRoot .abfEmojiItem:hover{
       transform: translateY(-1px);
       background: rgba(255,255,255,.08);
       border-color: rgba(56,189,248,.28);
     }
 
-    @media (max-width: 640px) {
-      #abfChatPageRoot .abfChatLog { padding: 10px 10px 12px; height: min(48vh, 360px); }
-      #abfChatPageRoot .abfEmojiGrid { grid-template-columns: repeat(7, 1fr); }
+    @media (max-width: 640px){
+      #abfChatPageRoot .abfChatLog{ padding: 10px 10px 12px; height: min(48vh, 360px); }
+      #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      #abfChatPageRoot .abfMsgRow { animation: none !important; }
-      #abfChatPageRoot .abfChatLog { scroll-behavior: auto; }
-      #abfChatPageRoot .abfBtnShine { animation: none !important; }
+    @media (prefers-reduced-motion: reduce){
+      #abfChatPageRoot .abfMsgRow{ animation: none !important; }
+      #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
+      #abfChatPageRoot .abfBtnShine{ animation: none !important; }
     }
   </style>
 
@@ -500,6 +496,7 @@ export const prerender = false;
       const scrollBtn = $("abfChatScrollBtn");
       const onlineEl = $("abfChatOnline");
       const roomPillEl = $("abfChatRoomPill");
+
       const emojiBtn = $("abfChatEmojiBtn");
       const emojiPanel = $("abfChatEmojiPanel");
       const emojiGrid = $("abfChatEmojiGrid");
@@ -507,6 +504,7 @@ export const prerender = false;
 
       if (!pseudoEl || !roomEl || !joinBtn || !logEl || !msgEl || !sendBtn || !statusEl || !errEl || !roomPillEl) return;
 
+      // ---- persistent singleton (survives Astro swaps) ----
       const G = (window.__abfChat = window.__abfChat || {});
       G.ws = G.ws || null;
       G.joined = G.joined || false;
@@ -517,10 +515,14 @@ export const prerender = false;
       G.recoTimer = G.recoTimer || 0;
       G.recoTry = G.recoTry || 0;
       G.lastVisibleTry = G.lastVisibleTry || 0;
+
       const ONLINE_TTL_MS = 1000 * 60 * 3;
       G.seen = G.seen || new Map();
 
-      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+
       const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
 
       function setStatus(t, ok=false){
@@ -572,12 +574,16 @@ export const prerender = false;
         scrollToLatest();
       }
 
+      // ✅ one-line message: time (left) / message (middle) / • pseudo (right)
       function msgBubble({ pseudo, message, created_at }){
         const isSelf = G.myPseudo && pseudo === G.myPseudo;
+
         const row = document.createElement("div");
         row.className = "abfMsgRow" + (isSelf ? " self" : "");
+
         const bubble = document.createElement("div");
         bubble.className = "abfBubble";
+
         const line = document.createElement("div");
         line.className = "abfLine";
 
@@ -599,6 +605,7 @@ export const prerender = false;
 
         bubble.appendChild(line);
         row.appendChild(bubble);
+
         logEl.appendChild(row);
         scrollToLatest();
       }
@@ -641,25 +648,26 @@ export const prerender = false;
       }
 
       function connectFresh(showConnectedLine=true){
-        if (G.ws) {
-          try { G.ws.close(); } catch(e) {}
-          G.ws = null;
-        }
+        // ✅ avoid connect loops:
+        // - if ws already OPEN or CONNECTING, do nothing
+        if (G.ws && (G.ws.readyState === WebSocket.OPEN || G.ws.readyState === WebSocket.CONNECTING)) return;
 
+        clearReconnect();
+        G.manualClosed = false;
+        G.joined = false;
+
+        try { G.ws?.close(); } catch {}
         G.ws = new WebSocket(WS_URL);
+
         setStatus("Connecting…", false);
 
         G.ws.addEventListener("open", () => {
           setStatus("Connected", true);
           if (showConnectedLine) sysLine(`connected`);
-
-          if (G.myPseudo && G.currentRoom && G.ws.readyState === WebSocket.OPEN) {
+          // If user had already joined earlier and comes back, auto re-join same room
+          if (G.myPseudo && G.currentRoom){
             try {
-              G.ws.send(JSON.stringify({
-                type: "join",
-                pseudo: G.myPseudo,
-                room: G.currentRoom
-              }));
+              G.ws.send(JSON.stringify({ type:"join", pseudo: G.myPseudo, room: G.currentRoom }));
             } catch {}
           }
         });
@@ -673,20 +681,21 @@ export const prerender = false;
 
         G.ws.addEventListener("error", () => {
           showErr("WebSocket error (TLS/DNS/proxy).");
-          scheduleReconnect();
         });
 
         G.ws.addEventListener("message", (e) => {
           showErr("");
-          let m;
-          try { m = JSON.parse(e.data); } catch { return; }
+          let m; try { m = JSON.parse(e.data); } catch { return; }
 
           if (m.type === "hello") return;
+
           if (m.type === "joined") {
             G.joined = true;
             G.currentRoom = m.room || G.currentRoom;
             setRoomPill(G.currentRoom);
+
             sysLine(`joined <b>${esc(`#${roomLabel(G.currentRoom)}`)}</b> as <b>${esc(m.pseudo)}</b>`);
+
             (m.history || []).forEach((h) => {
               if (!h) return;
               touchSeen(h.pseudo);
@@ -696,17 +705,20 @@ export const prerender = false;
                 created_at: h.created_at || Date.now(),
               });
             });
+
             G.stickToBottom = true;
             scrollToLatest(true);
             updateScrollState();
             return;
           }
+
           if (m.type === "presence") {
             const p = m.pseudo || "Listener";
             sysLine(`${esc(p)} ${esc(m.event)}`);
             touchSeen(p);
             return;
           }
+
           if (m.type === "msg") {
             touchSeen(m.pseudo);
             msgBubble({
@@ -716,6 +728,7 @@ export const prerender = false;
             });
             return;
           }
+
           if (m.type === "error") showErr("Error: " + m.code);
         });
       }
@@ -727,18 +740,22 @@ export const prerender = false;
       function join(){
         showErr("");
         ensureConnected();
+
         const pseudo = (pseudoEl.value || "").trim() || guest();
         const room = roomEl.value || "general";
 
+        // Update state first
         G.myPseudo = pseudo;
         G.currentRoom = room;
         setRoomPill(G.currentRoom);
 
+        // Reset UI for the room
         logEl.innerHTML = "";
         G.seen.clear();
         onlineEl.textContent = "—";
         G.joined = false;
 
+        // Send join when socket is open
         const sendJoin = () => {
           if (!G.ws || G.ws.readyState !== WebSocket.OPEN) return;
           try { G.ws.send(JSON.stringify({ type:"join", pseudo, room })); } catch {}
@@ -747,6 +764,7 @@ export const prerender = false;
         if (G.ws && G.ws.readyState === WebSocket.OPEN) {
           sendJoin();
         } else {
+          // wait for open (no reconnect loop)
           const t0 = Date.now();
           const tick = () => {
             if (!G.ws) return;
@@ -762,10 +780,13 @@ export const prerender = false;
         showErr("");
         if (!G.ws || G.ws.readyState !== WebSocket.OPEN) return showErr("Not connected.");
         if (!G.joined) return showErr("Join a room first.");
+
         const text = (msgEl.value || "").trim();
         if (!text) return;
+
         try { G.ws.send(JSON.stringify({ type:"msg", message: text })); } catch {}
         touchSeen(G.myPseudo);
+
         msgEl.value = "";
         msgEl.focus();
       }
@@ -816,9 +837,7 @@ export const prerender = false;
         const isOpen = !emojiPanel.classList.contains("hidden");
         setEmojiOpen(!isOpen);
       });
-
       emojiClose.addEventListener("click", () => setEmojiOpen(false));
-
       document.addEventListener("click", (e) => {
         const t = e.target;
         if (!t) return;
@@ -826,13 +845,11 @@ export const prerender = false;
         if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
         setEmojiOpen(false);
       });
-
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") setEmojiOpen(false);
       });
 
       logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
-
       scrollBtn.addEventListener("click", () => {
         G.stickToBottom = true;
         scrollToLatest(true);
@@ -845,26 +862,30 @@ export const prerender = false;
       sendBtn.addEventListener("click", send);
       msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
 
+      // ✅ initial pill
       setRoomPill(G.currentRoom || roomEl.value || "general");
 
+      // ✅ connect once (no “disconnect/reconnect” loops)
       connectFresh(true);
 
+      // ✅ Reconnect when coming back to tab ONLY if CLOSED or missing
       function onVisible(){
         if (document.visibilityState !== "visible") return;
         const now = Date.now();
-        if (now - G.lastVisibleTry < 1400) return;
+        if (now - (G.lastVisibleTry || 0) < 1200) return;
         G.lastVisibleTry = now;
-        if (!G.ws || G.ws.readyState >= WebSocket.CLOSING) {
+
+        if (!G.ws || G.ws.readyState === WebSocket.CLOSED){
           connectFresh(false);
         }
       }
-
       document.addEventListener("visibilitychange", onVisible);
 
+      // ✅ Cleanup on pagehide (avoid ghost sockets / duplicate connections)
       window.addEventListener("pagehide", () => {
         G.manualClosed = true;
         clearReconnect();
-        try { if (G.ws) G.ws.close(); } catch {}
+        try { G.ws && G.ws.close(); } catch {}
       });
 
       requestAnimationFrame(() => updateScrollState());
