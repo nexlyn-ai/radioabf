@@ -228,18 +228,23 @@ export const prerender = false;
     @keyframes abfIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
     #abfChatPageRoot .abfMsgRow.self{ justify-content:flex-end; }
 
-    /* ✅ one-line bubbles (no wrap) */
+    /* ✅ HARD LOCK: always ONE line */
     #abfChatPageRoot .abfBubble{
       max-width: min(760px, 96%);
-      border-radius:16px;
-      padding:8px 10px;
-      border:1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
-      display:flex;
-      align-items:center;
-      gap:10px;
-      white-space: nowrap;
+
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 10px !important;
+
+      white-space: nowrap !important;
+      overflow: hidden !important;
     }
     #abfChatPageRoot .abfMsgRow.self .abfBubble{
       background: linear-gradient(180deg, rgba(56,189,248,.16), rgba(56,189,248,.07));
@@ -247,9 +252,13 @@ export const prerender = false;
     }
 
     #abfChatPageRoot .abfMeta{
-      display:inline-flex; align-items:center; gap:7px;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+      margin: 0 !important;
       font-size:10px; color: rgba(232,242,255,.70);
-      white-space:nowrap; flex:0 0 auto;
     }
     #abfChatPageRoot .abfUserDot{
       width:7px; height:7px; border-radius:99px; display:inline-block;
@@ -259,15 +268,16 @@ export const prerender = false;
     #abfChatPageRoot .abfName{ font-weight:900; }
     #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight:700; }
 
-    /* ✅ one-line text, INLINE (prevents line break) */
     #abfChatPageRoot .abfText{
-      display:inline;
+      display: inline !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+
       font-size:12px; line-height:1.25;
       color: rgba(232,242,255,.92);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex:1 1 auto; min-width:0;
     }
 
     #abfChatPageRoot .abfSys{
@@ -498,12 +508,11 @@ export const prerender = false;
           const bubble = document.createElement("div");
           bubble.className = "abfBubble";
 
-          const meta = document.createElement("div");
+          const meta = document.createElement("span");
           meta.className = "abfMeta";
           const t = nowHHMM(created_at);
           const c = nameColor(pseudo, isSelf);
 
-          // ✅ exact 1-line meta: 22:45 • Loic Molo :
           meta.innerHTML = `
             <span class="abfTime">${esc(t)}</span>
             <span class="abfTime">•</span>
@@ -512,10 +521,9 @@ export const prerender = false;
             <span class="abfTime">:</span>
           `;
 
-          // ✅ IMPORTANT: inline SPAN, not DIV (prevents line-break)
           const txt = document.createElement("span");
           txt.className = "abfText";
-          txt.textContent = String(message || "");
+          txt.textContent = String(message || "").replace(/[\r\n]+/g, " ");
 
           bubble.appendChild(meta);
           bubble.appendChild(txt);
@@ -639,11 +647,9 @@ export const prerender = false;
               return;
             }
 
+            // keep online count only (no join spam)
             if (m.type === "presence") {
-              const p = m.pseudo || "Listener";
-              const c = nameColor(p, false);
-              sysLine(`<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`);
-              touchSeen(p);
+              touchSeen(m.pseudo || "Listener");
               return;
             }
 
