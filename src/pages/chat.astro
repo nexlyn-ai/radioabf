@@ -348,472 +348,187 @@ export const prerender = false;
 
     <!-- ✅ Socket.IO client (only if your server exposes /socket.io)
          If you already load it elsewhere, you can remove this script. -->
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-    <!-- ✅ CHAT LOGIC (Astro swap safe / re-join fix) -->
-    <script is:inline data-astro-rerun>
+<script is:inline data-astro-rerun>
 (() => {
-  const ROUTE = "/chat";
-  const KEY = "__abfChat";
-  const MAX_LOG = 140;
-
-  // -------- GLOBAL SINGLETON --------
+  // ----------------------------
+  // Swap-safe singleton state
+  // ----------------------------
+  const KEY = "__abfChatState";
   const S = (window[KEY] = window[KEY] || {
     socket: null,
-    bound: false,
+    boundGlobal: false,
+    uiBoundForRoot: new WeakSet(),
     username: "",
     room: "general",
     isConnected: false,
-    users: [],
-    msgLog: [],
   });
 
+  const ROUTE = "/chat";
+  const isChat = () => window.location.pathname === ROUTE;
+
   const $ = (id) => document.getElementById(id);
-  const isChatRoute = () => window.location.pathname === ROUTE;
-  const nowTs = () => Date.now();
 
-  function esc(s){
-    return String(s ?? "")
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#039;");
-  }
-
-  function fmtTime(ts){
-    const d = new Date(ts || nowTs());
-    const hh = String(d.getHours()).padStart(2,"0");
-    const mm = String(d.getMinutes()).padStart(2,"0");
-    return \`\${hh}:\${mm}\`;
-  }
-
-  // -------- USER COLOR (stable per device) --------
-  function hashStr(str){
-    let h = 2166136261;
-    for (let i=0;i<str.length;i++){
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return (h >>> 0);
-  }
-
-  function userColor(name){
-    const n = String(name || "").trim().toLowerCase();
-    const h = hashStr("abf:" + n);
-    const hue = h % 360;
-    // bright but not neon
-    return \`hsl(\${hue} 85% 72%)\`;
-  }
-
-  // -------- UI references --------
-  function refs(){
+  // ⚠️ Adapte seulement si tes IDs diffèrent (sinon laisse)
+  function refs() {
     return {
-      root: $("chatPageRoot"),
-      form: $("chatLoginForm"),
-      name: $("chatName"),
-      roomSel: $("roomSelect"),
-      status: $("chatStatus"),
-      roomBadge: $("roomBadge"),
-      usersBadge: $("usersBadge"),
-      usersList: $("usersList"),
-      usersEmpty: $("usersEmpty"),
-      chatLog: $("chatLog"),
-      chatEmpty: $("chatEmpty"),
-      msg: $("chatMessage"),
-      sendBtn: $("sendBtn"),
-      clearBtn: $("clearChatBtn"),
-      discBtn: $("disconnectBtn"),
-      emojiBtn: $("emojiBtn"),
-      emojiPanel: $("emojiPanel"),
-      emojiGrid: $("emojiGrid"),
+      root: $("chatPageRoot") || document.querySelector("[data-chat-root]") || document.body,
+      form: $("chatLoginForm") || $("loginForm") || null,
+      name: $("chatName") || $("nameInput") || null,
+      roomSel: $("roomSelect") || $("salonSelect") || null,
+      joinBtn: $("joinBtn") || $("joinRoomBtn") || null,
+      status: $("chatStatus") || $("status") || null,
+
+      // Optionnels (si tu les as)
+      heroBadge: $("heroRoomBadge") || $("roomHeroBadge") || null,
+      roomBadge: $("roomBadge") || $("currentRoomBadge") || null,
     };
   }
 
-  // -------- SOCKET --------
-  function ensureSocket(){
-    if (S.socket && (S.socket.connected || S.socket.connecting)) return S.socket;
+  function setStatus(txt) {
+    const r = refs();
+    if (!r.status) return;
+    r.status.textContent = txt;
+  }
+
+  function setRoomBadges(room) {
+    const r = refs();
+    const val = "#" + String(room || "general");
+    if (r.roomBadge) r.roomBadge.textContent = val;
+    if (r.heroBadge) r.heroBadge.textContent = val;
+  }
+
+  // ----------------------------
+  // Socket init (singleton)
+  // ----------------------------
+  function ensureSocket() {
     if (!window.io) return null;
+    if (S.socket && (S.socket.connected || S.socket.connecting)) return S.socket;
 
     S.socket = window.io({
       transports: ["websocket"],
       reconnection: true,
-      reconnectionAttempts: 12,
-      reconnectionDelay: 450,
+      reconnectionAttempts: 20,
+      reconnectionDelay: 500,
     });
 
     S.socket.on("connect", () => {
       S.isConnected = true;
-      updateStatusUI("connected");
-      // ✅ Auto re-join when returning on /chat
-      if (isChatRoute() && S.username) {
+      setStatus("connected");
+      // ✅ Re-join automatiquement si on revient sur /chat
+      if (isChat() && S.username) {
         try { S.socket.emit("join", { username: S.username, room: S.room }); } catch {}
       }
     });
 
     S.socket.on("disconnect", () => {
       S.isConnected = false;
-      updateStatusUI("disconnected");
+      setStatus("disconnected");
     });
 
-    // Server events (adapt names if your backend differs)
-    S.socket.on("room:users", (payload) => {
-      const list = Array.isArray(payload?.users) ? payload.users : [];
-      S.users = list.map(x => String(x || "").trim()).filter(Boolean);
-      renderUsers();
-    });
-
-    S.socket.on("chat:message", (m) => {
-      const msg = {
-        id: String(m?.id || "") || String(nowTs() + Math.random()),
-        ts: Number(m?.ts || nowTs()),
-        room: String(m?.room || S.room),
-        user: String(m?.user || "Unknown"),
-        text: String(m?.text || ""),
-        kind: String(m?.kind || "msg"),
-      };
-      pushMsg(msg);
-      renderLog();
-      scrollToBottom();
-    });
-
-    S.socket.on("room:joined", (payload) => {
-      // expected { room, usersCount }
-      if (payload?.room) S.room = String(payload.room);
-      renderRoomBadge();
-      joinFx();
+    // ✅ Si ton backend renvoie une confirmation de room
+    S.socket.on("room:joined", (p) => {
+      const room = String(p?.room || S.room || "general");
+      S.room = room;
+      setRoomBadges(room);
     });
 
     return S.socket;
   }
 
-  function updateStatusUI(text){
-    const r = refs();
-    if (!r.status) return;
-    r.status.textContent = text;
-    r.status.className =
-      text === "connected"
-        ? "text-cyan-200 font-semibold"
-        : text === "connecting"
-        ? "text-white/70 font-semibold"
-        : "text-white/60 font-semibold";
-  }
+  function joinRoom(username, room) {
+    const u = String(username || "").trim();
+    const r = String(room || "general").trim() || "general";
+    if (!u) return;
 
-  function joinRoom(username, room){
+    S.username = u;
+    S.room = r;
+    setRoomBadges(r);
+
     const sock = ensureSocket();
     if (!sock) {
-      updateStatusUI("socket missing");
+      setStatus("socket missing");
       return;
     }
-    S.username = String(username || "").trim();
-    S.room = String(room || "general").trim() || "general";
-    if (!S.username) return;
 
-    updateStatusUI(sock.connected ? "connected" : "connecting");
+    setStatus(sock.connected ? "connected" : "connecting");
 
-    // If not connected yet, connect will auto-join
+    // si pas connecté, connect => auto-rejoin via "connect"
     if (!sock.connected) {
       try { sock.connect(); } catch {}
       return;
     }
 
-    try { sock.emit("join", { username: S.username, room: S.room }); } catch {}
+    try { sock.emit("join", { username: u, room: r }); } catch {}
   }
 
-  function leaveAll(){
-    if (S.socket && S.socket.connected) {
-      try { S.socket.emit("leave"); } catch {}
-    }
-  }
-
-  function disconnect(){
-    try { leaveAll(); } catch {}
-    try { S.socket?.disconnect?.(); } catch {}
-    S.isConnected = false;
-    updateStatusUI("disconnected");
-  }
-
-  // -------- LOG + USERS RENDER --------
-  function pushMsg(m){
-    S.msgLog = S.msgLog || [];
-    S.msgLog.push(m);
-    if (S.msgLog.length > MAX_LOG) S.msgLog.splice(0, S.msgLog.length - MAX_LOG);
-  }
-
-  function renderRoomBadge(){
-    const r = refs();
-    if (r.roomBadge) r.roomBadge.textContent = "#" + String(S.room || "general");
-  }
-
-  function renderUsers(){
-    const r = refs();
-    if (!r.usersList || !r.usersBadge) return;
-    const list = Array.isArray(S.users) ? S.users : [];
-    r.usersBadge.textContent = String(list.length);
-
-    if (!list.length){
-      r.usersList.innerHTML = "";
-      if (r.usersEmpty) r.usersEmpty.classList.remove("hidden");
-      return;
-    }
-    if (r.usersEmpty) r.usersEmpty.classList.add("hidden");
-
-    r.usersList.innerHTML = list.map((u) => {
-      const c = userColor(u);
-      return \`
-        <div class="userPill">
-          <span class="userDot" style="background:\${esc(c)}"></span>
-          <span style="color:\${esc(c)}">\${esc(u)}</span>
-        </div>
-      \`;
-    }).join("");
-  }
-
-  function renderLog(){
-    const r = refs();
-    if (!r.chatLog) return;
-    const list = Array.isArray(S.msgLog) ? S.msgLog : [];
-
-    if (!list.length){
-      r.chatLog.innerHTML = "";
-      if (r.chatEmpty) r.chatEmpty.classList.remove("hidden");
-      return;
-    }
-    if (r.chatEmpty) r.chatEmpty.classList.add("hidden");
-
-    r.chatLog.innerHTML = list.map((m) => {
-      const name = String(m.user || "Unknown");
-      const col = userColor(name);
-      const time = fmtTime(m.ts);
-      const kind = String(m.kind || "msg");
-
-      // system / join messages
-      if (kind === "system") {
-        return \`
-          <div class="msgRow" style="background:rgba(255,255,255,0.035)">
-            <div class="msgTop">
-              <div class="msgName" style="color:rgba(255,255,255,0.75); font-weight:900">SYSTEM</div>
-              <div class="msgTime">\${esc(time)}</div>
-            </div>
-            <div class="msgText" style="color:rgba(255,255,255,0.70)">\${esc(m.text)}</div>
-          </div>
-        \`;
-      }
-
-      return \`
-        <div class="msgRow">
-          <div class="msgTop">
-            <div class="msgName" style="color:\${esc(col)}">\${esc(name)}</div>
-            <div class="msgTime">\${esc(time)}</div>
-          </div>
-          <div class="msgText">\${esc(m.text)}</div>
-        </div>
-      \`;
-    }).join("");
-  }
-
-  function scrollToBottom(){
-    const r = refs();
-    if (!r.chatLog) return;
-    r.chatLog.scrollTop = r.chatLog.scrollHeight + 9999;
-  }
-
-  function joinFx(){
-    const r = refs();
-    const hero = r.root?.querySelector?.("section");
-    if (!hero) return;
-    hero.classList.remove("abfJoinFx");
-    void hero.offsetWidth;
-    hero.classList.add("abfJoinFx");
-  }
-
-  // -------- EMOJI PICKER --------
-  const EMOJIS = [
-    "😀","😁","😂","🤣","🙂","😉","😊","😍","😘","😎",
-    "🔥","🚀","🎧","🎶","🎵","💙","💜","✨","⚡","🤝",
-    "👍","👏","🙏","💯","🕺","💃","🥳","🤩","😇","🫶",
-    "😈","🤖","👑","🌙","⭐","☕","🍻","🌊","🎛️","🎚️"
-  ];
-
-  function ensureEmojiGrid(){
-    const r = refs();
-    if (!r.emojiGrid) return;
-    if (r.emojiGrid.dataset.built === "1") return;
-    r.emojiGrid.dataset.built = "1";
-
-    r.emojiGrid.innerHTML = EMOJIS.map(e => \`
-      <button type="button" class="emojiBtn" data-emoji="\${esc(e)}">\${esc(e)}</button>
-    \`).join("");
-
-    r.emojiGrid.addEventListener("click", (ev) => {
-      const btn = ev.target?.closest?.("[data-emoji]");
-      if (!btn) return;
-      const emoji = btn.getAttribute("data-emoji") || "";
-      const msg = $("chatMessage");
-      if (!msg) return;
-      insertAtCursor(msg, emoji);
-      msg.focus();
-    });
-  }
-
-  function insertAtCursor(el, text){
-    try{
-      const start = el.selectionStart ?? el.value.length;
-      const end = el.selectionEnd ?? el.value.length;
-      const v = el.value || "";
-      el.value = v.slice(0,start) + text + v.slice(end);
-      const p = start + text.length;
-      el.selectionStart = el.selectionEnd = p;
-    } catch {
-      el.value = (el.value || "") + text;
-    }
-  }
-
-  function toggleEmoji(open){
-    const r = refs();
-    if (!r.emojiPanel) return;
-    const on = typeof open === "boolean" ? open : r.emojiPanel.classList.contains("hidden");
-    if (on) {
-      ensureEmojiGrid();
-      r.emojiPanel.classList.remove("hidden");
-    } else {
-      r.emojiPanel.classList.add("hidden");
-    }
-  }
-
-  // -------- SEND MESSAGE --------
-  function canSend(){
-    return S.socket && S.socket.connected && S.username && S.room;
-  }
-
-  function sendMessage(){
-    const r = refs();
-    const text = String(r.msg?.value || "").trim();
-    if (!text) return;
-
-    if (!canSend()){
-      // local feedback message
-      pushMsg({ id: "local-"+nowTs(), ts: nowTs(), user: "SYSTEM", text: "You are not connected. Please Join a room.", kind: "system" });
-      renderLog();
-      scrollToBottom();
-      return;
-    }
-
-    try{
-      S.socket.emit("chat:message", { room: S.room, user: S.username, text });
-      r.msg.value = "";
-      toggleEmoji(false);
-    } catch {}
-  }
-
-  // -------- UI BIND (swap-safe) --------
-  function bindUI(){
-    if (!isChatRoute()) return;
+  // ----------------------------
+  // UI bind (rebind after swap)
+  // ----------------------------
+  function bindUI() {
+    if (!isChat()) return;
     const r = refs();
     if (!r.root) return;
 
-    // prevent double binding on *this DOM instance*
-    if (r.root.dataset.uiBound === "1") return;
-    r.root.dataset.uiBound = "1";
+    // évite double-binding sur le même DOM
+    if (S.uiBoundForRoot.has(r.root)) return;
+    S.uiBoundForRoot.add(r.root);
 
-    // restore
-    if (S.username && r.name && !r.name.value) r.name.value = S.username;
-    if (S.room && r.roomSel) r.roomSel.value = S.room;
-    renderRoomBadge();
-    renderUsers();
-    renderLog();
+    // restore champs
+    if (r.name && S.username && !r.name.value) r.name.value = S.username;
+    if (r.roomSel && S.room) r.roomSel.value = S.room;
+    setRoomBadges(S.room);
 
-    // login / join
-    if (r.form){
+    // form submit
+    if (r.form) {
       r.form.addEventListener("submit", (e) => {
         e.preventDefault();
         joinRoom(r.name?.value, r.roomSel?.value);
       });
     }
 
-    // room change -> join new room
-    if (r.roomSel){
+    // join btn (si pas de form)
+    if (r.joinBtn) {
+      r.joinBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        joinRoom(r.name?.value, r.roomSel?.value);
+      });
+    }
+
+    // change room => rejoin direct
+    if (r.roomSel) {
       r.roomSel.addEventListener("change", () => {
         const u = String(r.name?.value || S.username || "").trim();
-        const rr = String(r.roomSel.value || "general").trim();
         if (!u) return;
-        joinRoom(u, rr);
+        joinRoom(u, r.roomSel.value);
       });
     }
 
-    // send
-    if (r.sendBtn) r.sendBtn.addEventListener("click", (e) => { e.preventDefault(); sendMessage(); });
-
-    if (r.msg){
-      r.msg.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey){
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-    }
-
-    // emoji
-    if (r.emojiBtn){
-      r.emojiBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        toggleEmoji();
-      });
-    }
-    document.addEventListener("click", (e) => {
-      if (!isChatRoute()) return;
-      const hitBtn = e.target?.closest?.("#emojiBtn");
-      const hitPanel = e.target?.closest?.("#emojiPanel");
-      if (!hitBtn && !hitPanel) toggleEmoji(false);
-    });
-
-    // clear log
-    if (r.clearBtn){
-      r.clearBtn.addEventListener("click", () => {
-        S.msgLog = [];
-        renderLog();
-      });
-    }
-
-    // disconnect
-    if (r.discBtn){
-      r.discBtn.addEventListener("click", () => {
-        disconnect();
-      });
-    }
-
-    // if already connected when coming back, re-join
-    if (S.isConnected && S.username){
+    // ✅ si on revient sur /chat et qu’on a déjà un user → re-join
+    if (S.username) {
       joinRoom(S.username, r.roomSel?.value || S.room);
     }
   }
 
-  // -------- CLEANUP BEFORE SWAP --------
-  function beforeSwap(){
-    const r = refs();
-    if (r.root) r.root.dataset.uiBound = "0";
-    // Keep socket alive (so user doesn't lose connection) but UI is rebuilt next time
-    toggleEmoji(false);
-  }
-
-  function init(){
-    if (!isChatRoute()) return;
+  function init() {
+    if (!isChat()) return;
     ensureSocket();
     bindUI();
-    // status
-    updateStatusUI(S.socket?.connected ? "connected" : (S.socket ? "connecting" : "socket missing"));
+    setStatus(S.socket?.connected ? "connected" : (S.socket ? "connecting" : "socket missing"));
+    setRoomBadges(S.room);
   }
 
-  // one-time global binds
-  if (!S.bound){
-    S.bound = true;
+  // Global bindings (une seule fois)
+  if (!S.boundGlobal) {
+    S.boundGlobal = true;
     document.addEventListener("astro:page-load", init);
     document.addEventListener("astro:after-swap", init);
-    document.addEventListener("astro:before-swap", beforeSwap);
+    // on ne disconnect PAS le socket pendant swap (sinon tu perds la session)
   }
 
   init();
 })();
-    </script>
+</script>
   </div>
 </Base>
