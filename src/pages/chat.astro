@@ -4,531 +4,860 @@ export const prerender = false;
 ---
 
 <Base
-  title="ABF Chat — RadioABF"
-  description="Join the ABF live chat: pick a room, connect with the community, and chat in real time."
+  title="Chat — RadioABF"
+  description="Live chat on RadioABF."
   canonical="/chat"
   image="/og-image.jpg"
 >
-  <!-- ✅ ROOT -->
-  <div id="chatPageRoot">
-    <!-- ✅ HERO (same typography + scale as /music hero) -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+  <div id="abfChatPageRoot">
+    <!-- ✅ HERO compact (music typography) + join card inside -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-4 sm:p-5 mb-4 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
       <div class="relative z-10">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-          <div class="min-w-0">
+        <div class="flex items-start justify-between gap-6 flex-wrap">
+          <!-- LEFT -->
+          <div class="min-w-0 flex-1">
             <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
               <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-              ABF Chat
+              Live Chat
             </div>
 
             <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-              Community <span class="text-cyan-200">Live Chat</span>
+              RadioABF <span class="text-cyan-200">Chat</span>
             </h1>
 
             <p class="text-white/65 mt-3 max-w-2xl">
-              Pick a room, connect, and chat live with the ABF community — fast, clean and premium.
+              Join the room, talk with listeners, and stay connected during shows.
             </p>
+
+            <!-- ✅ badges bottom-left + ✅ hero room badge that updates -->
+            <div class="flex items-center gap-2 flex-wrap mt-4">
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                ON AIR
+              </span>
+
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+                <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
+                online
+              </span>
+
+              <!-- ✅ HERO room badge -->
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-white/50"></span>
+                #<span id="abfChatHeroRoomLabel" class="font-semibold">General</span>
+              </span>
+
+              <span class="text-xs text-white/60">
+                Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+              </span>
+            </div>
+
+            <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
           </div>
 
-          <!-- ✅ Login card back in the hero (right) -->
-          <div class="w-full lg:w-[420px]">
-            <div class="rounded-3xl border border-white/10 bg-white/[0.04] overflow-hidden shadow-xl">
-              <div class="p-4 sm:p-5 border-b border-white/10 flex items-start justify-between gap-4">
-                <div class="min-w-0">
-                  <div class="text-sm text-white/60 uppercase tracking-wider">Connect</div>
-                  <div class="text-xs text-white/50 mt-1">Choose a room and join</div>
-                </div>
+          <!-- RIGHT: Join card -->
+          <div class="w-full sm:w-[320px] flex-shrink-0">
+            <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-4">
+              <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
+                Join a room
               </div>
 
-              <form id="chatLoginForm" class="p-4 sm:p-5 space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-xs text-white/60 mb-2">Username</label>
-                    <input
-                      id="chatName"
-                      type="text"
-                      maxlength="24"
-                      autocomplete="nickname"
-                      class="abfInput w-full"
-                      placeholder="Loic Molo"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-xs text-white/60 mb-2">Room</label>
-                    <select id="roomSelect" class="abfInput w-full" aria-label="Select room">
-                      <option value="general">General</option>
-                      <option value="all">All</option>
-                      <option value="music">Music</option>
-                      <option value="djs">Djs</option>
-                      <option value="events">Events</option>
-                    </select>
-                  </div>
-                </div>
+              <div class="space-y-3">
+                <input
+                  id="abfChatPseudo"
+                  class="abfInput w-full"
+                  placeholder="Pseudo (optionnel)"
+                  maxlength="24"
+                />
 
-                <div class="flex items-center justify-between gap-3 flex-wrap">
-                  <div class="text-xs text-white/50">
-                    Status:
-                    <span id="chatStatus" class="text-white/75 font-semibold">disconnected</span>
-                  </div>
+                <select id="abfChatRoom" class="abfInput w-full abfSelect">
+                  <option value="general">General</option>
+                  <option value="onair">Onair</option>
+                  <option value="support">Support</option>
+                </select>
 
-                  <button
-                    id="joinBtn"
-                    type="submit"
-                    class="abfBtnPrimaryMini"
-                  >
-                    Join
-                  </button>
-                </div>
-
-                <div id="chatLoginHint" class="text-xs text-white/45">
-                  Tip: your username color is auto-generated and stable on this device.
-                </div>
-              </form>
+                <button id="abfChatJoin" class="abfBtn abfBtnPrimary w-full" type="button">
+                  Join
+                  <span class="abfBtnShine"></span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- ✅ Badges moved to bottom-left of the hero header -->
-        <div class="mt-4 flex items-center justify-start gap-2 flex-nowrap overflow-x-auto no-scrollbar">
-          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-            Realtime rooms
-          </span>
-          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-            Emoji picker
-          </span>
-          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-            User color mapping
-          </span>
         </div>
       </div>
     </section>
 
-    <!-- ✅ MAIN GRID -->
-    <section class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.55fr)] gap-6 items-start">
-      <!-- CHAT -->
-      <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-        <div class="p-5 border-b border-white/10 flex items-center justify-between gap-4 flex-wrap">
-          <div class="min-w-0">
-            <div class="text-sm text-white/60 uppercase tracking-wider">Chat</div>
-            <div class="text-xs text-white/50 mt-1">
-              Room:
-              <span id="roomBadge" class="text-white/80 font-semibold">#general</span>
-              <span class="text-white/40">•</span>
-              Users:
-              <span id="usersBadge" class="tabular-nums text-white/80 font-semibold">0</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="clearChatBtn" type="button" class="abfBtnMini">Clear</button>
-            <button id="disconnectBtn" type="button" class="abfBtnMini abfBtnDangerMini">Disconnect</button>
-          </div>
+    <!-- CHAT -->
+    <section class="abfChatShell">
+      <div class="abfChatTopBar">
+        <div class="abfChatTopLeft">
+          <span class="abfRoomPill">#<span id="abfChatRoomLabel">General</span></span>
+          <span class="abfMuted">•</span>
+          <span class="abfMuted">Premium ABF UI</span>
         </div>
-
-        <div class="p-4 sm:p-5">
-          <div
-            id="chatLog"
-            class="space-y-3 max-h-[62vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pr-1"
-          ></div>
-
-          <div id="chatEmpty" class="text-white/55 text-sm hidden">
-            Connect to a room to start chatting.
-          </div>
-
-          <!-- composer -->
-          <div class="mt-4 rounded-3xl border border-white/10 bg-white/[0.04] overflow-hidden">
-            <div class="p-3 sm:p-4 flex items-end gap-2">
-              <div class="flex-1 min-w-0">
-                <label class="block text-xs text-white/60 mb-2">Message</label>
-                <textarea
-                  id="chatMessage"
-                  rows="2"
-                  maxlength="500"
-                  class="abfTextarea w-full"
-                  placeholder="Type a message…"
-                ></textarea>
-                <div class="mt-2 flex items-center justify-between gap-3">
-                  <div class="text-[11px] text-white/40">
-                    Enter to send • Shift+Enter new line
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <button id="emojiBtn" type="button" class="abfBtnMini" aria-label="Open emoji picker">🙂</button>
-                    <button id="sendBtn" type="button" class="abfBtnPrimaryMini">Send</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- emoji picker -->
-            <div id="emojiPanel" class="hidden border-t border-white/10 bg-[#050B14]/35 p-3">
-              <div class="text-xs text-white/60 uppercase tracking-wider mb-2">Emoji</div>
-              <div id="emojiGrid" class="grid grid-cols-10 sm:grid-cols-12 gap-2"></div>
-            </div>
-          </div>
-        </div>
+        <button id="abfChatScrollBtn" class="abfBtn abfBtnGhost hidden" title="Scroll to latest">
+          Latest
+        </button>
       </div>
 
-      <!-- SIDE -->
-      <aside class="space-y-6">
-        <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-          <div class="p-5 border-b border-white/10">
-            <div class="text-sm text-white/60 uppercase tracking-wider">Online</div>
-            <div class="text-xs text-white/50 mt-1">Users in current room</div>
-          </div>
-          <div class="p-4 sm:p-5">
-            <div id="usersList" class="flex flex-wrap gap-2"></div>
-            <div id="usersEmpty" class="text-white/55 text-sm hidden">No users yet.</div>
+      <div id="abfChatLog" class="abfChatLog" aria-live="polite"></div>
+
+      <!-- composer -->
+      <div class="abfComposer">
+        <div class="abfEmojiWrap">
+          <button id="abfChatEmojiBtn" class="abfBtn abfBtnGhost abfEmojiBtn" type="button" title="Emoji">
+            😊
+          </button>
+
+          <div id="abfChatEmojiPanel" class="abfEmojiPanel hidden" role="dialog" aria-label="Emoji picker">
+            <div class="abfEmojiHeader">
+              <div class="abfEmojiTitle">Emojis</div>
+              <button id="abfChatEmojiClose" class="abfBtn abfBtnGhost abfEmojiClose" type="button" title="Close">
+                ✕
+              </button>
+            </div>
+            <div id="abfChatEmojiGrid" class="abfEmojiGrid"></div>
           </div>
         </div>
 
-        <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
-          <div class="pointer-events-none absolute -top-24 -right-24 w-[260px] h-[260px] bg-cyan-500/15 rounded-full blur-[90px]"></div>
-          <div class="p-6 relative">
-            <div class="text-xs text-white/50 uppercase tracking-wider">How it works</div>
-            <div class="mt-2 font-extrabold text-lg leading-tight">Rooms, colors & etiquette</div>
-            <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2 list-disc pl-5">
-              <li><strong>Pick a room</strong> and click <strong>Join</strong>.</li>
-              <li><strong>Usernames have unique colors</strong> (stable on your device).</li>
-              <li><strong>Be cool</strong>: no spam, no hate, keep it ABF vibes 🙂</li>
-              <li><strong>Emoji</strong>: use the picker for fast reactions.</li>
-            </ul>
-          </div>
-        </div>
-      </aside>
+        <input id="abfChatMsg" class="abfInput abfComposerInput" placeholder="Message…" />
+        <button id="abfChatSend" class="abfBtn abfBtnPrimary abfSendBtn">
+          Send
+          <span class="abfBtnShine"></span>
+        </button>
+      </div>
     </section>
-
-    <style>
-      .tabular-nums { font-variant-numeric: tabular-nums; }
-      .scrollbar-thin::-webkit-scrollbar { width: 6px; }
-      .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-      .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 9999px; }
-      .no-scrollbar::-webkit-scrollbar{ display:none; }
-      .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-
-      .abfInput{
-        appearance: none;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.9);
-        border-radius: 14px;
-        padding: 10px 12px;
-        font-size: 12px;
-        outline: none;
-      }
-      .abfInput:focus{
-        border-color: rgba(47,194,255,0.35);
-        box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
-      }
-      .abfTextarea{
-        appearance:none;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.9);
-        border-radius: 16px;
-        padding: 10px 12px;
-        font-size: 13px;
-        outline: none;
-        resize: vertical;
-        min-height: 44px;
-        max-height: 160px;
-      }
-      .abfTextarea:focus{
-        border-color: rgba(47,194,255,0.35);
-        box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
-      }
-
-      .abfBtnMini{
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.9);
-        border-radius: 14px;
-        padding: 10px 12px;
-        font-size: 12px;
-        font-weight: 800;
-        transition: 150ms ease;
-        white-space: nowrap;
-      }
-      .abfBtnMini:hover{ background: rgba(255,255,255,0.10); }
-
-      .abfBtnPrimaryMini{
-        border: 1px solid rgba(47,194,255,0.35);
-        background: linear-gradient(90deg, rgba(20,92,143,0.9), rgba(47,194,255,0.9));
-        color: rgba(255,255,255,0.95);
-        border-radius: 14px;
-        padding: 10px 14px;
-        font-size: 12px;
-        font-weight: 900;
-        transition: 150ms ease;
-        white-space: nowrap;
-      }
-      .abfBtnPrimaryMini:hover{ filter: brightness(1.05); }
-
-      .abfBtnDangerMini{
-        border-color: rgba(239,68,68,0.35) !important;
-        background: rgba(239,68,68,0.10) !important;
-      }
-      .abfBtnDangerMini:hover{ background: rgba(239,68,68,0.16) !important; }
-
-      /* join effect */
-      @keyframes abfJoinGlow {
-        0%   { transform: translateY(6px) scale(.985); opacity: 0; }
-        35%  { transform: translateY(0px) scale(1); opacity: 1; }
-        100% { transform: translateY(0px) scale(1); opacity: 1; }
-      }
-      .abfJoinFx{
-        animation: abfJoinGlow .35s ease-out both;
-      }
-
-      .userPill{
-        display:inline-flex;
-        align-items:center;
-        gap:8px;
-        border: 1px solid rgba(255,255,255,0.10);
-        background: rgba(255,255,255,0.04);
-        border-radius: 999px;
-        padding: 8px 10px;
-        font-size: 12px;
-        font-weight: 800;
-        color: rgba(255,255,255,0.92);
-        white-space: nowrap;
-      }
-      .userDot{
-        width:10px; height:10px; border-radius:999px;
-        box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
-      }
-
-      .msgRow{
-        border: 1px solid rgba(255,255,255,0.10);
-        background: rgba(255,255,255,0.03);
-        border-radius: 18px;
-        padding: 12px;
-      }
-      .msgTop{
-        display:flex;
-        align-items:baseline;
-        justify-content:space-between;
-        gap: 12px;
-      }
-      .msgName{
-        font-weight: 900;
-        letter-spacing: .02em;
-      }
-      .msgTime{
-        flex:none;
-        font-size: 11px;
-        color: rgba(255,255,255,0.45);
-        font-variant-numeric: tabular-nums;
-      }
-      .msgText{
-        margin-top: 6px;
-        color: rgba(255,255,255,0.78);
-        font-size: 13px;
-        line-height: 1.45;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-
-      /* emoji buttons */
-      .emojiBtn{
-        border: 1px solid rgba(255,255,255,0.10);
-        background: rgba(255,255,255,0.04);
-        border-radius: 14px;
-        padding: 8px 0;
-        text-align:center;
-        font-size: 18px;
-        line-height: 1;
-        transition: 120ms ease;
-        cursor:pointer;
-      }
-      .emojiBtn:hover{ background: rgba(255,255,255,0.08); }
-    </style>
-
-    <!-- ✅ Socket.IO client (only if your server exposes /socket.io)
-         If you already load it elsewhere, you can remove this script. -->
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-
-<script is:inline data-astro-rerun>
-(() => {
-  // ----------------------------
-  // Swap-safe singleton state
-  // ----------------------------
-  const KEY = "__abfChatState";
-  const S = (window[KEY] = window[KEY] || {
-    socket: null,
-    boundGlobal: false,
-    uiBoundForRoot: new WeakSet(),
-    username: "",
-    room: "general",
-    isConnected: false,
-  });
-
-  const ROUTE = "/chat";
-  const isChat = () => window.location.pathname === ROUTE;
-
-  const $ = (id) => document.getElementById(id);
-
-  // ⚠️ Adapte seulement si tes IDs diffèrent (sinon laisse)
-  function refs() {
-    return {
-      root: $("chatPageRoot") || document.querySelector("[data-chat-root]") || document.body,
-      form: $("chatLoginForm") || $("loginForm") || null,
-      name: $("chatName") || $("nameInput") || null,
-      roomSel: $("roomSelect") || $("salonSelect") || null,
-      joinBtn: $("joinBtn") || $("joinRoomBtn") || null,
-      status: $("chatStatus") || $("status") || null,
-
-      // Optionnels (si tu les as)
-      heroBadge: $("heroRoomBadge") || $("roomHeroBadge") || null,
-      roomBadge: $("roomBadge") || $("currentRoomBadge") || null,
-    };
-  }
-
-  function setStatus(txt) {
-    const r = refs();
-    if (!r.status) return;
-    r.status.textContent = txt;
-  }
-
-  function setRoomBadges(room) {
-    const r = refs();
-    const val = "#" + String(room || "general");
-    if (r.roomBadge) r.roomBadge.textContent = val;
-    if (r.heroBadge) r.heroBadge.textContent = val;
-  }
-
-  // ----------------------------
-  // Socket init (singleton)
-  // ----------------------------
-  function ensureSocket() {
-    if (!window.io) return null;
-    if (S.socket && (S.socket.connected || S.socket.connecting)) return S.socket;
-
-    S.socket = window.io({
-      transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: 20,
-      reconnectionDelay: 500,
-    });
-
-    S.socket.on("connect", () => {
-      S.isConnected = true;
-      setStatus("connected");
-      // ✅ Re-join automatiquement si on revient sur /chat
-      if (isChat() && S.username) {
-        try { S.socket.emit("join", { username: S.username, room: S.room }); } catch {}
-      }
-    });
-
-    S.socket.on("disconnect", () => {
-      S.isConnected = false;
-      setStatus("disconnected");
-    });
-
-    // ✅ Si ton backend renvoie une confirmation de room
-    S.socket.on("room:joined", (p) => {
-      const room = String(p?.room || S.room || "general");
-      S.room = room;
-      setRoomBadges(room);
-    });
-
-    return S.socket;
-  }
-
-  function joinRoom(username, room) {
-    const u = String(username || "").trim();
-    const r = String(room || "general").trim() || "general";
-    if (!u) return;
-
-    S.username = u;
-    S.room = r;
-    setRoomBadges(r);
-
-    const sock = ensureSocket();
-    if (!sock) {
-      setStatus("socket missing");
-      return;
-    }
-
-    setStatus(sock.connected ? "connected" : "connecting");
-
-    // si pas connecté, connect => auto-rejoin via "connect"
-    if (!sock.connected) {
-      try { sock.connect(); } catch {}
-      return;
-    }
-
-    try { sock.emit("join", { username: u, room: r }); } catch {}
-  }
-
-  // ----------------------------
-  // UI bind (rebind after swap)
-  // ----------------------------
-  function bindUI() {
-    if (!isChat()) return;
-    const r = refs();
-    if (!r.root) return;
-
-    // évite double-binding sur le même DOM
-    if (S.uiBoundForRoot.has(r.root)) return;
-    S.uiBoundForRoot.add(r.root);
-
-    // restore champs
-    if (r.name && S.username && !r.name.value) r.name.value = S.username;
-    if (r.roomSel && S.room) r.roomSel.value = S.room;
-    setRoomBadges(S.room);
-
-    // form submit
-    if (r.form) {
-      r.form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        joinRoom(r.name?.value, r.roomSel?.value);
-      });
-    }
-
-    // join btn (si pas de form)
-    if (r.joinBtn) {
-      r.joinBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        joinRoom(r.name?.value, r.roomSel?.value);
-      });
-    }
-
-    // change room => rejoin direct
-    if (r.roomSel) {
-      r.roomSel.addEventListener("change", () => {
-        const u = String(r.name?.value || S.username || "").trim();
-        if (!u) return;
-        joinRoom(u, r.roomSel.value);
-      });
-    }
-
-    // ✅ si on revient sur /chat et qu’on a déjà un user → re-join
-    if (S.username) {
-      joinRoom(S.username, r.roomSel?.value || S.room);
-    }
-  }
-
-  function init() {
-    if (!isChat()) return;
-    ensureSocket();
-    bindUI();
-    setStatus(S.socket?.connected ? "connected" : (S.socket ? "connecting" : "socket missing"));
-    setRoomBadges(S.room);
-  }
-
-  // Global bindings (une seule fois)
-  if (!S.boundGlobal) {
-    S.boundGlobal = true;
-    document.addEventListener("astro:page-load", init);
-    document.addEventListener("astro:after-swap", init);
-    // on ne disconnect PAS le socket pendant swap (sinon tu perds la session)
-  }
-
-  init();
-})();
-</script>
   </div>
+
+  <style>
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
+    #abfChatPageRoot{ color: rgba(232,242,255,.95); }
+    #abfChatPageRoot .hidden{ display:none !important; }
+
+    #abfChatPageRoot .abfInput{
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      outline: none;
+      transition: 150ms ease;
+      height: 42px;
+    }
+    #abfChatPageRoot .abfInput:focus{
+      border-color: rgba(47,194,255,0.35);
+      box-shadow: 0 0 0 3px rgba(47,194,255,0.10);
+    }
+    #abfChatPageRoot .abfSelect{
+      background: rgba(10,31,51,.72);
+      color: rgba(232,242,255,.95);
+    }
+    #abfChatPageRoot select.abfSelect option{
+      background: #0B1726;
+      color: rgba(232,242,255,.95);
+    }
+
+    #abfChatPageRoot .abfBtn{
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 900;
+      transition: 160ms ease;
+      position: relative;
+      user-select: none;
+      height: 42px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      overflow: hidden;
+    }
+    #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+    #abfChatPageRoot .abfBtn:active{ transform: translateY(1px); }
+
+    #abfChatPageRoot .abfBtnPrimary{
+      background: linear-gradient(180deg, rgba(56,189,248,.24), rgba(56,189,248,.12));
+      border-color: rgba(56,189,248,.30);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    #abfChatPageRoot .abfBtnPrimary:hover{
+      background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(56,189,248,.14));
+      border-color: rgba(56,189,248,.42);
+      box-shadow: 0 14px 40px rgba(0,0,0,.32);
+      transform: translateY(-1px);
+    }
+
+    #abfChatPageRoot .abfBtnGhost{
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.12);
+      font-weight: 800;
+      padding: 0 12px;
+      height: 36px;
+      border-radius: 12px;
+    }
+    #abfChatPageRoot .abfBtnGhost:hover{
+      background: rgba(255,255,255,.08);
+      transform: translateY(-1px);
+    }
+
+    #abfChatPageRoot .abfBtnShine{
+      pointer-events:none;
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(600px 100px at 0% 50%, rgba(255,255,255,.20), rgba(255,255,255,0) 60%);
+      transform: translateX(-60%);
+      opacity: .55;
+      animation: abfShine 4.6s ease-in-out infinite;
+    }
+    @keyframes abfShine{
+      0%, 20%{ transform: translateX(-60%); opacity:.30; }
+      50%{ transform: translateX(40%); opacity:.65; }
+      80%,100%{ transform: translateX(120%); opacity:.20; }
+    }
+
+    #abfChatPageRoot .abfChatShell{
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(5,11,20,.64);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      overflow: hidden;
+    }
+    #abfChatPageRoot .abfChatTopBar{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+    }
+    #abfChatPageRoot .abfChatTopLeft{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    #abfChatPageRoot .abfRoomPill{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,.18);
+      background: rgba(56,189,248,.10);
+      color: rgba(232,242,255,.90);
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
+
+    #abfChatPageRoot .abfChatLog{
+      height: min(52vh, 420px);
+      overflow: auto;
+      padding: 12px 12px 14px;
+      background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.10));
+      scroll-behavior: smooth;
+    }
+
+    #abfChatPageRoot .abfMsgRow{
+      display:flex;
+      gap: 10px;
+      align-items: flex-end;
+      margin: 0 0 12px;
+      animation: abfIn .18s ease-out both;
+    }
+    @keyframes abfIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+    #abfChatPageRoot .abfMsgRow.self{ flex-direction: row-reverse; }
+
+    #abfChatPageRoot .abfAvatar{
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+      flex: 0 0 34px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+      letter-spacing: .02em;
+      color: rgba(232,242,255,.92);
+      background: rgba(255,255,255,.08);
+    }
+    #abfChatPageRoot .abfMsgRow.self .abfAvatar{
+      background: rgba(56,189,248,.14);
+      border-color: rgba(56,189,248,.22);
+    }
+
+    #abfChatPageRoot .abfBubble{
+      max-width: min(720px, 82%);
+      border-radius: 18px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 12px 40px rgba(0,0,0,.22);
+    }
+    #abfChatPageRoot .abfMsgRow.self .abfBubble{
+      background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.08));
+      border-color: rgba(56,189,248,.26);
+    }
+
+    #abfChatPageRoot .abfMeta{
+      display:flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: rgba(232,242,255,.70);
+    }
+    #abfChatPageRoot .abfUserDot{
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      display:inline-block;
+      box-shadow: 0 0 0 5px rgba(255,255,255,.06);
+      transform: translateY(1px);
+      flex: 0 0 auto;
+    }
+    #abfChatPageRoot .abfName{ font-weight: 900; }
+    #abfChatPageRoot .abfTime{ color: rgba(232,242,255,.45); font-weight: 700; }
+    #abfChatPageRoot .abfText{
+      font-size: 14px;
+      line-height: 1.35;
+      color: rgba(232,242,255,.92);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    #abfChatPageRoot .abfSys{
+      margin: 8px 0 12px;
+      text-align: center;
+      color: rgba(232,242,255,.55);
+      font-size: 12px;
+      letter-spacing: .02em;
+    }
+    #abfChatPageRoot .abfSys span{
+      display:inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+    }
+
+    #abfChatPageRoot .abfComposer{
+      display:flex;
+      gap: 10px;
+      padding: 8px 10px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      position: sticky;
+      bottom: 0;
+      align-items: center;
+    }
+    #abfChatPageRoot .abfComposerInput{
+      flex: 1;
+      height: 42px;
+      border-radius: 14px;
+    }
+    #abfChatPageRoot .abfSendBtn{
+      height: 42px;
+      border-radius: 14px;
+      padding: 0 16px;
+    }
+
+    #abfChatPageRoot .abfEmojiWrap{ position: relative; flex: 0 0 auto; }
+    #abfChatPageRoot .abfEmojiBtn{
+      height: 42px;
+      width: 46px;
+      padding: 0;
+      border-radius: 14px;
+      font-size: 18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #abfChatPageRoot .abfEmojiPanel{
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      width: 280px;
+      max-width: min(78vw, 320px);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(5,11,20,.92);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      overflow: hidden;
+      z-index: 30;
+    }
+    #abfChatPageRoot .abfEmojiHeader{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    #abfChatPageRoot .abfEmojiTitle{
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(232,242,255,.72);
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfEmojiClose{
+      height: 30px;
+      width: 34px;
+      padding: 0;
+      border-radius: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+    }
+    #abfChatPageRoot .abfEmojiGrid{
+      padding: 10px;
+      display:grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    #abfChatPageRoot .abfEmojiItem{
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor: pointer;
+      user-select: none;
+      font-size: 18px;
+      transition: transform .10s ease, background .10s ease, border-color .10s ease;
+    }
+    #abfChatPageRoot .abfEmojiItem:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.08);
+      border-color: rgba(56,189,248,.28);
+    }
+
+    @media (max-width: 640px){
+      #abfChatPageRoot .abfChatLog{ padding: 12px 10px 14px; height: min(56vh, 440px); }
+      #abfChatPageRoot .abfAvatar{ width: 30px; height: 30px; flex-basis: 30px; font-size: 12px; }
+      #abfChatPageRoot .abfBubble{ max-width: 86%; }
+      #abfChatPageRoot .abfEmojiGrid{ grid-template-columns: repeat(7, 1fr); }
+    }
+  </style>
+
+  <script is:inline>
+    (() => {
+      const WS_URL = "wss://chat.radioabf.com/ws";
+      const $ = (id) => document.getElementById(id);
+
+      const pseudoEl = $("abfChatPseudo");
+      const roomEl = $("abfChatRoom");
+      const joinBtn = $("abfChatJoin");
+      const logEl = $("abfChatLog");
+      const msgEl = $("abfChatMsg");
+      const sendBtn = $("abfChatSend");
+      const statusEl = $("abfChatStatus");
+      const errEl = $("abfChatError");
+      const roomLabelEl = $("abfChatRoomLabel");
+      const heroRoomEl = $("abfChatHeroRoomLabel");
+      const scrollBtn = $("abfChatScrollBtn");
+      const onlineEl = $("abfChatOnline");
+
+      const emojiBtn = $("abfChatEmojiBtn");
+      const emojiPanel = $("abfChatEmojiPanel");
+      const emojiGrid = $("abfChatEmojiGrid");
+      const emojiClose = $("abfChatEmojiClose");
+
+      let ws = null;
+      let joined = false;
+      let myPseudo = "";
+      let currentRoom = roomEl.value || "general";
+      let stickToBottom = true;
+
+      const ONLINE_TTL_MS = 1000 * 60 * 3;
+      const seen = new Map();
+
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+
+      const guest = () => "Guest " + Math.floor(1000 + Math.random()*9000);
+
+      function setStatus(t, ok=false){
+        statusEl.textContent = t;
+        statusEl.style.color = ok ? "rgba(124,252,179,.95)" : "rgba(255,255,255,.75)";
+      }
+
+      function showErr(t=""){
+        if (!t) { errEl.classList.add("hidden"); errEl.textContent=""; return; }
+        errEl.classList.remove("hidden");
+        errEl.textContent = t;
+      }
+
+      function nowHHMM(ts){
+        try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+        catch{ return ""; }
+      }
+
+      function initials(p){
+        const s = (p || "").trim();
+        if (!s) return "AB";
+        const parts = s.split(/\s+/).filter(Boolean);
+        const a = parts[0]?.[0] || "A";
+        const b = parts.length > 1 ? (parts[1]?.[0] || "") : (parts[0]?.[1] || "");
+        return (a + (b || "")).toUpperCase().slice(0,2);
+      }
+
+      function roomLabel(room){
+        const r = String(room || "").toLowerCase();
+        return r ? (r.charAt(0).toUpperCase() + r.slice(1)) : "General";
+      }
+
+      function setRoomLabels(room){
+        const label = roomLabel(room);
+        if (roomLabelEl) roomLabelEl.textContent = label;
+        if (heroRoomEl) heroRoomEl.textContent = label;
+      }
+
+      function hashTo01(str){
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++){
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return (h >>> 0) / 4294967295;
+      }
+
+      function nameColor(pseudo, isSelf=false){
+        if (isSelf) return "rgba(56,189,248,.98)";
+        const t = hashTo01((pseudo || "listener").toLowerCase());
+        const hue = 185 + Math.round(t * 95);
+        return `hsla(${hue}, 92%, 72%, .98)`;
+      }
+
+      function shouldStick(){
+        const threshold = 64;
+        return (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight) < threshold;
+      }
+
+      function scrollToLatest(force=false){
+        if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function updateScrollState(){
+        stickToBottom = shouldStick();
+        if (!stickToBottom) scrollBtn.classList.remove("hidden");
+        else scrollBtn.classList.add("hidden");
+      }
+
+      function sysLine(html){
+        const div = document.createElement("div");
+        div.className = "abfSys";
+        div.innerHTML = `<span>${html}</span>`;
+        logEl.appendChild(div);
+        scrollToLatest();
+      }
+
+      function msgBubble({ pseudo, message, created_at }){
+        const isSelf = myPseudo && pseudo === myPseudo;
+
+        const row = document.createElement("div");
+        row.className = "abfMsgRow" + (isSelf ? " self" : "");
+
+        const av = document.createElement("div");
+        av.className = "abfAvatar";
+        av.textContent = initials(pseudo);
+
+        const bubble = document.createElement("div");
+        bubble.className = "abfBubble";
+
+        const meta = document.createElement("div");
+        meta.className = "abfMeta";
+        const t = nowHHMM(created_at);
+
+        const c = nameColor(pseudo, isSelf);
+        meta.innerHTML = `
+          <span class="abfUserDot" style="background:${c}"></span>
+          <span class="abfName" style="color:${c}">${esc(pseudo)}</span>
+          <span class="abfTime">• ${esc(t)}</span>
+        `;
+
+        const txt = document.createElement("div");
+        txt.className = "abfText";
+        txt.innerHTML = esc(message);
+
+        bubble.appendChild(meta);
+        bubble.appendChild(txt);
+
+        row.appendChild(av);
+        row.appendChild(bubble);
+
+        logEl.appendChild(row);
+        scrollToLatest();
+      }
+
+      function touchSeen(pseudo){
+        if (!pseudo) return;
+        seen.set(pseudo, Date.now());
+        pruneSeen();
+        onlineEl.textContent = String(seen.size);
+      }
+
+      function pruneSeen(){
+        const now = Date.now();
+        for (const [k, v] of seen.entries()){
+          if (now - v > ONLINE_TTL_MS) seen.delete(k);
+        }
+      }
+
+      setInterval(() => {
+        pruneSeen();
+        onlineEl.textContent = seen.size ? String(seen.size) : "—";
+      }, 8000);
+
+      function ensureConnected(){
+        if (!ws || ws.readyState !== 1) connect();
+      }
+
+      // ✅ NEW: switch room immediately (auto re-join)
+      function switchRoom(newRoom){
+        currentRoom = newRoom || "general";
+        setRoomLabels(currentRoom);
+
+        if (!ws || ws.readyState !== 1){
+          connect();
+          // join will happen when user clicks join; avoid auto join without socket
+          return;
+        }
+
+        if (!myPseudo){
+          myPseudo = (pseudoEl.value || "").trim() || guest();
+        }
+
+        joined = false;
+        seen.clear();
+        onlineEl.textContent = "—";
+
+        // clear log on room change (clean UX)
+        logEl.innerHTML = "";
+        sysLine(`switching to <b>#${esc(roomLabel(currentRoom))}</b>…`);
+
+        ws.send(JSON.stringify({ type:"join", pseudo: myPseudo, room: currentRoom }));
+      }
+
+      function connect(){
+        showErr("");
+        joined = false;
+
+        try { ws?.close(); } catch {}
+        ws = new WebSocket(WS_URL);
+
+        ws.addEventListener("open", () => {
+          setStatus("Connected", true);
+          sysLine(`connected`);
+        });
+
+        ws.addEventListener("close", () => {
+          setStatus("Disconnected", false);
+          sysLine(`disconnected`);
+          joined = false;
+        });
+
+        ws.addEventListener("error", () => {
+          showErr("WebSocket error (TLS/DNS/proxy).");
+        });
+
+        ws.addEventListener("message", (e) => {
+          showErr("");
+          let m; try { m = JSON.parse(e.data); } catch { return; }
+
+          if (m.type === "hello") return;
+
+          if (m.type === "joined") {
+            joined = true;
+            currentRoom = m.room || currentRoom;
+            setRoomLabels(currentRoom);
+
+            sysLine(`joined <b>#${esc(roomLabel(currentRoom))}</b> as <b>${esc(m.pseudo)}</b>`);
+
+            (m.history || []).forEach((h) => {
+              if (!h) return;
+              touchSeen(h.pseudo);
+              msgBubble({
+                pseudo: h.pseudo || "Listener",
+                message: h.message || "",
+                created_at: h.created_at || Date.now(),
+              });
+            });
+
+            stickToBottom = true;
+            scrollToLatest(true);
+            updateScrollState();
+            return;
+          }
+
+          if (m.type === "presence") {
+            const p = m.pseudo || "Listener";
+            const c = nameColor(p, false);
+            const ev = `<span style="color:${c}; font-weight:900">${esc(p)}</span> ${esc(m.event)}`;
+            sysLine(ev);
+            touchSeen(p);
+            return;
+          }
+
+          if (m.type === "msg") {
+            touchSeen(m.pseudo);
+            msgBubble({
+              pseudo: m.pseudo || "Listener",
+              message: m.message || "",
+              created_at: m.created_at || Date.now(),
+            });
+            return;
+          }
+
+          if (m.type === "error") showErr("Error: " + m.code);
+        });
+      }
+
+      function join(){
+        showErr("");
+        ensureConnected();
+
+        myPseudo = (pseudoEl.value || "").trim() || guest();
+        currentRoom = roomEl.value || "general";
+        setRoomLabels(currentRoom);
+
+        joined = false;
+        seen.clear();
+        onlineEl.textContent = "—";
+
+        // clean join UX
+        logEl.innerHTML = "";
+        sysLine(`joining <b>#${esc(roomLabel(currentRoom))}</b>…`);
+
+        setTimeout(() => {
+          if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+          ws.send(JSON.stringify({ type:"join", pseudo: myPseudo, room: currentRoom }));
+        }, 80);
+      }
+
+      function send(){
+        showErr("");
+        if (!ws || ws.readyState !== 1) return showErr("Not connected.");
+        if (!joined) return showErr("Join a room first.");
+        const text = (msgEl.value || "").trim();
+        if (!text) return;
+
+        ws.send(JSON.stringify({ type:"msg", message: text }));
+        touchSeen(myPseudo);
+
+        msgEl.value = "";
+        msgEl.focus();
+      }
+
+      // Emoji picker
+      const EMOJIS = [
+        "😀","😄","😁","😅","😂","🤣","😊","😍",
+        "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
+        "👍","👎","👏","🙏","🔥","💎","✨","⚡",
+        "🎶","🎧","🎚️","🎛️","🎤","📻","🚀","🌙",
+        "❤️","💙","💜","🤍","🖤","💚","🧡","💛"
+      ];
+
+      function setEmojiOpen(open){
+        if (open) emojiPanel.classList.remove("hidden");
+        else emojiPanel.classList.add("hidden");
+      }
+
+      function insertAtCursor(input, text){
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? input.value.length;
+        const before = input.value.slice(0, start);
+        const after = input.value.slice(end);
+        input.value = before + text + after;
+        const pos = start + text.length;
+        input.setSelectionRange(pos, pos);
+        input.focus();
+      }
+
+      function buildEmojiGrid(){
+        emojiGrid.innerHTML = "";
+        EMOJIS.forEach((e) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "abfEmojiItem";
+          b.textContent = e;
+          b.addEventListener("click", () => {
+            insertAtCursor(msgEl, e);
+            setEmojiOpen(false);
+          });
+          emojiGrid.appendChild(b);
+        });
+      }
+
+      buildEmojiGrid();
+
+      emojiBtn.addEventListener("click", () => {
+        const isOpen = !emojiPanel.classList.contains("hidden");
+        setEmojiOpen(!isOpen);
+      });
+      emojiClose.addEventListener("click", () => setEmojiOpen(false));
+
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t) return;
+        if (emojiPanel.classList.contains("hidden")) return;
+        if (emojiPanel.contains(t) || emojiBtn.contains(t)) return;
+        setEmojiOpen(false);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setEmojiOpen(false);
+      });
+
+      logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
+
+      scrollBtn.addEventListener("click", () => {
+        stickToBottom = true;
+        scrollToLatest(true);
+        updateScrollState();
+      });
+
+      // ✅ IMPORTANT: changing room updates both labels + auto rejoin if already joined
+      roomEl.addEventListener("change", () => {
+        const next = roomEl.value || "general";
+        setRoomLabels(next);
+        if (joined && ws && ws.readyState === 1) switchRoom(next);
+      });
+
+      joinBtn.addEventListener("click", join);
+      sendBtn.addEventListener("click", send);
+      msgEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+
+      // init labels at load
+      setRoomLabels(currentRoom);
+
+      setStatus("Connecting…", false);
+      connect();
+      requestAnimationFrame(() => updateScrollState());
+    })();
+  </script>
 </Base>
