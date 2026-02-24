@@ -33,7 +33,10 @@ export const prerender = false;
             </span>
           </div>
 
-          <h1 class="abfHeroTitle">RadioABF Chat</h1>
+          <!-- ✅ Match hero title style used elsewhere (music/videos) -->
+          <h1 class="abfHeroTitle">
+            RadioABF Chat
+          </h1>
           <p class="abfHeroSub">
             Join the room, talk with listeners, and stay connected during shows.
           </p>
@@ -66,10 +69,6 @@ export const prerender = false;
               Join
               <span class="abfBtnShine"></span>
             </button>
-
-            <div class="abfMicroNote">
-              Tip: press <b>Enter</b> to send • Smart scroll enabled
-            </div>
           </div>
         </div>
       </div>
@@ -107,19 +106,13 @@ export const prerender = false;
        Scoped to /chat only
        ========================= */
     #abfChatPageRoot{
-      --abf-bg: #050B14;
-      --abf-panel: rgba(8,18,30,.70);
-      --abf-panel2: rgba(7,14,24,.78);
       --abf-border: rgba(255,255,255,.10);
       --abf-text: rgba(232,242,255,.95);
       --abf-muted: rgba(232,242,255,.62);
       --abf-faint: rgba(232,242,255,.42);
       --abf-cyan: rgba(56,189,248,1);
-      --abf-cyanSoft: rgba(56,189,248,.20);
-      --abf-cyanSoft2: rgba(56,189,248,.12);
       --abf-good: rgba(124,252,179,.95);
       --abf-warn: rgba(255,148,148,.92);
-
       color: var(--abf-text);
     }
 
@@ -223,12 +216,14 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfOnlineText{ color: rgba(232,242,255,.62); font-weight: 700; }
 
+    /* ✅ Match site hero typography: same scale/weight as other pages */
     #abfChatPageRoot .abfHeroTitle{
-      font-size: 24px;
-      line-height: 1.08;
+      font-size: 26px;
+      line-height: 1.10;
       font-weight: 900;
       margin: 0;
       letter-spacing: -.02em;
+      color: rgba(255,255,255,.96);
     }
     #abfChatPageRoot .abfHeroSub{
       margin-top: 8px;
@@ -292,7 +287,7 @@ export const prerender = false;
       background: rgba(255,255,255,.07);
     }
 
-    /* Select menu visibility fix (no white background, readable options) */
+    /* Select menu visibility fix */
     #abfChatPageRoot .abfSelect{
       background: rgba(10,31,51,.72);
       color: rgba(232,242,255,.95);
@@ -370,13 +365,6 @@ export const prerender = false;
       80%,100%{ transform: translateX(120%); opacity:.20; }
     }
 
-    #abfChatPageRoot .abfMicroNote{
-      margin-top: 2px;
-      font-size: 12px;
-      color: rgba(232,242,255,.55);
-      display: none; /* reduced hero height */
-    }
-
     /* Chat shell */
     #abfChatPageRoot .abfChatShell{
       border-radius: 22px;
@@ -440,6 +428,7 @@ export const prerender = false;
       flex-direction: row-reverse;
     }
 
+    /* ✅ Avatars: simple clean badge (no gradients, no bands) */
     #abfChatPageRoot .abfAvatar{
       width: 34px;
       height: 34px;
@@ -453,8 +442,14 @@ export const prerender = false;
       justify-content:center;
       font-weight: 900;
       letter-spacing: .02em;
-      color: rgba(255,255,255,.92);
+      color: rgba(232,242,255,.92);
+      background: rgba(255,255,255,.08); /* no stripes */
     }
+    #abfChatPageRoot .abfMsgRow.self .abfAvatar{
+      background: rgba(56,189,248,.14);
+      border-color: rgba(56,189,248,.22);
+    }
+
     #abfChatPageRoot .abfBubble{
       max-width: min(720px, 82%);
       border-radius: 18px;
@@ -528,7 +523,7 @@ export const prerender = false;
     /* Mobile tuning */
     @media (max-width: 640px){
       #abfChatPageRoot .abfChatHero{ padding: 12px; border-radius: 20px; }
-      #abfChatPageRoot .abfHeroTitle{ font-size: 22px; }
+      #abfChatPageRoot .abfHeroTitle{ font-size: 24px; }
       #abfChatPageRoot .abfChatShell{ border-radius: 20px; }
       #abfChatPageRoot .abfChatLog{ padding: 12px 10px 14px; height: min(56vh, 440px); }
       #abfChatPageRoot .abfAvatar{ width: 30px; height: 30px; flex-basis: 30px; font-size: 12px; }
@@ -569,7 +564,6 @@ export const prerender = false;
 
       // smart scroll state
       let stickToBottom = true;
-      let userScrolledUp = false;
 
       // online estimate (unique pseudos seen recently)
       const ONLINE_TTL_MS = 1000 * 60 * 3; // 3 minutes
@@ -598,16 +592,6 @@ export const prerender = false;
         }catch{ return ""; }
       }
 
-      // deterministic hash -> 0..1
-      function hashTo01(str){
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i++){
-          h ^= str.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0) / 4294967295;
-      }
-
       function initials(p){
         const s = (p || "").trim();
         if (!s) return "AB";
@@ -615,20 +599,6 @@ export const prerender = false;
         const a = parts[0]?.[0] || "A";
         const b = parts.length > 1 ? (parts[1]?.[0] || "") : (parts[0]?.[1] || "");
         return (a + (b || "")).toUpperCase().slice(0,2);
-      }
-
-      // lock avatar hues to ABF cyan/blue range (no yellow)
-      function avatarStyle(pseudo){
-        const t = hashTo01((pseudo || "radioabf").toLowerCase());
-        const hue1 = 185 + Math.round(t * 30);       // 185..215
-        const hue2 = 195 + Math.round((1 - t) * 25); // 195..220
-        return `
-          background:
-            radial-gradient(18px 18px at 28% 28%,
-              hsla(${hue1}, 92%, 68%, .96),
-              hsla(${hue2}, 92%, 46%, .96)
-            );
-        `.trim();
       }
 
       function roomLabel(room){
@@ -649,8 +619,7 @@ export const prerender = false;
 
       function updateScrollState(){
         stickToBottom = shouldStick();
-        userScrolledUp = !stickToBottom;
-        if (userScrolledUp) scrollBtn.classList.remove("hidden");
+        if (!stickToBottom) scrollBtn.classList.remove("hidden");
         else scrollBtn.classList.add("hidden");
       }
 
@@ -669,7 +638,6 @@ export const prerender = false;
 
         const av = document.createElement("div");
         av.className = "abfAvatar";
-        av.setAttribute("style", avatarStyle(pseudo));
         av.textContent = initials(pseudo);
 
         const bubble = document.createElement("div");
@@ -708,7 +676,6 @@ export const prerender = false;
         }
       }
 
-      // periodic prune
       setInterval(() => {
         pruneSeen();
         onlineEl.textContent = seen.size ? String(seen.size) : "—";
@@ -761,6 +728,7 @@ export const prerender = false;
 
             stickToBottom = true;
             scrollToLatest(true);
+            updateScrollState();
             return;
           }
 
@@ -801,7 +769,6 @@ export const prerender = false;
 
         roomLabelEl.textContent = roomLabel(currentRoom);
 
-        // reset online estimator per room change
         seen.clear();
         onlineEl.textContent = "—";
 
@@ -825,7 +792,6 @@ export const prerender = false;
         msgEl.focus();
       }
 
-      // smart scroll listeners
       logEl.addEventListener("scroll", () => {
         updateScrollState();
       }, { passive: true });
@@ -836,7 +802,6 @@ export const prerender = false;
         updateScrollState();
       });
 
-      // reflect room selection in header immediately
       roomEl.addEventListener("change", () => {
         roomLabelEl.textContent = roomLabel(roomEl.value);
       });
