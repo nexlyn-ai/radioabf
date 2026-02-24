@@ -1,0 +1,96 @@
+---
+import Base from "../../layouts/Base.astro";
+import { directusGet } from "../../lib/directus";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+type VideoItem = {
+  id: number;
+  slug: string;
+  title: string;
+  description?: string | null;
+  youtube_url?: string | null;
+};
+
+type DirectusResp = { data: VideoItem[] };
+
+let video: VideoItem | null = null;
+
+try {
+  const resp = await directusGet<DirectusResp>(
+    `/items/videos?fields=id,slug,title,description,youtube_url&filter[slug][_eq]=${slug}&limit=1`
+  );
+  video = resp?.data?.[0] ?? null;
+} catch {
+  video = null;
+}
+
+function youtubeIdFromUrl(url?: string | null) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+
+    if (u.hostname.includes("youtu.be")) {
+      return u.pathname.split("/").filter(Boolean)[0] ?? null;
+    }
+
+    if (u.searchParams.get("v")) {
+      return u.searchParams.get("v");
+    }
+
+    const parts = u.pathname.split("/").filter(Boolean);
+    const embedIndex = parts.indexOf("embed");
+    if (embedIndex !== -1) return parts[embedIndex + 1] ?? null;
+
+    const shortsIndex = parts.indexOf("shorts");
+    if (shortsIndex !== -1) return parts[shortsIndex + 1] ?? null;
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+const youtubeId = youtubeIdFromUrl(video?.youtube_url);
+const embedUrl = youtubeId
+  ? `https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1`
+  : null;
+---
+
+{!video ? (
+  <Base title="Video not found — RadioABF">
+    <div class="text-white/60 p-6">Video not found.</div>
+  </Base>
+) : (
+  <Base
+    title={`${video.title} — RadioABF`}
+    description={video.description ?? ""}
+    canonical={`/videos/${video.slug}`}
+    image="/og-image.jpg"
+  >
+    <section class="max-w-4xl mx-auto">
+      <h1 class="text-2xl sm:text-3xl font-semibold text-white mb-6">
+        {video.title}
+      </h1>
+
+      {embedUrl ? (
+        <div class="aspect-video mb-6">
+          <iframe
+            src={embedUrl}
+            class="w-full h-full rounded-2xl"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          />
+        </div>
+      ) : (
+        <div class="text-white/50">Invalid YouTube URL</div>
+      )}
+
+      <p class="text-white/70 text-sm">
+        {video.description}
+      </p>
+    </section>
+  </Base>
+)}

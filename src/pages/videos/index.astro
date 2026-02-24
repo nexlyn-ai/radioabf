@@ -1,0 +1,119 @@
+---
+import Base from "../layouts/Base.astro";
+import { directusGet } from "../lib/directus";
+
+export const prerender = false;
+
+type VideoItem = {
+  id: number;
+  status: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  youtube_url?: string | null;
+};
+
+type DirectusResp = { data: VideoItem[] };
+
+let videos: VideoItem[] = [];
+
+try {
+  const resp = await directusGet<DirectusResp>(
+    `/items/videos?fields=id,status,slug,title,description,youtube_url&filter[status][_eq]=published&sort=-id`
+  );
+  videos = resp?.data ?? [];
+} catch {
+  videos = [];
+}
+
+function youtubeIdFromUrl(url?: string | null) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+
+    if (u.hostname.includes("youtu.be")) {
+      return u.pathname.split("/").filter(Boolean)[0] ?? null;
+    }
+
+    if (u.searchParams.get("v")) {
+      return u.searchParams.get("v");
+    }
+
+    const parts = u.pathname.split("/").filter(Boolean);
+    const embedIndex = parts.indexOf("embed");
+    if (embedIndex !== -1) return parts[embedIndex + 1] ?? null;
+
+    const shortsIndex = parts.indexOf("shorts");
+    if (shortsIndex !== -1) return parts[shortsIndex + 1] ?? null;
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+---
+
+<Base
+  title="Videos — RadioABF"
+  description="Exclusive interviews, DJ sets and YouTube videos from the RadioABF universe."
+  canonical="/videos"
+  image="/og-image.jpg"
+>
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 mb-8 shadow-2xl">
+    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
+    <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+
+    <div class="relative z-10">
+      <h1 class="text-2xl sm:text-3xl font-semibold text-white mb-2">
+        ABF Videos
+      </h1>
+      <p class="text-white/60 text-sm">
+        Interviews, DJ sets and exclusive content from the ABF universe.
+      </p>
+    </div>
+  </section>
+
+  {videos.length === 0 ? (
+    <div class="text-white/60 text-sm">
+      No videos yet — add one in Directus.
+    </div>
+  ) : (
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {videos.map((video) => {
+        const id = youtubeIdFromUrl(video.youtube_url);
+        const thumb = id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+
+        return (
+          <a
+            href={`/videos/${video.slug}`}
+            class="group rounded-3xl border border-white/10 bg-[#07182A] overflow-hidden shadow-2xl hover:scale-[1.02] transition-transform"
+          >
+            <div class="aspect-video bg-black relative">
+              {thumb ? (
+                <img
+                  src={thumb}
+                  alt={video.title}
+                  class="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div class="absolute inset-0 flex items-center justify-center text-xs text-white/50">
+                  Invalid YouTube link
+                </div>
+              )}
+            </div>
+
+            <div class="p-4">
+              <h2 class="text-sm font-semibold text-white line-clamp-1">
+                {video.title}
+              </h2>
+              <p class="text-xs text-white/60 mt-1 line-clamp-2">
+                {video.description}
+              </p>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  )}
+</Base>
