@@ -10,102 +10,87 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="abfChatPageRoot">
-    <!-- ✅ HERO (same typography/structure as /music hero) -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
-  <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
-  <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+    <!-- ✅ HERO (same typography as /music, but compact + login card inside hero, no duplicate card below) -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-4 sm:p-5 mb-4 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
 
-  <div class="relative z-10">
-    <div class="flex items-start justify-between gap-6 flex-wrap">
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-6 flex-wrap">
+          <!-- LEFT -->
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Live Chat
+            </div>
 
-      <!-- LEFT SIDE -->
-      <div class="min-w-0 flex-1">
+            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+              RadioABF <span class="text-cyan-200">Chat</span>
+            </h1>
 
-        <!-- Kicker -->
-        <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
-          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-          Live Chat
-        </div>
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Join the room, talk with listeners, and stay connected during shows.
+            </p>
 
-        <!-- SAME TYPO AS MUSIC -->
-        <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-          RadioABF <span class="text-cyan-200">Chat</span>
-        </h1>
+            <!-- ✅ badges bottom-left -->
+            <div class="flex items-center gap-2 flex-wrap mt-4">
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                ON AIR
+              </span>
 
-        <p class="text-white/65 mt-3 max-w-2xl">
-          Join the room, talk with listeners, and stay connected during shows.
-        </p>
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
+                <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
+                online
+              </span>
 
-        <!-- ✅ BADGES NOW BOTTOM LEFT -->
-        <div class="flex items-center gap-2 flex-wrap mt-6">
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
+                Smart scroll
+              </span>
 
-          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
-            ON AIR
-          </span>
+              <span class="text-xs text-white/60">
+                Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
+              </span>
+            </div>
 
-          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl inline-flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-300/90"></span>
-            <span id="abfChatOnline" class="tabular-nums font-semibold">—</span>
-            online
-          </span>
-
-          <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl">
-            Smart scroll
-          </span>
-
-          <span class="text-xs text-white/60">
-            Status: <span id="abfChatStatus" class="font-semibold">Connecting…</span>
-          </span>
-
-        </div>
-
-        <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
-
-      </div>
-
-      <!-- ✅ RIGHT SIDE LOGIN CARD (back in hero) -->
-      <div class="w-full sm:w-[320px] flex-shrink-0">
-
-        <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-5">
-
-          <div class="text-sm text-white/60 uppercase tracking-wider mb-4">
-            Join a room
+            <div id="abfChatError" class="mt-3 text-xs text-red-300 hidden"></div>
           </div>
 
-          <div class="space-y-3">
+          <!-- ✅ RIGHT: Join card back in hero -->
+          <div class="w-full sm:w-[320px] flex-shrink-0">
+            <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl p-4">
+              <div class="text-sm text-white/60 uppercase tracking-wider mb-3">
+                Join a room
+              </div>
 
-            <input
-              id="abfChatPseudo"
-              class="abfInput w-full"
-              placeholder="Pseudo (optionnel)"
-              maxlength="24"
-            />
+              <div class="space-y-3">
+                <input
+                  id="abfChatPseudo"
+                  class="abfInput w-full"
+                  placeholder="Pseudo (optionnel)"
+                  maxlength="24"
+                />
 
-            <select id="abfChatRoom" class="abfInput w-full">
-              <option value="general">General</option>
-              <option value="onair">Onair</option>
-              <option value="support">Support</option>
-            </select>
+                <select id="abfChatRoom" class="abfInput w-full abfSelect">
+                  <option value="general">General</option>
+                  <option value="onair">Onair</option>
+                  <option value="support">Support</option>
+                </select>
 
-            <button
-              id="abfChatJoin"
-              class="abfBtn abfBtnPrimary w-full"
-              type="button"
-            >
-              Join
-            </button>
-
+                <!-- ✅ join effects like earlier -->
+                <button id="abfChatJoin" class="abfBtn abfBtnPrimary w-full" type="button">
+                  Join
+                  <span class="abfBtnShine"></span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
+    </section>
 
-    </div>
-  </div>
-</section>
-
-    <!-- CHAT (unchanged content, premium shell) -->
+    <!-- CHAT -->
     <section class="abfChatShell">
       <div class="abfChatTopBar">
         <div class="abfChatTopLeft">
@@ -113,11 +98,9 @@ export const prerender = false;
           <span class="abfMuted">•</span>
           <span class="abfMuted">Premium ABF UI</span>
         </div>
-        <div class="flex items-center gap-2">
-          <button id="abfChatScrollBtn" class="abfBtn abfBtnGhost hidden" title="Scroll to latest">
-            Latest
-          </button>
-        </div>
+        <button id="abfChatScrollBtn" class="abfBtn abfBtnGhost hidden" title="Scroll to latest">
+          Latest
+        </button>
       </div>
 
       <div id="abfChatLog" class="abfChatLog" aria-live="polite"></div>
@@ -147,35 +130,6 @@ export const prerender = false;
         </button>
       </div>
     </section>
-
-    <!-- ✅ Join card moved UNDER hero (keeps everything else intact) -->
-    <section class="mt-6 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-6 items-start">
-      <div class="space-y-6">
-        <!-- (empty left column for now — keeps layout similar to other pages) -->
-      </div>
-
-      <aside class="space-y-6">
-        <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-xl">
-          <div class="p-5 border-b border-white/10">
-            <div class="text-sm text-white/60 uppercase tracking-wider">Join a room</div>
-            <div class="text-xs text-white/50 mt-1">Choose your nickname and salon</div>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-1 gap-3">
-              <input id="abfChatPseudo" class="abfInput" placeholder="Pseudo (optionnel)" maxlength="24" />
-              <select id="abfChatRoom" class="abfInput abfSelect">
-                <option value="general">General</option>
-                <option value="onair">Onair</option>
-                <option value="support">Support</option>
-              </select>
-              <button id="abfChatJoin" class="abfBtn abfBtnPrimaryWide" type="button">
-                Join
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
-    </section>
   </div>
 
   <style>
@@ -190,12 +144,11 @@ export const prerender = false;
       --abf-border: rgba(255,255,255,.10);
       --abf-text: rgba(232,242,255,.95);
       --abf-muted: rgba(232,242,255,.62);
-      --abf-warn: rgba(255,148,148,.92);
       color: var(--abf-text);
     }
     #abfChatPageRoot .hidden{ display:none !important; }
 
-    /* Inputs/buttons aligned with site ABF inputs */
+    /* Inputs aligned with site */
     #abfChatPageRoot .abfInput{
       appearance: none;
       border: 1px solid rgba(255,255,255,0.12);
@@ -221,6 +174,7 @@ export const prerender = false;
       color: rgba(232,242,255,.95);
     }
 
+    /* Buttons + shine effects */
     #abfChatPageRoot .abfBtn{
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.06);
@@ -228,8 +182,8 @@ export const prerender = false;
       border-radius: 14px;
       padding: 10px 14px;
       font-size: 12px;
-      font-weight: 800;
-      transition: 150ms ease;
+      font-weight: 900;
+      transition: 160ms ease;
       position: relative;
       user-select: none;
       height: 42px;
@@ -237,18 +191,23 @@ export const prerender = false;
       align-items:center;
       justify-content:center;
       gap: 8px;
+      overflow: hidden;
     }
     #abfChatPageRoot .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+    #abfChatPageRoot .abfBtn:active{ transform: translateY(1px); }
+
     #abfChatPageRoot .abfBtnPrimary{
-      background: rgba(56,189,248,.16);
-      border-color: rgba(56,189,248,.22);
-      overflow:hidden;
+      background: linear-gradient(180deg, rgba(56,189,248,.24), rgba(56,189,248,.12));
+      border-color: rgba(56,189,248,.30);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
     #abfChatPageRoot .abfBtnPrimary:hover{
-      background: rgba(56,189,248,.22);
-      border-color: rgba(56,189,248,.30);
+      background: linear-gradient(180deg, rgba(56,189,248,.30), rgba(56,189,248,.14));
+      border-color: rgba(56,189,248,.42);
+      box-shadow: 0 14px 40px rgba(0,0,0,.32);
+      transform: translateY(-1px);
     }
-    #abfChatPageRoot .abfBtnPrimaryWide{ width: 100%; }
+
     #abfChatPageRoot .abfBtnGhost{
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.12);
@@ -256,6 +215,10 @@ export const prerender = false;
       padding: 0 12px;
       height: 36px;
       border-radius: 12px;
+    }
+    #abfChatPageRoot .abfBtnGhost:hover{
+      background: rgba(255,255,255,.08);
+      transform: translateY(-1px);
     }
 
     #abfChatPageRoot .abfBtnShine{
@@ -311,7 +274,6 @@ export const prerender = false;
     }
     #abfChatPageRoot .abfMuted{ color: rgba(232,242,255,.55); }
 
-    /* Chat log */
     #abfChatPageRoot .abfChatLog{
       height: min(52vh, 420px);
       overflow: auto;
@@ -332,9 +294,7 @@ export const prerender = false;
       from{ opacity:0; transform: translateY(6px); }
       to{ opacity:1; transform: translateY(0); }
     }
-    #abfChatPageRoot .abfMsgRow.self{
-      flex-direction: row-reverse;
-    }
+    #abfChatPageRoot .abfMsgRow.self{ flex-direction: row-reverse; }
 
     #abfChatPageRoot .abfAvatar{
       width: 34px;
@@ -343,7 +303,6 @@ export const prerender = false;
       border: 1px solid rgba(255,255,255,.14);
       box-shadow: 0 10px 30px rgba(0,0,0,.22);
       flex: 0 0 34px;
-      overflow:hidden;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -364,7 +323,6 @@ export const prerender = false;
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
-      position: relative;
     }
     #abfChatPageRoot .abfMsgRow.self .abfBubble{
       background: linear-gradient(180deg, rgba(56,189,248,.18), rgba(56,189,248,.08));
@@ -376,8 +334,8 @@ export const prerender = false;
       align-items: baseline;
       gap: 8px;
       margin-bottom: 4px;
-      color: rgba(232,242,255,.70);
       font-size: 12px;
+      color: rgba(232,242,255,.70);
     }
     #abfChatPageRoot .abfUserDot{
       width: 8px;
@@ -398,7 +356,6 @@ export const prerender = false;
       white-space: pre-wrap;
     }
 
-    /* System lines */
     #abfChatPageRoot .abfSys{
       margin: 8px 0 12px;
       text-align: center;
@@ -444,7 +401,6 @@ export const prerender = false;
       padding: 0;
       border-radius: 14px;
       font-size: 18px;
-      line-height: 1;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -523,6 +479,7 @@ export const prerender = false;
     @media (prefers-reduced-motion: reduce){
       #abfChatPageRoot .abfMsgRow{ animation: none !important; }
       #abfChatPageRoot .abfChatLog{ scroll-behavior: auto; }
+      #abfChatPageRoot .abfBtnShine{ animation: none !important; }
     }
   </style>
 
@@ -543,7 +500,6 @@ export const prerender = false;
       const scrollBtn = $("abfChatScrollBtn");
       const onlineEl = $("abfChatOnline");
 
-      // emoji UI
       const emojiBtn = $("abfChatEmojiBtn");
       const emojiPanel = $("abfChatEmojiPanel");
       const emojiGrid = $("abfChatEmojiGrid");
@@ -555,9 +511,8 @@ export const prerender = false;
       let currentRoom = roomEl.value || "general";
       let stickToBottom = true;
 
-      // online estimate (unique pseudos seen recently)
-      const ONLINE_TTL_MS = 1000 * 60 * 3; // 3 minutes
-      const seen = new Map(); // pseudo -> lastSeenTs
+      const ONLINE_TTL_MS = 1000 * 60 * 3;
+      const seen = new Map();
 
       const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -577,9 +532,8 @@ export const prerender = false;
       }
 
       function nowHHMM(ts){
-        try{
-          return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-        }catch{ return ""; }
+        try{ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+        catch{ return ""; }
       }
 
       function initials(p){
@@ -605,11 +559,10 @@ export const prerender = false;
         return (h >>> 0) / 4294967295;
       }
 
-      // ABF palette (cyan -> violet), self stays cyan
       function nameColor(pseudo, isSelf=false){
         if (isSelf) return "rgba(56,189,248,.98)";
         const t = hashTo01((pseudo || "listener").toLowerCase());
-        const hue = 185 + Math.round(t * 95); // 185..280
+        const hue = 185 + Math.round(t * 95);
         return `hsla(${hue}, 92%, 72%, .98)`;
       }
 
@@ -619,9 +572,7 @@ export const prerender = false;
       }
 
       function scrollToLatest(force=false){
-        if (force || stickToBottom){
-          logEl.scrollTop = logEl.scrollHeight;
-        }
+        if (force || stickToBottom) logEl.scrollTop = logEl.scrollHeight;
       }
 
       function updateScrollState(){
@@ -698,7 +649,6 @@ export const prerender = false;
       function connect(){
         showErr("");
         joined = false;
-
         try { ws?.close(); } catch {}
         ws = new WebSocket(WS_URL);
 
@@ -782,7 +732,6 @@ export const prerender = false;
 
         myPseudo = pseudo;
         currentRoom = room;
-
         roomLabelEl.textContent = roomLabel(currentRoom);
 
         seen.clear();
@@ -808,7 +757,6 @@ export const prerender = false;
         msgEl.focus();
       }
 
-      // Emoji picker
       const EMOJIS = [
         "😀","😄","😁","😅","😂","🤣","😊","😍",
         "😎","🤩","🥳","🤯","😴","😭","😡","🤝",
@@ -869,7 +817,6 @@ export const prerender = false;
         if (e.key === "Escape") setEmojiOpen(false);
       });
 
-      // listeners
       logEl.addEventListener("scroll", () => updateScrollState(), { passive: true });
 
       scrollBtn.addEventListener("click", () => {
