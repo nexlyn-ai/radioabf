@@ -2121,14 +2121,6 @@ const listHtml = BUILDS.map(b => `
 
 buildList.innerHTML = currentHeader + listHtml;
 
-          <div class="buildItem">
-            <div class="buildLeft">
-              <div class="buildVer">v${esc(b.v)}</div>
-              <div class="buildTxt">${esc(b.t)}</div>
-            </div>
-            <div class="buildDate">${esc(b.d)}</div>
-          </div>
-        `).join("");
         const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
         const open = (modal) => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
         const close = (modal) => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
