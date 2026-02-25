@@ -2109,7 +2109,7 @@ const currentHeader = `
   </div>
 `;
 
-const listHtml = BUILDS.map(b => `
+const listHtml = BUILDS.slice(1).map((b) => `
   <div class="buildItem">
     <div class="buildLeft">
       <div class="buildVer">v${esc(b.v)}</div>
