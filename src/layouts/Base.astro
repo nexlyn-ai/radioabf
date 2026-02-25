@@ -1953,6 +1953,12 @@ function computeStatus(){
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
+	const BUILDS = [
+  {
+    v: "3.4.0",
+    d: "Feb 25, 2026",
+    t: "Official Chat integration: new /chat page fully integrated into the RadioABF design (desktop + mobile). Header navigation updated, layout harmonized with News, Music, Programs and Videos sections. Seamless UI integration without impacting player or streaming scripts."
+  },
 	{
   v: "3.3.10",
   d: "Feb 24, 2026",
@@ -2073,7 +2079,49 @@ function computeStatus(){
           .replace(/>/g,"&gt;")
           .replace(/"/g,"&quot;")
           .replace(/'/g,"&#039;");
-        buildList.innerHTML = BUILDS.map(b => `
+        const current = BUILDS[0] || { v: "—", d: "—", t: "" };
+
+const currentHeader = `
+  <div class="buildItem" style="border-color: rgba(47,194,255,0.30); background: rgba(47,194,255,0.06);">
+    <div class="buildLeft">
+      <div class="buildVer" style="display:flex; align-items:center; gap:10px;">
+        <span>Current version • v${esc(current.v)}</span>
+        <span
+          style="
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .10em;
+            text-transform: uppercase;
+            border: 1px solid rgba(47,194,255,0.35);
+            background: rgba(47,194,255,0.16);
+            color: rgba(210,245,255,0.95);
+            white-space: nowrap;
+          "
+        >stable</span>
+      </div>
+      <div class="buildTxt">${esc(current.t || "")}</div>
+    </div>
+    <div class="buildDate">${esc(current.d)}</div>
+  </div>
+`;
+
+const listHtml = BUILDS.map(b => `
+  <div class="buildItem">
+    <div class="buildLeft">
+      <div class="buildVer">v${esc(b.v)}</div>
+      <div class="buildTxt">${esc(b.t)}</div>
+    </div>
+    <div class="buildDate">${esc(b.d)}</div>
+  </div>
+`).join("");
+
+buildList.innerHTML = currentHeader + listHtml;
+
           <div class="buildItem">
             <div class="buildLeft">
               <div class="buildVer">v${esc(b.v)}</div>
