@@ -856,11 +856,18 @@ let history = [];
 const seen = new Set();
 
 for (const e of (historyServer || [])) {
-  const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
-  if (!e?.t) continue;
+  const raw = String(e?.raw || e?.t || "").trim();
+  const ts = Number(e?.played_at_ms || e?.ts || 0);
+  const key = `${raw.toLowerCase()}__${ts}`;
+  if (!raw) continue;
   if (seen.has(key)) continue;
   seen.add(key);
-  history.push(e);
+  history.push({
+    t: raw,          // ✅ normalise vers le format attendu par ton front
+    ts,              // ✅ idem
+    cover_url: String(e?.cover_url || ""),
+    cover_source: String(e?.cover_source || ""),
+  });
 }
 
 for (const e of (historyLocal || [])) {
