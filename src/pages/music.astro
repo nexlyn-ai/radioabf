@@ -21,11 +21,11 @@ export const prerender = false;
               Music Portal
             </div>
             <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
-			Music & Charts <span class="text-cyan-200">by RadioABF</span>
-			</h1>
-			<p class="text-white/65 mt-3 max-w-2xl">
-			Now playing, full history, and weekly community charts — updated live.
-			</p>
+              Music & Charts <span class="text-cyan-200">by RadioABF</span>
+            </h1>
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Now playing, full history, and weekly community charts — updated live.
+            </p>
           </div>
           <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
             <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
@@ -188,10 +188,10 @@ export const prerender = false;
             </div>
             <div class="mt-2 font-extrabold text-lg leading-tight">Community voting + covers system</div>
             <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2 list-disc pl-5">
-              <li><strong>1 vote per track per day.</strong><br>Every listener helps shape the weekly ABF chart.</li>
-              <li><strong>ABF CLUB shows are not votable.</strong><br>Only individual tracks count toward the charts.</li>
-              <li><strong>Covers system:</strong><br>Directus first when a cover is manually uploaded,<br>otherwise automatic iTunes fallback.</li>
-              <li><strong>Weekly rankings reset every Monday (ISO week).</strong><br>Fresh chart, fresh competition.</li>
+              <li><strong>1 vote per track per day.</strong><br />Every listener helps shape the weekly ABF chart.</li>
+              <li><strong>ABF CLUB shows are not votable.</strong><br />Only individual tracks count toward the charts.</li>
+              <li><strong>Covers system:</strong><br />Directus first when a cover is manually uploaded,<br />otherwise automatic iTunes fallback.</li>
+              <li><strong>Weekly rankings reset every Monday (ISO week).</strong><br />Fresh chart, fresh competition.</li>
             </ul>
             <p class="mt-4 text-sm text-white/80 italic">
               “Your votes power the ABF weekly chart — live, transparent, community-driven.”
@@ -408,6 +408,13 @@ export const prerender = false;
     return /^abf\s*club\b/i.test(String(artist || "").trim());
   }
 
+  // ✅ MODIF #2: annuler le retitrage (strip + titlecase) sur ABF CLUB
+  function displayTitleFor(artistRaw, titleRaw){
+    if (isBlockedShow(artistRaw)) return String(titleRaw || "—").trim() || "—";
+    const clean = stripTitleSuffixes(titleRaw);
+    return titleCaseEN(clean || "—");
+  }
+
   function blockedVoteMsg(){
     alert("Voting is disabled for ABF CLUB shows. Please vote for tracks only 🙂");
   }
@@ -459,12 +466,15 @@ export const prerender = false;
           });
         }
       }
-      const seen = new Set();
+
+      // ✅ MODIF #1: ne dédupliquer que les doublons consécutifs (au lieu de tout dédupliquer)
       const deduped = [];
+      let lastKey = "";
       for (const item of out){
-        const k = String(item.t || "").toLowerCase();
-        if (!k || seen.has(k)) continue;
-        seen.add(k);
+        const k = String(item.t || "").toLowerCase().trim();
+        if (!k) continue;
+        if (k === lastKey) continue;
+        lastKey = k;
         deduped.push(item);
       }
       return deduped.slice(0, limit);
@@ -486,7 +496,6 @@ export const prerender = false;
     }
   }
 
-  // ✅ FIX: return "none" when there's no cover URL so the badge can display "No cover"
   function inferCoverSource(coverUrl, explicitSource){
     const src = String(explicitSource || "").toLowerCase().trim();
     const u = String(coverUrl || "").toLowerCase().trim();
@@ -496,7 +505,7 @@ export const prerender = false;
     if (u.includes("mzstatic.com")) return "itunes";
     if (u.includes("/assets/") || u.includes("directus")) return "directus";
 
-    if (!u) return "none"; // <-- show "No cover"
+    if (!u) return "none";
     return "other";
   }
 
@@ -506,7 +515,6 @@ export const prerender = false;
 
     const kind = inferCoverSource(coverUrl, explicitSource);
 
-    // Always show badge for "none" too
     el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
     el.textContent =
       kind === "directus" ? "Directus cover" :
@@ -626,7 +634,6 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
   const [hh, mi] = timeStr.split(":").map(Number);
   if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
 
-  // ✅ IMPORTANT: inputs date/time are LOCAL time (Europe/Paris), so build a LOCAL timestamp
   const targetLocal = new Date(y, m - 1, d, hh, mi, 0, 0).getTime();
   const tol = toleranceMinutes * 60 * 1000;
 
@@ -638,7 +645,6 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
     const ts = Number(entry?.ts || 0);
     if (!ts) continue;
 
-    // ✅ Compare LOCAL day (not UTC)
     const ed = new Date(ts);
     const sameDay =
       ed.getFullYear() === y &&
@@ -691,7 +697,8 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
     const time = fmtTime(best.ts);
     const d = toLocalKey(best.ts).date;
     const artist = upperArtist(String(t.artist || "—"));
-    const title = titleCaseEN(stripTitleSuffixes(String(t.title || "—")));
+    // ✅ MODIF #2 appliquée ici aussi (ABF CLUB = raw)
+    const title = displayTitleFor(String(t.artist || ""), String(t.title || ""));
     const deltaMin = Math.round(bestDelta / 60000);
     box.innerHTML = `
       <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
@@ -849,7 +856,7 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
         titleEl.textContent = "—";
         if (timeEl) timeEl.textContent = "--:--";
         setCover("", root);
-        setCoverSourceBadge(root, "", ""); // will show "No cover"
+        setCoverSourceBadge(root, "", "");
         if (histEmpty) histEmpty.classList.remove("hidden");
         histEl.innerHTML = "";
         if (nowVoteBtn) nowVoteBtn.style.display = "none";
@@ -871,16 +878,16 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
       const current = splitTrack(currentEntry.t);
       const nowArtistRaw = String(current.artist || "").trim();
       const nowTitleRaw0 = String(current.title || "").trim();
-      const nowTitleClean = stripTitleSuffixes(nowTitleRaw0);
       artistEl.textContent = upperArtist(nowArtistRaw || "—");
-      titleEl.textContent = titleCaseEN(nowTitleClean || "—");
+      // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
+      titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
       const nowTime = fmtTime(currentEntry.ts);
       if (timeEl) timeEl.textContent = nowTime;
       const nowCover =
         String(currentEntry.cover_url || "").trim() ||
         (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
       setCover(nowCover, root);
-      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || "")); // ✅ shows "No cover" if empty
+      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || ""));
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
         apiGetTopWeek(prevWeek),
@@ -956,7 +963,6 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
         const t = splitTrack(entry.t);
         const aRaw = String(t.artist || "").trim();
         const tRaw0 = String(t.title || "").trim();
-        const tClean = stripTitleSuffixes(tRaw0);
         const kNorm = normKey(aRaw, tRaw0);
         const kRaw = rawKey(aRaw, tRaw0);
         const coverUrl =
@@ -968,7 +974,8 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
         return rowHtml({
           coverUrl,
           artist: upperArtist(aRaw || "—"),
-          title: titleCaseEN(tClean || "—"),
+          // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
+          title: displayTitleFor(aRaw, tRaw0),
           time: fmtTime(entry.ts),
           count,
           blocked,
@@ -1047,7 +1054,8 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
           const aRaw = String(row.artist || "").trim() || sp.artist || "—";
           const tRaw = String(row.title || "").trim() || sp.title || "—";
           const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
-          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), titleCaseEN(stripTitleSuffixes(tRaw)), Number(row.count || 0), max);
+          // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
+          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), displayTitleFor(aRaw, tRaw), Number(row.count || 0), max);
         }).join("");
       }
       const topPrevSafe = (topPrev || [])
@@ -1065,7 +1073,8 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
           const aRaw = String(row.artist || "").trim() || sp.artist || "—";
           const tRaw = String(row.title || "").trim() || sp.title || "—";
           const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
-          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), titleCaseEN(stripTitleSuffixes(tRaw)), Number(row.count || 0), maxP);
+          // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
+          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), displayTitleFor(aRaw, tRaw), Number(row.count || 0), maxP);
         }).join("");
       }
       if (state.search?.date && state.search?.time){
