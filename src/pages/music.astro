@@ -848,9 +848,31 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
       if (howWeekThisEl) howWeekThisEl.textContent = week.replace("-W"," W");
       if (howWeekPrevEl) howWeekPrevEl.textContent = prevWeek.replace("-W"," W");
       if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
-      let history = await fetchServerNowPlaying(80);
-      if (!history.length) history = loadHistory();
-      state.lastHistory = history || [];
+let historyServer = await fetchServerNowPlaying(80);
+const historyLocal = loadHistory();
+
+// ✅ Merge: server first, then fill with local cache to reach enough items
+let history = [];
+const seen = new Set();
+
+for (const e of (historyServer || [])) {
+  const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
+  if (!e?.t) continue;
+  if (seen.has(key)) continue;
+  seen.add(key);
+  history.push(e);
+}
+
+for (const e of (historyLocal || [])) {
+  const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
+  if (!e?.t) continue;
+  if (seen.has(key)) continue;
+  seen.add(key);
+  history.push(e);
+  if (history.length >= 80) break;
+}
+
+state.lastHistory = history || [];
       if (!history.length){
         artistEl.textContent = "—";
         titleEl.textContent = "—";
