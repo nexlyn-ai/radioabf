@@ -30,6 +30,25 @@ function cleanNowText(s: string) {
   return out.trim();
 }
 
+// ✅ NEW: filter garbage / partial metadata like "ABF -", "-", "—", "Artist -"
+function isBadRaw(raw: string) {
+  const s = String(raw || "").trim();
+
+  if (!s) return true;
+  if (s === "-" || s === "—" || s === "–") return true;
+
+  // "ABF -" / "ABF —" / "ABF –"
+  if (/^\s*abf\s*[-—–]\s*$/i.test(s)) return true;
+
+  // "Artist - " (empty title)
+  if (/^.{1,120}\s-\s*$/.test(s)) return true;
+
+  // "- Title" (empty artist)
+  if (/^\s*-\s+.{1,200}$/.test(s)) return true;
+
+  return false;
+}
+
 function splitTrack(entry: string) {
   const cleaned = cleanNowText(entry);
   const idx = cleaned.indexOf(" - ");
@@ -131,9 +150,7 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
 
     const coverVal = row?.[TRACKS_COVER_FIELD];
     const fileId =
-      typeof coverVal === "string"
-        ? coverVal
-        : (coverVal?.id ? String(coverVal.id) : "");
+      typeof coverVal === "string" ? coverVal : (coverVal?.id ? String(coverVal.id) : "");
 
     if (fileId) coverUrl = directusAssetUrl(fileId);
   } catch {
@@ -197,9 +214,7 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
 export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
-
-    // ✅ on garde ton cap, mais avec un default plus haut (front demande 80 souvent)
-    const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || "80")));
+    const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || "12")));
 
     // Icecast → now playing
     const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
@@ -207,6 +222,8 @@ export const GET: APIRoute = async ({ request }) => {
     const iceJson = await ice.json();
 
     const nowText = cleanNowText(extractNowPlaying(iceJson));
+    const nowIsBad = isBadRaw(nowText);
+
     const { artist, title } = splitTrack(nowText);
     const track_key = normKey(artist, title);
 
@@ -214,6 +231,7 @@ export const GET: APIRoute = async ({ request }) => {
     const played_at_ms = Date.parse(played_at);
 
     // Vérifier dernier en base + insert si changement
+    // ✅ NEW: do not insert garbage "ABF -" rows
     const lastRes = await directusFetch(
       `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
     );
@@ -221,7 +239,7 @@ export const GET: APIRoute = async ({ request }) => {
     const last = lastJson?.data?.[0];
 
     let inserted = false;
-    if (!last || last.track_key !== track_key) {
+    if (!nowIsBad && (!last || last.track_key !== track_key)) {
       await directusFetch(`/items/${PLAYS_COLLECTION}`, {
         method: "POST",
         body: JSON.stringify({
@@ -236,81 +254,63 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // ✅ Historique : on tire plus large pour compenser les doublons, puis on dédoublonne
+    // Historique → EXCLURE le titre actuel
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
-      limit: String(limit + 80), // marge anti-doublons
+      limit: limit.toString(),
+      ...(nowIsBad ? {} : { "filter[track_key][_neq]": track_key }),
     });
 
     const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
     const histJson = await histRes.json();
     const historyRaw = histJson?.data || [];
 
-    // On enrichit + dédoublonne (track_key + played_at_ms)
-    const seen = new Set<string>();
-    const history: Array<{
-      id: any;
-      raw: string;
-      artist: string;
-      title: string;
-      track_key: string;
-      played_at: any;
-      played_at_ms: number;
-      cover_url: string;
-      cover_source: string;
-      // champs bonus (compat front si jamais)
-      t: string;
-      ts: number;
-    }> = [];
+    const historyMaybe = await Promise.all(
+      historyRaw.map(async (row: any) => {
+        const a = String(row.artist || "");
+        const t = String(row.title || "");
+        const tk = String(row.track_key || "");
+        const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
+        const ts = toUTCms(row.played_at);
 
-    for (const row of historyRaw) {
-      const a = String(row?.artist || "");
-      const t0 = String(row?.title || "");
-      const tk = String(row?.track_key || "");
-      const raw = String(row?.raw || `${a} - ${t0}`.trim()).trim();
-      const ts = toUTCms(row?.played_at);
+        // ✅ NEW: drop garbage rows to avoid "ABF -" duplicates in UI
+        if (isBadRaw(raw)) return null;
 
-      if (!raw || !ts) continue;
+        // ✅ priorité Directus, fallback iTunes uniquement si vide
+        let cover_url = await fetchDirectusCoverByTrackKey(tk);
+        let cover_source = cover_url ? "directus" : "";
+        if (!cover_url) {
+          cover_url = await fetchItunesCover(a, t);
+          if (cover_url) cover_source = "itunes";
+        }
 
-      // exclure le NOW “actuel” si même track et timestamp très proche
-      if (tk === track_key && Math.abs(ts - played_at_ms) < 2 * 60 * 1000) continue;
+        return {
+          id: row.id,
+          raw,
+          artist: a,
+          title: t,
+          track_key: tk,
+          played_at: row.played_at,
+          played_at_ms: ts,
+          cover_url,
+          cover_source,
+        };
+      })
+    );
 
-      const key = `${tk}__${ts}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      let cover_url = await fetchDirectusCoverByTrackKey(tk);
-      let cover_source = cover_url ? "directus" : "";
-      if (!cover_url) {
-        cover_url = await fetchItunesCover(a, t0);
-        if (cover_url) cover_source = "itunes";
-      }
-
-      history.push({
-        id: row?.id,
-        raw,
-        artist: a,
-        title: t0,
-        track_key: tk,
-        played_at: row?.played_at,
-        played_at_ms: ts,
-        cover_url,
-        cover_source,
-        // bonus front-friendly
-        t: raw,
-        ts,
-      });
-
-      if (history.length >= limit) break;
-    }
+    const history = (historyMaybe || []).filter(Boolean);
 
     // Now cover
-    let nowCover = await fetchDirectusCoverByTrackKey(track_key);
-    let nowCoverSource = nowCover ? "directus" : "";
-    if (!nowCover) {
-      nowCover = await fetchItunesCover(artist, title);
-      if (nowCover) nowCoverSource = "itunes";
+    let nowCover = "";
+    let nowCoverSource = "";
+    if (!nowIsBad) {
+      nowCover = await fetchDirectusCoverByTrackKey(track_key);
+      nowCoverSource = nowCover ? "directus" : "";
+      if (!nowCover) {
+        nowCover = await fetchItunesCover(artist, title);
+        if (nowCover) nowCoverSource = "itunes";
+      }
     }
 
     return new Response(
@@ -318,10 +318,10 @@ export const GET: APIRoute = async ({ request }) => {
         ok: true,
         inserted,
         now: {
-          raw: nowText,
-          artist,
-          title,
-          track_key,
+          raw: nowIsBad ? "" : nowText,
+          artist: nowIsBad ? "" : artist,
+          title: nowIsBad ? "" : title,
+          track_key: nowIsBad ? "" : track_key,
           played_at,
           played_at_ms,
           cover_url: nowCover,
