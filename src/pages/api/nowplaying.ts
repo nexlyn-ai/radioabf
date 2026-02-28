@@ -235,17 +235,25 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // Historique → EXCLURE le titre actuel
+    // ✅ Historique → NE PLUS exclure tous les plays du track courant
+    // On récupère un peu plus, puis on retire seulement la 1ère ligne si elle correspond au titre courant.
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
-      limit: limit.toString(),
-      "filter[track_key][_neq]": track_key,
+      limit: String(limit + 1),
     });
 
     const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
     const histJson = await histRes.json();
-    const historyRaw = histJson?.data || [];
+    let historyRaw = histJson?.data || [];
+
+    // ✅ retire uniquement l’entrée la plus récente si elle correspond au track en cours
+    if (historyRaw[0]?.track_key === track_key) {
+      historyRaw = historyRaw.slice(1);
+    }
+
+    // puis on coupe au vrai "limit"
+    historyRaw = historyRaw.slice(0, limit);
 
     const history = await Promise.all(
       historyRaw.map(async (row: any) => {
