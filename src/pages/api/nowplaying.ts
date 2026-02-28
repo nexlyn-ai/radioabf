@@ -30,7 +30,7 @@ function cleanNowText(s: string) {
   return out.trim();
 }
 
-// ✅ NEW: filter garbage / partial metadata like "ABF -", "-", "—", "Artist -"
+// ✅ Filter garbage / partial metadata like "ABF -", "-", "—", "Artist -"
 function isBadRaw(raw: string) {
   const s = String(raw || "").trim();
 
@@ -231,7 +231,7 @@ export const GET: APIRoute = async ({ request }) => {
     const played_at_ms = Date.parse(played_at);
 
     // Vérifier dernier en base + insert si changement
-    // ✅ NEW: do not insert garbage "ABF -" rows
+    // ✅ do not insert garbage "ABF -" rows
     const lastRes = await directusFetch(
       `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
     );
@@ -254,11 +254,14 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // Historique → EXCLURE le titre actuel
+    // ✅ IMPORTANT FIX:
+    // We oversample from Directus, then filter bad rows, then slice back to `limit`.
+    const oversample = Math.min(200, Math.max(limit * 4, limit + 40));
+
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
-      limit: limit.toString(),
+      limit: oversample.toString(),
       ...(nowIsBad ? {} : { "filter[track_key][_neq]": track_key }),
     });
 
@@ -274,10 +277,8 @@ export const GET: APIRoute = async ({ request }) => {
         const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
         const ts = toUTCms(row.played_at);
 
-        // ✅ NEW: drop garbage rows to avoid "ABF -" duplicates in UI
         if (isBadRaw(raw)) return null;
 
-        // ✅ priorité Directus, fallback iTunes uniquement si vide
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
         let cover_source = cover_url ? "directus" : "";
         if (!cover_url) {
@@ -299,7 +300,7 @@ export const GET: APIRoute = async ({ request }) => {
       })
     );
 
-    const history = (historyMaybe || []).filter(Boolean);
+    const history = (historyMaybe || []).filter(Boolean).slice(0, limit);
 
     // Now cover
     let nowCover = "";
