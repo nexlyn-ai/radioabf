@@ -246,6 +246,8 @@ export const GET: APIRoute = async ({ request }) => {
     const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
     const histJson = await histRes.json();
     let historyRaw = histJson?.data || [];
+	
+	console.log("Directus returned historyRaw length:", (histJson?.data || []).length, "requested:", limit + 1);
 
     // ✅ retire uniquement l’entrée la plus récente si elle correspond au track en cours
     if (historyRaw[0]?.track_key === track_key) {
