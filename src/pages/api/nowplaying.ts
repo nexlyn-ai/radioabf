@@ -254,10 +254,10 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // ✅ IMPORTANT FIX:
-    // We oversample from Directus, then filter bad rows, then slice back to `limit`.
-    const oversample = Math.min(200, Math.max(limit * 4, limit + 40));
+    // ✅ TEMP FIX: Directus contains duplicates → oversample strongly, then dedupe, then slice to `limit`
+    const oversample = Math.min(500, Math.max(limit * 20, limit + 80));
 
+    // Historique → EXCLURE le titre actuel (sauf si now est garbage)
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
@@ -277,8 +277,10 @@ export const GET: APIRoute = async ({ request }) => {
         const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
         const ts = toUTCms(row.played_at);
 
+        // ✅ drop garbage rows to avoid "ABF -" duplicates in UI
         if (isBadRaw(raw)) return null;
 
+        // ✅ priorité Directus, fallback iTunes uniquement si vide
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
         let cover_source = cover_url ? "directus" : "";
         if (!cover_url) {
@@ -300,7 +302,21 @@ export const GET: APIRoute = async ({ request }) => {
       })
     );
 
-    const history = (historyMaybe || []).filter(Boolean).slice(0, limit);
+    // ✅ TEMP FIX: Deduplicate Directus rows (same track_key/raw + same played_at_ms)
+    const cleaned = (historyMaybe || []).filter(Boolean) as any[];
+
+    const seen = new Set<string>();
+    const uniq: any[] = [];
+
+    for (const it of cleaned) {
+      const k = `${String(it.track_key || it.raw || "")}__${Number(it.played_at_ms || 0)}`;
+      if (!it?.raw) continue;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      uniq.push(it);
+    }
+
+    const history = uniq.slice(0, limit);
 
     // Now cover
     let nowCover = "";
