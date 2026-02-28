@@ -102,6 +102,23 @@ function splitFromTrackKey(track_key: string) {
 }
 
 // ----------------------
+// ✅ ABF CLUB guard (SERVER-SIDE)
+// ----------------------
+function isABFClubTrackKey(track_key_raw: string) {
+  const raw = String(track_key_raw || "").trim();
+  if (!raw) return false;
+
+  // match "ABF CLUB - ..." or "ABFCLUB - ..." (tolerant spaces)
+  if (/^abf\s*club\b/i.test(raw)) return true;
+
+  // also match if artist part is ABF CLUB (from "Artist - Title")
+  const sp = splitFromTrackKey(raw);
+  if (/^abf\s*club\b/i.test(String(sp.artist || "").trim())) return true;
+
+  return false;
+}
+
+// ----------------------
 // Simple deterministic IP hash (NOT cryptographic)
 // ----------------------
 async function ipHash(ip: string) {
@@ -244,6 +261,9 @@ export const GET: APIRoute = async ({ url }) => {
       const raw = String(r?.track_key || "").trim();
       if (!raw) continue;
 
+      // ✅ SERVER-SIDE: exclude ABF CLUB from charts too
+      if (isABFClubTrackKey(raw)) continue;
+
       const nk = normTrackKey(raw);
       if (!nk) continue;
 
@@ -323,6 +343,18 @@ export const POST: APIRoute = async ({ request }) => {
 
     const track_key_raw = String(body?.track_key || "").trim();
     if (!track_key_raw) return bad(400, "Missing track_key");
+
+    // ✅ SERVER-SIDE: hard block ABF CLUB voting
+    if (isABFClubTrackKey(track_key_raw)) {
+      return json(
+        {
+          ok: false,
+          error: "Voting is disabled for ABF CLUB shows.",
+          reason: "blocked",
+        },
+        403
+      );
+    }
 
     // Normalize before storage / check
     const track_key = normTrackKey(track_key_raw);
