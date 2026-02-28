@@ -120,7 +120,6 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
 
   try {
     const params = new URLSearchParams({
-      // ✅ robuste: cover_art peut être string (id) OU objet { id }
       fields: `${TRACKS_COVER_FIELD},${TRACKS_COVER_FIELD}.id`,
       limit: "1",
       [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
@@ -198,7 +197,9 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
 export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
-    const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || "12")));
+
+    // ✅ on garde ton cap, mais avec un default plus haut (front demande 80 souvent)
+    const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || "80")));
 
     // Icecast → now playing
     const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
@@ -235,51 +236,72 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // Historique → on récupère large puis on dédoublonne proprement côté API
+    // ✅ Historique : on tire plus large pour compenser les doublons, puis on dédoublonne
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
-      limit: String(limit + 20), // ✅ marge pour compenser les doublons
+      limit: String(limit + 80), // marge anti-doublons
     });
 
     const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
     const histJson = await histRes.json();
     const historyRaw = histJson?.data || [];
 
-    const historyItems = await Promise.all(
-      historyRaw.map(async (row: any) => {
-        const a = String(row.artist || "");
-        const t = String(row.title || "");
-        const tk = String(row.track_key || "");
-        const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
-        const ts = toUTCms(row.played_at);
-
-        // ✅ priorité Directus, fallback iTunes uniquement si vide
-        let cover_url = await fetchDirectusCoverByTrackKey(tk);
-        let cover_source = cover_url ? "directus" : "";
-        if (!cover_url) {
-          cover_url = await fetchItunesCover(a, t);
-          if (cover_url) cover_source = "itunes";
-        }
-
-        return { t: raw, ts, cover_url, cover_source, track_key: tk };
-      })
-    );
-
-    // ✅ retire seulement l'entrée en cours (une seule fois) puis dédoublonne (track+ts)
+    // On enrichit + dédoublonne (track_key + played_at_ms)
     const seen = new Set<string>();
-    const history: Array<{ t: string; ts: number; cover_url: string; cover_source: string }> = [];
-    for (const it of historyItems) {
-      if (!it.t || !it.ts) continue;
+    const history: Array<{
+      id: any;
+      raw: string;
+      artist: string;
+      title: string;
+      track_key: string;
+      played_at: any;
+      played_at_ms: number;
+      cover_url: string;
+      cover_source: string;
+      // champs bonus (compat front si jamais)
+      t: string;
+      ts: number;
+    }> = [];
 
-      // exclude current NOW once (same track_key and ts within 2 min)
-      if (it.track_key === track_key && Math.abs(it.ts - played_at_ms) < 2 * 60 * 1000) continue;
+    for (const row of historyRaw) {
+      const a = String(row?.artist || "");
+      const t0 = String(row?.title || "");
+      const tk = String(row?.track_key || "");
+      const raw = String(row?.raw || `${a} - ${t0}`.trim()).trim();
+      const ts = toUTCms(row?.played_at);
 
-      const key = `${String(it.t).toLowerCase()}__${Number(it.ts)}`;
+      if (!raw || !ts) continue;
+
+      // exclure le NOW “actuel” si même track et timestamp très proche
+      if (tk === track_key && Math.abs(ts - played_at_ms) < 2 * 60 * 1000) continue;
+
+      const key = `${tk}__${ts}`;
       if (seen.has(key)) continue;
       seen.add(key);
 
-      history.push({ t: it.t, ts: it.ts, cover_url: it.cover_url, cover_source: it.cover_source });
+      let cover_url = await fetchDirectusCoverByTrackKey(tk);
+      let cover_source = cover_url ? "directus" : "";
+      if (!cover_url) {
+        cover_url = await fetchItunesCover(a, t0);
+        if (cover_url) cover_source = "itunes";
+      }
+
+      history.push({
+        id: row?.id,
+        raw,
+        artist: a,
+        title: t0,
+        track_key: tk,
+        played_at: row?.played_at,
+        played_at_ms: ts,
+        cover_url,
+        cover_source,
+        // bonus front-friendly
+        t: raw,
+        ts,
+      });
+
       if (history.length >= limit) break;
     }
 
@@ -304,9 +326,6 @@ export const GET: APIRoute = async ({ request }) => {
           played_at_ms,
           cover_url: nowCover,
           cover_source: nowCoverSource,
-          // ✅ format front-friendly too
-          t: nowText,
-          ts: played_at_ms,
         },
         history,
       }),
