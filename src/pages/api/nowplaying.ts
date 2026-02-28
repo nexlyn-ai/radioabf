@@ -235,54 +235,61 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // ✅ Historique → NE PLUS exclure tous les plays du track courant
-    // On récupère un peu plus, puis on retire seulement la 1ère ligne si elle correspond au titre courant.
+    // Historique → on récupère large puis on dédoublonne proprement côté API
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
-      limit: String(limit + 1),
+      limit: String(limit + 20), // ✅ marge pour compenser les doublons
     });
 
     const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
     const histJson = await histRes.json();
-    let historyRaw = histJson?.data || [];
-	
-	console.log("Directus returned historyRaw length:", (histJson?.data || []).length, "requested:", limit + 1);
+    const historyRaw = histJson?.data || [];
 
-    // ✅ retire uniquement l’entrée la plus récente si elle correspond au track en cours
-    if (historyRaw[0]?.track_key === track_key) {
-      historyRaw = historyRaw.slice(1);
-    }
-
-    // puis on coupe au vrai "limit"
-    historyRaw = historyRaw.slice(0, limit);
-
-    const history = await Promise.all(
+    const historyItems = await Promise.all(
       historyRaw.map(async (row: any) => {
         const a = String(row.artist || "");
         const t = String(row.title || "");
         const tk = String(row.track_key || "");
+        const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
+        const ts = toUTCms(row.played_at);
 
         // ✅ priorité Directus, fallback iTunes uniquement si vide
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
-        if (!cover_url) cover_url = await fetchItunesCover(a, t);
+        let cover_source = cover_url ? "directus" : "";
+        if (!cover_url) {
+          cover_url = await fetchItunesCover(a, t);
+          if (cover_url) cover_source = "itunes";
+        }
 
-        return {
-          id: row.id,
-          raw: row.raw,
-          artist: a,
-          title: t,
-          track_key: tk,
-          played_at: row.played_at,
-          played_at_ms: toUTCms(row.played_at),
-          cover_url,
-        };
+        return { t: raw, ts, cover_url, cover_source, track_key: tk };
       })
     );
 
+    // ✅ retire seulement l'entrée en cours (une seule fois) puis dédoublonne (track+ts)
+    const seen = new Set<string>();
+    const history: Array<{ t: string; ts: number; cover_url: string; cover_source: string }> = [];
+    for (const it of historyItems) {
+      if (!it.t || !it.ts) continue;
+
+      // exclude current NOW once (same track_key and ts within 2 min)
+      if (it.track_key === track_key && Math.abs(it.ts - played_at_ms) < 2 * 60 * 1000) continue;
+
+      const key = `${String(it.t).toLowerCase()}__${Number(it.ts)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      history.push({ t: it.t, ts: it.ts, cover_url: it.cover_url, cover_source: it.cover_source });
+      if (history.length >= limit) break;
+    }
+
     // Now cover
     let nowCover = await fetchDirectusCoverByTrackKey(track_key);
-    if (!nowCover) nowCover = await fetchItunesCover(artist, title);
+    let nowCoverSource = nowCover ? "directus" : "";
+    if (!nowCover) {
+      nowCover = await fetchItunesCover(artist, title);
+      if (nowCover) nowCoverSource = "itunes";
+    }
 
     return new Response(
       JSON.stringify({
@@ -296,6 +303,10 @@ export const GET: APIRoute = async ({ request }) => {
           played_at,
           played_at_ms,
           cover_url: nowCover,
+          cover_source: nowCoverSource,
+          // ✅ format front-friendly too
+          t: nowText,
+          ts: played_at_ms,
         },
         history,
       }),
