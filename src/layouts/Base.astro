@@ -711,19 +711,53 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       }).join("");
     }
 
-    function apply(root = document){
-      root.querySelectorAll("[data-abf-artist]").forEach((el) => {
-        const raw = (el.getAttribute("data-abf-artist") || "").trim();
-        const val = raw ? raw : el.textContent;
-        el.textContent = upperArtist(val);
-      });
+function apply(root = document){
 
-      root.querySelectorAll("[data-abf-title]").forEach((el) => {
-        const raw = (el.getAttribute("data-abf-title") || "").trim();
-        const val = raw ? raw : el.textContent;
-        el.textContent = titleCaseEN(val); // ✅ now includes stripping suffixes
-      });
+  // ✅ Special rule for ABF CLUB: show DJ name in the artist line, and "Live show" as title
+  function isAbfClub(a){
+    return /^abf\s*club\b/i.test(String(a || "").trim());
+  }
+
+  function handlePair(artistId, titleId){
+    const aEl = root.getElementById ? root.getElementById(artistId) : document.getElementById(artistId);
+    const tEl = root.getElementById ? root.getElementById(titleId) : document.getElementById(titleId);
+    if (!aEl || !tEl) return;
+
+    const rawArtist = (aEl.getAttribute("data-abf-artist") || aEl.textContent || "").trim();
+    const rawTitle  = (tEl.getAttribute("data-abf-title")  || tEl.textContent || "").trim();
+
+    if (isAbfClub(rawArtist)){
+      aEl.textContent = `ABF CLUB - ${rawTitle || "—"}`;
+      tEl.textContent = "Live show";
+      aEl.setAttribute("data-abf-skipfmt", "1");
+      tEl.setAttribute("data-abf-skipfmt", "1");
+    } else {
+      aEl.removeAttribute("data-abf-skipfmt");
+      tEl.removeAttribute("data-abf-skipfmt");
     }
+  }
+
+  // ✅ pairs used in your Base layout
+  handlePair("npArtist", "npTitle");
+  handlePair("fsArtist", "fsTitle");
+
+  // ---- normal formatting (skip ABF CLUB special ones) ----
+  root.querySelectorAll("[data-abf-artist]").forEach((el) => {
+    if (el.getAttribute("data-abf-skipfmt") === "1") return;
+
+    const raw = (el.getAttribute("data-abf-artist") || "").trim();
+    const val = raw ? raw : el.textContent;
+    el.textContent = upperArtist(val);
+  });
+
+  root.querySelectorAll("[data-abf-title]").forEach((el) => {
+    if (el.getAttribute("data-abf-skipfmt") === "1") return;
+
+    const raw = (el.getAttribute("data-abf-title") || "").trim();
+    const val = raw ? raw : el.textContent;
+    el.textContent = titleCaseEN(val);
+  });
+}
 
     // Expose
     window.ABF_FMT = { artist: upperArtist, title: titleCaseEN, strip: stripTitleSuffixes, apply };
@@ -1532,9 +1566,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             const full = String(now?.raw || "").trim() || (artist || title ? `${artist} - ${title}`.trim() : "");
             const a = $("npArtist");
             const t = $("npTitle");
-            if (a) a.textContent = artist || "—";
-            if (t) t.textContent = title || (full || "—");
-            fmtApply();
+            if (a){
+  a.setAttribute("data-abf-artist", artist || "");
+  a.textContent = artist || "—";
+}
+if (t){
+  const rawTitle = title || full || "";
+  t.setAttribute("data-abf-title", rawTitle);
+  t.textContent = rawTitle || "—";
+}
+fmtApply();
             // ✅ cover from API (Directus assets)
             const coverUrl = String(now?.cover_url || "").trim();
             setPlayerCover(coverUrl);
@@ -1604,8 +1645,18 @@ function computeStatus(){
           const fsMute = $("fsMute");
           const fsVol = $("fsVol");
           const fsSel = $("fsStreamSelect");
-          if (fa) fa.textContent = $("npArtist")?.textContent || "—";
-          if (ft) ft.textContent = $("npTitle")?.textContent || "—";
+          const npA = $("npArtist");
+const npT = $("npTitle");
+
+if (fa){
+  fa.setAttribute("data-abf-artist", npA?.getAttribute("data-abf-artist") || "");
+  fa.textContent = npA?.textContent || "—";
+}
+if (ft){
+  ft.setAttribute("data-abf-title", npT?.getAttribute("data-abf-title") || "");
+  ft.textContent = npT?.textContent || "—";
+}
+
           if (fsStatus) fsStatus.textContent = computeStatus();
           const fsPlayIc = fsPlay?.querySelector(".abf-ic");
           const fsMuteIc = fsMute?.querySelector(".abf-ic");
