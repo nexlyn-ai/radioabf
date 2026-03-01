@@ -887,15 +887,26 @@ try {
       if (n && u) coverByNorm[n] = u;
     }
     window.__abfHomeCoverByNorm = coverByNorm;
+	
     // NOW
     const currentEntry = history[0];
     const current = splitTrack(currentEntry.t);
-    const artist = cleanArtistForDisplay(current.artist);
-    const title = cleanTitleForDisplay(current.title);
-    // on laisse Base faire le formatage global via data-abf-*
-    artistEl.textContent = artist || "—";
-    titleEl.textContent = title || "—";
-    setCover(String(currentEntry.cover_url || "").trim() || coverByNorm[normKey(artist, title)] || "");
+    // ✅ RAW → ABF_FMT fera: uppercase artist + titleCase + strip suffixes
+const artistRaw = (current.artist || "").trim();
+const titleRaw  = (current.title  || "").trim();
+
+artistEl.textContent = artistRaw || "—";
+titleEl.textContent  = titleRaw  || "—";
+
+setCover(
+  String(currentEntry.cover_url || "").trim() ||
+  coverByNorm[normKey(artistRaw, titleRaw)] ||
+  ""
+);
+
+// applique le formatter global (utile après injections / swaps)
+try { window.ABF_FMT?.apply(document); } catch {}
+	
     // LAST PLAYED carousel: 3 items
     const items = history.slice(1, 4);
     if (!items.length){
@@ -904,8 +915,8 @@ try {
     }
     host.innerHTML = items.map((entry) => {
       const t = splitTrack(entry.t);
-      const a = cleanArtistForDisplay(t.artist);
-      const ti = cleanTitleForDisplay(t.title);
+      const a  = (t.artist || "").trim();
+	  const ti = (t.title  || "").trim();
       const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
       return `
         <a href="/music"
@@ -1474,12 +1485,17 @@ function formatWorldTimeLabel(timeHHMM){
     }
     // timers (nettoyage avant de re-créer)
     if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
-    window.__abfHomeTimer = setInterval(async () => {
-      await renderNowPlayingAndLast();
-      renderOnAirTonight();
-      renderTop();
-      renderHeroTop1();
-    }, 8000);
+   // 🔁 Refresh rapide : now playing + on air
+window.__abfHomeTimer = setInterval(async () => {
+  await renderNowPlayingAndLast();
+  renderOnAirTonight();
+}, 8000);
+
+// 🔁 Refresh plus lent : votes (Top + #1)
+window.__abfHomeVoteTimer = setInterval(async () => {
+  await renderTop();
+  await renderHeroTop1();
+}, 30000);
     if (!window.__abfOnAirTimer){
       window.__abfOnAirTimer = setInterval(renderOnAirTonight, 30000);
     }
@@ -1496,6 +1512,7 @@ function formatWorldTimeLabel(timeHHMM){
     document.addEventListener("astro:after-swap", initHomePage);
     document.addEventListener("astro:before-swap", () => {
       if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
+	  if (window.__abfHomeVoteTimer) clearInterval(window.__abfHomeVoteTimer);
     });
     // rafraîchir dès que le player met à jour l'historique (server-side now)
     window.addEventListener("abf:history-updated", initHomePage);
