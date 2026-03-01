@@ -504,7 +504,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 <!-- ================= HEADER ================= -->
 <header id="siteHeader" class="sticky top-0 z-50">
   <div class="bg-[#050B14]/80 backdrop-blur-xl border-b border-white/10">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-4">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-4">
       <!-- ✅ important: parent en relative pour ancrer le dropdown -->
       <div class="relative">
         <div class="flex items-center justify-between gap-4">
@@ -1936,7 +1936,10 @@ if (ft){
       })();
     </script>
     <!-- ================= FOOTER ================= -->
-    <footer id="siteFooter" class="fixed bottom-0 left-0 right-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-t border-white/10">
+    <footer
+  id="siteFooter"
+  class="z-40 bg-[#050B14]/80 backdrop-blur-xl border-t border-white/10 md:fixed md:bottom-0 md:left-0 md:right-0"
+>
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/60">
     
     <div class="text-center md:text-left">
@@ -2529,7 +2532,8 @@ buildList.innerHTML = currentHeader + listHtml;
         const player = document.getElementById("playerContainer");
         if (!footer || !player) return;
         const apply = () => {
-          const fh = footer.offsetHeight || 0;
+          const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+		  const fh = isDesktop ? (footer.offsetHeight || 0) : 0;
           const ph = player.offsetHeight || 0;
           document.body.style.setProperty("--abf-footer-h", fh + "px");
           document.body.style.setProperty("--abf-player-h", ph + "px");
