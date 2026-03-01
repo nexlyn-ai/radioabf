@@ -2,35 +2,30 @@
 
 /* =========================================================
    GLOBAL LAYOUT STABILITY
-   Fix micro horizontal shift between pages (scrollbar issue)
    ========================================================= */
 
 :root{
   color-scheme: dark;
-
-  /* Dedications bar height (keep in sync with .dedications-inner height) */
   --dedications-h: 28px;
 }
 
 html{
-  /* keeps layout width stable even when scrollbar appears */
   scrollbar-gutter: stable;
 }
 
 html, body{
-  overflow-x: clip; /* prevents 1px overflow from glows / gradients */
+  overflow-x: clip;
   width: 100%;
 }
 
 /* =========================================================
-   ABF PLAYER (distinct from cards)
+   ABF PLAYER (glass system)
    ========================================================= */
 
 .abf-playerGlass{
   position: relative;
   isolation: isolate;
 
-  /* glass */
   background: linear-gradient(
       135deg,
       rgba(255,255,255,0.10),
@@ -40,7 +35,6 @@ html, body{
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
 
-  /* border + depth */
   border: 1px solid rgba(255,255,255,0.12);
   box-shadow:
     0 18px 50px rgba(0,0,0,0.55),
@@ -49,7 +43,7 @@ html, body{
   transform: translateZ(0);
 }
 
-/* top shine */
+/* shine */
 .abf-playerGlass::before{
   content:"";
   position:absolute;
@@ -66,7 +60,7 @@ html, body{
   z-index: 0;
 }
 
-/* subtle cyan glow */
+/* cyan glow */
 .abf-playerGlass::after{
   content:"";
   position:absolute;
@@ -83,13 +77,12 @@ html, body{
   z-index: -1;
 }
 
-/* keep inner content above shine layers */
 .abf-playerGlass > *{
   position: relative;
   z-index: 1;
 }
 
-/* optional noise texture */
+/* noise */
 .abf-playerGlass .abf-noise{
   position:absolute;
   inset:0;
@@ -103,24 +96,33 @@ html, body{
   background-size: 140px 140px;
 }
 
-/* visualizer canvas */
+/* =========================================================
+   VISUALIZER
+   ========================================================= */
+
 #visualizerCanvas{
   background: rgba(0,0,0,0.14);
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* volume slider */
-#volRange{
+/* =========================================================
+   VOLUME SLIDERS (desktop + mobile)
+   ========================================================= */
+
+#volRange,
+#volRangeMobile{
   accent-color: rgba(47,194,255,0.9);
 }
 
-#volRange::-webkit-slider-runnable-track{
+#volRange::-webkit-slider-runnable-track,
+#volRangeMobile::-webkit-slider-runnable-track{
   height: 6px;
   border-radius: 999px;
   background: rgba(255,255,255,0.18);
 }
 
-#volRange::-webkit-slider-thumb{
+#volRange::-webkit-slider-thumb,
+#volRangeMobile::-webkit-slider-thumb{
   -webkit-appearance: none;
   width: 14px;
   height: 14px;
@@ -129,7 +131,10 @@ html, body{
   background: rgba(255,255,255,0.9);
 }
 
-/* hardware feel buttons */
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
 #playerContainer button{
   color: rgba(255,255,255,0.88);
 }
@@ -143,129 +148,8 @@ html, body{
 }
 
 /* =========================================================
-   DEDICATIONS BAR — FIXED under header
+   CAST BUTTON FIX (stroke only icon)
    ========================================================= */
-
-/* Dedications bar fixed under header */
-.dedications-bar{
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--header-height, 96px);
-  z-index: 45; /* under header (z-50), above page content */
-  background: rgba(10, 31, 51, 0.65);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
-}
-
-.dedications-inner{
-  max-width: 1152px; /* max-w-6xl */
-  margin: 0 auto;
-  padding: 0 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  height: var(--dedications-h, 28px); /* ultra-fin */
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.dedications-label{
-  flex-shrink: 0;
-  padding: 0.125rem 0.75rem;
-  border-radius: 0.375rem; /* rectangulaire doux */
-  background: rgba(34, 211, 238, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.25);
-  color: rgba(34, 211, 238, 0.95);
-  font-size: 0.625rem; /* 10px */
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 1px 4px rgba(34, 211, 238, 0.1);
-}
-
-.dedications-scroll{
-  flex: 1;
-  overflow: hidden;
-}
-.dedications-scroll-inner{
-  display: inline-flex;
-  align-items: center;
-  gap: 1.5rem;
-
-  font-size: 12px; /* Réglage de la taille du texte des dédicaces */
-  line-height: 1;
-  letter-spacing: .02em;
-
-  white-space: nowrap;     /* IMPORTANT */
-  will-change: transform;  /* IMPORTANT */
-  transform: translate3d(0,0,0);
-}
-
-.dedications-scroll-inner span{
-  color: rgba(165, 243, 252, 0.88);
-  font-weight: 500;
-}
-
-.dedications-scroll-inner span strong{
-  color: rgba(255,255,255,0.92);
-  font-weight: 700;
-}
-
-
-.dedications-send-btn{
-  flex-shrink: 0;
-  padding: 0.125rem 0.75rem;
-  border-radius: 0.375rem;
-  background: linear-gradient(to right, rgba(34, 211, 238, 0.7), rgba(59, 130, 246, 0.7));
-  color: white;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(34, 211, 238, 0.2);
-}
-
-.dedications-send-btn:hover{
-  background: linear-gradient(to right, rgba(34, 211, 238, 0.85), rgba(59, 130, 246, 0.85));
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(34, 211, 238, 0.35);
-}
-
-.dedications-badge{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  margin-left: 8px;
-  height: 16px;
-  min-width: 16px;
-  padding: 0 6px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .02em;
-  color: rgba(255,255,255,0.95);
-  background: rgba(239,68,68,0.95); /* rouge */
-  box-shadow: 0 6px 18px rgba(239,68,68,0.25);
-  transform: translateY(-1px);
-}
-
-.dedications-badge.hidden{
-  display:none;
-}
-
-
-/* =========================================================
-   PAGE OFFSET (so fixed bar doesn't overlap content)
-   ========================================================= */
-
-/* If your main has id="mainContent" (it does in Base.astro),
-   we add spacing so content starts BELOW the dedications bar. */
-main#mainContent{
-  padding-top: calc(var(--dedications-h, 28px) + 16px);
-}
 
 #castBtn {
   transition: all 0.25s ease;
@@ -281,11 +165,74 @@ main#mainContent{
   background: rgba(47, 194, 255, 0.25);
 }
 
-/* évite effet “gras” sur SVG */
-#castBtn svg {
-  fill: currentColor;
-  stroke: none;
+/* IMPORTANT FIX */
+#castBtn svg{
+  fill: none;
+  stroke: currentColor;
 }
-#castBtn {
-  backdrop-filter: none !important;
+
+/* =========================================================
+   PLAYER MINI / EXPAND MOBILE
+   ========================================================= */
+
+@media (max-width: 639px){
+
+  /* hide visualizer when mini */
+  #playerContainer[data-mini="true"] #playerVizWrap{
+    display: none;
+  }
+
+  /* slightly tighter spacing in mini */
+  #playerContainer[data-mini="true"] .abf-playerGlass{
+    border-radius: 1rem;
+  }
+}
+
+/* =========================================================
+   DEDICATIONS BAR
+   ========================================================= */
+
+.dedications-bar{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--header-height, 96px);
+  z-index: 45;
+  background: rgba(10, 31, 51, 0.65);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+}
+
+.dedications-inner{
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: var(--dedications-h, 28px);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.dedications-scroll-inner{
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  will-change: transform;
+  transform: translate3d(0,0,0);
+}
+
+/* =========================================================
+   PAGE OFFSET
+   ========================================================= */
+
+main#mainContent{
+  padding-top: calc(var(--dedications-h, 28px) + 16px);
 }
