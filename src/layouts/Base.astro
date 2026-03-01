@@ -459,7 +459,26 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
   animation: abfCastingPulse 1.15s ease-out infinite;
 }
 	  
-         </style>
+	  /* Dedications emoji buttons */
+#dedEmojiGrid button{
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: .12s ease;
+}
+#dedEmojiGrid button:hover{
+  background: rgba(255,255,255,0.10);
+  transform: translateY(-1px);
+}
+</style>
+	  
+	  
     <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
@@ -3026,24 +3045,349 @@ buildList.innerHTML = currentHeader + listHtml;
   required
 />
       </div>
-      <!-- MESSAGE (AGRANDI) -->
-      <div>
-        <label class="block text-xs text-white/60 mb-2">
-          Your message
-        </label>
-       <textarea
-  id="dedMessage"
-  name="message"
-  maxlength="300"
-  rows="5"
-  class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
-  placeholder="Your message"
-  required
-></textarea>
-        <div class="text-[11px] text-white/40 mt-2">
-          Max 300 characters.
+	  
+<script is:inline data-astro-rerun>
+(() => {
+  // Prevent double-binding across Astro swaps
+  if (window.__abfDedEmojiBound) return;
+  window.__abfDedEmojiBound = true;
+
+  const $ = (id) => document.getElementById(id);
+
+  const EMOJIS = [
+  
+    // 😄 CLASSIC EXPRESSIONS
+  { e:"😎", k:["cool"] },
+  { e:"😍", k:["love","eyes"] },
+  { e:"🥰", k:["happy","love"] },
+  { e:"😂", k:["lol","funny"] },
+  { e:"🤣", k:["funny"] },
+  { e:"😊", k:["smile"] },
+  { e:"😁", k:["grin"] },
+  { e:"😉", k:["wink"] },
+  { e:"🥳", k:["party"] },
+  { e:"🤩", k:["wow"] },
+  { e:"🙌", k:["hands","yay"] },
+  { e:"👏", k:["clap"] },
+  { e:"🙏", k:["thanks"] },
+
+  // 🔥 RADIO / DJ / LIVE
+  { e:"📻", k:["radio","fm","station"] },
+  { e:"🎙️", k:["mic","microphone","radio"] },
+  { e:"🎤", k:["mic","live","sing"] },
+  { e:"🎧", k:["headphones","dj","music"] },
+  { e:"🎚️", k:["mixer","dj","studio"] },
+  { e:"🎛️", k:["studio","mixer","radio"] },
+  { e:"🔊", k:["speaker","sound","volume"] },
+  { e:"🔈", k:["speaker"] },
+  { e:"🔉", k:["volume"] },
+  { e:"📡", k:["signal","broadcast"] },
+  { e:"📀", k:["cd","music"] },
+  { e:"💿", k:["disc"] },
+  { e:"🛰️", k:["satellite","broadcast"] },
+
+  // 🎉 PARTY / CLUB
+  { e:"🎉", k:["party"] },
+  { e:"🎊", k:["celebration"] },
+  { e:"💃", k:["dance"] },
+  { e:"🕺", k:["dance"] },
+  { e:"🍾", k:["champagne"] },
+  { e:"🥂", k:["cheers"] },
+  { e:"🍻", k:["beer"] },
+
+  // 🎶 MUSIC
+  { e:"🎵", k:["note","music"] },
+  { e:"🎶", k:["notes","music"] },
+  { e:"🎼", k:["score"] },
+  { e:"🎹", k:["piano"] },
+  { e:"🥁", k:["drum"] },
+  { e:"🎸", k:["guitar"] },
+  { e:"🎺", k:["trumpet"] },
+
+  // 🔥 VIBES / ENERGY
+  { e:"🔥", k:["fire","hot"] },
+  { e:"💥", k:["boom"] },
+  { e:"⚡", k:["energy","power"] },
+  { e:"🚀", k:["rocket"] },
+  { e:"✨", k:["sparkles"] },
+  { e:"🌟", k:["star"] },
+  { e:"⭐", k:["star"] },
+  { e:"💫", k:["stars"] },
+  { e:"🌊", k:["wave"] },
+  { e:"🌙", k:["night"] },
+  { e:"☀️", k:["sun"] },
+
+  // ❤️ CLASSIC HEARTS
+  { e:"❤️", k:["heart","love"] },
+  { e:"💙", k:["blue","heart"] },
+  { e:"💜", k:["purple","heart"] },
+  { e:"🧡", k:["orange","heart"] },
+  { e:"💚", k:["green","heart"] },
+  { e:"🖤", k:["black","heart"] },
+  { e:"🤍", k:["white","heart"] },
+  { e:"💛", k:["yellow","heart"] },
+  { e:"🫶", k:["hands","heart"] },
+
+  // 🌍 COMMUNITY
+  { e:"🌍", k:["world"] },
+  { e:"🌎", k:["world"] },
+  { e:"🌏", k:["world"] },
+  { e:"🤝", k:["together"] },
+  { e:"👊", k:["support"] },
+  { e:"✌️", k:["peace"] },
+
+];
+
+  function insertAtCursor(textarea, emoji) {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? textarea.value.length;
+    const before = textarea.value.slice(0, start);
+    const after = textarea.value.slice(end);
+    textarea.value = before + emoji + after;
+    const pos = start + emoji.length;
+    textarea.focus();
+    textarea.setSelectionRange(pos, pos);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function renderGrid(filter = "") {
+    const grid = $("dedEmojiGrid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    const q = filter.trim().toLowerCase();
+
+    const list = !q
+      ? EMOJIS
+      : EMOJIS.filter(x => (x.k || []).some(kk => kk.includes(q)));
+
+    list.forEach((x) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = x.e;
+      b.setAttribute("aria-label", "emoji " + x.e);
+      b.addEventListener("click", () => {
+        const ta = $("dedMessage");
+        if (!ta) return;
+        insertAtCursor(ta, x.e);
+      });
+      grid.appendChild(b);
+    });
+
+    if (!list.length) {
+      const empty = document.createElement("div");
+      empty.className = "col-span-8 text-xs text-white/45 py-2";
+      empty.textContent = "No results.";
+      grid.appendChild(empty);
+    }
+  }
+
+  function closePanel() {
+    const p = $("dedEmojiPanel");
+    if (p) p.classList.add("hidden");
+  }
+ 
+function positionPanel() {
+  const btn = $("dedEmojiBtn");
+  const panel = $("dedEmojiPanel");
+  if (!btn || !panel) return;
+
+  const r = btn.getBoundingClientRect();
+  const gap = 10;
+
+  const panelW = Math.min(300, Math.floor(window.innerWidth * 0.88));
+  panel.style.width = panelW + "px";
+
+  let left = r.right - panelW;
+  left = Math.max(10, Math.min(left, window.innerWidth - panelW - 10));
+
+  let top = r.bottom + gap;
+  const maxH = Math.min(window.innerHeight * 0.62, 380);
+
+  const fitsBelow = (top + maxH + 10) <= window.innerHeight;
+
+  if (!fitsBelow) {
+    top = Math.max(10, r.top - gap - maxH);
+  }
+
+  panel.style.left = left + "px";
+  panel.style.top = top + "px";
+} 
+  
+function togglePanel() {
+  const p = $("dedEmojiPanel");
+  if (!p) return;
+
+  const willOpen = p.classList.contains("hidden");
+
+  if (!willOpen) {
+    p.classList.add("hidden");
+    return;
+  }
+
+  // Open
+  p.classList.remove("hidden");
+  positionPanel();
+
+  const search = $("dedEmojiSearch");
+if (search) search.value = "";   // ✅ reset filter on open
+
+renderGrid("");                  // ✅ show ALL emojis
+
+const grid = $("dedEmojiGrid");
+if (grid) grid.scrollTop = 0;
+
+search?.focus();
+}
+
+  function bindOnce() {
+    const btn = $("dedEmojiBtn");
+    const panel = $("dedEmojiPanel");
+    const search = $("dedEmojiSearch");
+
+    // Si on est sur une page sans modal, on skip
+    if (!btn || !panel) return;
+
+    // éviter double binding si Astro rerun + script global
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      togglePanel();
+    });
+
+    if (search) {
+      search.addEventListener("input", () => {
+        renderGrid(search.value);
+      });
+    }
+
+    // Fermer si click en dehors
+    document.addEventListener("click", (e) => {
+      if (panel.classList.contains("hidden")) return;
+      if (e.target.closest("#dedEmojiPanel")) return;
+      if (e.target.closest("#dedEmojiBtn")) return;
+      closePanel();
+    });
+
+    // Fermer au ESC si ouvert
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closePanel();
+    });
+
+    // Astuce: quand le modal dedication s'ouvre, ferme le panel
+    const dedModal = $("dedicationModal");
+    if (dedModal) {
+      const obs = new MutationObserver(() => closePanel());
+      obs.observe(dedModal, { attributes: true, attributeFilter: ["class","aria-hidden"] });
+    }
+
+    renderGrid("");
+  }
+  
+  window.addEventListener("resize", () => {
+  const p = $("dedEmojiPanel");
+  if (p && !p.classList.contains("hidden")) positionPanel();
+}, { passive: true });
+
+document.addEventListener("scroll", () => {
+  const p = $("dedEmojiPanel");
+  if (p && !p.classList.contains("hidden")) positionPanel();
+}, { passive: true, capture: true });
+
+  // Boot now + after Astro swaps
+  const boot = () => {
+    bindOnce();
+    requestAnimationFrame(bindOnce);
+    setTimeout(bindOnce, 50);
+  };
+
+  boot();
+  document.addEventListener("astro:page-load", boot);
+  document.addEventListener("astro:after-swap", boot);
+})();
+</script>
+
+<!-- MESSAGE + EMOJIS -->
+<div>
+  <div class="flex items-center justify-between gap-3">
+    <label class="block text-xs text-white/60 mb-2">
+      Your message
+    </label>
+
+    <!-- ✅ Emoji button -->
+    <div class="relative">
+      <button
+        id="dedEmojiBtn"
+        type="button"
+        class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-xs font-semibold text-white/80"
+        aria-label="Add emoji"
+        title="Add emoji"
+      >
+        😊 <span class="hidden sm:inline">Emojis</span>
+      </button>
+
+      <!-- ✅ Emoji panel -->
+     <div
+  id="dedEmojiPanel"
+  class="hidden fixed w-[300px] max-w-[88vw] rounded-2xl border border-white/10 bg-[#050B14]/95 backdrop-blur-xl shadow-2xl p-3 z-[99999]"
+  style="
+    left: 0px;
+    top: 0px;
+    max-height: min(62vh, 380px);
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  "
+>
+        <div class="text-[11px] uppercase tracking-wider text-white/50 font-extrabold mb-2">
+          Quick emojis
+        </div>
+
+        <!-- optional search -->
+        <input
+          id="dedEmojiSearch"
+          type="text"
+          class="w-full mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs outline-none focus:border-cyan-400/40 transition"
+          placeholder="Search… (ex: heart)"
+        />
+
+       <div
+  id="dedEmojiGrid"
+  class="grid grid-cols-8 gap-1"
+  style="
+    height: calc(min(62vh, 380px) - 120px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  "
+></div>
+
+        <div class="mt-2 text-[11px] text-white/45">
+          Click an emoji to insert it.
         </div>
       </div>
+    </div>
+  </div>
+
+  <textarea
+    id="dedMessage"
+    name="message"
+    maxlength="300"
+    rows="5"
+    class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+    placeholder="Your message"
+    required
+  ></textarea>
+
+  <div class="text-[11px] text-white/40 mt-2">
+    Max 300 characters.
+  </div>
+</div>
+
       <!-- FEEDBACK -->
      <div
   id="dedicationFeedback"
