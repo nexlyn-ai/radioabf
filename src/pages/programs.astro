@@ -282,14 +282,17 @@ try {
         0%,100% { transform: scale(1); opacity: .9; }
         50% { transform: scale(1.25); opacity: 1; }
       }
-      .onAirStrip .label{
-        color: rgba(255,255,255,.92);
-        font-weight: 800;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 56vw;
-      }
+  .onAirStrip .label{
+  color: rgba(255,255,255,.92);
+  font-weight: 800;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;          /* ✅ max 2 lignes */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 56vw;
+  line-height: 1.2;
+}
 
       /* ✅ Time block: premium + responsive line split */
       .onAirStrip .time{
