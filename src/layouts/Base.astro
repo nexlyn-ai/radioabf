@@ -3621,5 +3621,60 @@ document.addEventListener("scroll", () => {
     </form>
   </div>
 </div>
+
+<script is:inline data-astro-rerun>
+(() => {
+  // mobile only
+  const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
+
+  let lastY = 0;
+  let ticking = false;
+
+  const apply = () => {
+    ticking = false;
+    if (!isMobile()) {
+      document.body.classList.remove("abf-chrome-hidden");
+      lastY = window.scrollY || 0;
+      return;
+    }
+
+    const y = window.scrollY || 0;
+    const dy = y - lastY;
+
+    // Toujours visible proche du top
+    if (y < 24) {
+      document.body.classList.remove("abf-chrome-hidden");
+      lastY = y;
+      return;
+    }
+
+    // Scroll down => hide, scroll up => show
+    if (dy > 6) document.body.classList.add("abf-chrome-hidden");
+    if (dy < -6) document.body.classList.remove("abf-chrome-hidden");
+
+    lastY = y;
+  };
+
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(apply);
+  };
+
+  // reset on navigation swaps
+  const boot = () => {
+    lastY = window.scrollY || 0;
+    apply();
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", boot, { passive: true });
+
+  document.addEventListener("astro:page-load", boot);
+  document.addEventListener("astro:after-swap", boot);
+  document.addEventListener("DOMContentLoaded", boot);
+})();
+</script>
+
  </body>
 </html>

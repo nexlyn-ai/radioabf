@@ -294,3 +294,22 @@ main#mainContent{
 #castBtn{
   backdrop-filter: none !important;
 }
+
+/* =========================================================
+   MOBILE PREMIUM: hide header + dedications on scroll down
+   ========================================================= */
+
+#siteHeader,
+.dedications-bar{
+  transition: transform .22s ease, opacity .22s ease;
+  will-change: transform;
+}
+
+@media (max-width: 768px){
+  body.abf-chrome-hidden #siteHeader,
+  body.abf-chrome-hidden .dedications-bar{
+    transform: translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
