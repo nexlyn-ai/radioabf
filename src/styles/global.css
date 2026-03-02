@@ -322,7 +322,7 @@ main#mainContent{
 
   /* En mobile, évite que le player "mange" visuellement le footer */
   #playerContainer > div{
-    padding-bottom: 1px !important; /* remplace pb-4 */
+    padding-bottom: 10px !important; /* remplace pb-4 */
   }
 
   /* ✅ IMPORTANT: en mobile, le player DOIT ignorer --abf-footer-h */
@@ -337,15 +337,3 @@ main#mainContent{
     bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));
   }
 }
-
-@media (max-width: 767px) {
- 
-  main#mainContent {
-    padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 12px) !important;
-  }
-
-  #playerContainer > div {
-    padding-bottom: 0 !important;     /* enlève l'espace interne au player */
-  }
-}
-
