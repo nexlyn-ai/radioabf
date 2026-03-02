@@ -781,7 +781,7 @@ function apply(root = document){
 <div
   id="playerContainer"
   class="fixed left-0 right-0 z-50 pointer-events-none"
-  style="bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));"
+  style="bottom: calc(var(--abf-gap) + env(safe-area-inset-bottom, 0px));"
   data-mini="true"
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-4 pointer-events-auto">
@@ -992,7 +992,7 @@ function apply(root = document){
       </div>
 
       <!-- VISUALIZER: hidden on mobile mini, visible when expanded -->
-      <div id="playerVizWrap" class="border-t border-white/10">
+      <div id="playerVizWrap" class="border-t border-white/10 rounded-b-2xl overflow-hidden">
         <canvas id="visualizerCanvas" class="w-full h-8"></canvas>
       </div>
     </div>
