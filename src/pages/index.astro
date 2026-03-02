@@ -517,46 +517,121 @@ try {
   <div class="abfModalBackdrop" data-close="streamquality"></div>
   <div class="abfModalWrap">
     <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Stream qualities info">
+      
       <div class="abfModalTop">
-        <div class="abfModalTitle">Stream Qualities & HTTPS Proxy</div>
+        <div class="abfModalTitle">Stream Qualities, HTTPS Proxy & HLS</div>
         <button class="abfModalClose" id="streamQualityClose" type="button" aria-label="Close">✕</button>
       </div>
+
       <div class="abfModalBody">
-        <div class="space-y-4 text-sm text-white/75 leading-relaxed">
-          <p class="text-white/85 font-semibold">ABF offers four stream qualities via stable HTTPS proxy endpoints.</p>
-          <p>These fixed URLs are perfect for direct listening, external players (VLC, Winamp, foobar2000, etc.), widgets, apps, or to bypass firewalls/corporate networks.</p>
+        <div class="space-y-5 text-sm text-white/75 leading-relaxed">
+
+          <p class="text-white/90 font-semibold">
+            ABF offers multiple stream qualities via secure HTTPS proxy endpoints.
+          </p>
+
+          <p>
+            Direct Icecast streams provide the lowest latency for live radio.
+            HLS versions are also available for extended compatibility (Safari, iOS, Smart TVs).
+          </p>
+
+          <!-- QUALITY DESCRIPTION -->
           <ul class="space-y-3">
-            <li> <span class="font-semibold text-cyan-200">UHD (FLAC ~728kbps)</span>: Lossless studio quality — maximum fidelity for high-end setups.</li>
-            <li> <span class="font-semibold text-white/90">HD (MP3 320kbps)</span>: High bitrate for excellent clarity on good connections.</li>
-            <li> <span class="font-semibold text-white/90">SD (MP3 128kbps)</span>: Balanced quality/bitrate for everyday listening.</li>
-            <li> <span class="font-semibold text-white/90">Low connection (AAC+ 32kbps)</span>: Ultra-light for mobile data or unstable networks.</li>
+            <li><span class="font-semibold text-cyan-200">UHD (FLAC ~728kbps)</span>: Lossless studio quality — maximum fidelity.</li>
+            <li><span class="font-semibold text-white/90">HD (MP3 320kbps)</span>: High bitrate for excellent clarity.</li>
+            <li><span class="font-semibold text-white/90">SD (MP3 128kbps)</span>: Balanced quality for everyday listening.</li>
+            <li><span class="font-semibold text-white/90">Low (AAC+ 32kbps)</span>: Ultra-light for mobile data or unstable networks.</li>
           </ul>
-          <p>The embedded player automatically selects the best quality, but you can force one manually in the controls.</p>
-          <div class="mt-6 pt-4 border-t border-white/10">
-            <p class="text-white/85 font-semibold mb-3">How to use in external players</p>
-            <ul class="space-y-3 text-sm">
-              <li><strong>Windows</strong>: VLC → Media → Open Network Stream → paste URL → Play.<br>Or Winamp/foobar2000 → Add URL.</li>
-              <li><strong>Mac</strong>: VLC or IINA → File → Open Network → paste URL.</li>
-              <li><strong>Android</strong>: VLC, MX Player, or any radio app → Add stream URL.</li>
-              <li><strong>iOS/iPhone</strong>: Apps like "Radio" or VLC → add custom URL (or use Safari for direct play on some).</li>
+
+          <p>
+            The embedded player auto-selects the best quality, but you can manually force one in the controls.
+          </p>
+
+          <!-- EXTERNAL PLAYERS -->
+          <div class="pt-5 border-t border-white/10">
+            <p class="text-white/90 font-semibold mb-3">How to use in external players</p>
+            <ul class="space-y-2 text-sm">
+              <li><strong>Windows</strong>: VLC → Media → Open Network Stream → paste URL.</li>
+              <li><strong>Mac</strong>: VLC or IINA → File → Open Network.</li>
+              <li><strong>Android</strong>: VLC or radio app → Add stream URL.</li>
+              <li><strong>iOS</strong>: Safari (HLS recommended) or VLC → add custom URL.</li>
               <li><strong>Linux</strong>: VLC, Rhythmbox, or mpv → open network stream.</li>
             </ul>
           </div>
-          <div class="mt-6 pt-4 border-t border-white/10">
-            <p class="text-white/85 font-semibold mb-3">Direct HTTPS URLs (copy-paste ready)</p>
+
+          <!-- ICECAST STREAMS -->
+          <div class="pt-6 border-t border-white/10">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="px-2 py-1 text-xs rounded bg-cyan-500/15 text-cyan-300 border border-cyan-400/30">
+                ⚡ Low Latency • Recommended
+              </span>
+            </div>
+            <p class="text-white/90 font-semibold mb-3">
+              Direct HTTPS Streams (Icecast)
+            </p>
             <ul class="space-y-2 text-cyan-200">
-              <li>• UHD FLAC: <a href="https://stream.radioabf.com/abf-uhd.flac" class="underline hover:text-cyan-100" target="_blank">https://stream.radioabf.com/abf-uhd.flac</a></li>
-              <li>• HD MP3 320kbps: <a href="https://stream.radioabf.com/abf-hd.mp3" class="underline hover:text-cyan-100" target="_blank">https://stream.radioabf.com/abf-hd.mp3</a></li>
-              <li>• SD MP3 128kbps: <a href="https://stream.radioabf.com/abf-sd.mp3" class="underline hover:text-cyan-100" target="_blank">https://stream.radioabf.com/abf-sd.mp3</a></li>
-              <li>• Low AAC+ 32kbps: <a href="https://stream.radioabf.com/abf-low.aac" class="underline hover:text-cyan-100" target="_blank">https://stream.radioabf.com/abf-low.aac</a></li>
+              <li>• UHD FLAC 728kbps: 
+                <a href="https://stream.radioabf.com/abf-uhd.flac" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/abf-uhd.flac
+                </a>
+              </li>
+              <li>• HD MP3 320kbps: 
+                <a href="https://stream.radioabf.com/abf-hd.mp3" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/abf-hd.mp3
+                </a>
+              </li>
+              <li>• SD MP3 128kbps: 
+                <a href="https://stream.radioabf.com/abf-sd.mp3" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/abf-sd.mp3
+                </a>
+              </li>
+              <li>• Low AAC+ 32kbps: 
+                <a href="https://stream.radioabf.com/abf-low.aac" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/abf-low.aac
+                </a>
+              </li>
             </ul>
           </div>
+
+          <!-- HLS STREAMS -->
+          <div class="pt-6 border-t border-white/10">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="px-2 py-1 text-xs rounded bg-purple-500/15 text-purple-300 border border-purple-400/30">
+                📺 HLS Compatible • iOS / Safari / Smart TV
+              </span>
+            </div>
+            <p class="text-white/90 font-semibold mb-2">
+              HLS Streams (Secondary Option)
+            </p>
+            <p class="text-xs text-white/60 mb-3">
+              HLS uses segmented delivery for better compatibility.
+              Slightly higher latency compared to Icecast.
+            </p>
+            <ul class="space-y-2 text-cyan-200">
+              <li>• HD MP3 320kbps (HLS): 
+                <a href="https://stream.radioabf.com/hls/abf-hd.m3u8" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/hls/abf-hd.m3u8
+                </a>
+              </li>
+              <li>• SD MP3 128kbps (HLS): 
+                <a href="https://stream.radioabf.com/hls/abf-sd.m3u8" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/hls/abf-sd.m3u8
+                </a>
+              </li>
+              <li>• Low AAC+ 32kbps (HLS): 
+                <a href="https://stream.radioabf.com/hls/abf-low.m3u8" class="underline hover:text-cyan-100" target="_blank">
+                  https://stream.radioabf.com/hls/abf-low.m3u8
+                </a>
+              </li>
+            </ul>
+          </div>
+
         </div>
       </div>
+
     </div>
   </div>
 </div>
-
 
   <!-- FLAC MODAL -->
   <div id="flacModal" class="abfModal" aria-hidden="true">
