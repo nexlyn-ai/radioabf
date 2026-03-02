@@ -317,7 +317,7 @@ main#mainContent{
   /* Footer safe-area on iOS — MOBILE ONLY
      (ne pas toucher desktop fixed) */
   #siteFooter{
-    padding-bottom: calc(env(safe-area-inset-bottom, 3px) + 6px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
   }
 
   /* En mobile, évite que le player "mange" visuellement le footer */
