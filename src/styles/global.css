@@ -337,3 +337,10 @@ main#mainContent{
     bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* Correction espace vide en bas sur mobile uniquement */
+@media (max-width: 767px) {
+  main#mainContent {
+    padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 28px) !important;
+  }
+}
