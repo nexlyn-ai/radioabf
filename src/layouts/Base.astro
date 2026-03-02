@@ -773,7 +773,7 @@ function apply(root = document){
     <main
       id="mainContent"
       class="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 pt-6"
-      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-footer-h) + var(--abf-gap) + 24px);"
+      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px) + 24px);"
     >
       <slot />
     </main>
@@ -781,7 +781,7 @@ function apply(root = document){
 <div
   id="playerContainer"
   class="fixed left-0 right-0 z-50 pointer-events-none"
-  style="bottom: calc(var(--abf-footer-h) + var(--abf-gap));"
+  style="bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));"
   data-mini="true"
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-4 pointer-events-auto">
