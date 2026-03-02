@@ -202,6 +202,7 @@ try {
     <style is:inline>
       .no-scrollbar::-webkit-scrollbar { display: none }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
       .dayTab {
         flex: 0 0 auto;
         padding: .55rem .95rem;
@@ -219,12 +220,14 @@ try {
         color: #fff;
         box-shadow: 0 0 22px rgba(47,194,255,.18);
       }
+
       .line-clamp-2 {
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
+
       .onAirCard {
         border-color: rgba(248,113,113,.35) !important;
         background: radial-gradient(1200px 220px at 20% 0%, rgba(239,68,68,0.22), rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.03) 100%);
@@ -241,6 +244,7 @@ try {
         filter: blur(18px);
         opacity: .55;
       }
+
       .onAirStrip {
         display: flex;
         align-items: center;
@@ -280,16 +284,52 @@ try {
       }
       .onAirStrip .label{
         color: rgba(255,255,255,.92);
-        font-weight: 700;
+        font-weight: 800;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 56vw;
       }
+
+      /* ✅ Time block: premium + responsive line split */
       .onAirStrip .time{
-        color: rgba(255,255,255,.78);
-        font-weight: 700;
-        white-space: nowrap;
+        color: rgba(255,255,255,.88);
+        font-weight: 800;
+        text-align: right;
+        min-width: 0;
+      }
+      .onAirStrip .time .timeLine{ display: inline; }
+      .onAirStrip .time .timeLine + .timeLine { margin-left: 8px; }
+
+      /* ✅ Mobile fix: no overlap + wrap + 2 lines (Paris/UTC then Local) */
+      @media (max-width: 640px){
+        .onAirStrip{
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+        .onAirStrip .left{
+          width: 100%;
+          min-width: 0;
+        }
+        .onAirStrip .label{
+          max-width: 100%;
+        }
+        .onAirStrip .time{
+          width: 100%;
+          text-align: left;
+          white-space: normal;
+          overflow-wrap: anywhere;
+          line-height: 1.25;
+        }
+        .onAirStrip .time .timeLine{
+          display: block;          /* ✅ 2 lignes sur mobile */
+        }
+        .onAirStrip .time .timeLine + .timeLine{
+          margin-left: 0;
+          margin-top: 4px;
+          opacity: .95;
+        }
       }
     </style>
   </section>
@@ -306,22 +346,15 @@ try {
   </script>
 
   <!-- Script client -->
-  <script is:inline>
-    (function() {
-      console.log("[CLIENT] Script programs chargé");
+  <script is:inline data-astro-rerun>
+    (() => {
+      const KEY = "__abfProgramsPage";
+      const state = (window[KEY] = window[KEY] || { bound: false });
 
       const PROGRAMS_DIR = "/images/programs/";
 
       // fallback local (au cas où Directus est vide)
-      const STATIC_SCHEDULE = {
-        mon: [],
-        tue: [],
-        wed: [],
-        thu: [],
-        fri: [],
-        sat: [],
-        sun: []
-      };
+      const STATIC_SCHEDULE = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
 
       function escapeHtml(s) {
         return String(s || "")
@@ -332,7 +365,7 @@ try {
           .replace(/'/g, "&#039;");
       }
 
-      // --------- WORLD TIME (Paris -> UTC) ----------
+      // --------- WORLD TIME (Paris -> UTC -> Local user) ----------
       function parseTimeToMinutesFlexible(t){
         const s = String(t || "").trim();
         const m = s.match(/^(\d{1,2})[:h](\d{2})(?::\d{2})?$/i);
@@ -377,27 +410,50 @@ try {
         return Math.round((asUTC - date.getTime()) / 60000);
       }
 
+      function getTzShortLabel(timeZone){
+        try{
+          const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "short" }).formatToParts(new Date());
+          const tz = parts.find(p => p.type === "timeZoneName")?.value;
+          return tz || "Local";
+        }catch{
+          return "Local";
+        }
+      }
+
       function formatWorldTimeLabel(timeHHMM){
-  const minsParis = parseTimeToMinutesFlexible(timeHHMM);
-  if (minsParis == null) return escapeHtml(timeHHMM);
+        const minsParis = parseTimeToMinutesFlexible(timeHHMM);
+        if (minsParis == null) return escapeHtml(timeHHMM);
 
-  const now = new Date();
-  const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris"); // minutes vs UTC
+        const now = new Date();
+        const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
-  // Paris -> UTC
-  const utcMins = minsParis - offset;
-  const utcHHMM = minutesToHHMM(utcMins);
+        // Offsets vs UTC (minutes)
+        const offsetParis = getTimeZoneOffsetMinutes(now, "Europe/Paris");
+        const offsetUser  = getTimeZoneOffsetMinutes(now, userTZ);
 
-  // CET/CEST label (simple, correct for the *current* season)
-  const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
+        // Paris -> UTC -> Local user
+        const utcMins  = minsParis - offsetParis;
+        const utcHHMM  = minutesToHHMM(utcMins);
 
-  // Example: 00:00 CET (Paris) • 23:00 UTC
-  return (
-    minutesToHHMM(minsParis) + " " + tzLabel + ' <span class="text-white/60 font-medium">(Paris)</span>' +
-    ' <span class="text-white/30">•</span> ' +
-    '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
-  );
-}
+        const userMins = utcMins + offsetUser;
+        const userHHMM = minutesToHHMM(userMins);
+
+        // CET/CEST label (for current season)
+        const tzLabelParis = offsetParis === 60 ? "CET" : offsetParis === 120 ? "CEST" : "CET";
+        const tzLabelUser  = getTzShortLabel(userTZ);
+
+        const line1 =
+          minutesToHHMM(minsParis) + " " + tzLabelParis +
+          ' <span class="text-white/60 font-medium">(Paris)</span>' +
+          ' <span class="text-white/30">•</span> ' +
+          '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>";
+
+        const line2 =
+          '<span class="text-white/85 font-semibold">' + userHHMM + " Local</span>" +
+          ' <span class="text-white/50 font-medium">(' + escapeHtml(tzLabelUser) + ')</span>';
+
+        return '<span class="timeLine">' + line1 + '</span><span class="timeLine">' + line2 + '</span>';
+      }
 
       function parseTimeToMinutes(t) {
         const m = String(t || "").match(/(\d{1,2})\s*:\s*(\d{2})/);
@@ -447,34 +503,25 @@ try {
       function getSchedule() {
         const raw = window.__abfProgramsFromDirectus;
 
-        if (raw && typeof raw === "object") {
-          console.log("[CLIENT] Directus planning prêt (object)");
-          return raw;
-        }
+        if (raw && typeof raw === "object") return raw;
 
         if (typeof raw === "string" && raw.trim() && raw !== "null") {
           try {
             const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object") {
-              console.log("[CLIENT] Directus planning parsé (string JSON)");
-              return parsed;
-            }
-          } catch (e) {
-            console.error("[CLIENT] Erreur parse JSON Directus:", e);
-          }
+            if (parsed && typeof parsed === "object") return parsed;
+          } catch {}
         }
 
-        console.log("[CLIENT] Fallback sur STATIC_SCHEDULE");
         return STATIC_SCHEDULE;
       }
 
       function card(item, onAir) {
         const timeRaw = item?.time ?? "";
-        const time   = formatWorldTimeLabel(timeRaw);
-        const title  = escapeHtml(item?.title ?? "");
-        const desc   = escapeHtml(item?.desc ?? "");
+        const time = formatWorldTimeLabel(timeRaw);
+        const title = escapeHtml(item?.title ?? "");
+        const desc = escapeHtml(item?.desc ?? "");
         const rawImg = String(item?.img ?? "");
-        const src    = rawImg ? (isAbsoluteOrRootUrl(rawImg) ? rawImg : PROGRAMS_DIR + rawImg) : "";
+        const src = rawImg ? (isAbsoluteOrRootUrl(rawImg) ? rawImg : PROGRAMS_DIR + rawImg) : "";
 
         const timeClasses = onAir
           ? "border-red-400/35 bg-red-500/15 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
@@ -483,16 +530,16 @@ try {
         const dotClasses = onAir ? "bg-red-400 animate-pulse" : "bg-cyan-400 animate-pulse";
 
         let onAirBadge = "";
-        if (onAir) {
-          onAirBadge =
-            '<span class="ml-1 inline-flex items-center gap-2 px-2 py-0.5 rounded-xl border border-red-400/30 bg-red-500/15 text-[10px] uppercase tracking-widest text-red-200 shadow-[0_0_18px_rgba(239,68,68,0.16)]">' +
-              '<span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>On Air</span>';
+        if (!onAir) {
+          // (non onAir): small on-air badge near time, only when needed
+          // kept empty here intentionally for clean layout
         }
 
         let header =
           '<div class="flex items-center gap-2 flex-wrap">' +
             '<div class="inline-flex items-center gap-2 w-fit px-2.5 py-1 rounded-xl border backdrop-blur-xl text-[12px] md:text-[13px] font-bold tracking-wide ' + timeClasses + '">' +
-              '<span class="w-2 h-2 rounded-full ' + dotClasses + '"></span>' + time +
+              '<span class="w-2 h-2 rounded-full ' + dotClasses + '"></span>' +
+              '<span class="tabular-nums">' + time + "</span>" +
             "</div>" +
             onAirBadge +
           "</div>";
@@ -540,7 +587,7 @@ try {
 
         const schedule = getSchedule();
         const items = (schedule?.[day] || []).slice().sort(
-          (a, b) => parseTimeToMinutesFlexible(a.time) - parseTimeToMinutesFlexible(b.time)
+          (a, b) => (parseTimeToMinutesFlexible(a.time) ?? 0) - (parseTimeToMinutesFlexible(b.time) ?? 0)
         );
 
         if (items.length === 0) {
@@ -556,21 +603,23 @@ try {
       }
 
       function initPrograms() {
-        console.log("[CLIENT] initPrograms exécuté");
-
-        document.querySelectorAll(".dayTab").forEach(tab => {
-          tab.addEventListener("click", function() {
-            const day = this.dataset.day;
+        // Guard: avoid rebinding listeners on Astro swaps
+        if (!state.bound) {
+          state.bound = true;
+          document.addEventListener("click", (e) => {
+            const btn = e.target?.closest?.(".dayTab");
+            if (!btn) return;
+            const day = btn.dataset.day;
             if (day) render(day);
           });
-        });
+        }
 
         render(todayKey());
       }
 
-      initPrograms();
       document.addEventListener("astro:page-load", initPrograms);
       document.addEventListener("astro:after-swap", initPrograms);
+      initPrograms();
     })();
   </script>
 </Base>
