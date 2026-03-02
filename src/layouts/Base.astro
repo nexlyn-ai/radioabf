@@ -860,50 +860,65 @@ function apply(root = document){
         </div>
 
         <!-- CONTROLS ROW: ALWAYS UNDER TITLES on mobile -->
-        <div class="mt-2 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2 flex-none">
-            <button id="playBtn" type="button"
-              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
-              aria-label="Play/Pause" title="Play/Pause">
-              <span class="abf-ic" data-ic="play"></span>
-            </button>
+<div class="flex items-center gap-2 flex-none">
+  <button id="playBtn" type="button"
+    class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
+    aria-label="Play/Pause" title="Play/Pause">
+    <span class="abf-ic" data-ic="play"></span>
+  </button>
+  <button id="stopBtn" type="button"
+    class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+    aria-label="Stop" title="Stop">
+    <span class="abf-ic" data-ic="stop"></span>
+  </button>
+  <button id="muteBtn" type="button"
+    class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+    aria-label="Mute" title="Mute">
+    <span class="abf-ic" data-ic="volume"></span>
+  </button>
+  <button id="fsBtn" type="button"
+    class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+    aria-label="Full screen" title="Full screen">
+    <span class="abf-ic" data-ic="fs"></span>
+  </button>
+  <button
+    id="castBtn"
+    type="button"
+    class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+    aria-label="Cast"
+    title="Cast"
+    style="display:flex;"
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+      fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+      style="display:block">
+      <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
+      <path d="M3 19a2 2 0 0 1 2 2" />
+      <path d="M3 15a6 6 0 0 1 6 6" />
+      <path d="M3 11a10 10 0 0 1 10 10" />
+    </svg>
+  </button>
 
-            <button id="stopBtn" type="button"
-              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-              aria-label="Stop" title="Stop">
-              <span class="abf-ic" data-ic="stop"></span>
-            </button>
-
-            <button id="muteBtn" type="button"
-              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-              aria-label="Mute" title="Mute">
-              <span class="abf-ic" data-ic="volume"></span>
-            </button>
-
-            <button id="fsBtn" type="button"
-              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-              aria-label="Full screen" title="Full screen">
-              <span class="abf-ic" data-ic="fs"></span>
-            </button>
-
-            <button
-              id="castBtn"
-              type="button"
-              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-              aria-label="Cast"
-              title="Cast"
-              style="display:flex;"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-                fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-                style="display:block">
-                <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
-                <path d="M3 19a2 2 0 0 1 2 2" />
-                <path d="M3 15a6 6 0 0 1 6 6" />
-                <path d="M3 11a10 10 0 0 1 10 10" />
-              </svg>
-            </button>
-          </div>
+  <!-- Status + Stream select : uniquement sur desktop, collé à droite des boutons -->
+  <div class="hidden sm:flex items-center gap-2">
+    <div
+      id="npStatus"
+      class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
+    >
+      stopped
+    </div>
+    <select
+      id="streamSelect"
+      class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
+      title="Stream quality"
+    >
+      <option value="0">MP3 • 320 kbps</option>
+      <option value="1">MP3 • 128 kbps</option>
+      <option value="2">AAC+ • 32 kbps</option>
+      <option value="3">FLAC • 728 kbps</option>
+    </select>
+  </div>
+</div>
 
           <!-- volume only on sm+ OR when expanded on mobile -->
           <input
