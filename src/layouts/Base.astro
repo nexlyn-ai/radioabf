@@ -1,3 +1,12 @@
+---
+import "../styles/global.css";
+import { ViewTransitions } from "astro:transitions";
+const {
+  title = "RadioABF",
+  description = "RadioABF — Alternative Bass Fréquence | The DJs' Frequency. Live electronic music streaming on radioabf.com. Vote for your favorite tracks, discover DJ programs and weekly charts."
+} = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf.com").toString();
+---
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -435,21 +444,22 @@
         left: 23px;
         background: rgba(47,194,255,0.95);
       }
- 
-  /* ===================== STATUS BADGE (CASTING) ===================== */
+	  
+	  /* ===================== STATUS BADGE (CASTING) ===================== */
 @keyframes abfCastingPulse {
-  0% { box-shadow: 0 0 0 0 rgba(47,194,255,.45); transform: translateZ(0) scale(1); }
-  60% { box-shadow: 0 0 0 10px rgba(47,194,255,0); transform: translateZ(0) scale(1.03); }
+  0%   { box-shadow: 0 0 0 0 rgba(47,194,255,.45); transform: translateZ(0) scale(1); }
+  60%  { box-shadow: 0 0 0 10px rgba(47,194,255,0); transform: translateZ(0) scale(1.03); }
   100% { box-shadow: 0 0 0 0 rgba(47,194,255,0); transform: translateZ(0) scale(1); }
 }
+
 .abfStatusCasting{
   border-color: rgba(47,194,255,0.45) !important;
   background: linear-gradient(90deg, rgba(20,92,143,0.55), rgba(47,194,255,0.28)) !important;
   color: rgba(210,245,255,0.95) !important;
   animation: abfCastingPulse 1.15s ease-out infinite;
 }
- 
-  /* Dedications emoji buttons */
+	  
+	  /* Dedications emoji buttons */
 #dedEmojiGrid button{
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -467,8 +477,8 @@
   transform: translateY(-1px);
 }
 </style>
- 
- 
+	  
+	  
     <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
@@ -539,6 +549,7 @@
   <a href="/videos" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Videos</a>
   <a href="/chat" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Chat</a>
 </nav>
+
 <!-- Mobile button -->
 <button
   id="navBtn"
@@ -550,8 +561,10 @@
 >
   ☰
 </button>
+
 </div> <!-- ✅ ferme flex justify-between -->
 </div> <!-- ✅ ferme relative -->
+
 <!-- ✅ Mobile nav: ABSOLUTE dropdown -->
 <nav
   id="mobileNav"
@@ -567,25 +580,33 @@
     <a href="/chat" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Chat</a>
   </div>
 </nav>
+
 <script is:inline data-astro-rerun>
 (() => {
+
   const btn = document.getElementById("navBtn");
   const nav = document.getElementById("mobileNav");
+
   if (!btn || !nav) return;
+
   const isOpen = () => !nav.classList.contains("hidden");
+
   const open = () => {
     nav.classList.remove("hidden");
     btn.setAttribute("aria-expanded", "true");
   };
+
   const close = () => {
     nav.classList.add("hidden");
     btn.setAttribute("aria-expanded", "false");
   };
+
   btn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     isOpen() ? close() : open();
   });
+
   // Ferme si on clique ailleurs
   document.addEventListener("click", (e) => {
     if (!isOpen()) return;
@@ -593,19 +614,24 @@
     if (e.target.closest("#navBtn")) return;
     close();
   });
+
   // Ferme si on clique sur un lien
   nav.addEventListener("click", (e) => {
     if (e.target.closest("a")) close();
   });
+
   // Ferme en repassant desktop
   window.addEventListener("resize", () => {
     if (window.innerWidth >= 768) close();
   });
+
 })();
 </script>
+
 </div> <!-- ✅ ferme .mx-auto -->
 </div> <!-- ✅ ferme bg wrapper -->
 </header>
+
 <!-- DEDICATIONS BAR (global) -->
 <div class="dedications-bar" transition:persist="dedications">
   <div class="dedications-inner">
@@ -637,9 +663,11 @@
 <script is:inline data-astro-rerun>
   (() => {
     if (window.ABF_FMT) return;
+
     function upperArtist(s){
       return String(s || "—").trim().toUpperCase();
     }
+
     // ✅ NEW: remove common suffixes like (Radio Edit), (Extended Mix), (Remaster), etc.
     function stripTitleSuffixes(input){
       let s = String(input || "").trim();
@@ -649,19 +677,24 @@
       s = s.replace(rx, " ");
       return s.replace(/\s{2,}/g, " ").trim();
     }
+
     function titleCaseEN(input){
       const s0 = String(input || "").trim();
       if (!s0) return "—";
       const s = stripTitleSuffixes(s0);
+
       const lowerWords = new Set([
         "a","an","the","and","but","or","nor","for","so","yet",
         "as","at","by","for","from","in","into","near","of","on","onto","over","per","to","up","via","with","within","without"
       ]);
+
       const parts = s.split(/(\s+)/);
       return parts.map((chunk, idx) => {
         if (/^\s+$/.test(chunk)) return chunk;
+
         // keep short acronyms
         if (chunk === chunk.toUpperCase() && /[A-Z]/.test(chunk) && chunk.length <= 6) return chunk;
+
         const hyParts = chunk.split("-");
         const rebuilt = hyParts.map((w, hIdx) => {
           const cleaned = w.replace(/[^\p{L}\p{N}'’]/gu, "");
@@ -673,20 +706,26 @@
           const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
           return w.replace(cleaned, cap);
         });
+
         return rebuilt.join("-");
       }).join("");
     }
+
 function apply(root = document){
+
   // ✅ Special rule for ABF CLUB: show DJ name in the artist line, and "Live show" as title
   function isAbfClub(a){
     return /^abf\s*club\b/i.test(String(a || "").trim());
   }
+
   function handlePair(artistId, titleId){
     const aEl = root.getElementById ? root.getElementById(artistId) : document.getElementById(artistId);
     const tEl = root.getElementById ? root.getElementById(titleId) : document.getElementById(titleId);
     if (!aEl || !tEl) return;
+
     const rawArtist = (aEl.getAttribute("data-abf-artist") || aEl.textContent || "").trim();
-    const rawTitle = (tEl.getAttribute("data-abf-title") || tEl.textContent || "").trim();
+    const rawTitle  = (tEl.getAttribute("data-abf-title")  || tEl.textContent || "").trim();
+
     if (isAbfClub(rawArtist)){
       aEl.textContent = `ABF CLUB - ${rawTitle || "—"}`;
       tEl.textContent = "Live show";
@@ -697,31 +736,39 @@ function apply(root = document){
       tEl.removeAttribute("data-abf-skipfmt");
     }
   }
+
   // ✅ pairs used in your Base layout
   handlePair("npArtist", "npTitle");
   handlePair("fsArtist", "fsTitle");
+
   // ---- normal formatting (skip ABF CLUB special ones) ----
   root.querySelectorAll("[data-abf-artist]").forEach((el) => {
     if (el.getAttribute("data-abf-skipfmt") === "1") return;
+
     const raw = (el.getAttribute("data-abf-artist") || "").trim();
     const val = raw ? raw : el.textContent;
     el.textContent = upperArtist(val);
   });
+
   root.querySelectorAll("[data-abf-title]").forEach((el) => {
     if (el.getAttribute("data-abf-skipfmt") === "1") return;
+
     const raw = (el.getAttribute("data-abf-title") || "").trim();
     const val = raw ? raw : el.textContent;
     el.textContent = titleCaseEN(val);
   });
 }
+
     // Expose
     window.ABF_FMT = { artist: upperArtist, title: titleCaseEN, strip: stripTitleSuffixes, apply };
+
     const run = () => requestAnimationFrame(() => apply(document));
     document.addEventListener("DOMContentLoaded", run);
     document.addEventListener("astro:page-load", run);
     document.addEventListener("astro:after-swap", run);
   })();
 </script>
+
     <!-- ================= PAGE ================= -->
     <main
       id="mainContent"
@@ -740,62 +787,46 @@ function apply(root = document){
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-4 pointer-events-auto">
     <div class="abf-playerGlass rounded-2xl overflow-hidden border border-white/10">
       <div class="abf-noise" aria-hidden="true"></div>
+
       <div class="px-3 sm:px-4 py-2.5">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <!-- TOP ROW -->
-          <div class="flex items-center gap-3">
-            <div class="abfCover w-11 h-11 rounded-xl border border-white/10 overflow-hidden flex-none">
-              <img id="playerCover" class="hidden" alt="Pochette actuelle" />
-              <div id="playerCoverFallback" class="abfCoverFallback">
-                <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-              </div>
-            </div>
-            <!-- titles -->
-            <div class="min-w-0 flex-1">
-              <div id="npArtist" data-abf-artist class="font-semibold text-[13px] leading-tight truncate">—</div>
-              <div id="npTitle" data-abf-title class="text-[12px] text-white/70 leading-tight truncate">—</div>
-            </div>
-            <!-- expand button (mobile) -->
-            <button
-              id="playerToggleBtn"
-              type="button"
-              class="sm:hidden flex-none inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-              aria-label="Expand player"
-              title="Expand player"
-            >
-              <span id="playerToggleIcon" class="text-base">▴</span>
-            </button>
-            <!-- status + desktop stream select -->
-            <div class="hidden sm:flex items-center gap-2 flex-none">
-              <div
-                id="npStatus"
-                class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
-              >
-                stopped
-              </div>
-              <select
-                id="streamSelect"
-                class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
-                title="Stream quality"
-              >
-                <option value="0">MP3 • 320 kbps</option>
-                <option value="1">MP3 • 128 kbps</option>
-                <option value="2">AAC+ • 32 kbps</option>
-                <option value="3">FLAC • 728 kbps</option>
-              </select>
+        <!-- TOP ROW -->
+        <div class="flex items-center gap-3">
+          <div class="abfCover w-11 h-11 rounded-xl border border-white/10 overflow-hidden flex-none">
+            <img id="playerCover" class="hidden" alt="Pochette actuelle" />
+            <div id="playerCoverFallback" class="abfCoverFallback">
+              <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
             </div>
           </div>
-          <!-- MOBILE ROW: status + stream select -->
-          <div class="flex items-center justify-between gap-2 sm:hidden">
+
+          <!-- titles -->
+          <div class="min-w-0 flex-1">
+            <div id="npArtist" data-abf-artist class="font-semibold text-[13px] leading-tight truncate">—</div>
+            <div id="npTitle" data-abf-title class="text-[12px] text-white/70 leading-tight truncate">—</div>
+          </div>
+
+          <!-- expand button (mobile) -->
+          <button
+            id="playerToggleBtn"
+            type="button"
+            class="sm:hidden flex-none inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+            aria-label="Expand player"
+            title="Expand player"
+          >
+            <span id="playerToggleIcon" class="text-base">▴</span>
+          </button>
+
+          <!-- status + desktop stream select -->
+          <div class="hidden sm:flex items-center gap-2 flex-none">
             <div
-              id="npStatusMobile"
+              id="npStatus"
               class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
             >
               stopped
             </div>
+
             <select
-              id="streamSelectMobile"
-              class="bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
+              id="streamSelect"
+              class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
               title="Stream quality"
             >
               <option value="0">MP3 • 320 kbps</option>
@@ -804,61 +835,89 @@ function apply(root = document){
               <option value="3">FLAC • 728 kbps</option>
             </select>
           </div>
-          <!-- CONTROLS ROW: ALWAYS UNDER TITLES on mobile -->
-          <div class="flex items-center gap-2">
-            <div class="flex items-center gap-2 flex-none">
-              <button id="playBtn" type="button"
-                class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
-                aria-label="Play/Pause" title="Play/Pause">
-                <span class="abf-ic" data-ic="play"></span>
-              </button>
-              <button id="stopBtn" type="button"
-                class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-                aria-label="Stop" title="Stop">
-                <span class="abf-ic" data-ic="stop"></span>
-              </button>
-              <button id="muteBtn" type="button"
-                class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-                aria-label="Mute" title="Mute">
-                <span class="abf-ic" data-ic="volume"></span>
-              </button>
-              <button id="fsBtn" type="button"
-                class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-                aria-label="Full screen" title="Full screen">
-                <span class="abf-ic" data-ic="fs"></span>
-              </button>
-              <button
-                id="castBtn"
-                type="button"
-                class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-                aria-label="Cast"
-                title="Cast"
-                style="display:flex;"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-                  fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-                  style="display:block">
-                  <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
-                  <path d="M3 19a2 2 0 0 1 2 2" />
-                  <path d="M3 15a6 6 0 0 1 6 6" />
-                  <path d="M3 11a10 10 0 0 1 10 10" />
-                </svg>
-              </button>
-            </div>
-            <!-- volume only on sm+ OR when expanded on mobile -->
-            <input
-              id="volRange"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value="0.8"
-              class="hidden sm:block w-28"
-              aria-label="Volume"
-              title="Volume"
-            />
-          </div>
         </div>
+
+        <!-- MOBILE ROW: status + stream select -->
+        <div class="mt-2 flex items-center justify-between gap-2 sm:hidden">
+          <div
+            id="npStatusMobile"
+            class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
+          >
+            stopped
+          </div>
+
+          <select
+            id="streamSelectMobile"
+            class="bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
+            title="Stream quality"
+          >
+            <option value="0">MP3 • 320 kbps</option>
+            <option value="1">MP3 • 128 kbps</option>
+            <option value="2">AAC+ • 32 kbps</option>
+            <option value="3">FLAC • 728 kbps</option>
+          </select>
+        </div>
+
+        <!-- CONTROLS ROW: ALWAYS UNDER TITLES on mobile -->
+        <div class="mt-2 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-none">
+            <button id="playBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
+              aria-label="Play/Pause" title="Play/Pause">
+              <span class="abf-ic" data-ic="play"></span>
+            </button>
+
+            <button id="stopBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Stop" title="Stop">
+              <span class="abf-ic" data-ic="stop"></span>
+            </button>
+
+            <button id="muteBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Mute" title="Mute">
+              <span class="abf-ic" data-ic="volume"></span>
+            </button>
+
+            <button id="fsBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Full screen" title="Full screen">
+              <span class="abf-ic" data-ic="fs"></span>
+            </button>
+
+            <button
+              id="castBtn"
+              type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Cast"
+              title="Cast"
+              style="display:flex;"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+                fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                style="display:block">
+                <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
+                <path d="M3 19a2 2 0 0 1 2 2" />
+                <path d="M3 15a6 6 0 0 1 6 6" />
+                <path d="M3 11a10 10 0 0 1 10 10" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- volume only on sm+ OR when expanded on mobile -->
+          <input
+            id="volRange"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.8"
+            class="hidden sm:block w-28"
+            aria-label="Volume"
+            title="Volume"
+          />
+        </div>
+
         <!-- EXPANDED AREA (mobile): show volume slider -->
         <div id="playerExpandedArea" class="hidden sm:hidden mt-2">
           <input
@@ -874,6 +933,7 @@ function apply(root = document){
           />
         </div>
       </div>
+
       <!-- VISUALIZER: hidden on mobile mini, visible when expanded -->
       <div id="playerVizWrap" class="border-t border-white/10">
         <canvas id="visualizerCanvas" class="w-full h-8"></canvas>
@@ -881,6 +941,9 @@ function apply(root = document){
     </div>
   </div>
 </div>
+
+
+
 <script is:inline data-astro-rerun>
 (() => {
   const root = document.getElementById("playerContainer");
@@ -890,14 +953,19 @@ function apply(root = document){
   const vizWrap = document.getElementById("playerVizWrap");
   const volDesktop = document.getElementById("volRange");
   const volMobile = document.getElementById("volRangeMobile");
+
   if (!root || !btn || !icon) return;
+
   const KEY = "abf_player_mini_v1";
   const isMobile = () => window.matchMedia("(max-width: 639px)").matches;
+
   function setMini(mini){
     root.dataset.mini = mini ? "true" : "false";
     icon.textContent = mini ? "▴" : "▾";
+
     // expanded area
     if (expanded) expanded.classList.toggle("hidden", mini);
+
     // viz
     if (vizWrap) {
       if (!isMobile()) {
@@ -906,11 +974,14 @@ function apply(root = document){
         vizWrap.classList.toggle("hidden", mini);
       }
     }
+
     // volume: desktop slider hidden on mobile anyway; mobile slider only when expanded
     if (volMobile) volMobile.parentElement?.classList.toggle("hidden", mini);
+
     try { localStorage.setItem(KEY, mini ? "1" : "0"); } catch {}
     window.__abfUpdateLayout?.();
   }
+
   function readInitial(){
     if (!isMobile()) return false; // desktop always expanded
     try {
@@ -920,6 +991,7 @@ function apply(root = document){
     } catch {}
     return true; // default mini on mobile
   }
+
   // sync mobile volume slider with main audio volume + desktop slider
   function syncMobileVolFromAudio(){
     const a = window.__abf?.audio;
@@ -936,22 +1008,26 @@ function apply(root = document){
       try { localStorage.setItem("abf_volume", String(a.volume)); } catch {}
     });
   }
+
   btn.addEventListener("click", (e) => {
     e.preventDefault();
     const mini = root.dataset.mini === "true";
     setMini(!mini);
     syncMobileVolFromAudio();
   });
+
   const init = () => {
     setMini(readInitial());
     syncMobileVolFromAudio();
   };
+
   init();
   window.addEventListener("resize", () => {
     if (!isMobile()) setMini(false);
   });
 })();
 </script>
+
     <!-- ================= FULLSCREEN PLAYER OVERLAY (NO VISUALIZER) ================= -->
     <div id="fsOverlay" class="fixed inset-0 z-[60] hidden" aria-hidden="true">
       <div class="absolute inset-0 bg-[#050B14]/92 backdrop-blur-2xl"></div>
@@ -1193,8 +1269,10 @@ function apply(root = document){
         ];
         S.audio = S.audio || new Audio();
         const audio = S.audio;
+
         // CORRECTION : playsinline pour mobile (évite plein écran forcé)
         audio.playsinline = true;
+
         // =========================
         // AirPlay / iOS safety
         // =========================
@@ -1265,12 +1343,15 @@ function apply(root = document){
   const a = $("npStatus");
   const b = $("npStatusMobile");
   const fsStatus = $("fsStatus");
+
   const isCasting = String(text || "").toUpperCase().includes("CASTING");
+
   const apply = (el) => {
     if (!el) return;
     el.textContent = text;
     el.classList.toggle("abfStatusCasting", isCasting);
   };
+
   apply(a);
   apply(b);
   apply(fsStatus);
@@ -1717,6 +1798,7 @@ function computeStatus(){
           const fsSel = $("fsStreamSelect");
           const npA = $("npArtist");
 const npT = $("npTitle");
+
 if (fa){
   fa.setAttribute("data-abf-artist", npA?.getAttribute("data-abf-artist") || "");
   fa.textContent = npA?.textContent || "—";
@@ -1725,6 +1807,7 @@ if (ft){
   ft.setAttribute("data-abf-title", npT?.getAttribute("data-abf-title") || "");
   ft.textContent = npT?.textContent || "—";
 }
+
           if (fsStatus) fsStatus.textContent = computeStatus();
           const fsPlayIc = fsPlay?.querySelector(".abf-ic");
           const fsMuteIc = fsMute?.querySelector(".abf-ic");
@@ -1793,13 +1876,13 @@ if (ft){
           if (!audio.src){
             let idx = 0;
             try { idx = Number(localStorage.getItem(LS_KEY) || 0); } catch {}
-        
+         
             // Détection mobile : force Low Data (index 2 = AAC+ 32kbps) au premier lancement
             const isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
             if (isMobile && localStorage.getItem(LS_KEY) === null) {
               idx = 2; // Low Data en premier sur mobile
             }
-        
+         
             setStream(idx);
           }
           const savedVol = (() => {
@@ -1852,14 +1935,16 @@ if (ft){
               S.isStopped = false;
             } else {
              const wasStopped = !!S.isStopped;
- const hasSrc = !!audio.src;
-// On recharge uniquement si on était vraiment arrêté
-// ou si aucune source n’est définie
-if (wasStopped || !hasSrc) {
-   audio.load();
-}
-S.isStopped = false;
-           
+			 const hasSrc = !!audio.src;
+
+			// On recharge uniquement si on était vraiment arrêté
+			// ou si aucune source n’est définie
+			if (wasStopped || !hasSrc) {
+			   audio.load();
+			}
+
+			S.isStopped = false;
+            
               try {
                 await audio.play();
               } catch (e) {
@@ -1890,7 +1975,7 @@ S.isStopped = false;
             setStream(Number(v));
             fetchNowPlaying();
             syncSelectValues();
-         
+          
             if (wasPlaying) {
               // On recharge uniquement si on change vraiment de flux
               audio.load();
@@ -1900,7 +1985,7 @@ S.isStopped = false;
                 console.error(e);
               }
             }
-         
+          
             ensureVisualizerReady();
             syncUI();
           };
@@ -2010,59 +2095,70 @@ S.isStopped = false;
          md:fixed md:bottom-0 md:left-0 md:right-0"
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/60">
-   
+    
     <div class="text-center md:text-left">
       © 2026 Radio ABF - Alternative Bass Fréquence | The DJs' Frequency | www.radioabf.com
     </div>
+
     <div class="flex items-center gap-3 flex-wrap justify-center">
-     
+      
       <button id="openBuild" type="button" class="abfFooterLinkBtn" aria-label="Open build updates" title="Build / Updates">
         Build <span id="buildVersion" class="text-cyan-200/90 font-semibold">—</span>
       </button>
+
       <button id="openLegal" type="button" class="abfFooterLinkBtn" aria-label="Open legal notices" title="Legal notices">
         Legal
       </button>
+
       <button id="openCookies" type="button" class="abfFooterLinkBtn" aria-label="Cookie preferences" title="Cookies">
         Cookies
       </button>
+
       <button id="purgeBtn" type="button" class="abfFooterLinkBtn" aria-label="Purge local data" title="Purge local data">
         Purge
       </button>
- 
-  <button id="openContact" type="button" class="abfFooterLinkBtn" aria-label="Contact RadioABF" title="Contact">
+	  
+	  <button id="openContact" type="button" class="abfFooterLinkBtn" aria-label="Contact RadioABF" title="Contact">
       Contact
       </button>
+
       <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
+
       <!-- X / Twitter -->
       <a href="https://x.com/abfonair" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter" class="text-white/60 hover:text-cyan-300 transition">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231z"/>
         </svg>
       </a>
+
       <!-- Instagram -->
       <a href="https://www.instagram.com/abfonair/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-white/60 hover:text-cyan-300 transition">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm4.25 5.5A4.75 4.75 0 1 1 7.25 12 4.756 4.756 0 0 1 12 7.5zm5.25-.75a1 1 0 1 1-1 1 1 1 0 0 1 1-1z"/>
         </svg>
       </a>
+
       <!-- Facebook (FIXED CLEAN VERSION) -->
       <a href="https://www.facebook.com/abfonair" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="text-white/60 hover:text-cyan-300 transition">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M22 12a10 10 0 1 0-11.63 9.88v-6.99h-2.4V12h2.4V9.8c0-2.37 1.41-3.68 3.57-3.68 1.03 0 2.11.18 2.11.18v2.32h-1.19c-1.18 0-1.55.73-1.55 1.48V12h2.64l-.42 2.89h-2.22v6.99A10 10 0 0 0 22 12z"/>
         </svg>
       </a>
+
       <!-- TikTok -->
       <a href="https://www.tiktok.com/@abfonair" target="_blank" rel="noopener noreferrer" aria-label="TikTok" class="text-white/60 hover:text-cyan-300 transition">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2v14.5a3.5 3.5 0 1 1-3-3.465V10a7 7 0 1 0 7 7V8.5a5.5 5.5 0 0 0 4 1.5V6.5A3.5 3.5 0 0 1 12 2z"/>
         </svg>
       </a>
+
       <!-- YouTube -->
       <a href="https://www.youtube.com/@abfonair" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="text-white/60 hover:text-cyan-300 transition">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M21.8 8.001a3.003 3.003 0 0 0-2.112-2.124C17.5 5.25 12 5.25 12 5.25s-5.5 0-7.688.627A3.003 3.003 0 0 0 2.2 8.001C1.575 10.19 1.575 12 1.575 12s0 1.81.625 3.999a3.003 3.003 0 0 0 2.112 2.124C6.5 18.75 12 18.75 12 18.75s5.5 0 7.688-.627a3.003 3.003 0 0 0 2.112-2.124C22.425 13.81 22.425 12 22.425 12s0-1.81-.625-3.999zM10 15.5v-7l6 3.5-6 3.5z"/>
         </svg>
       </a>
+
     </div>
   </div>
 </footer>
@@ -2094,21 +2190,21 @@ S.isStopped = false;
   d: "Feb 25, 2026",
   t: "Official Chat integration: new /chat page fully integrated into the RadioABF design (desktop + mobile). Header navigation updated, layout harmonized with News, Music, Programs and Videos sections. Seamless UI integration without impacting player or streaming scripts."
   },
-{
+	{
   v: "3.3.10",
   d: "Feb 24, 2026",
   t: "Videos section added: new /videos entry in the main navigation (desktop + mobile) after Artists. No script changes — UI-only update for faster access to the Video Portal."
-    },
-{
+    },	
+	{
   v: "3.3.9",
   d: "Feb 24, 2026",
   t: "Dual contact system implemented. Added DJ Casting form (Directus collection + Flow + SMTP via Zoho) with automated applicant confirmation and internal ABF notification. Added global Contact modal (Astro + Brevo API) integrated in the footer for direct messages to RadioABF. Domain authentication (DKIM + DMARC) configured for compliant email delivery. Production-ready messaging pipeline fully operational."
-},
+	},	
     {
   v: "3.3.8",
   d: "Feb 23, 2026",
   t: "Artists fully migrated to Directus. The /artists listing and dynamic profile pages now fetch published content directly from the CMS. Portraits are served via Directus Files, local JSON and legacy HTML bios removed from runtime. Public API permissions configured for published artists only. Production-ready headless integration completed."
-   },
+   },		
    {
   v: "3.3.7",
   d: "Feb 23, 2026",
@@ -2215,6 +2311,7 @@ S.isStopped = false;
           .replace(/"/g,"&quot;")
           .replace(/'/g,"&#039;");
         const current = BUILDS[0] || { v: "—", d: "—", t: "" };
+
 const currentHeader = `
   <div class="buildItem" style="border-color: rgba(47,194,255,0.30); background: rgba(47,194,255,0.06);">
     <div class="buildLeft">
@@ -2243,6 +2340,7 @@ const currentHeader = `
     <div class="buildDate">${esc(current.d)}</div>
   </div>
 `;
+
 const listHtml = BUILDS.slice(1).map((b) => `
   <div class="buildItem">
     <div class="buildLeft">
@@ -2252,7 +2350,9 @@ const listHtml = BUILDS.slice(1).map((b) => `
     <div class="buildDate">${esc(b.d)}</div>
   </div>
 `).join("");
+
 buildList.innerHTML = currentHeader + listHtml;
+
         const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
         const open = (modal) => { modal.setAttribute("aria-hidden","false"); lockScroll(true); };
         const close = (modal) => { modal.setAttribute("aria-hidden","true"); lockScroll(false); };
@@ -2293,9 +2393,12 @@ buildList.innerHTML = currentHeader + listHtml;
         });
       })();
     </script>
+	
 <script is:inline data-astro-rerun>
 (() => {
+
   function initContact(){
+
     const contactModal = document.getElementById("contactModal");
     const openContact = document.getElementById("openContact");
     const contactClose = document.getElementById("contactClose");
@@ -2303,80 +2406,100 @@ buildList.innerHTML = currentHeader + listHtml;
     const form = document.getElementById("contactForm");
     const feedback = document.getElementById("contactFeedback");
     const btnSend = document.getElementById("ctSend");
+
     if (!contactModal || !openContact || !contactClose || !form || !feedback) {
       return false;
     }
+
     // évite double binding
     if (contactModal.dataset.bound === "1") return true;
     contactModal.dataset.bound = "1";
+
     const lockScroll = (on) => {
       document.documentElement.style.overflow = on ? "hidden" : "";
     };
+
     const open = () => {
       contactModal.setAttribute("aria-hidden","false");
       lockScroll(true);
     };
+
     const close = () => {
       contactModal.setAttribute("aria-hidden","true");
       lockScroll(false);
     };
+
     function showFeedback(ok, msg){
       feedback.classList.remove("hidden");
       feedback.className = "text-sm font-medium px-4 py-3 rounded-xl border";
+
       if (ok){
         feedback.classList.add("border-cyan-400/30","bg-cyan-400/10","text-cyan-200");
       } else {
         feedback.classList.add("border-red-500/35","bg-red-500/10","text-red-200");
       }
+
       feedback.textContent = msg;
     }
+
     openContact.addEventListener("click", (e) => {
       e.preventDefault();
       feedback.classList.add("hidden");
       open();
     });
+
     contactClose.addEventListener("click", (e) => {
       e.preventDefault();
       close();
     });
+
     if (ctCancel){
       ctCancel.addEventListener("click", (e) => {
         e.preventDefault();
         close();
       });
     }
+
     document.addEventListener("click", (e) => {
       const t = e.target;
       if (t?.dataset?.close === "contact") close();
     });
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" &&
           contactModal.getAttribute("aria-hidden") === "false") {
         close();
       }
     });
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       const name = String(document.getElementById("ctName")?.value || "").trim();
       const email = String(document.getElementById("ctEmail")?.value || "").trim();
       const subject = String(document.getElementById("ctSubject")?.value || "").trim();
       const message = String(document.getElementById("ctMessage")?.value || "").trim();
       const page = window.location?.href || "";
+
       if (!name || !email || !message){
         showFeedback(false, "Please fill in name, email and message.");
         return;
       }
+
       try{
         if (btnSend){
           btnSend.disabled = true;
           btnSend.textContent = "Sending…";
         }
+
         const res = await fetch("/api/contact", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ name, email, subject, message, page }),
         });
+
         const data = await res.json().catch(() => ({}));
+
         if (res.ok && data?.ok){
           showFeedback(true, "Message sent! Thanks — we’ll get back to you soon.");
           form.reset();
@@ -2384,6 +2507,7 @@ buildList.innerHTML = currentHeader + listHtml;
         } else {
           showFeedback(false, data?.error || "Unable to send message. Please try again.");
         }
+
       } catch {
         showFeedback(false, "Network error. Please try again.");
       } finally {
@@ -2393,22 +2517,28 @@ buildList.innerHTML = currentHeader + listHtml;
         }
       }
     });
+
     document.addEventListener("astro:after-swap", close);
     document.addEventListener("astro:page-load", close);
+
     return true;
   }
+
   function boot(){
     if (initContact()) return;
     requestAnimationFrame(() => initContact());
     setTimeout(() => initContact(), 50);
     setTimeout(() => initContact(), 250);
   }
+
   boot();
   document.addEventListener("DOMContentLoaded", boot);
   document.addEventListener("astro:page-load", boot);
   document.addEventListener("astro:after-swap", boot);
+
 })();
-</script>
+</script>	
+	
     <!-- ================= COOKIE CONSENT LOGIC (GA4) ================= -->
     <script is:inline data-astro-rerun>
       (() => {
@@ -2562,7 +2692,7 @@ buildList.innerHTML = currentHeader + listHtml;
         if (!footer || !player) return;
         const apply = () => {
           const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-  const fh = isDesktop ? (footer.offsetHeight || 0) : 0;
+		  const fh = isDesktop ? (footer.offsetHeight || 0) : 0;
           const ph = player.offsetHeight || 0;
           document.body.style.setProperty("--abf-footer-h", fh + "px");
           document.body.style.setProperty("--abf-player-h", ph + "px");
@@ -2987,15 +3117,18 @@ buildList.innerHTML = currentHeader + listHtml;
   document.addEventListener("astro:after-swap", boot);
 })();
 </script>
+
 <!-- ================= CONTACT MODAL ================= -->
 <div id="contactModal" class="abfModal" aria-hidden="true">
   <div class="abfModalBackdrop" data-close="contact"></div>
+
   <div class="abfModalWrap">
     <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Contact RadioABF">
       <div class="abfModalTop">
         <div class="abfModalTitle">Contact</div>
         <button class="abfModalClose" id="contactClose" type="button" aria-label="Close">✕</button>
       </div>
+
       <div class="abfModalBody">
         <div class="text-sm text-white/75 leading-relaxed">
           <p class="text-white/85 font-semibold">
@@ -3005,6 +3138,7 @@ buildList.innerHTML = currentHeader + listHtml;
             We usually reply within 24–72h depending on the volume.
           </p>
         </div>
+
         <form id="contactForm" class="mt-4 space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -3019,6 +3153,7 @@ buildList.innerHTML = currentHeader + listHtml;
                 placeholder="Your name"
               />
             </div>
+
             <div>
               <label class="block text-xs text-white/60 mb-2">Your email</label>
               <input
@@ -3032,6 +3167,7 @@ buildList.innerHTML = currentHeader + listHtml;
               />
             </div>
           </div>
+
           <div>
             <label class="block text-xs text-white/60 mb-2">Subject</label>
             <input
@@ -3043,6 +3179,7 @@ buildList.innerHTML = currentHeader + listHtml;
               placeholder="What’s this about?"
             />
           </div>
+
           <div>
             <label class="block text-xs text-white/60 mb-2">Message</label>
             <textarea
@@ -3056,13 +3193,16 @@ buildList.innerHTML = currentHeader + listHtml;
             ></textarea>
             <div class="text-[11px] text-white/40 mt-2">Max 2000 characters.</div>
           </div>
+
           <div id="contactFeedback" class="hidden text-sm font-medium px-4 py-3 rounded-xl border"></div>
+
           <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
             <button id="ctCancel" type="button" class="abfBtn">Cancel</button>
             <button id="ctSend" type="submit" class="abfBtn abfBtnPrimary">
               Send
             </button>
           </div>
+
           <div class="abfMuted pt-1">
             This will send an email directly to <span class="text-white/70">contact@radioabf.com</span>.
           </div>
@@ -3071,6 +3211,8 @@ buildList.innerHTML = currentHeader + listHtml;
     </div>
   </div>
 </div>
+
+ 
 <!-- ================= DEDICATION MODAL ================= -->
 <div
   id="dedicationModal"
@@ -3117,15 +3259,17 @@ buildList.innerHTML = currentHeader + listHtml;
   required
 />
       </div>
- 
+	  
 <script is:inline data-astro-rerun>
 (() => {
   // Prevent double-binding across Astro swaps
   if (window.__abfDedEmojiBound) return;
   window.__abfDedEmojiBound = true;
+
   const $ = (id) => document.getElementById(id);
+
   const EMOJIS = [
- 
+  
     // 😄 CLASSIC EXPRESSIONS
   { e:"😎", k:["cool"] },
   { e:"😍", k:["love","eyes"] },
@@ -3140,6 +3284,7 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"🙌", k:["hands","yay"] },
   { e:"👏", k:["clap"] },
   { e:"🙏", k:["thanks"] },
+
   // 🔥 RADIO / DJ / LIVE
   { e:"📻", k:["radio","fm","station"] },
   { e:"🎙️", k:["mic","microphone","radio"] },
@@ -3154,6 +3299,7 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"📀", k:["cd","music"] },
   { e:"💿", k:["disc"] },
   { e:"🛰️", k:["satellite","broadcast"] },
+
   // 🎉 PARTY / CLUB
   { e:"🎉", k:["party"] },
   { e:"🎊", k:["celebration"] },
@@ -3162,6 +3308,7 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"🍾", k:["champagne"] },
   { e:"🥂", k:["cheers"] },
   { e:"🍻", k:["beer"] },
+
   // 🎶 MUSIC
   { e:"🎵", k:["note","music"] },
   { e:"🎶", k:["notes","music"] },
@@ -3170,6 +3317,7 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"🥁", k:["drum"] },
   { e:"🎸", k:["guitar"] },
   { e:"🎺", k:["trumpet"] },
+
   // 🔥 VIBES / ENERGY
   { e:"🔥", k:["fire","hot"] },
   { e:"💥", k:["boom"] },
@@ -3182,6 +3330,7 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"🌊", k:["wave"] },
   { e:"🌙", k:["night"] },
   { e:"☀️", k:["sun"] },
+
   // ❤️ CLASSIC HEARTS
   { e:"❤️", k:["heart","love"] },
   { e:"💙", k:["blue","heart"] },
@@ -3192,6 +3341,7 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"🤍", k:["white","heart"] },
   { e:"💛", k:["yellow","heart"] },
   { e:"🫶", k:["hands","heart"] },
+
   // 🌍 COMMUNITY
   { e:"🌍", k:["world"] },
   { e:"🌎", k:["world"] },
@@ -3199,7 +3349,9 @@ buildList.innerHTML = currentHeader + listHtml;
   { e:"🤝", k:["together"] },
   { e:"👊", k:["support"] },
   { e:"✌️", k:["peace"] },
+
 ];
+
   function insertAtCursor(textarea, emoji) {
     const start = textarea.selectionStart ?? textarea.value.length;
     const end = textarea.selectionEnd ?? textarea.value.length;
@@ -3211,14 +3363,17 @@ buildList.innerHTML = currentHeader + listHtml;
     textarea.setSelectionRange(pos, pos);
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
   }
+
   function renderGrid(filter = "") {
     const grid = $("dedEmojiGrid");
     if (!grid) return;
     grid.innerHTML = "";
     const q = filter.trim().toLowerCase();
+
     const list = !q
       ? EMOJIS
       : EMOJIS.filter(x => (x.k || []).some(kk => kk.includes(q)));
+
     list.forEach((x) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -3231,6 +3386,7 @@ buildList.innerHTML = currentHeader + listHtml;
       });
       grid.appendChild(b);
     });
+
     if (!list.length) {
       const empty = document.createElement("div");
       empty.className = "col-span-8 text-xs text-white/45 py-2";
@@ -3238,67 +3394,89 @@ buildList.innerHTML = currentHeader + listHtml;
       grid.appendChild(empty);
     }
   }
+
   function closePanel() {
     const p = $("dedEmojiPanel");
     if (p) p.classList.add("hidden");
   }
+ 
 function positionPanel() {
   const btn = $("dedEmojiBtn");
   const panel = $("dedEmojiPanel");
   if (!btn || !panel) return;
+
   const r = btn.getBoundingClientRect();
   const gap = 10;
+
   const panelW = Math.min(300, Math.floor(window.innerWidth * 0.88));
   panel.style.width = panelW + "px";
+
   let left = r.right - panelW;
   left = Math.max(10, Math.min(left, window.innerWidth - panelW - 10));
+
   let top = r.bottom + gap;
   const maxH = Math.min(window.innerHeight * 0.62, 380);
+
   const fitsBelow = (top + maxH + 10) <= window.innerHeight;
+
   if (!fitsBelow) {
     top = Math.max(10, r.top - gap - maxH);
   }
+
   panel.style.left = left + "px";
   panel.style.top = top + "px";
-}
- 
+} 
+  
 function togglePanel() {
   const p = $("dedEmojiPanel");
   if (!p) return;
+
   const willOpen = p.classList.contains("hidden");
+
   if (!willOpen) {
     p.classList.add("hidden");
     return;
   }
+
   // Open
   p.classList.remove("hidden");
   positionPanel();
+
   const search = $("dedEmojiSearch");
-if (search) search.value = ""; // ✅ reset filter on open
-renderGrid(""); // ✅ show ALL emojis
+if (search) search.value = "";   // ✅ reset filter on open
+
+renderGrid("");                  // ✅ show ALL emojis
+
 const grid = $("dedEmojiGrid");
 if (grid) grid.scrollTop = 0;
+
 search?.focus();
 }
+
   function bindOnce() {
     const btn = $("dedEmojiBtn");
     const panel = $("dedEmojiPanel");
     const search = $("dedEmojiSearch");
+
     // Si on est sur une page sans modal, on skip
     if (!btn || !panel) return;
+
     // éviter double binding si Astro rerun + script global
     if (btn.dataset.bound === "1") return;
     btn.dataset.bound = "1";
+
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       togglePanel();
     });
+
     if (search) {
       search.addEventListener("input", () => {
         renderGrid(search.value);
       });
     }
+
     // Fermer si click en dehors
     document.addEventListener("click", (e) => {
       if (panel.classList.contains("hidden")) return;
@@ -3306,44 +3484,52 @@ search?.focus();
       if (e.target.closest("#dedEmojiBtn")) return;
       closePanel();
     });
+
     // Fermer au ESC si ouvert
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closePanel();
     });
+
     // Astuce: quand le modal dedication s'ouvre, ferme le panel
     const dedModal = $("dedicationModal");
     if (dedModal) {
       const obs = new MutationObserver(() => closePanel());
       obs.observe(dedModal, { attributes: true, attributeFilter: ["class","aria-hidden"] });
     }
+
     renderGrid("");
   }
- 
+  
   window.addEventListener("resize", () => {
   const p = $("dedEmojiPanel");
   if (p && !p.classList.contains("hidden")) positionPanel();
 }, { passive: true });
+
 document.addEventListener("scroll", () => {
   const p = $("dedEmojiPanel");
   if (p && !p.classList.contains("hidden")) positionPanel();
 }, { passive: true, capture: true });
+
   // Boot now + after Astro swaps
   const boot = () => {
     bindOnce();
     requestAnimationFrame(bindOnce);
     setTimeout(bindOnce, 50);
   };
+
   boot();
   document.addEventListener("astro:page-load", boot);
   document.addEventListener("astro:after-swap", boot);
 })();
 </script>
+
 <!-- MESSAGE + EMOJIS -->
 <div>
   <div class="flex items-center justify-between gap-3">
     <label class="block text-xs text-white/60 mb-2">
       Your message
     </label>
+
     <!-- ✅ Emoji button -->
     <div class="relative">
       <button
@@ -3355,6 +3541,7 @@ document.addEventListener("scroll", () => {
       >
         😊 <span class="hidden sm:inline">Emojis</span>
       </button>
+
       <!-- ✅ Emoji panel -->
      <div
   id="dedEmojiPanel"
@@ -3371,6 +3558,7 @@ document.addEventListener("scroll", () => {
         <div class="text-[11px] uppercase tracking-wider text-white/50 font-extrabold mb-2">
           Quick emojis
         </div>
+
         <!-- optional search -->
         <input
           id="dedEmojiSearch"
@@ -3378,6 +3566,7 @@ document.addEventListener("scroll", () => {
           class="w-full mb-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs outline-none focus:border-cyan-400/40 transition"
           placeholder="Search… (ex: heart)"
         />
+
        <div
   id="dedEmojiGrid"
   class="grid grid-cols-8 gap-1"
@@ -3390,12 +3579,14 @@ document.addEventListener("scroll", () => {
     overscroll-behavior: contain;
   "
 ></div>
+
         <div class="mt-2 text-[11px] text-white/45">
           Click an emoji to insert it.
         </div>
       </div>
     </div>
   </div>
+
   <textarea
     id="dedMessage"
     name="message"
@@ -3405,10 +3596,12 @@ document.addEventListener("scroll", () => {
     placeholder="Your message"
     required
   ></textarea>
+
   <div class="text-[11px] text-white/40 mt-2">
     Max 300 characters.
   </div>
 </div>
+
       <!-- FEEDBACK -->
      <div
   id="dedicationFeedback"
@@ -3436,12 +3629,15 @@ document.addEventListener("scroll", () => {
     </form>
   </div>
 </div>
+
 <script is:inline data-astro-rerun>
 (() => {
   // mobile only
   const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
+
   let lastY = 0;
   let ticking = false;
+
   const apply = () => {
     ticking = false;
     if (!isMobile()) {
@@ -3449,35 +3645,44 @@ document.addEventListener("scroll", () => {
       lastY = window.scrollY || 0;
       return;
     }
+
     const y = window.scrollY || 0;
     const dy = y - lastY;
+
     // Toujours visible proche du top
     if (y < 24) {
       document.body.classList.remove("abf-chrome-hidden");
       lastY = y;
       return;
     }
+
     // Scroll down => hide, scroll up => show
     if (dy > 6) document.body.classList.add("abf-chrome-hidden");
     if (dy < -6) document.body.classList.remove("abf-chrome-hidden");
+
     lastY = y;
   };
+
   const onScroll = () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(apply);
   };
+
   // reset on navigation swaps
   const boot = () => {
     lastY = window.scrollY || 0;
     apply();
   };
+
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", boot, { passive: true });
+
   document.addEventListener("astro:page-load", boot);
   document.addEventListener("astro:after-swap", boot);
   document.addEventListener("DOMContentLoaded", boot);
 })();
 </script>
+
  </body>
 </html>
