@@ -820,8 +820,7 @@ function apply(root = document){
     <div class="abf-playerGlass rounded-2xl overflow-hidden border border-white/10">
       <div class="abf-noise" aria-hidden="true"></div>
 
-      <div class="px-3 sm:px-4 py-2.5">
-        <!-- TOP ROW -->
+      <!-- ✅ SINGLE wrapper (no duplicate) -->
       <div class="px-3 sm:px-4 py-2.5">
         <!-- TOP BAR (left titles + right controls) -->
         <div class="abfPlayerBar">
@@ -834,7 +833,6 @@ function apply(root = document){
               </div>
             </div>
 
-            <!-- titles -->
             <div class="min-w-0 flex-1">
               <div id="npArtist" data-abf-artist class="font-semibold text-[13px] leading-tight truncate">—</div>
               <div id="npTitle" data-abf-title class="text-[12px] text-white/70 leading-tight truncate">—</div>
@@ -852,9 +850,8 @@ function apply(root = document){
             </button>
           </div>
 
-          <!-- RIGHT: (desktop/tablet) status + selector + buttons + volume -->
+          <!-- RIGHT: (tablet/desktop) status + selector + buttons + volume -->
           <div class="hidden sm:flex abfPlayerRight">
-            <!-- status badge (tablet+ / desktop) -->
             <div
               id="npStatus"
               class="hidden sm:inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
@@ -862,7 +859,6 @@ function apply(root = document){
               stopped
             </div>
 
-            <!-- stream selector (desktop only, unchanged) -->
             <select
               id="streamSelect"
               class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
@@ -874,8 +870,7 @@ function apply(root = document){
               <option value="3">FLAC • 728 kbps</option>
             </select>
 
-            <!-- buttons (same IDs, reused everywhere) -->
-            <div id="playerControlsRow" class="mt-2 md:mt-0 flex items-center gap-2 flex-none">
+            <div id="playerControlsRow" class="md:mt-0 flex items-center gap-2 flex-none">
               <button
                 id="playBtn"
                 type="button"
@@ -935,7 +930,6 @@ function apply(root = document){
               </button>
             </div>
 
-            <!-- volume (desktop only, order AFTER buttons) -->
             <input
               id="volRange"
               type="range"
@@ -950,7 +944,7 @@ function apply(root = document){
           </div>
         </div>
 
-        <!-- MOBILE ROW: status + stream select (unchanged) -->
+        <!-- ✅ MOBILE ROW (ONLY ONCE) -->
         <div class="mt-2 flex items-center justify-between gap-2 sm:hidden">
           <div
             id="npStatusMobile"
@@ -971,7 +965,7 @@ function apply(root = document){
           </select>
         </div>
 
-        <!-- EXPANDED AREA (mobile): show volume slider -->
+        <!-- ✅ EXPANDED AREA (mobile volume) (ONLY ONCE) -->
         <div id="playerExpandedArea" class="hidden sm:hidden mt-2">
           <input
             id="volRangeMobile"
@@ -987,52 +981,13 @@ function apply(root = document){
         </div>
       </div>
 
-<!-- MOBILE ROW: status + stream select -->
-<div class="mt-2 flex items-center justify-between gap-2 sm:hidden">
-  <div
-    id="npStatusMobile"
-    class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
-  >
-    stopped
-  </div>
-
-  <select
-    id="streamSelectMobile"
-    class="bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
-    title="Stream quality"
-  >
-    <option value="0">MP3 • 320 kbps</option>
-    <option value="1">MP3 • 128 kbps</option>
-    <option value="2">AAC+ • 32 kbps</option>
-    <option value="3">FLAC • 728 kbps</option>
-  </select>
-</div>
-
-<!-- EXPANDED AREA (mobile): show volume slider -->
-<div id="playerExpandedArea" class="hidden sm:hidden mt-2">
-  <input
-    id="volRangeMobile"
-    type="range"
-    min="0"
-    max="1"
-    step="0.01"
-    value="0.8"
-    class="w-full"
-    aria-label="Volume"
-    title="Volume"
-  />
-</div>
-</div>
-
-      <!-- VISUALIZER: hidden on mobile mini, visible when expanded -->
+      <!-- ✅ VISUALIZER stays INSIDE player card -->
       <div id="playerVizWrap" class="border-t border-white/10">
         <canvas id="visualizerCanvas" class="w-full h-8"></canvas>
       </div>
     </div>
   </div>
 </div>
-
-
 
 <script is:inline data-astro-rerun>
 (() => {
