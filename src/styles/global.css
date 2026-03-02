@@ -344,15 +344,3 @@ main#mainContent{
     padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 2px) !important;
   }
 }
-
-@media (max-width: 767px) {
-  main#mainContent {
-    padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 32px) !important;
-  }
-
-  /* Sécurité supplémentaire : force le footer à ne pas être écrasé */
-  #siteFooter {
-    margin-top: 16px !important;     /* ← petit espace au-dessus du footer */
-    margin-bottom: 0 !important;
-  }
-}
