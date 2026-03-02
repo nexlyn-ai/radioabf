@@ -327,7 +327,7 @@ main#mainContent{
 
   /* ✅ IMPORTANT: en mobile, le player DOIT ignorer --abf-footer-h */
   #playerContainer{
-    bottom: calc(var(--abf-gap) + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(var(--abf-gap) + env(safe-area-inset-bottom, 5px)) !important;
   }
 }
 
