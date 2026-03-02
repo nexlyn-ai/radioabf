@@ -331,21 +331,34 @@ main#mainContent{
   }
 }
 
-/* ✅ Desktop only (>=768) : player au-dessus du footer fixed */
-@media (min-width: 768px){
-  #playerContainer{
-    bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));
-  }
-}
+/* ─────────────────────────────────────────────── */
+/*               MOBILE ONLY (< 768px)            */
+/* ─────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
-  /* ... tes autres règles ... */
-
+  /* Contenu principal : juste assez de padding pour le player fixe + safe area */
   main#mainContent {
     padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 12px) !important;
   }
 
+  /* Évite l'espace interne parasite dans le player */
   #playerContainer > div {
-    padding-bottom: 0 !important;     /* enlève l'espace interne au player */
+    padding-bottom: 0 !important;
+  }
+
+  /* Footer collé en bas sans marge supplémentaire */
+  #siteFooter {
+    margin-bottom: 0 !important;
+  }
+}
+
+/* ─────────────────────────────────────────────── */
+/*               DESKTOP ONLY (≥ 768px)           */
+/* ─────────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  /* Player positionné au-dessus du footer fixe */
+  #playerContainer {
+    bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));
   }
 }
