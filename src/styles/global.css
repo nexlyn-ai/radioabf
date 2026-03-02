@@ -341,6 +341,6 @@ main#mainContent{
 /* Correction espace vide en bas sur mobile uniquement */
 @media (max-width: 767px) {
   main#mainContent {
-    padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 28px) !important;
+    padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 2px) !important;
   }
 }
