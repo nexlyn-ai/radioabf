@@ -305,23 +305,35 @@ main#mainContent{
   will-change: transform;
 }
 
-@media (max-width: 768px){
+/* ✅ Mobile only (strict <768) */
+@media (max-width: 767px){
   body.abf-chrome-hidden #siteHeader,
   body.abf-chrome-hidden .dedications-bar{
     transform: translateY(-120%);
     opacity: 0;
     pointer-events: none;
   }
-}
 
-/* Footer safe-area on iOS */
-#siteFooter{
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-}
+  /* Footer safe-area on iOS — MOBILE ONLY
+     (ne pas toucher desktop fixed) */
+  #siteFooter{
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  }
 
-/* En mobile, évite que le player "mange" visuellement le footer (padding trop gros) */
-@media (max-width: 640px){
+  /* En mobile, évite que le player "mange" visuellement le footer */
   #playerContainer > div{
-    padding-bottom: 10px !important; /* remplace pb-4 en pratique */
+    padding-bottom: 10px !important; /* remplace pb-4 */
+  }
+
+  /* ✅ IMPORTANT: en mobile, le player DOIT ignorer --abf-footer-h */
+  #playerContainer{
+    bottom: calc(var(--abf-gap) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* ✅ Desktop only (>=768) : player au-dessus du footer fixed */
+@media (min-width: 768px){
+  #playerContainer{
+    bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));
   }
 }
