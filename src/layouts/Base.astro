@@ -770,15 +770,13 @@ function apply(root = document){
 </script>
 
     <!-- ================= PAGE ================= -->
-<main
-  id="mainContent"
-  class="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 pt-6"
-  style="
-    padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 10px);
-  "
->
-  <slot />
-</main>
+    <main
+      id="mainContent"
+      class="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 pt-6"
+      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px) + 24px);"
+    >
+      <slot />
+    </main>
 <!-- ================= PLAYER (mobile collapsible, IDs unique) ================= -->
 <div
   id="playerContainer"
@@ -2092,7 +2090,7 @@ if (ft){
 <footer
   id="siteFooter"
   class="z-40 bg-[#050B14]/80 backdrop-blur-xl border-t border-white/10
-         mb-0                          /* ← CHANGE ÇA */
+         mb-[calc(var(--abf-player-h)+env(safe-area-inset-bottom,0px)+16px)]
          md:mb-0
          md:fixed md:bottom-0 md:left-0 md:right-0"
 >
