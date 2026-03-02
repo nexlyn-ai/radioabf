@@ -773,7 +773,7 @@ function apply(root = document){
     <main
       id="mainContent"
       class="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 pt-6"
-      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-gap) + env(safe-area-inset-bottom,0px) + 24px);"
+      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px) + 24px);"
     >
       <slot />
     </main>
@@ -781,7 +781,7 @@ function apply(root = document){
 <div
   id="playerContainer"
   class="fixed left-0 right-0 z-50 pointer-events-none"
-  style="bottom: calc(var(--abf-gap) + env(safe-area-inset-bottom, 0px));"
+  style="bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));"
   data-mini="true"
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-4 pointer-events-auto">
@@ -789,156 +789,53 @@ function apply(root = document){
       <div class="abf-noise" aria-hidden="true"></div>
 
       <div class="px-3 sm:px-4 py-2.5">
-	  
-       <!-- TOP ROW (CLEAN: desktop buttons on the right, mobile buttons under titles) -->
-<div class="flex items-start sm:items-center gap-3">
-  <!-- cover -->
-  <div class="abfCover w-11 h-11 rounded-xl border border-white/10 overflow-hidden flex-none">
-    <img id="playerCover" class="hidden" alt="Pochette actuelle" />
-    <div id="playerCoverFallback" class="abfCoverFallback">
-      <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
-    </div>
-  </div>
+        <!-- TOP ROW -->
+        <div class="flex items-center gap-3">
+          <div class="abfCover w-11 h-11 rounded-xl border border-white/10 overflow-hidden flex-none">
+            <img id="playerCover" class="hidden" alt="Pochette actuelle" />
+            <div id="playerCoverFallback" class="abfCoverFallback">
+              <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+            </div>
+          </div>
 
-  <!-- titles + mobile controls -->
-  <div class="min-w-0 flex-1">
-    <div id="npArtist" data-abf-artist class="font-semibold text-[13px] leading-tight truncate">—</div>
-    <div id="npTitle" data-abf-title class="text-[12px] text-white/70 leading-tight truncate">—</div>
+          <!-- titles -->
+          <div class="min-w-0 flex-1">
+            <div id="npArtist" data-abf-artist class="font-semibold text-[13px] leading-tight truncate">—</div>
+            <div id="npTitle" data-abf-title class="text-[12px] text-white/70 leading-tight truncate">—</div>
+          </div>
 
-    <!-- MOBILE CONTROLS (unique IDs) -->
-    <div class="mt-2 flex items-center justify-between gap-2 sm:hidden">
-      <div class="flex items-center gap-2">
-        <button id="playBtnMobile" type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
-          aria-label="Play/Pause" title="Play/Pause">
-          <span class="abf-ic" data-ic="play"></span>
-        </button>
+          <!-- expand button (mobile) -->
+          <button
+            id="playerToggleBtn"
+            type="button"
+            class="sm:hidden flex-none inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+            aria-label="Expand player"
+            title="Expand player"
+          >
+            <span id="playerToggleIcon" class="text-base">▴</span>
+          </button>
 
-        <button id="stopBtnMobile" type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-          aria-label="Stop" title="Stop">
-          <span class="abf-ic" data-ic="stop"></span>
-        </button>
+          <!-- status + desktop stream select -->
+          <div class="hidden sm:flex items-center gap-2 flex-none">
+            <div
+              id="npStatus"
+              class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
+            >
+              stopped
+            </div>
 
-        <button id="muteBtnMobile" type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-          aria-label="Mute" title="Mute">
-          <span class="abf-ic" data-ic="volume"></span>
-        </button>
-
-        <button id="fsBtnMobile" type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-          aria-label="Full screen" title="Full screen">
-          <span class="abf-ic" data-ic="fs"></span>
-        </button>
-
-        <button
-          id="castBtnMobile"
-          type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-          aria-label="Cast"
-          title="Cast"
-          style="display:flex;"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-            fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-            style="display:block">
-            <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
-            <path d="M3 19a2 2 0 0 1 2 2" />
-            <path d="M3 15a6 6 0 0 1 6 6" />
-            <path d="M3 11a10 10 0 0 1 10 10" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- expand button (mobile) -->
-      <button
-        id="playerToggleBtn"
-        type="button"
-        class="flex-none inline-flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-        aria-label="Expand player"
-        title="Expand player"
-      >
-        <span id="playerToggleIcon" class="text-base">▴</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- DESKTOP RIGHT SIDE (keeps original IDs used by your main JS) -->
-  <div class="hidden sm:flex items-center gap-2 flex-none">
-    <div
-      id="npStatus"
-      class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-cyan-200/90 uppercase tracking-wider"
-    >
-      stopped
-    </div>
-
-    <select
-      id="streamSelect"
-      class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
-      title="Stream quality"
-    >
-      <option value="0">MP3 • 320 kbps</option>
-      <option value="1">MP3 • 128 kbps</option>
-      <option value="2">AAC+ • 32 kbps</option>
-      <option value="3">FLAC • 728 kbps</option>
-    </select>
-
-    <button id="playBtn" type="button"
-      class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
-      aria-label="Play/Pause" title="Play/Pause">
-      <span class="abf-ic" data-ic="play"></span>
-    </button>
-
-    <button id="stopBtn" type="button"
-      class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-      aria-label="Stop" title="Stop">
-      <span class="abf-ic" data-ic="stop"></span>
-    </button>
-
-    <button id="muteBtn" type="button"
-      class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-      aria-label="Mute" title="Mute">
-      <span class="abf-ic" data-ic="volume"></span>
-    </button>
-
-    <button id="fsBtn" type="button"
-      class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-      aria-label="Full screen" title="Full screen">
-      <span class="abf-ic" data-ic="fs"></span>
-    </button>
-
-    <button
-      id="castBtn"
-      type="button"
-      class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
-      aria-label="Cast"
-      title="Cast"
-      style="display:flex;"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-        style="display:block">
-        <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
-        <path d="M3 19a2 2 0 0 1 2 2" />
-        <path d="M3 15a6 6 0 0 1 6 6" />
-        <path d="M3 11a10 10 0 0 1 10 10" />
-      </svg>
-    </button>
-
-    <input
-      id="volRange"
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value="0.8"
-      class="hidden md:block w-28"
-      aria-label="Volume"
-      title="Volume"
-    />
-  </div>
-</div>
+            <select
+              id="streamSelect"
+              class="hidden md:block bg-[#050B14]/60 border border-white/15 text-white rounded-xl px-2.5 py-2 text-xs backdrop-blur-xl"
+              title="Stream quality"
+            >
+              <option value="0">MP3 • 320 kbps</option>
+              <option value="1">MP3 • 128 kbps</option>
+              <option value="2">AAC+ • 32 kbps</option>
+              <option value="3">FLAC • 728 kbps</option>
+            </select>
+          </div>
+        </div>
 
         <!-- MOBILE ROW: status + stream select -->
         <div class="mt-2 flex items-center justify-between gap-2 sm:hidden">
@@ -961,7 +858,53 @@ function apply(root = document){
           </select>
         </div>
 
-        <!-- volume only on sm+ OR when expanded on mobile -->
+        <!-- CONTROLS ROW: ALWAYS UNDER TITLES on mobile -->
+        <div class="mt-2 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-none">
+            <button id="playBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition shadow-[0_10px_30px_rgba(47,194,255,0.18)] hover:shadow-[0_14px_40px_rgba(47,194,255,0.28)]"
+              aria-label="Play/Pause" title="Play/Pause">
+              <span class="abf-ic" data-ic="play"></span>
+            </button>
+
+            <button id="stopBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Stop" title="Stop">
+              <span class="abf-ic" data-ic="stop"></span>
+            </button>
+
+            <button id="muteBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Mute" title="Mute">
+              <span class="abf-ic" data-ic="volume"></span>
+            </button>
+
+            <button id="fsBtn" type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Full screen" title="Full screen">
+              <span class="abf-ic" data-ic="fs"></span>
+            </button>
+
+            <button
+              id="castBtn"
+              type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition"
+              aria-label="Cast"
+              title="Cast"
+              style="display:flex;"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+                fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                style="display:block">
+                <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6" />
+                <path d="M3 19a2 2 0 0 1 2 2" />
+                <path d="M3 15a6 6 0 0 1 6 6" />
+                <path d="M3 11a10 10 0 0 1 10 10" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- volume only on sm+ OR when expanded on mobile -->
           <input
             id="volRange"
             type="range"
@@ -992,7 +935,7 @@ function apply(root = document){
       </div>
 
       <!-- VISUALIZER: hidden on mobile mini, visible when expanded -->
-      <div id="playerVizWrap" class="border-t border-white/10 rounded-b-2xl overflow-hidden">
+      <div id="playerVizWrap" class="border-t border-white/10">
         <canvas id="visualizerCanvas" class="w-full h-8"></canvas>
       </div>
     </div>
@@ -1081,33 +1024,6 @@ function apply(root = document){
   init();
   window.addEventListener("resize", () => {
     if (!isMobile()) setMini(false);
-  });
-})();
-</script>
-
-<script is:inline data-astro-rerun>
-(() => {
-  const pairs = [
-    ["playBtnMobile", "playBtn"],
-    ["stopBtnMobile", "stopBtn"],
-    ["muteBtnMobile", "muteBtn"],
-    ["fsBtnMobile", "fsBtn"],
-    ["castBtnMobile", "castBtn"],
-  ];
-
-  pairs.forEach(([mobileId, desktopId]) => {
-    const mobileBtn = document.getElementById(mobileId);
-    const desktopBtn = document.getElementById(desktopId);
-    if (!mobileBtn || !desktopBtn) return;
-
-    // avoid double binding on astro rerender
-    if (mobileBtn.dataset.bound === "1") return;
-    mobileBtn.dataset.bound = "1";
-
-    mobileBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      desktopBtn.click();
-    });
   });
 })();
 </script>
@@ -2174,6 +2090,8 @@ if (ft){
 <footer
   id="siteFooter"
   class="z-40 bg-[#050B14]/80 backdrop-blur-xl border-t border-white/10
+         mb-[calc(var(--abf-player-h)+env(safe-area-inset-bottom,0px)+16px)]
+         md:mb-0
          md:fixed md:bottom-0 md:left-0 md:right-0"
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/60">
