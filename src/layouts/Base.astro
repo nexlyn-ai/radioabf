@@ -773,7 +773,7 @@ function apply(root = document){
     <main
       id="mainContent"
       class="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 pt-6"
-      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px) + 24px);"
+      style="padding-bottom: calc(var(--abf-player-h) + var(--abf-gap) + env(safe-area-inset-bottom,0px) + 24px);"
     >
       <slot />
     </main>
@@ -2090,8 +2090,6 @@ if (ft){
 <footer
   id="siteFooter"
   class="z-40 bg-[#050B14]/80 backdrop-blur-xl border-t border-white/10
-         mb-[calc(var(--abf-player-h)+env(safe-area-inset-bottom,0px)+16px)]
-         md:mb-0
          md:fixed md:bottom-0 md:left-0 md:right-0"
 >
   <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/60">
