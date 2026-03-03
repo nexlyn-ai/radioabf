@@ -16,7 +16,7 @@ const TRACKS_COLLECTION = "tracks";
 const TRACKS_KEY_FIELD = "track_key";
 const TRACKS_COVER_FIELD = "cover_art";
 
-// ✅ iTunes fallback ON (uniquement si pas de cover Directus)
+// ✅ iTunes fallback ON (UNIQUEMENT pour l'AFFICHAGE, jamais écrit en base)
 const ENABLE_ITUNES_FALLBACK =
   (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "true") === "true";
 
@@ -123,6 +123,39 @@ function directusAssetUrl(fileId: string) {
   return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
 }
 
+/* -------------------- Tracks: ensure row (SAFE) -------------------- */
+/* Creates ONLY {track_key, artist, title} when missing.
+   No cover written. No update. No history loop. */
+async function ensureTrackRow(track_key: string, artist: string, title: string) {
+  if (!track_key) return;
+
+  try {
+    const params = new URLSearchParams({
+      fields: "id",
+      limit: "1",
+      [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
+    });
+
+    const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
+    const j = await r.json();
+    const exists = j?.data?.[0];
+
+    if (exists?.id) return;
+
+    await directusFetch(`/items/${TRACKS_COLLECTION}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        [TRACKS_KEY_FIELD]: track_key,
+        artist: artist || null,
+        title: title || null,
+      }),
+    });
+  } catch (e: any) {
+    console.warn("[nowplaying] ensureTrackRow failed:", e?.message || e);
+  }
+}
+
 /* -------------------- Cover lookup (tracks.cover_art) -------------------- */
 
 const __coverCache: Map<string, { url: string; exp: number }> =
@@ -162,7 +195,7 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
   return coverUrl;
 }
 
-/* -------------------- iTunes cover (fallback) -------------------- */
+/* -------------------- iTunes cover (fallback display-only) -------------------- */
 
 const __itunesCache: Map<string, { url: string; exp: number }> =
   ((globalThis as any).__itunesCache as Map<string, { url: string; exp: number }>) || new Map();
@@ -231,7 +264,6 @@ export const GET: APIRoute = async ({ request }) => {
     const played_at_ms = Date.parse(played_at);
 
     // Vérifier dernier en base + insert si changement
-    // ✅ do not insert garbage "ABF -" rows
     const lastRes = await directusFetch(
       `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
     );
@@ -239,7 +271,13 @@ export const GET: APIRoute = async ({ request }) => {
     const last = lastJson?.data?.[0];
 
     let inserted = false;
+
+    // ✅ Only on real change + non garbage:
+    //    - Insert into plays
+    //    - Ensure ONE track row exists (no covers written)
     if (!nowIsBad && (!last || last.track_key !== track_key)) {
+      await ensureTrackRow(track_key, artist, title);
+
       await directusFetch(`/items/${PLAYS_COLLECTION}`, {
         method: "POST",
         body: JSON.stringify({
@@ -251,6 +289,7 @@ export const GET: APIRoute = async ({ request }) => {
         }),
         headers: { "Content-Type": "application/json" },
       });
+
       inserted = true;
     }
 
@@ -277,10 +316,10 @@ export const GET: APIRoute = async ({ request }) => {
         const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
         const ts = toUTCms(row.played_at);
 
-        // ✅ drop garbage rows to avoid "ABF -" duplicates in UI
+        // ✅ drop garbage rows
         if (isBadRaw(raw)) return null;
 
-        // ✅ priorité Directus, fallback iTunes uniquement si vide
+        // ✅ cover lookup for UI only (Directus manual first; else iTunes fallback)
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
         let cover_source = cover_url ? "directus" : "";
         if (!cover_url) {
@@ -302,7 +341,7 @@ export const GET: APIRoute = async ({ request }) => {
       })
     );
 
-    // ✅ TEMP FIX: Deduplicate Directus rows (same track_key/raw + same played_at_ms)
+    // ✅ Deduplicate Directus rows (same track_key/raw + same played_at_ms)
     const cleaned = (historyMaybe || []).filter(Boolean) as any[];
 
     const seen = new Set<string>();
@@ -318,7 +357,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     const history = uniq.slice(0, limit);
 
-    // Now cover
+    // Now cover (UI only)
     let nowCover = "";
     let nowCoverSource = "";
     if (!nowIsBad) {
