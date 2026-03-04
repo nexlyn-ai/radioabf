@@ -10,6 +10,7 @@
     "sync:artists": "node scripts/sync-artists.mjs"
   },
   "dependencies": {
+    "@astrojs/node": "^9.5.4",
     "@tailwindcss/vite": "^4.1.18",
     "astro": "^5.17.1",
     "cheerio": "^1.2.0",
