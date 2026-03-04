@@ -59,6 +59,25 @@ function splitTrack(entry: string) {
   };
 }
 
+/**
+ * ✅ Fix mojibake (UTF-8 read as Latin-1 / Win-1252)
+ * Ex: "NATÃ©" -> "NATé", "FrÃ©quence" -> "Fréquence"
+ */
+function fixMojibake(s: string) {
+  const str = String(s || "");
+  // Heuristic: only try when it looks like mojibake
+  if (!/[ÃÂâ€“â€”â€˜â€™â€œâ€�]/.test(str)) return str;
+
+  try {
+    // Interpret current JS string as bytes of Latin-1, then decode as UTF-8
+    const bytes = Uint8Array.from(str, (c) => c.charCodeAt(0) & 0xff);
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    return decoded || str;
+  } catch {
+    return str;
+  }
+}
+
 function normKey(artist: string, title: string) {
   return (artist + " - " + title)
     .toLowerCase()
@@ -123,25 +142,16 @@ function directusAssetUrl(fileId: string) {
   return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
 }
 
-/* -------------------- Tracks: ensure row (SAFE) -------------------- */
-/* Creates ONLY {track_key, artist, title} when missing.
-   No cover written. No update. No history loop. */
+/* -------------------- Tracks: ensure row (RACE-SAFE) -------------------- */
+/**
+ * ✅ Robust fix for "track_key must be unique"
+ * We try to create; if it already exists (race), we ignore.
+ * No cover written. No update.
+ */
 async function ensureTrackRow(track_key: string, artist: string, title: string) {
   if (!track_key) return;
 
   try {
-    const params = new URLSearchParams({
-      fields: "id",
-      limit: "1",
-      [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
-    });
-
-    const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
-    const j = await r.json();
-    const exists = j?.data?.[0];
-
-    if (exists?.id) return;
-
     await directusFetch(`/items/${TRACKS_COLLECTION}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -152,7 +162,12 @@ async function ensureTrackRow(track_key: string, artist: string, title: string) 
       }),
     });
   } catch (e: any) {
-    console.warn("[nowplaying] ensureTrackRow failed:", e?.message || e);
+    const msg = String(e?.message || e || "");
+
+    // ✅ if unique constraint hit, it's OK (already created by another request)
+    if (/RECORD_NOT_UNIQUE|has to be unique/i.test(msg)) return;
+
+    console.warn("[nowplaying] ensureTrackRow failed:", msg);
   }
 }
 
@@ -254,7 +269,9 @@ export const GET: APIRoute = async ({ request }) => {
     if (!ice.ok) throw new Error(`Icecast failed: ${ice.status}`);
     const iceJson = await ice.json();
 
-    const nowText = cleanNowText(extractNowPlaying(iceJson));
+    // ✅ Fix mojibake coming from relay/proxy/clients
+    const nowRaw = extractNowPlaying(iceJson);
+    const nowText = cleanNowText(fixMojibake(nowRaw));
     const nowIsBad = isBadRaw(nowText);
 
     const { artist, title } = splitTrack(nowText);
@@ -273,9 +290,8 @@ export const GET: APIRoute = async ({ request }) => {
     let inserted = false;
 
     // ✅ Only on real change + non garbage:
-    //    - Insert into plays
-    //    - Ensure ONE track row exists (no covers written)
     if (!nowIsBad && (!last || last.track_key !== track_key)) {
+      // ✅ race-safe: try create track row; ignore unique conflicts
       await ensureTrackRow(track_key, artist, title);
 
       await directusFetch(`/items/${PLAYS_COLLECTION}`, {
@@ -310,10 +326,11 @@ export const GET: APIRoute = async ({ request }) => {
 
     const historyMaybe = await Promise.all(
       historyRaw.map(async (row: any) => {
-        const a = String(row.artist || "");
-        const t = String(row.title || "");
+        // ✅ Fix mojibake in stored rows too (in case old bad rows exist)
+        const a = fixMojibake(String(row.artist || ""));
+        const t = fixMojibake(String(row.title || ""));
         const tk = String(row.track_key || "");
-        const raw = String(row.raw || `${a} - ${t}`.trim()).trim();
+        const raw = fixMojibake(String(row.raw || `${a} - ${t}`.trim()).trim());
         const ts = toUTCms(row.played_at);
 
         // ✅ drop garbage rows
