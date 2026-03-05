@@ -2226,6 +2226,11 @@ if (ft){
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
+	{
+    v: "3.5.0",
+    d: "Mar 05, 2026",
+    t: "Major infrastructure update. RadioABF now operates on a dedicated three-server architecture: abf-front hosts the main website radioabf.com, abf-cms runs the content management and monitoring environment, and abf-stream serves as the public streaming edge delivering listener traffic via HTTPS relay and HLS proxy at stream.radioabf.com. Audio automation and encoding continue to run through a private provider source. Streaming endpoints were simplified with a universal HLS master playlist and a low-bandwidth fallback, improving compatibility across Safari, mobile devices and external players."
+    },	
     {
    v: "3.4.2",
    d: "Mar 02, 2026",
