@@ -1145,19 +1145,24 @@ export const prerender = false;
     `;
   }
 
-  function buildAirplayStats(history, coverByNorm){
-    const now = nowTs();
-    const todayStart = startOfLocalDay(now);
-    const last24hStart = now - DAY;
-    const prev24hStart = now - (2 * DAY);
-    const map = Object.create(null);
+function buildAirplayStats(history, coverByNorm){
+  const now = nowTs();
+  const todayStart = startOfLocalDay(now);
+  const last24hStart = now - DAY;
+  const prev24hStart = now - (2 * DAY);
+  const map = Object.create(null);
+  const dedupe = new Set();
 
-    for (const entry of (history || [])){
-      const ts = Number(entry?.ts || 0);
-      const sp = splitTrack(entry?.t || "");
-      const aRaw = String(sp.artist || "").trim();
-      const tRaw = String(sp.title || "").trim();
+  for (const entry of (history || [])){
+    const ts = Number(entry?.ts || 0);
+    const minuteKey = `${String(entry?.t || "").toLowerCase()}_${Math.floor(ts / 60000)}`;
+    if (dedupe.has(minuteKey)) continue;
+    dedupe.add(minuteKey);
 
+    const sp = splitTrack(entry?.t || "");
+    const aRaw = String(sp.artist || "").trim();
+    const tRaw = String(sp.title || "").trim();
+	
       if ((!aRaw && !tRaw) || isBlockedShow(aRaw)) continue;
 
       const n = normKey(aRaw, tRaw);
