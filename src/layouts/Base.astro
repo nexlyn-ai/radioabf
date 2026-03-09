@@ -2227,6 +2227,11 @@ if (ft){
         // Build / Updates (latest first) — Feb 2026
         const BUILDS = [
 	{
+    v: "3.5.1",
+    d: "Mar 09, 2026",
+    t: "Music Portal refinements and stability improvements. This update introduces a smarter track lifecycle system powered by Directus, allowing RadioABF to track the first time a track enters rotation and display accurate NEW badges across Now Playing, Last Played and New Entries sections. Live show identifiers such as ABF CLUB are now excluded from the new-track logic to avoid false positives. Cover artwork reliability was improved with better fallback handling and smarter caching behavior, ensuring covers remain stable across page navigation and auto-refresh."
+    },	
+	{
     v: "3.5.0",
     d: "Mar 05, 2026",
     t: "Major infrastructure update. RadioABF now operates on a dedicated three-server architecture: abf-front hosts the main website radioabf.com, abf-cms runs the content management and monitoring environment, and abf-stream serves as the public streaming edge delivering listener traffic via HTTPS relay and HLS proxy at stream.radioabf.com. Audio automation and encoding continue to run through a private provider source. Streaming endpoints were simplified with a universal HLS master playlist and a low-bandwidth fallback, improving compatibility across Safari, mobile devices and external players."
