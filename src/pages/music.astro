@@ -1834,14 +1834,18 @@ export const prerender = false;
     }, 8000);
   }
 
-  function init(){
-    if (!isMusicRoute()) return;
-    const root = getRoot();
-    if (!root) return;
-    bindAirSearchOnce(root);
-    render();
-    startTimer();
-  }
+function init(){
+  if (!isMusicRoute()) return;
+  const root = getRoot();
+  if (!root) return;
+
+  state.lastAutoHash = "";
+  state.searchBound = false;
+
+  bindAirSearchOnce(root);
+  render();
+  startTimer();
+}
 
   if (!state.bound){
     state.bound = true;
