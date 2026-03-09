@@ -15,10 +15,13 @@ const TRACKS_COLLECTION = "tracks";
 // ✅ ton schéma Directus
 const TRACKS_KEY_FIELD = "track_key";
 const TRACKS_COVER_FIELD = "cover_art";
+const TRACKS_FIRST_PLAYED_FIELD = "first_played_at";
 
 // ✅ iTunes fallback ON (UNIQUEMENT pour l'AFFICHAGE, jamais écrit en base)
 const ENABLE_ITUNES_FALLBACK =
   (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "true") === "true";
+
+const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /* -------------------- Helpers -------------------- */
 
@@ -65,11 +68,9 @@ function splitTrack(entry: string) {
  */
 function fixMojibake(s: string) {
   const str = String(s || "");
-  // Heuristic: only try when it looks like mojibake
   if (!/[ÃÂâ€“â€”â€˜â€™â€œâ€�]/.test(str)) return str;
 
   try {
-    // Interpret current JS string as bytes of Latin-1, then decode as UTF-8
     const bytes = Uint8Array.from(str, (c) => c.charCodeAt(0) & 0xff);
     const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     return decoded || str;
@@ -112,6 +113,12 @@ function toUTCms(v: any): number {
   return Date.parse(s + "Z");
 }
 
+function isNewFromFirstPlayed(firstPlayedAt: string): boolean {
+  const ts = toUTCms(firstPlayedAt);
+  if (!ts) return false;
+  return Date.now() - ts <= NEW_TRACK_TTL_MS;
+}
+
 function assertEnv() {
   if (!ICECAST_STATUS_URL) throw new Error("ICECAST_STATUS_URL missing");
   if (!DIRECTUS_URL) throw new Error("DIRECTUS_URL missing");
@@ -148,7 +155,12 @@ function directusAssetUrl(fileId: string) {
  * We try to create; if it already exists (race), we ignore.
  * No cover written. No update.
  */
-async function ensureTrackRow(track_key: string, artist: string, title: string) {
+async function ensureTrackRow(
+  track_key: string,
+  artist: string,
+  title: string,
+  first_played_at: string
+) {
   if (!track_key) return;
 
   try {
@@ -159,6 +171,7 @@ async function ensureTrackRow(track_key: string, artist: string, title: string) 
         [TRACKS_KEY_FIELD]: track_key,
         artist: artist || null,
         title: title || null,
+        [TRACKS_FIRST_PLAYED_FIELD]: first_played_at || null,
       }),
     });
   } catch (e: any) {
@@ -205,9 +218,45 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
     coverUrl = "";
   }
 
-  __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 }); // 30 min
+  __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 });
   (globalThis as any).__coverCache = __coverCache;
   return coverUrl;
+}
+
+/* -------------------- Track meta lookup (tracks.first_played_at) -------------------- */
+
+const __trackMetaCache: Map<string, { first_played_at: string; exp: number }> =
+  ((globalThis as any).__trackMetaCache as Map<string, { first_played_at: string; exp: number }>) || new Map();
+
+async function fetchTrackFirstPlayedAt(track_key: string): Promise<string> {
+  if (!track_key) return "";
+
+  const now = Date.now();
+  const hit = __trackMetaCache.get(track_key);
+  if (hit && hit.exp > now) return hit.first_played_at;
+
+  let firstPlayedAt = "";
+
+  try {
+    const params = new URLSearchParams({
+      fields: TRACKS_FIRST_PLAYED_FIELD,
+      limit: "1",
+      [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
+    });
+
+    const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
+    const j = await r.json();
+    const row = j?.data?.[0];
+
+    firstPlayedAt = String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim();
+  } catch {
+    firstPlayedAt = "";
+  }
+
+  __trackMetaCache.set(track_key, { first_played_at: firstPlayedAt, exp: now + 30 * 60 * 1000 });
+  (globalThis as any).__trackMetaCache = __trackMetaCache;
+
+  return firstPlayedAt;
 }
 
 /* -------------------- iTunes cover (fallback display-only) -------------------- */
@@ -226,7 +275,6 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
 
   let cover = "";
   try {
-    // try exact
     let term = `${artist} ${title}`;
     let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
     let r = await fetch(url, { cache: "no-store" });
@@ -236,7 +284,6 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
       if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
     }
 
-    // try cleaned title
     if (!cover) {
       const cleanTitle = stripMixSuffix(title);
       if (cleanTitle && cleanTitle !== title) {
@@ -252,7 +299,7 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
     }
   } catch {}
 
-  __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 }); // 6h
+  __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
   (globalThis as any).__itunesCache = __itunesCache;
   return cover;
 }
@@ -264,12 +311,10 @@ export const GET: APIRoute = async ({ request }) => {
     const url = new URL(request.url);
     const limit = Math.min(400, Math.max(1, Number(url.searchParams.get("limit") || "12")));
 
-    // Icecast → now playing
     const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
     if (!ice.ok) throw new Error(`Icecast failed: ${ice.status}`);
     const iceJson = await ice.json();
 
-    // ✅ Fix mojibake coming from relay/proxy/clients
     const nowRaw = extractNowPlaying(iceJson);
     const nowText = cleanNowText(fixMojibake(nowRaw));
     const nowIsBad = isBadRaw(nowText);
@@ -280,7 +325,6 @@ export const GET: APIRoute = async ({ request }) => {
     const played_at = new Date().toISOString();
     const played_at_ms = Date.parse(played_at);
 
-    // Vérifier dernier en base + insert si changement
     const lastRes = await directusFetch(
       `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
     );
@@ -289,10 +333,8 @@ export const GET: APIRoute = async ({ request }) => {
 
     let inserted = false;
 
-    // ✅ Only on real change + non garbage:
     if (!nowIsBad && (!last || last.track_key !== track_key)) {
-      // ✅ race-safe: try create track row; ignore unique conflicts
-      await ensureTrackRow(track_key, artist, title);
+      await ensureTrackRow(track_key, artist, title, played_at);
 
       await directusFetch(`/items/${PLAYS_COLLECTION}`, {
         method: "POST",
@@ -309,10 +351,8 @@ export const GET: APIRoute = async ({ request }) => {
       inserted = true;
     }
 
-    // ✅ TEMP FIX: Directus contains duplicates → oversample strongly, then dedupe, then slice to `limit`
     const oversample = Math.min(500, Math.max(limit * 20, limit + 80));
 
-    // Historique → EXCLURE le titre actuel (sauf si now est garbage)
     const params = new URLSearchParams({
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
@@ -325,23 +365,24 @@ export const GET: APIRoute = async ({ request }) => {
 
     const historyMaybe = await Promise.all(
       historyRaw.map(async (row: any) => {
-        // ✅ Fix mojibake in stored rows too (in case old bad rows exist)
         const a = fixMojibake(String(row.artist || ""));
         const t = fixMojibake(String(row.title || ""));
         const tk = String(row.track_key || "");
         const raw = fixMojibake(String(row.raw || `${a} - ${t}`.trim()).trim());
         const ts = toUTCms(row.played_at);
 
-        // ✅ drop garbage rows
         if (isBadRaw(raw)) return null;
 
-        // ✅ cover lookup for UI only (Directus manual first; else iTunes fallback)
         let cover_url = await fetchDirectusCoverByTrackKey(tk);
         let cover_source = cover_url ? "directus" : "";
         if (!cover_url) {
           cover_url = await fetchItunesCover(a, t);
           if (cover_url) cover_source = "itunes";
         }
+
+        const first_played_at = await fetchTrackFirstPlayedAt(tk);
+        const first_played_at_ms = toUTCms(first_played_at);
+        const is_new = isNewFromFirstPlayed(first_played_at);
 
         return {
           id: row.id,
@@ -353,11 +394,13 @@ export const GET: APIRoute = async ({ request }) => {
           played_at_ms: ts,
           cover_url,
           cover_source,
+          first_played_at,
+          first_played_at_ms,
+          is_new,
         };
       })
     );
 
-    // ✅ Deduplicate Directus rows (same track_key/raw + same played_at_ms)
     const cleaned = (historyMaybe || []).filter(Boolean) as any[];
 
     const seen = new Set<string>();
@@ -373,7 +416,6 @@ export const GET: APIRoute = async ({ request }) => {
 
     const history = uniq.slice(0, limit);
 
-    // Now cover (UI only)
     let nowCover = "";
     let nowCoverSource = "";
     if (!nowIsBad) {
@@ -383,6 +425,16 @@ export const GET: APIRoute = async ({ request }) => {
         nowCover = await fetchItunesCover(artist, title);
         if (nowCover) nowCoverSource = "itunes";
       }
+    }
+
+    let nowFirstPlayedAt = "";
+    let nowFirstPlayedAtMs = 0;
+    let nowIsNew = false;
+
+    if (!nowIsBad) {
+      nowFirstPlayedAt = await fetchTrackFirstPlayedAt(track_key);
+      nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
+      nowIsNew = isNewFromFirstPlayed(nowFirstPlayedAt);
     }
 
     return new Response(
@@ -398,6 +450,9 @@ export const GET: APIRoute = async ({ request }) => {
           played_at_ms,
           cover_url: nowCover,
           cover_source: nowCoverSource,
+          first_played_at: nowIsBad ? "" : nowFirstPlayedAt,
+          first_played_at_ms: nowIsBad ? 0 : nowFirstPlayedAtMs,
+          is_new: nowIsBad ? false : nowIsNew,
         },
         history,
       }),

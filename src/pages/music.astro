@@ -393,8 +393,6 @@ export const prerender = false;
   const DAY = 24 * 60 * 60 * 1000;
   const VOTED_KEY = "abf_voted_tracks";
   const HISTORY_KEY = "abf_history";
-  const TRACK_SEEN_KEY = "abf_track_first_seen";
-  const TRACK_SEEN_RETENTION_MS = 90 * DAY;
 
   const state = (window[KEY] = window[KEY] || {
     bound: false,
@@ -402,9 +400,9 @@ export const prerender = false;
     inFlight: false,
     lastRenderAt: 0,
     lastHistory: [],
+    lastNow: null,
     search: { date: "", time: "" },
     searchBound: false,
-    trackSeen: {},
     coverMemory: {},
     lastAutoHash: "",
   });
@@ -581,72 +579,19 @@ export const prerender = false;
     try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
     catch{ raw = []; }
     return (raw || []).map((x) => {
-      if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
+      if (typeof x === "string") return { t: x, ts: 0, cover_url: "", cover_source: "", is_new: false, first_played_at_ms: 0 };
       if (x && typeof x === "object" && typeof x.t === "string") {
-        return { t: x.t, ts: Number(x.ts) || 0, cover_url: String(x.cover_url || "") };
+        return {
+          t: x.t,
+          ts: Number(x.ts) || 0,
+          cover_url: String(x.cover_url || ""),
+          cover_source: String(x.cover_source || ""),
+          is_new: Boolean(x.is_new),
+          first_played_at_ms: Number(x.first_played_at_ms || 0),
+        };
       }
       return null;
     }).filter(Boolean);
-  }
-
-  function loadTrackSeen(){
-    try{
-      const raw = JSON.parse(localStorage.getItem(TRACK_SEEN_KEY) || "{}");
-      const clean = {};
-      const now = nowTs();
-      for (const k in raw){
-        const ts = Number(raw[k] || 0);
-        if (!k || !ts) continue;
-        if (now - ts > TRACK_SEEN_RETENTION_MS) continue;
-        clean[k] = ts;
-      }
-      return clean;
-    }catch{
-      return {};
-    }
-  }
-
-  function saveTrackSeen(map){
-    try{
-      localStorage.setItem(TRACK_SEEN_KEY, JSON.stringify(map || {}));
-    }catch{}
-  }
-
-  function updateTrackSeenFromHistory(history){
-    const seen = loadTrackSeen();
-    let changed = false;
-    const now = nowTs();
-
-    for (const entry of (history || [])){
-      const t = splitTrack(entry?.t || "");
-      const aRaw = String(t.artist || "").trim();
-      const tRaw = String(t.title || "").trim();
-      if (!aRaw && !tRaw) continue;
-      if (isBlockedShow(aRaw)) continue;
-
-      const n = normKey(aRaw, tRaw);
-      if (!n) continue;
-
-      const ts = Number(entry?.ts || 0) || now;
-      if (!seen[n] || ts < seen[n]){
-        seen[n] = ts;
-        changed = true;
-      }
-    }
-
-    if (changed) saveTrackSeen(seen);
-    state.trackSeen = seen;
-    return seen;
-  }
-
-  function firstSeenTs(norm){
-    return Number(state.trackSeen?.[norm] || 0);
-  }
-
-  function isTrackNew(norm, ttlMs = 7 * DAY){
-    const ts = firstSeenTs(norm);
-    if (!ts) return false;
-    return (nowTs() - ts) <= ttlMs;
   }
 
   function rememberCover(norm, url){
@@ -665,52 +610,47 @@ export const prerender = false;
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
       const data = await res.json().catch(()=> ({}));
-      if (!data?.ok) return [];
-      const out = [];
+      if (!data?.ok) return { now: null, history: [] };
 
-      if (data?.now){
+      let now = null;
+      if (data?.now) {
         const rawNow = String(data?.now?.raw || "").trim();
         const a = String(data?.now?.artist || "").trim();
         const t = String(data?.now?.title || "").trim();
         const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
-        if (raw){
-          out.push({
+        if (raw) {
+          now = {
             t: raw,
-            ts: Number(data?.now?.played_at_ms) ||
-                (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+            ts:
+              Number(data?.now?.played_at_ms) ||
+              (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
             cover_url: String(data?.now?.cover_url || ""),
-            cover_source: String(data?.now?.cover_source || "")
-          });
+            cover_source: String(data?.now?.cover_source || ""),
+            is_new: Boolean(data?.now?.is_new),
+            first_played_at_ms: Number(data?.now?.first_played_at_ms || 0),
+          };
         }
       }
 
+      const history = [];
       if (Array.isArray(data?.history)){
         for (const row of data.history){
           const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
           if (!raw) continue;
-          out.push({
+          history.push({
             t: raw,
-            ts: Number(row?.played_at_ms) ||
-                (row?.played_at ? new Date(row.played_at).getTime() : 0),
+            ts: Number(row?.played_at_ms) || (row?.played_at ? new Date(row.played_at).getTime() : 0),
             cover_url: String(row?.cover_url || ""),
-            cover_source: String(row?.cover_source || "")
+            cover_source: String(row?.cover_source || ""),
+            is_new: Boolean(row?.is_new),
+            first_played_at_ms: Number(row?.first_played_at_ms || 0),
           });
         }
       }
 
-      const deduped = [];
-      let lastKey = "";
-      for (const item of out){
-        const k = String(item.t || "").toLowerCase().trim();
-        if (!k) continue;
-        if (k === lastKey) continue;
-        lastKey = k;
-        deduped.push(item);
-      }
-
-      return deduped.slice(0, limit);
+      return { now, history };
     }catch{
-      return [];
+      return { now: null, history: [] };
     }
   }
 
@@ -1238,7 +1178,8 @@ export const prerender = false;
           plays24h: 0,
           playsPrev24h: 0,
           latestTs: 0,
-          firstSeen: firstSeenTs(n) || ts || now,
+          firstSeen: Number(entry?.first_played_at_ms || 0) || ts || now,
+          isNew: Boolean(entry?.is_new),
         };
       }
 
@@ -1249,12 +1190,15 @@ export const prerender = false;
       else if (ts >= prev24hStart) item.playsPrev24h += 1;
 
       if (ts > item.latestTs) item.latestTs = ts;
-      const knownFirstSeen = firstSeenTs(n);
-      if (knownFirstSeen){
-        item.firstSeen = Math.min(item.firstSeen, knownFirstSeen);
-      } else if (ts){
+
+      const serverFirstSeen = Number(entry?.first_played_at_ms || 0);
+      if (serverFirstSeen) {
+        item.firstSeen = serverFirstSeen;
+      } else if (ts) {
         item.firstSeen = Math.min(item.firstSeen, ts);
       }
+
+      if (entry?.is_new) item.isNew = true;
 
       if (!item.coverUrl){
         item.coverUrl =
@@ -1290,7 +1234,7 @@ export const prerender = false;
       .slice(0, 6);
 
     const newEntries = rows
-      .filter((x) => isTrackNew(x.norm))
+      .filter((x) => Boolean(x.isNew))
       .sort((a, b) => Number(b.firstSeen || 0) - Number(a.firstSeen || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
       .slice(0, 8);
 
@@ -1341,15 +1285,16 @@ export const prerender = false;
       if (howWeekPrevEl) howWeekPrevEl.textContent = prevWeek.replace("-W"," W");
       if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
 
-      const historyServer = await fetchServerNowPlaying(400);
+      const serverData = await fetchServerNowPlaying(400);
+      const historyServer = serverData.history || [];
       const historyLocal = loadHistory();
 
       const history = [];
       const seen = new Set();
 
-      for (const e of (historyServer || [])) {
-        const raw = String(e?.raw || e?.t || "").trim();
-        const ts = Number(e?.played_at_ms || e?.ts || 0);
+      for (const e of historyServer) {
+        const raw = String(e?.t || "").trim();
+        const ts = Number(e?.ts || 0);
         const key = `${raw.toLowerCase()}__${ts}`;
         if (!raw) continue;
         if (seen.has(key)) continue;
@@ -1359,10 +1304,12 @@ export const prerender = false;
           ts,
           cover_url: String(e?.cover_url || ""),
           cover_source: String(e?.cover_source || ""),
+          is_new: Boolean(e?.is_new),
+          first_played_at_ms: Number(e?.first_played_at_ms || 0),
         });
       }
 
-      for (const e of (historyLocal || [])) {
+      for (const e of historyLocal) {
         const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
         if (!e?.t) continue;
         if (seen.has(key)) continue;
@@ -1372,9 +1319,9 @@ export const prerender = false;
       }
 
       state.lastHistory = history || [];
-      updateTrackSeenFromHistory(history);
+      state.lastNow = serverData.now || null;
 
-      if (!history.length){
+      if (!history.length && !state.lastNow){
         artistEl.textContent = "—";
         titleEl.textContent = "—";
         if (timeEl) timeEl.textContent = "--:--";
@@ -1413,12 +1360,12 @@ export const prerender = false;
         coverByNorm[n] = u || getRememberedCover(n) || "";
       }
 
-      const currentEntry = history[0];
-      const current = splitTrack(currentEntry.t);
+      const nowEntry = state.lastNow || history[0] || null;
+      const current = splitTrack(nowEntry?.t || "");
       const nowArtistRaw = String(current.artist || "").trim();
       const nowTitleRaw0 = String(current.title || "").trim();
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
-      const nowIsNew = isTrackNew(nowKNorm);
+      const nowIsNew = Boolean(nowEntry?.is_new);
 
       artistEl.textContent = upperArtist(nowArtistRaw || "—");
       titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
@@ -1428,17 +1375,17 @@ export const prerender = false;
         else npNewBadge.classList.add("hidden");
       }
 
-      const nowTime = fmtTime(currentEntry.ts);
+      const nowTime = fmtTime(Number(nowEntry?.ts || 0));
       if (timeEl) timeEl.textContent = nowTime;
 
       const nowCover =
-        String(currentEntry.cover_url || "").trim() ||
+        String(nowEntry?.cover_url || "").trim() ||
         coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] ||
         getRememberedCover(nowKNorm);
 
       if (nowCover) rememberCover(nowKNorm, nowCover);
       setCover(nowCover, root);
-      setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || ""));
+      setCoverSourceBadge(root, nowCover, String(nowEntry?.cover_source || ""));
 
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
@@ -1524,7 +1471,7 @@ export const prerender = false;
       }
 
       const limit = LAST_PLAYED_LIMIT();
-      const rows = history.slice(1, 1 + limit);
+      const rows = history.slice(0, limit);
       histEl.innerHTML = rows.map((entry) => {
         const t = splitTrack(entry.t);
         const aRaw = String(t.artist || "").trim();
@@ -1555,7 +1502,7 @@ export const prerender = false;
           kRaw,
           aRaw,
           tRaw: tRaw0,
-          isNew: isTrackNew(kNorm)
+          isNew: Boolean(entry.is_new)
         });
       }).join("");
 
@@ -1700,10 +1647,10 @@ export const prerender = false;
       const airplayStats = buildAirplayStats(history, coverByNorm);
 
       const autoHash = JSON.stringify({
-        mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays, x.coverUrl]),
-        trending: airplayStats.trending.map(x => [x.norm, x.plays24h, x.playsPrev24h, x.coverUrl]),
-        today: airplayStats.today.map(x => [x.norm, x.playsToday, x.coverUrl]),
-        newEntries: airplayStats.newEntries.map(x => [x.norm, x.firstSeen, x.coverUrl]),
+        mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays, x.coverUrl, x.isNew]),
+        trending: airplayStats.trending.map(x => [x.norm, x.plays24h, x.playsPrev24h, x.coverUrl, x.isNew]),
+        today: airplayStats.today.map(x => [x.norm, x.playsToday, x.coverUrl, x.isNew]),
+        newEntries: airplayStats.newEntries.map(x => [x.norm, x.firstSeen, x.coverUrl, x.isNew]),
       });
 
       if (state.lastAutoHash !== autoHash) {
@@ -1727,7 +1674,7 @@ export const prerender = false;
                 maxAuto,
                 "",
                 "plays",
-                isTrackNew(row.norm)
+                Boolean(row.isNew)
               );
             }).join("");
           }
@@ -1758,7 +1705,7 @@ export const prerender = false;
                 metricLabel: "24h plays",
                 subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Trend delta: ${delta >= 0 ? "+" : ""}${delta}`,
                 accent: "emerald",
-                isNew: isTrackNew(row.norm),
+                isNew: Boolean(row.isNew),
                 rightBadge,
               });
             }).join("");
@@ -1782,7 +1729,7 @@ export const prerender = false;
                 metricLabel: "today",
                 subline: `Latest spin • ${fmtTime(row.latestTs)}`,
                 accent: "cyan",
-                isNew: isTrackNew(row.norm),
+                isNew: Boolean(row.isNew),
                 rightBadge: "",
               });
             }).join("");
@@ -1834,18 +1781,18 @@ export const prerender = false;
     }, 8000);
   }
 
-function init(){
-  if (!isMusicRoute()) return;
-  const root = getRoot();
-  if (!root) return;
+  function init(){
+    if (!isMusicRoute()) return;
+    const root = getRoot();
+    if (!root) return;
 
-  state.lastAutoHash = "";
-  state.searchBound = false;
+    state.lastAutoHash = "";
+    state.searchBound = false;
 
-  bindAirSearchOnce(root);
-  render();
-  startTimer();
-}
+    bindAirSearchOnce(root);
+    render();
+    startTimer();
+  }
 
   if (!state.bound){
     state.bound = true;
