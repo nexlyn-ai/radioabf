@@ -94,9 +94,11 @@ export const prerender = false;
                   <div class="mt-1 flex items-center gap-2 min-w-0">
                     <div id="musicTitle" class="text-white/70 text-base md:text-lg truncate min-w-0 flex-1">—</div>
                     <span
-                      id="npNewBadge"
-                      class="hidden inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/15 border-rose-400/30 text-rose-100 tracking-wide flex-none"
-                    >
+  id="npNewBadge"
+  class="hidden items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/15 border-rose-400/30 text-rose-100 tracking-wide flex-none"
+>
+  NEW
+</span>
                       NEW
                     </span>
                   </div>
@@ -1371,9 +1373,14 @@ export const prerender = false;
       titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
 
       if (npNewBadge){
-        if (nowIsNew) npNewBadge.classList.remove("hidden");
-        else npNewBadge.classList.add("hidden");
-      }
+  if (nowIsNew) {
+    npNewBadge.classList.remove("hidden");
+    npNewBadge.classList.add("inline-flex");
+  } else {
+    npNewBadge.classList.add("hidden");
+    npNewBadge.classList.remove("inline-flex");
+  }
+}
 
       const nowTime = fmtTime(Number(nowEntry?.ts || 0));
       if (timeEl) timeEl.textContent = nowTime;
