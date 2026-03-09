@@ -1367,7 +1367,7 @@ export const prerender = false;
       const nowArtistRaw = String(current.artist || "").trim();
       const nowTitleRaw0 = String(current.title || "").trim();
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
-      const nowIsNew = Boolean(nowEntry?.is_new);
+      const nowIsNew = nowEntry && nowEntry.is_new === true;
 
       artistEl.textContent = upperArtist(nowArtistRaw || "—");
       titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
