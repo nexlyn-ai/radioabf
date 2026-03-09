@@ -119,6 +119,10 @@ function isNewFromFirstPlayed(firstPlayedAt: string): boolean {
   return Date.now() - ts <= NEW_TRACK_TTL_MS;
 }
 
+function isBlockedShow(artist: string) {
+  return /^abf\s*club\b/i.test(String(artist || "").trim());
+}
+
 function assertEnv() {
   if (!ICECAST_STATUS_URL) throw new Error("ICECAST_STATUS_URL missing");
   if (!DIRECTUS_URL) throw new Error("DIRECTUS_URL missing");
@@ -382,7 +386,7 @@ export const GET: APIRoute = async ({ request }) => {
 
         const first_played_at = await fetchTrackFirstPlayedAt(tk);
         const first_played_at_ms = toUTCms(first_played_at);
-        const is_new = isNewFromFirstPlayed(first_played_at);
+        const is_new = isBlockedShow(a) ? false : isNewFromFirstPlayed(first_played_at);
 
         return {
           id: row.id,
@@ -434,7 +438,7 @@ export const GET: APIRoute = async ({ request }) => {
     if (!nowIsBad) {
       nowFirstPlayedAt = await fetchTrackFirstPlayedAt(track_key);
       nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
-      nowIsNew = isNewFromFirstPlayed(nowFirstPlayedAt);
+      nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
     }
 
     return new Response(
