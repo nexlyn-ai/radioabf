@@ -262,7 +262,7 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
 export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
-    const limit = Math.min(30, Math.max(1, Number(url.searchParams.get("limit") || "12")));
+    const limit = Math.min(400, Math.max(1, Number(url.searchParams.get("limit") || "12")));
 
     // Icecast → now playing
     const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
