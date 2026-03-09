@@ -16,6 +16,8 @@ const TRACKS_COLLECTION = "tracks";
 const TRACKS_KEY_FIELD = "track_key";
 const TRACKS_COVER_FIELD = "cover_art";
 const TRACKS_FIRST_PLAYED_FIELD = "first_played_at";
+const TRACKS_COVER_URL_FIELD = "cover_url";
+const TRACKS_COVER_OVERRIDE_FIELD = "cover_override";
 
 // ✅ iTunes fallback ON (UNIQUEMENT pour l'AFFICHAGE, jamais écrit en base)
 const ENABLE_ITUNES_FALLBACK =
@@ -181,14 +183,13 @@ async function ensureTrackRow(
   } catch (e: any) {
     const msg = String(e?.message || e || "");
 
-    // ✅ if unique constraint hit, it's OK (already created by another request)
     if (/RECORD_NOT_UNIQUE|has to be unique/i.test(msg)) return;
 
     console.warn("[nowplaying] ensureTrackRow failed:", msg);
   }
 }
 
-/* -------------------- Cover lookup (tracks.cover_art) -------------------- */
+/* -------------------- Cover lookup (tracks cover fields) -------------------- */
 
 const __coverCache: Map<string, { url: string; exp: number }> =
   ((globalThis as any).__coverCache as Map<string, { url: string; exp: number }>) || new Map();
@@ -204,7 +205,12 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
 
   try {
     const params = new URLSearchParams({
-      fields: `${TRACKS_COVER_FIELD},${TRACKS_COVER_FIELD}.id`,
+      fields: [
+        TRACKS_COVER_FIELD,
+        `${TRACKS_COVER_FIELD}.id`,
+        TRACKS_COVER_URL_FIELD,
+        TRACKS_COVER_OVERRIDE_FIELD,
+      ].join(","),
       limit: "1",
       [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
     });
@@ -215,9 +221,20 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
 
     const coverVal = row?.[TRACKS_COVER_FIELD];
     const fileId =
-      typeof coverVal === "string" ? coverVal : (coverVal?.id ? String(coverVal.id) : "");
+      typeof coverVal === "string"
+        ? coverVal
+        : (coverVal?.id ? String(coverVal.id) : "");
 
-    if (fileId) coverUrl = directusAssetUrl(fileId);
+    const coverOverride = String(row?.[TRACKS_COVER_OVERRIDE_FIELD] || "").trim();
+    const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
+
+    if (fileId) {
+      coverUrl = directusAssetUrl(fileId);
+    } else if (coverOverride) {
+      coverUrl = coverOverride;
+    } else if (coverUrlField) {
+      coverUrl = coverUrlField;
+    }
   } catch {
     coverUrl = "";
   }
