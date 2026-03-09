@@ -247,6 +247,7 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
   }
 
   return coverUrl;
+}
 
 /* -------------------- Track meta lookup (tracks.first_played_at) -------------------- */
 
