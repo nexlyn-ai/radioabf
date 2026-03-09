@@ -1471,7 +1471,7 @@ export const prerender = false;
       }
 
       const limit = LAST_PLAYED_LIMIT();
-      const rows = history.slice(0, limit);
+      const rows = history.slice(1, 1 + limit);
       histEl.innerHTML = rows.map((entry) => {
         const t = splitTrack(entry.t);
         const aRaw = String(t.artist || "").trim();
@@ -1644,7 +1644,19 @@ export const prerender = false;
         }).join("");
       }
 
-      const airplayStats = buildAirplayStats(history, coverByNorm);
+ const statsSource = [
+  ...(state.lastNow ? [{
+    t: state.lastNow.t,
+    ts: Number(state.lastNow.ts || 0),
+    cover_url: String(state.lastNow.cover_url || ""),
+    cover_source: String(state.lastNow.cover_source || ""),
+    is_new: Boolean(state.lastNow.is_new),
+    first_played_at_ms: Number(state.lastNow.first_played_at_ms || 0),
+  }] : []),
+  ...history,
+];
+
+const airplayStats = buildAirplayStats(statsSource, coverByNorm);
 
       const autoHash = JSON.stringify({
         mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays, x.coverUrl, x.isNew]),
