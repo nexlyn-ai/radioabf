@@ -117,10 +117,7 @@ export const prerender = false;
               <div class="text-sm text-white/60 uppercase tracking-wider">Last played</div>
               <div class="text-xs text-white/50">Tap 👍 to vote</div>
             </div>
-            <div
-              id="historyTable"
-              class="space-y-3 overflow-visible"
-            ></div>
+            <div id="historyTable" class="space-y-3 overflow-visible"></div>
             <div id="historyEmpty" class="text-white/55 text-sm hidden">
               Start the player to load history.
             </div>
@@ -209,7 +206,6 @@ export const prerender = false;
       </aside>
     </section>
 
-    <!-- AUTO AIRPLAY INSIGHTS -->
     <section class="mt-6">
       <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-2xl relative">
         <div class="pointer-events-none absolute -top-28 -left-28 w-[320px] h-[320px] rounded-full bg-cyan-500/10 blur-[110px]"></div>
@@ -409,6 +405,8 @@ export const prerender = false;
     search: { date: "", time: "" },
     searchBound: false,
     trackSeen: {},
+    coverMemory: {},
+    lastAutoHash: "",
   });
 
   function loadVotedTracks() {
@@ -502,8 +500,22 @@ export const prerender = false;
   function splitTrack(entry){
     const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
     const idx = s.indexOf(" - ");
-    if (idx === -1) return { artist: s.trim(), title: "" };
-    return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+
+    if (idx === -1) {
+      const artistOnly = s.trim();
+      return {
+        artist: /^undefined$/i.test(artistOnly) ? "" : artistOnly,
+        title: ""
+      };
+    }
+
+    const artist = s.slice(0, idx).trim();
+    const title = s.slice(idx + 3).trim();
+
+    return {
+      artist: /^undefined$/i.test(artist) ? "" : artist,
+      title: /^undefined$/i.test(title) ? "" : title,
+    };
   }
 
   function normKey(artist, title){
@@ -516,8 +528,8 @@ export const prerender = false;
   }
 
   function rawKey(artist, title){
-    const a = String(artist || "").trim();
-    const t = String(title || "").trim();
+    const a = /^undefined$/i.test(String(artist || "").trim()) ? "" : String(artist || "").trim();
+    const t = /^undefined$/i.test(String(title || "").trim()) ? "" : String(title || "").trim();
     return `${a} - ${t}`.trim();
   }
 
@@ -637,12 +649,25 @@ export const prerender = false;
     return (nowTs() - ts) <= ttlMs;
   }
 
+  function rememberCover(norm, url){
+    const n = String(norm || "").trim();
+    const u = String(url || "").trim();
+    if (!n || !u) return;
+    state.coverMemory[n] = u;
+  }
+
+  function getRememberedCover(norm){
+    const n = String(norm || "").trim();
+    return n ? String(state.coverMemory[n] || "") : "";
+  }
+
   async function fetchServerNowPlaying(limit = 400){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
       const data = await res.json().catch(()=> ({}));
       if (!data?.ok) return [];
       const out = [];
+
       if (data?.now){
         const rawNow = String(data?.now?.raw || "").trim();
         const a = String(data?.now?.artist || "").trim();
@@ -658,6 +683,7 @@ export const prerender = false;
           });
         }
       }
+
       if (Array.isArray(data?.history)){
         for (const row of data.history){
           const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
@@ -681,6 +707,7 @@ export const prerender = false;
         lastKey = k;
         deduped.push(item);
       }
+
       return deduped.slice(0, limit);
     }catch{
       return [];
@@ -756,6 +783,7 @@ export const prerender = false;
     const c = window.__abfVotesCache[k];
     const now = nowTs();
     if (c && now < c.exp) return c.payload || { top: [] };
+
     try{
       const res = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
@@ -798,24 +826,33 @@ export const prerender = false;
     const exact = Object.create(null);
     const lower = Object.create(null);
     const byNorm = Object.create(null);
+
     for (const row of (topRows || [])){
       const tk = String(row?.track_key || "").trim();
       const c = Number(row?.count || 0);
       if (!tk) continue;
+
       exact[tk] = c;
       lower[tk.toLowerCase()] = c;
+
       const sp = splitTrack(tk);
       const n = normKey(sp.artist, sp.title);
       if (n) byNorm[n] = c;
     }
+
     return {
       getCount(trackKeyRaw, artistMaybe, titleMaybe){
         const k = String(trackKeyRaw || "").trim();
         if (k && exact[k] != null) return exact[k];
-        if (k && lower[k.toLowerCase()] != null) return lower[k];
-        const sp = k ? splitTrack(k) : { artist: String(artistMaybe||""), title: String(titleMaybe||"") };
+        if (k && lower[k.toLowerCase()] != null) return lower[k.toLowerCase()];
+
+        const sp = k
+          ? splitTrack(k)
+          : { artist: String(artistMaybe || ""), title: String(titleMaybe || "") };
+
         const n = normKey(sp.artist, sp.title);
         if (n && byNorm[n] != null) return byNorm[n];
+
         return 0;
       }
     };
@@ -924,6 +961,7 @@ export const prerender = false;
     const timeEl = root.querySelector("#airTime");
     const btnEl = root.querySelector("#airSearchBtn");
     if (!dateEl || !timeEl || !btnEl) return;
+
     if (!dateEl.value){
       const n = new Date();
       const yyyy = n.getFullYear();
@@ -935,12 +973,14 @@ export const prerender = false;
       const n = new Date();
       timeEl.value = `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
     }
+
     const run = () => {
       state.search.date = dateEl.value || "";
       state.search.time = timeEl.value || "";
       const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 10);
       renderAirSearchResult(root, payload);
     };
+
     btnEl.addEventListener("click", run);
     dateEl.addEventListener("change", run);
     timeEl.addEventListener("change", run);
@@ -1036,10 +1076,7 @@ export const prerender = false;
       (tk && prevRankMap[tk.toLowerCase()] != null) ? prevRankMap[tk.toLowerCase()] :
       null;
 
-    return {
-      currentRank: null,
-      prevRank,
-    };
+    return { currentRank: null, prevRank };
   }
 
   function moveBadgeHtml(currentRank, prevRank){
@@ -1128,7 +1165,7 @@ export const prerender = false;
             <div class="text-white/65 text-sm truncate min-w-0 flex-1">${esc(title)}</div>
             ${isNew ? newBadgeHtml() : ""}
           </div>
-          ${subline ? `<div class="text-xs text-white/45 mt-1 truncate">${subline}</div>` : ""}
+          ${subline ? `<div class="text-xs text-white/45 mt-1 truncate">${esc(subline)}</div>` : ""}
         </div>
         <div class="flex-none text-right">
           ${rightBadge || ""}
@@ -1192,7 +1229,10 @@ export const prerender = false;
           artist: aRaw,
           title: tRaw,
           raw: rawKey(aRaw, tRaw),
-          coverUrl: String(entry?.cover_url || "").trim() || String(coverByNorm?.[n] || "").trim(),
+          coverUrl:
+            String(entry?.cover_url || "").trim() ||
+            String(coverByNorm?.[n] || "").trim() ||
+            getRememberedCover(n),
           plays: 0,
           playsToday: 0,
           plays24h: 0,
@@ -1215,8 +1255,12 @@ export const prerender = false;
       } else if (ts){
         item.firstSeen = Math.min(item.firstSeen, ts);
       }
+
       if (!item.coverUrl){
-        item.coverUrl = String(entry?.cover_url || "").trim() || String(coverByNorm?.[n] || "").trim();
+        item.coverUrl =
+          String(entry?.cover_url || "").trim() ||
+          String(coverByNorm?.[n] || "").trim() ||
+          getRememberedCover(n);
       }
     }
 
@@ -1259,12 +1303,13 @@ export const prerender = false;
     if (!root) return;
     if (state.inFlight) return;
     state.inFlight = true;
+
     try{
       const artistEl = root.querySelector("#musicArtist");
       const titleEl = root.querySelector("#musicTitle");
       const timeEl = root.querySelector("#musicTime");
       const histEl = root.querySelector("#historyTable");
-      const histEmpty= root.querySelector("#historyEmpty");
+      const histEmpty = root.querySelector("#historyEmpty");
       const nowVoteBtn = root.querySelector("#nowVoteBtn");
       const nowVoteCount = root.querySelector("#nowVoteCount");
       const npNewBadge = root.querySelector("#npNewBadge");
@@ -1296,10 +1341,10 @@ export const prerender = false;
       if (howWeekPrevEl) howWeekPrevEl.textContent = prevWeek.replace("-W"," W");
       if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
 
-      let historyServer = await fetchServerNowPlaying(400);
+      const historyServer = await fetchServerNowPlaying(400);
       const historyLocal = loadHistory();
 
-      let history = [];
+      const history = [];
       const seen = new Set();
 
       for (const e of (historyServer || [])) {
@@ -1352,6 +1397,7 @@ export const prerender = false;
         if (autoTrendingEl) autoTrendingEl.innerHTML = "";
         if (autoTodayEl) autoTodayEl.innerHTML = "";
         if (autoNewEntriesEl) autoNewEntriesEl.innerHTML = "";
+        state.lastAutoHash = "";
         return;
       }
 
@@ -1362,7 +1408,9 @@ export const prerender = false;
         const t = splitTrack(entry.t);
         const n = normKey(t.artist, t.title);
         const u = String(entry.cover_url || "").trim();
-        if (n && u) coverByNorm[n] = u;
+        if (!n) continue;
+        if (u) rememberCover(n, u);
+        coverByNorm[n] = u || getRememberedCover(n) || "";
       }
 
       const currentEntry = history[0];
@@ -1374,6 +1422,7 @@ export const prerender = false;
 
       artistEl.textContent = upperArtist(nowArtistRaw || "—");
       titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
+
       if (npNewBadge){
         if (nowIsNew) npNewBadge.classList.remove("hidden");
         else npNewBadge.classList.add("hidden");
@@ -1384,7 +1433,10 @@ export const prerender = false;
 
       const nowCover =
         String(currentEntry.cover_url || "").trim() ||
-        (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
+        coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] ||
+        getRememberedCover(nowKNorm);
+
+      if (nowCover) rememberCover(nowKNorm, nowCover);
       setCover(nowCover, root);
       setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || ""));
 
@@ -1397,14 +1449,15 @@ export const prerender = false;
         .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")));
 
       const prevRankMap = buildRankMap(topPrevFullSafe);
-
       const voteIndex = buildVoteIndex(topThis || []);
+
       const nowKRaw = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = voteIndex.getCount(nowKRaw, nowArtistRaw, nowTitleRaw0);
       const nowBlocked = isBlockedShow(nowArtistRaw);
       const nowAlready = isVoted(nowKNorm);
 
       if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
+
       if (nowVoteBtn){
         nowVoteBtn.style.display = "inline-flex";
         if (nowBlocked || nowAlready){
@@ -1416,11 +1469,13 @@ export const prerender = false;
           nowVoteBtn.style.opacity = "1";
           nowVoteBtn.style.cursor = "pointer";
         }
+
         nowVoteBtn.dataset.raw = nowKRaw;
         nowVoteBtn.dataset.norm = nowKNorm;
         nowVoteBtn.dataset.artist = nowArtistRaw;
         nowVoteBtn.dataset.title = nowTitleRaw0;
         nowVoteBtn.dataset.blocked = nowBlocked ? "1" : "0";
+
         if (!nowVoteBtn.dataset.listenerAttached){
           nowVoteBtn.dataset.listenerAttached = "true";
           nowVoteBtn.addEventListener("click", async () => {
@@ -1433,10 +1488,12 @@ export const prerender = false;
             const kRaw = btn.dataset.raw || "";
             const a = btn.dataset.artist || "";
             const t = btn.dataset.title || "";
+
             if (blocked){
               blockedVoteMsg();
               return;
             }
+
             if (isVoted(kNorm)){
               alert("You already voted for this track. Come back in 24h 🙂");
               btn.classList.add("is-voted");
@@ -1444,6 +1501,7 @@ export const prerender = false;
               btn.style.cursor = "not-allowed";
               return;
             }
+
             btn.style.opacity = "0.7";
             btn.style.cursor = "wait";
             const r = await apiVote(kRaw, a, t);
@@ -1453,6 +1511,7 @@ export const prerender = false;
               voteErrorToast(r);
               return;
             }
+
             markVoted(kNorm);
             const ck = votesCacheKey(getISOWeekId());
             if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
@@ -1474,10 +1533,16 @@ export const prerender = false;
         const kRaw = rawKey(aRaw, tRaw0);
         const coverUrl =
           String(entry.cover_url || "").trim() ||
-          (coverByNorm[normKey(aRaw, tRaw0)] || "");
+          coverByNorm[normKey(aRaw, tRaw0)] ||
+          getRememberedCover(kNorm) ||
+          "";
+
+        if (coverUrl) rememberCover(kNorm, coverUrl);
+
         const count = voteIndex.getCount(kRaw, aRaw, tRaw0);
         const blocked = isBlockedShow(aRaw);
         const voted = isVoted(kNorm);
+
         return rowHtml({
           coverUrl,
           artist: upperArtist(aRaw || "—"),
@@ -1503,8 +1568,10 @@ export const prerender = false;
         const countEl = btn.querySelector(".voteCount");
         const c = voteIndex.getCount(kRaw, a, t0);
         if (countEl) countEl.textContent = String(c);
+
         const row = btn.closest(".abfHistoryRow");
         const already = isVoted(kNorm);
+
         if (blocked || already){
           btn.classList.add("is-voted");
           btn.style.opacity = "0.55";
@@ -1527,6 +1594,7 @@ export const prerender = false;
               if (row) row.classList.add("abfVotedRow");
               return;
             }
+
             btn.style.opacity = "0.7";
             btn.style.cursor = "wait";
             const r = await apiVote(kRaw || rawKey(a, t0), a, t0);
@@ -1536,6 +1604,7 @@ export const prerender = false;
               voteErrorToast(r);
               return;
             }
+
             markVoted(kNorm);
             const ck = votesCacheKey(week);
             if (window.__abfVotesCache?.[ck]) window.__abfVotesCache[ck].exp = 0;
@@ -1563,7 +1632,14 @@ export const prerender = false;
           const sp = splitTrack(tk);
           const aRaw = String(row.artist || "").trim() || sp.artist || "—";
           const tRaw = String(row.title || "").trim() || sp.title || "—";
-          const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
+          const n = normKey(aRaw, tRaw);
+          const coverUrl =
+            String(row.cover_url || "").trim() ||
+            coverByNorm[n] ||
+            getRememberedCover(n) ||
+            "";
+
+          if (coverUrl) rememberCover(n, coverUrl);
 
           const currentRank = idx + 1;
           const move = getChartMove(row, prevRankMap);
@@ -1598,7 +1674,15 @@ export const prerender = false;
           const sp = splitTrack(tk);
           const aRaw = String(row.artist || "").trim() || sp.artist || "—";
           const tRaw = String(row.title || "").trim() || sp.title || "—";
-          const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
+          const n = normKey(aRaw, tRaw);
+          const coverUrl =
+            String(row.cover_url || "").trim() ||
+            coverByNorm[n] ||
+            getRememberedCover(n) ||
+            "";
+
+          if (coverUrl) rememberCover(n, coverUrl);
+
           return chartRowHtml(
             idx + 1,
             coverUrl,
@@ -1615,99 +1699,114 @@ export const prerender = false;
 
       const airplayStats = buildAirplayStats(history, coverByNorm);
 
-      if (autoMostPlayedEl){
-        if (!airplayStats.mostPlayed.length){
-          if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.remove("hidden");
-          autoMostPlayedEl.innerHTML = "";
-        } else {
-          if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.add("hidden");
-          const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => Number(x.plays || 0)), 1);
-          autoMostPlayedEl.innerHTML = airplayStats.mostPlayed.map((row, idx) => {
-            return chartRowHtml(
-              idx + 1,
-              row.coverUrl || "",
-              upperArtist(row.artist || "—"),
-              displayTitleFor(row.artist || "", row.title || ""),
-              Number(row.plays || 0),
-              maxAuto,
-              "",
-              "plays",
-              isTrackNew(row.norm)
-            );
-          }).join("");
+      const autoHash = JSON.stringify({
+        mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays, x.coverUrl]),
+        trending: airplayStats.trending.map(x => [x.norm, x.plays24h, x.playsPrev24h, x.coverUrl]),
+        today: airplayStats.today.map(x => [x.norm, x.playsToday, x.coverUrl]),
+        newEntries: airplayStats.newEntries.map(x => [x.norm, x.firstSeen, x.coverUrl]),
+      });
+
+      if (state.lastAutoHash !== autoHash) {
+        state.lastAutoHash = autoHash;
+
+        if (autoMostPlayedEl){
+          if (!airplayStats.mostPlayed.length){
+            if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.remove("hidden");
+            autoMostPlayedEl.innerHTML = "";
+          } else {
+            if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.add("hidden");
+            const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => Number(x.plays || 0)), 1);
+            autoMostPlayedEl.innerHTML = airplayStats.mostPlayed.map((row, idx) => {
+              if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
+              return chartRowHtml(
+                idx + 1,
+                row.coverUrl || "",
+                upperArtist(row.artist || "—"),
+                displayTitleFor(row.artist || "", row.title || ""),
+                Number(row.plays || 0),
+                maxAuto,
+                "",
+                "plays",
+                isTrackNew(row.norm)
+              );
+            }).join("");
+          }
         }
-      }
 
-      if (autoTrendingEl){
-        if (!airplayStats.trending.length){
-          if (autoTrendingEmpty) autoTrendingEmpty.classList.remove("hidden");
-          autoTrendingEl.innerHTML = "";
-        } else {
-          if (autoTrendingEmpty) autoTrendingEmpty.classList.add("hidden");
-          autoTrendingEl.innerHTML = airplayStats.trending.map((row, idx) => {
-            const delta = Number(row.delta24 || 0);
-            const rightBadge =
-              delta > 0
-                ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-emerald-500/12 border-emerald-400/25 text-emerald-200 mb-1">+${delta}</div>`
-                : delta < 0
-                ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/12 border-rose-400/25 text-rose-200 mb-1">${delta}</div>`
-                : `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-white/5 border-white/10 text-white/60 mb-1">=</div>`;
+        if (autoTrendingEl){
+          if (!airplayStats.trending.length){
+            if (autoTrendingEmpty) autoTrendingEmpty.classList.remove("hidden");
+            autoTrendingEl.innerHTML = "";
+          } else {
+            if (autoTrendingEmpty) autoTrendingEmpty.classList.add("hidden");
+            autoTrendingEl.innerHTML = airplayStats.trending.map((row, idx) => {
+              if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
+              const delta = Number(row.delta24 || 0);
+              const rightBadge =
+                delta > 0
+                  ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-emerald-500/12 border-emerald-400/25 text-emerald-200 mb-1">+${delta}</div>`
+                  : delta < 0
+                  ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/12 border-rose-400/25 text-rose-200 mb-1">${delta}</div>`
+                  : `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-white/5 border-white/10 text-white/60 mb-1">=</div>`;
 
-            return compactMetricRowHtml({
-              rank: idx + 1,
-              coverUrl: row.coverUrl || "",
-              artist: upperArtist(row.artist || "—"),
-              title: displayTitleFor(row.artist || "", row.title || ""),
-              metricValue: Number(row.plays24h || 0),
-              metricLabel: "24h plays",
-              subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Trend delta: ${delta >= 0 ? "+" : ""}${delta}`,
-              accent: "emerald",
-              isNew: isTrackNew(row.norm),
-              rightBadge,
-            });
-          }).join("");
+              return compactMetricRowHtml({
+                rank: idx + 1,
+                coverUrl: row.coverUrl || "",
+                artist: upperArtist(row.artist || "—"),
+                title: displayTitleFor(row.artist || "", row.title || ""),
+                metricValue: Number(row.plays24h || 0),
+                metricLabel: "24h plays",
+                subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Trend delta: ${delta >= 0 ? "+" : ""}${delta}`,
+                accent: "emerald",
+                isNew: isTrackNew(row.norm),
+                rightBadge,
+              });
+            }).join("");
+          }
         }
-      }
 
-      if (autoTodayEl){
-        if (!airplayStats.today.length){
-          if (autoTodayEmpty) autoTodayEmpty.classList.remove("hidden");
-          autoTodayEl.innerHTML = "";
-        } else {
-          if (autoTodayEmpty) autoTodayEmpty.classList.add("hidden");
-          autoTodayEl.innerHTML = airplayStats.today.map((row, idx) => {
-            return compactMetricRowHtml({
-              rank: idx + 1,
-              coverUrl: row.coverUrl || "",
-              artist: upperArtist(row.artist || "—"),
-              title: displayTitleFor(row.artist || "", row.title || ""),
-              metricValue: Number(row.playsToday || 0),
-              metricLabel: "today",
-              subline: `Latest spin • ${fmtTime(row.latestTs)}`,
-              accent: "cyan",
-              isNew: isTrackNew(row.norm),
-              rightBadge: "",
-            });
-          }).join("");
+        if (autoTodayEl){
+          if (!airplayStats.today.length){
+            if (autoTodayEmpty) autoTodayEmpty.classList.remove("hidden");
+            autoTodayEl.innerHTML = "";
+          } else {
+            if (autoTodayEmpty) autoTodayEmpty.classList.add("hidden");
+            autoTodayEl.innerHTML = airplayStats.today.map((row, idx) => {
+              if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
+              return compactMetricRowHtml({
+                rank: idx + 1,
+                coverUrl: row.coverUrl || "",
+                artist: upperArtist(row.artist || "—"),
+                title: displayTitleFor(row.artist || "", row.title || ""),
+                metricValue: Number(row.playsToday || 0),
+                metricLabel: "today",
+                subline: `Latest spin • ${fmtTime(row.latestTs)}`,
+                accent: "cyan",
+                isNew: isTrackNew(row.norm),
+                rightBadge: "",
+              });
+            }).join("");
+          }
         }
-      }
 
-      if (autoNewEntriesEl){
-        if (!airplayStats.newEntries.length){
-          if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.remove("hidden");
-          autoNewEntriesEl.innerHTML = "";
-        } else {
-          if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.add("hidden");
-          autoNewEntriesEl.innerHTML = airplayStats.newEntries.map((row) => {
-            return newEntryCardHtml({
-              coverUrl: row.coverUrl || "",
-              artist: upperArtist(row.artist || "—"),
-              title: displayTitleFor(row.artist || "", row.title || ""),
-              firstSeen: row.firstSeen,
-              plays: Number(row.plays || 0),
-              isNew: true,
-            });
-          }).join("");
+        if (autoNewEntriesEl){
+          if (!airplayStats.newEntries.length){
+            if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.remove("hidden");
+            autoNewEntriesEl.innerHTML = "";
+          } else {
+            if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.add("hidden");
+            autoNewEntriesEl.innerHTML = airplayStats.newEntries.map((row) => {
+              if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
+              return newEntryCardHtml({
+                coverUrl: row.coverUrl || "",
+                artist: upperArtist(row.artist || "—"),
+                title: displayTitleFor(row.artist || "", row.title || ""),
+                firstSeen: row.firstSeen,
+                plays: Number(row.plays || 0),
+                isNew: true,
+              });
+            }).join("");
+          }
         }
       }
 
@@ -1761,6 +1860,7 @@ export const prerender = false;
       if (t - state.lastRenderAt > 400) render();
     });
   }
+
   init();
 })();
     </script>
