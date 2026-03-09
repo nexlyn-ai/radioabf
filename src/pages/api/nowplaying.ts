@@ -239,10 +239,14 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
     coverUrl = "";
   }
 
-  __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 });
-  (globalThis as any).__coverCache = __coverCache;
+    if (coverUrl) {
+    __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 });
+    (globalThis as any).__coverCache = __coverCache;
+  } else {
+    __coverCache.delete(track_key);
+  }
+
   return coverUrl;
-}
 
 /* -------------------- Track meta lookup (tracks.first_played_at) -------------------- */
 
@@ -320,8 +324,13 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
     }
   } catch {}
 
-  __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
-  (globalThis as any).__itunesCache = __itunesCache;
+   if (cover) {
+    __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
+    (globalThis as any).__itunesCache = __itunesCache;
+  } else {
+    __itunesCache.delete(key);
+  }
+
   return cover;
 }
 
