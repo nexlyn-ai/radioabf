@@ -1649,7 +1649,7 @@ export const prerender = false;
         }).join("");
       }
 
- const statsSource = [
+const statsSourceRaw = [
   ...(state.lastNow ? [{
     t: state.lastNow.t,
     ts: Number(state.lastNow.ts || 0),
@@ -1660,6 +1660,20 @@ export const prerender = false;
   }] : []),
   ...history,
 ];
+
+const statsSource = [];
+const statsSeen = new Set();
+
+for (const entry of statsSourceRaw) {
+  const raw = String(entry?.t || "").trim();
+  const ts = Number(entry?.ts || 0);
+  if (!raw) continue;
+
+  const key = `${raw.toLowerCase()}__${ts}`;
+  if (statsSeen.has(key)) continue;
+  statsSeen.add(key);
+  statsSource.push(entry);
+}
 
 const airplayStats = buildAirplayStats(statsSource, coverByNorm);
 
