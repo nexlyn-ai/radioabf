@@ -91,7 +91,15 @@ export const prerender = false;
                 </div>
                 <div class="min-w-0 flex-1">
                   <div id="musicArtist" class="text-xl md:text-2xl font-extrabold text-white truncate leading-tight">—</div>
-                  <div id="musicTitle" class="mt-1 text-white/70 text-base md:text-lg truncate">—</div>
+                  <div class="mt-1 flex items-center gap-2 min-w-0">
+                    <div id="musicTitle" class="text-white/70 text-base md:text-lg truncate min-w-0 flex-1">—</div>
+                    <span
+                      id="npNewBadge"
+                      class="hidden inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/15 border-rose-400/30 text-rose-100 tracking-wide flex-none"
+                    >
+                      NEW
+                    </span>
+                  </div>
                 </div>
                 <button
                   id="nowVoteBtn"
@@ -109,10 +117,10 @@ export const prerender = false;
               <div class="text-sm text-white/60 uppercase tracking-wider">Last played</div>
               <div class="text-xs text-white/50">Tap 👍 to vote</div>
             </div>
-           <div
-  id="historyTable"
-  class="space-y-3 overflow-visible"
-></div>
+            <div
+              id="historyTable"
+              class="space-y-3 overflow-visible"
+            ></div>
             <div id="historyEmpty" class="text-white/55 text-sm hidden">
               Start the player to load history.
             </div>
@@ -201,6 +209,123 @@ export const prerender = false;
       </aside>
     </section>
 
+    <!-- AUTO AIRPLAY INSIGHTS -->
+    <section class="mt-6">
+      <div class="rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden shadow-2xl relative">
+        <div class="pointer-events-none absolute -top-28 -left-28 w-[320px] h-[320px] rounded-full bg-cyan-500/10 blur-[110px]"></div>
+        <div class="pointer-events-none absolute -bottom-28 -right-28 w-[320px] h-[320px] rounded-full bg-blue-600/10 blur-[110px]"></div>
+        <div class="relative z-10 p-5 sm:p-6 border-b border-white/10">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div class="min-w-0">
+              <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+                <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+                Auto airplay insights
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold leading-tight">
+                Radio rotation <span class="text-cyan-200">in real time</span>
+              </h2>
+              <p class="text-white/65 mt-3 max-w-3xl">
+                Automatic charts built from recent airplay history: most played tracks, current momentum, today’s rotation and fresh new entries.
+              </p>
+            </div>
+            <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+                Auto charts
+              </span>
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+                Based on live history
+              </span>
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+                Updated every 8s
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 p-5 sm:p-6">
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <div class="xl:col-span-7 rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden shadow-xl">
+              <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <div class="text-sm text-white/60 uppercase tracking-wider">Most played on RadioABF</div>
+                  <div class="text-xs text-white/50 mt-1">Top rotation from recent airplay history</div>
+                </div>
+                <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
+                  Auto
+                </div>
+              </div>
+              <div class="p-4 md:p-5">
+                <ol id="autoMostPlayed" class="space-y-3"></ol>
+                <div id="autoMostPlayedEmpty" class="text-white/55 text-sm hidden">
+                  Not enough recent play data yet.
+                </div>
+              </div>
+            </div>
+
+            <div class="xl:col-span-5 rounded-3xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#081523] overflow-hidden shadow-xl relative">
+              <div class="pointer-events-none absolute -top-24 -right-24 w-[240px] h-[240px] bg-emerald-500/10 rounded-full blur-[90px]"></div>
+              <div class="p-5 border-b border-white/10 relative">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="text-sm text-white/60 uppercase tracking-wider">Trending now</div>
+                    <div class="text-xs text-white/50 mt-1">Tracks gaining momentum over the last 24h</div>
+                  </div>
+                  <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
+                    24h
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 md:p-5 relative">
+                <div id="autoTrending" class="space-y-3"></div>
+                <div id="autoTrendingEmpty" class="text-white/55 text-sm hidden">
+                  No trend detected yet.
+                </div>
+              </div>
+            </div>
+
+            <div class="xl:col-span-4 rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden shadow-xl">
+              <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <div class="text-sm text-white/60 uppercase tracking-wider">Most played today</div>
+                  <div class="text-xs text-white/50 mt-1">Today’s strongest rotations</div>
+                </div>
+                <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
+                  Today
+                </div>
+              </div>
+              <div class="p-4 md:p-5">
+                <div id="autoToday" class="space-y-3"></div>
+                <div id="autoTodayEmpty" class="text-white/55 text-sm hidden">
+                  No airplay recorded today yet.
+                </div>
+              </div>
+            </div>
+
+            <div class="xl:col-span-8 rounded-3xl border border-white/10 bg-gradient-to-br from-[#07111E] via-[#0A1F33] to-[#050B14] overflow-hidden shadow-xl relative">
+              <div class="pointer-events-none absolute -bottom-24 -left-24 w-[260px] h-[260px] bg-rose-500/10 rounded-full blur-[95px]"></div>
+              <div class="p-5 border-b border-white/10 relative">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="text-sm text-white/60 uppercase tracking-wider">New entries</div>
+                    <div class="text-xs text-white/50 mt-1">Fresh tracks recently detected in the rotation</div>
+                  </div>
+                  <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
+                    Fresh
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 md:p-5 relative">
+                <div id="autoNewEntries" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                <div id="autoNewEntriesEmpty" class="text-white/55 text-sm hidden">
+                  No fresh entries detected yet.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <style>
       .tabular-nums { font-variant-numeric: tabular-nums; }
       .scrollbar-thin::-webkit-scrollbar { width: 6px; }
@@ -272,6 +397,9 @@ export const prerender = false;
   const DAY = 24 * 60 * 60 * 1000;
   const VOTED_KEY = "abf_voted_tracks";
   const HISTORY_KEY = "abf_history";
+  const TRACK_SEEN_KEY = "abf_track_first_seen";
+  const TRACK_SEEN_RETENTION_MS = 90 * DAY;
+
   const state = (window[KEY] = window[KEY] || {
     bound: false,
     timer: null,
@@ -280,6 +408,7 @@ export const prerender = false;
     lastHistory: [],
     search: { date: "", time: "" },
     searchBound: false,
+    trackSeen: {},
   });
 
   function loadVotedTracks() {
@@ -345,6 +474,23 @@ export const prerender = false;
     return `${hh}:${mm}`;
   }
 
+  function fmtDateTimeShort(ts){
+    if (!ts) return "—";
+    const d = new Date(ts);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} • ${hh}:${mi}`;
+  }
+
+  function startOfLocalDay(ts = nowTs()){
+    const d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
   function stripTitleSuffixes(input){
     let s = String(input || "").trim();
     if (!s) return "";
@@ -408,7 +554,6 @@ export const prerender = false;
     return /^abf\s*club\b/i.test(String(artist || "").trim());
   }
 
-  // ✅ MODIF #2: annuler le retitrage (strip + titlecase) sur ABF CLUB
   function displayTitleFor(artistRaw, titleRaw){
     if (isBlockedShow(artistRaw)) return String(titleRaw || "—").trim() || "—";
     const clean = stripTitleSuffixes(titleRaw);
@@ -432,7 +577,67 @@ export const prerender = false;
     }).filter(Boolean);
   }
 
-  async function fetchServerNowPlaying(limit = 80){
+  function loadTrackSeen(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(TRACK_SEEN_KEY) || "{}");
+      const clean = {};
+      const now = nowTs();
+      for (const k in raw){
+        const ts = Number(raw[k] || 0);
+        if (!k || !ts) continue;
+        if (now - ts > TRACK_SEEN_RETENTION_MS) continue;
+        clean[k] = ts;
+      }
+      return clean;
+    }catch{
+      return {};
+    }
+  }
+
+  function saveTrackSeen(map){
+    try{
+      localStorage.setItem(TRACK_SEEN_KEY, JSON.stringify(map || {}));
+    }catch{}
+  }
+
+  function updateTrackSeenFromHistory(history){
+    const seen = loadTrackSeen();
+    let changed = false;
+    const now = nowTs();
+
+    for (const entry of (history || [])){
+      const t = splitTrack(entry?.t || "");
+      const aRaw = String(t.artist || "").trim();
+      const tRaw = String(t.title || "").trim();
+      if (!aRaw && !tRaw) continue;
+      if (isBlockedShow(aRaw)) continue;
+
+      const n = normKey(aRaw, tRaw);
+      if (!n) continue;
+
+      const ts = Number(entry?.ts || 0) || now;
+      if (!seen[n] || ts < seen[n]){
+        seen[n] = ts;
+        changed = true;
+      }
+    }
+
+    if (changed) saveTrackSeen(seen);
+    state.trackSeen = seen;
+    return seen;
+  }
+
+  function firstSeenTs(norm){
+    return Number(state.trackSeen?.[norm] || 0);
+  }
+
+  function isTrackNew(norm, ttlMs = 7 * DAY){
+    const ts = firstSeenTs(norm);
+    if (!ts) return false;
+    return (nowTs() - ts) <= ttlMs;
+  }
+
+  async function fetchServerNowPlaying(limit = 400){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
       const data = await res.json().catch(()=> ({}));
@@ -467,7 +672,6 @@ export const prerender = false;
         }
       }
 
-      // ✅ MODIF #1: ne dédupliquer que les doublons consécutifs (au lieu de tout dédupliquer)
       const deduped = [];
       let lastKey = "";
       for (const item of out){
@@ -608,7 +812,7 @@ export const prerender = false;
       getCount(trackKeyRaw, artistMaybe, titleMaybe){
         const k = String(trackKeyRaw || "").trim();
         if (k && exact[k] != null) return exact[k];
-        if (k && lower[k.toLowerCase()] != null) return lower[k.toLowerCase()];
+        if (k && lower[k.toLowerCase()] != null) return lower[k];
         const sp = k ? splitTrack(k) : { artist: String(artistMaybe||""), title: String(titleMaybe||"") };
         const n = normKey(sp.artist, sp.title);
         if (n && byNorm[n] != null) return byNorm[n];
@@ -627,62 +831,62 @@ export const prerender = false;
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
   }
 
-function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10) {
-  if (!dateStr || !timeStr) return null;
+  function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10) {
+    if (!dateStr || !timeStr) return null;
 
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const [hh, mi] = timeStr.split(":").map(Number);
-  if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [hh, mi] = timeStr.split(":").map(Number);
+    if (!y || !m || !d || Number.isNaN(hh) || Number.isNaN(mi)) return null;
 
-  const targetLocal = new Date(y, m - 1, d, hh, mi, 0, 0).getTime();
-  const tol = toleranceMinutes * 60 * 1000;
+    const targetLocal = new Date(y, m - 1, d, hh, mi, 0, 0).getTime();
+    const tol = toleranceMinutes * 60 * 1000;
 
-  let best = null;
-  let bestDelta = Infinity;
-  let sameDayMatches = 0;
+    let best = null;
+    let bestDelta = Infinity;
+    let sameDayMatches = 0;
 
-  for (const entry of (history || [])) {
-    const ts = Number(entry?.ts || 0);
-    if (!ts) continue;
+    for (const entry of (history || [])) {
+      const ts = Number(entry?.ts || 0);
+      if (!ts) continue;
 
-    const ed = new Date(ts);
-    const sameDay =
-      ed.getFullYear() === y &&
-      (ed.getMonth() + 1) === m &&
-      ed.getDate() === d;
+      const ed = new Date(ts);
+      const sameDay =
+        ed.getFullYear() === y &&
+        (ed.getMonth() + 1) === m &&
+        ed.getDate() === d;
 
-    if (!sameDay) continue;
+      if (!sameDay) continue;
 
-    sameDayMatches++;
-    const delta = Math.abs(ts - targetLocal);
-    if (delta < bestDelta) {
-      bestDelta = delta;
-      best = entry;
+      sameDayMatches++;
+      const delta = Math.abs(ts - targetLocal);
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        best = entry;
+      }
     }
-  }
 
-  if (!best) {
+    if (!best) {
+      console.log("Search:", {
+        dateStr,
+        timeStr,
+        targetLocal: new Date(targetLocal).toString(),
+        sameDayMatches,
+        result: "No match in the same local day",
+      });
+      return null;
+    }
+
     console.log("Search:", {
       dateStr,
       timeStr,
       targetLocal: new Date(targetLocal).toString(),
+      bestTs: best.ts,
+      bestDeltaMin: Math.round(bestDelta / 60000),
       sameDayMatches,
-      result: "No match in the same local day",
     });
-    return null;
+
+    return { best, bestDelta, within: bestDelta <= tol };
   }
-
-  console.log("Search:", {
-    dateStr,
-    timeStr,
-    targetLocal: new Date(targetLocal).toString(),
-    bestTs: best.ts,
-    bestDeltaMin: Math.round(bestDelta / 60000),
-    sameDayMatches,
-  });
-
-  return { best, bestDelta, within: bestDelta <= tol };
-}
 
   function renderAirSearchResult(root, payload){
     const box = root.querySelector("#airSearchResult");
@@ -697,7 +901,6 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
     const time = fmtTime(best.ts);
     const d = toLocalKey(best.ts).date;
     const artist = upperArtist(String(t.artist || "—"));
-    // ✅ MODIF #2 appliquée ici aussi (ABF CLUB = raw)
     const title = displayTitleFor(String(t.artist || ""), String(t.title || ""));
     const deltaMin = Math.round(bestDelta / 60000);
     box.innerHTML = `
@@ -754,7 +957,15 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
     `;
   }
 
-  function rowHtml({ coverUrl, artist, title, time, count, blocked, voted, kNorm, kRaw, aRaw, tRaw }){
+  function newBadgeHtml(){
+    return `
+      <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/15 border-rose-400/30 text-rose-100 tracking-wide flex-none">
+        NEW
+      </span>
+    `;
+  }
+
+  function rowHtml({ coverUrl, artist, title, time, count, blocked, voted, kNorm, kRaw, aRaw, tRaw, isNew }){
     return `
       <div class="abfHistoryRow ${voted ? "abfVotedRow" : ""} flex items-center justify-between gap-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
         <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -764,7 +975,10 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
               <div class="font-extrabold text-white truncate">${esc(artist || "—")}</div>
               ${badgeTimeBlue(time)}
             </div>
-            <div class="text-white/65 text-sm truncate">${esc(title || "—")}</div>
+            <div class="mt-1 flex items-center gap-2 min-w-0">
+              <div class="text-white/65 text-sm truncate min-w-0 flex-1">${esc(title || "—")}</div>
+              ${isNew ? newBadgeHtml() : ""}
+            </div>
           </div>
         </div>
         <button
@@ -862,7 +1076,7 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
     `;
   }
 
-  function chartRowHtml(rank, coverUrl, artist, title, count, max, moveBadge = ""){
+  function chartRowHtml(rank, coverUrl, artist, title, count, max, moveBadge = "", unitLabel = "votes", isNew = false){
     const pct = Math.round((Number(count) / Math.max(1, Number(max))) * 100);
     return `
       <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition">
@@ -874,12 +1088,15 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
           <div class="flex items-start gap-3">
             <div class="min-w-0">
               <div class="font-extrabold text-white truncate">${esc(artist)}</div>
-              <div class="text-white/65 text-sm truncate">${esc(title)}</div>
+              <div class="mt-1 flex items-center gap-2 min-w-0">
+                <div class="text-white/65 text-sm truncate min-w-0">${esc(title)}</div>
+                ${isNew ? newBadgeHtml() : ""}
+              </div>
             </div>
             <div class="ml-auto flex-none flex items-center gap-2 text-sm text-white/90 font-extrabold tabular-nums">
               ${moveBadge}
               <span>
-                ${esc(String(count))} <span class="text-white/50 font-normal">votes</span>
+                ${esc(String(count))} <span class="text-white/50 font-normal">${esc(unitLabel)}</span>
               </span>
             </div>
           </div>
@@ -889,6 +1106,151 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
         </div>
       </li>
     `;
+  }
+
+  function compactMetricRowHtml({ rank, coverUrl, artist, title, metricValue, metricLabel, subline = "", accent = "cyan", isNew = false, rightBadge = "" }){
+    const accentClass =
+      accent === "emerald"
+        ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-100"
+        : accent === "rose"
+        ? "bg-rose-500/10 border-rose-400/20 text-rose-100"
+        : "bg-cyan-500/10 border-cyan-400/20 text-cyan-100";
+
+    return `
+      <div class="flex items-center gap-3 p-3 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition">
+        <div class="flex-none w-9 h-9 rounded-2xl border ${accentClass} flex items-center justify-center text-sm font-extrabold tabular-nums">
+          ${esc(String(rank))}
+        </div>
+        ${coverHtmlByUrl(coverUrl, "w-12 h-12 rounded-2xl")}
+        <div class="min-w-0 flex-1">
+          <div class="font-extrabold text-white truncate">${esc(artist)}</div>
+          <div class="mt-1 flex items-center gap-2 min-w-0">
+            <div class="text-white/65 text-sm truncate min-w-0 flex-1">${esc(title)}</div>
+            ${isNew ? newBadgeHtml() : ""}
+          </div>
+          ${subline ? `<div class="text-xs text-white/45 mt-1 truncate">${subline}</div>` : ""}
+        </div>
+        <div class="flex-none text-right">
+          ${rightBadge || ""}
+          <div class="text-sm font-extrabold text-white tabular-nums">${esc(String(metricValue))}</div>
+          <div class="text-[11px] text-white/45 uppercase tracking-wide">${esc(metricLabel)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function newEntryCardHtml({ coverUrl, artist, title, firstSeen, plays, isNew }){
+    return `
+      <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:bg-white/[0.05] transition">
+        <div class="flex items-start gap-4">
+          ${coverHtmlByUrl(coverUrl, "w-16 h-16 rounded-2xl")}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-start gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="font-extrabold text-white truncate">${esc(artist)}</div>
+                <div class="mt-1 flex items-center gap-2 min-w-0">
+                  <div class="text-white/65 text-sm truncate min-w-0 flex-1">${esc(title)}</div>
+                  ${isNew ? newBadgeHtml() : ""}
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <div class="text-xs text-white/45">
+                First seen • <span class="tabular-nums">${esc(fmtDateTimeShort(firstSeen))}</span>
+              </div>
+              <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-2.5 py-1 rounded-xl tabular-nums">
+                ${esc(String(plays))} plays
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildAirplayStats(history, coverByNorm){
+    const now = nowTs();
+    const todayStart = startOfLocalDay(now);
+    const last24hStart = now - DAY;
+    const prev24hStart = now - (2 * DAY);
+    const map = Object.create(null);
+
+    for (const entry of (history || [])){
+      const ts = Number(entry?.ts || 0);
+      const sp = splitTrack(entry?.t || "");
+      const aRaw = String(sp.artist || "").trim();
+      const tRaw = String(sp.title || "").trim();
+
+      if ((!aRaw && !tRaw) || isBlockedShow(aRaw)) continue;
+
+      const n = normKey(aRaw, tRaw);
+      if (!n) continue;
+
+      if (!map[n]){
+        map[n] = {
+          norm: n,
+          artist: aRaw,
+          title: tRaw,
+          raw: rawKey(aRaw, tRaw),
+          coverUrl: String(entry?.cover_url || "").trim() || String(coverByNorm?.[n] || "").trim(),
+          plays: 0,
+          playsToday: 0,
+          plays24h: 0,
+          playsPrev24h: 0,
+          latestTs: 0,
+          firstSeen: firstSeenTs(n) || ts || now,
+        };
+      }
+
+      const item = map[n];
+      item.plays += 1;
+      if (ts >= todayStart) item.playsToday += 1;
+      if (ts >= last24hStart) item.plays24h += 1;
+      else if (ts >= prev24hStart) item.playsPrev24h += 1;
+
+      if (ts > item.latestTs) item.latestTs = ts;
+      const knownFirstSeen = firstSeenTs(n);
+      if (knownFirstSeen){
+        item.firstSeen = Math.min(item.firstSeen, knownFirstSeen);
+      } else if (ts){
+        item.firstSeen = Math.min(item.firstSeen, ts);
+      }
+      if (!item.coverUrl){
+        item.coverUrl = String(entry?.cover_url || "").trim() || String(coverByNorm?.[n] || "").trim();
+      }
+    }
+
+    const rows = Object.values(map);
+
+    const mostPlayed = rows
+      .slice()
+      .sort((a, b) => Number(b.plays || 0) - Number(a.plays || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
+      .slice(0, 8);
+
+    const today = rows
+      .filter((x) => Number(x.playsToday || 0) > 0)
+      .sort((a, b) => Number(b.playsToday || 0) - Number(a.playsToday || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
+      .slice(0, 6);
+
+    const trending = rows
+      .map((x) => ({
+        ...x,
+        delta24: Number(x.plays24h || 0) - Number(x.playsPrev24h || 0),
+      }))
+      .filter((x) => Number(x.plays24h || 0) > 0 || Number(x.playsPrev24h || 0) > 0)
+      .sort((a, b) =>
+        Number(b.delta24 || 0) - Number(a.delta24 || 0) ||
+        Number(b.plays24h || 0) - Number(a.plays24h || 0) ||
+        Number(b.latestTs || 0) - Number(a.latestTs || 0)
+      )
+      .slice(0, 6);
+
+    const newEntries = rows
+      .filter((x) => isTrackNew(x.norm))
+      .sort((a, b) => Number(b.firstSeen || 0) - Number(a.firstSeen || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
+      .slice(0, 8);
+
+    return { mostPlayed, today, trending, newEntries };
   }
 
   async function render(){
@@ -905,6 +1267,8 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
       const histEmpty= root.querySelector("#historyEmpty");
       const nowVoteBtn = root.querySelector("#nowVoteBtn");
       const nowVoteCount = root.querySelector("#nowVoteCount");
+      const npNewBadge = root.querySelector("#npNewBadge");
+
       const weekThisEl = root.querySelector("#weekThis");
       const weekPrevEl = root.querySelector("#weekPrev");
       const howWeekThisEl = root.querySelector("#howWeekThis");
@@ -913,49 +1277,63 @@ function findClosestByDateTime(history, dateStr, timeStr, toleranceMinutes = 10)
       const topPrevEl = root.querySelector("#topPrevWeek");
       const topThisEmpty = root.querySelector("#topThisEmpty");
       const topPrevEmpty = root.querySelector("#topPrevEmpty");
+
+      const autoMostPlayedEl = root.querySelector("#autoMostPlayed");
+      const autoMostPlayedEmpty = root.querySelector("#autoMostPlayedEmpty");
+      const autoTrendingEl = root.querySelector("#autoTrending");
+      const autoTrendingEmpty = root.querySelector("#autoTrendingEmpty");
+      const autoTodayEl = root.querySelector("#autoToday");
+      const autoTodayEmpty = root.querySelector("#autoTodayEmpty");
+      const autoNewEntriesEl = root.querySelector("#autoNewEntries");
+      const autoNewEntriesEmpty = root.querySelector("#autoNewEntriesEmpty");
+
       const week = getISOWeekId();
       const prevWeek = getPrevISOWeekId();
+
       if (weekThisEl) weekThisEl.textContent = week.replace("-W"," W");
       if (weekPrevEl) weekPrevEl.textContent = prevWeek.replace("-W"," W");
       if (howWeekThisEl) howWeekThisEl.textContent = week.replace("-W"," W");
       if (howWeekPrevEl) howWeekPrevEl.textContent = prevWeek.replace("-W"," W");
       if (!artistEl || !titleEl || !histEl || !topThisEl || !topPrevEl) return;
-let historyServer = await fetchServerNowPlaying(80);
-const historyLocal = loadHistory();
 
-// ✅ Merge: server first, then fill with local cache to reach enough items
-let history = [];
-const seen = new Set();
+      let historyServer = await fetchServerNowPlaying(400);
+      const historyLocal = loadHistory();
 
-for (const e of (historyServer || [])) {
-  const raw = String(e?.raw || e?.t || "").trim();
-  const ts = Number(e?.played_at_ms || e?.ts || 0);
-  const key = `${raw.toLowerCase()}__${ts}`;
-  if (!raw) continue;
-  if (seen.has(key)) continue;
-  seen.add(key);
-  history.push({
-    t: raw,          // ✅ normalise vers le format attendu par ton front
-    ts,              // ✅ idem
-    cover_url: String(e?.cover_url || ""),
-    cover_source: String(e?.cover_source || ""),
-  });
-}
+      let history = [];
+      const seen = new Set();
 
-for (const e of (historyLocal || [])) {
-  const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
-  if (!e?.t) continue;
-  if (seen.has(key)) continue;
-  seen.add(key);
-  history.push(e);
-  if (history.length >= 80) break;
-}
+      for (const e of (historyServer || [])) {
+        const raw = String(e?.raw || e?.t || "").trim();
+        const ts = Number(e?.played_at_ms || e?.ts || 0);
+        const key = `${raw.toLowerCase()}__${ts}`;
+        if (!raw) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        history.push({
+          t: raw,
+          ts,
+          cover_url: String(e?.cover_url || ""),
+          cover_source: String(e?.cover_source || ""),
+        });
+      }
 
-state.lastHistory = history || [];
+      for (const e of (historyLocal || [])) {
+        const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
+        if (!e?.t) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        history.push(e);
+        if (history.length >= 400) break;
+      }
+
+      state.lastHistory = history || [];
+      updateTrackSeenFromHistory(history);
+
       if (!history.length){
         artistEl.textContent = "—";
         titleEl.textContent = "—";
         if (timeEl) timeEl.textContent = "--:--";
+        if (npNewBadge) npNewBadge.classList.add("hidden");
         setCover("", root);
         setCoverSourceBadge(root, "", "");
         if (histEmpty) histEmpty.classList.remove("hidden");
@@ -965,9 +1343,20 @@ state.lastHistory = history || [];
         if (topPrevEmpty) topPrevEmpty.classList.remove("hidden");
         topThisEl.innerHTML = "";
         topPrevEl.innerHTML = "";
+
+        if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.remove("hidden");
+        if (autoTrendingEmpty) autoTrendingEmpty.classList.remove("hidden");
+        if (autoTodayEmpty) autoTodayEmpty.classList.remove("hidden");
+        if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.remove("hidden");
+        if (autoMostPlayedEl) autoMostPlayedEl.innerHTML = "";
+        if (autoTrendingEl) autoTrendingEl.innerHTML = "";
+        if (autoTodayEl) autoTodayEl.innerHTML = "";
+        if (autoNewEntriesEl) autoNewEntriesEl.innerHTML = "";
         return;
       }
+
       if (histEmpty) histEmpty.classList.add("hidden");
+
       const coverByNorm = {};
       for (const entry of history){
         const t = splitTrack(entry.t);
@@ -975,20 +1364,30 @@ state.lastHistory = history || [];
         const u = String(entry.cover_url || "").trim();
         if (n && u) coverByNorm[n] = u;
       }
+
       const currentEntry = history[0];
       const current = splitTrack(currentEntry.t);
       const nowArtistRaw = String(current.artist || "").trim();
       const nowTitleRaw0 = String(current.title || "").trim();
+      const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
+      const nowIsNew = isTrackNew(nowKNorm);
+
       artistEl.textContent = upperArtist(nowArtistRaw || "—");
-      // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
       titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
+      if (npNewBadge){
+        if (nowIsNew) npNewBadge.classList.remove("hidden");
+        else npNewBadge.classList.add("hidden");
+      }
+
       const nowTime = fmtTime(currentEntry.ts);
       if (timeEl) timeEl.textContent = nowTime;
+
       const nowCover =
         String(currentEntry.cover_url || "").trim() ||
         (coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] || "");
       setCover(nowCover, root);
       setCoverSourceBadge(root, nowCover, String(currentEntry.cover_source || ""));
+
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
         apiGetTopWeek(prevWeek),
@@ -1000,11 +1399,11 @@ state.lastHistory = history || [];
       const prevRankMap = buildRankMap(topPrevFullSafe);
 
       const voteIndex = buildVoteIndex(topThis || []);
-      const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
       const nowKRaw = rawKey(nowArtistRaw, nowTitleRaw0);
       const nowCount = voteIndex.getCount(nowKRaw, nowArtistRaw, nowTitleRaw0);
       const nowBlocked = isBlockedShow(nowArtistRaw);
       const nowAlready = isVoted(nowKNorm);
+
       if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
       if (nowVoteBtn){
         nowVoteBtn.style.display = "inline-flex";
@@ -1064,6 +1463,7 @@ state.lastHistory = history || [];
           });
         }
       }
+
       const limit = LAST_PLAYED_LIMIT();
       const rows = history.slice(1, 1 + limit);
       histEl.innerHTML = rows.map((entry) => {
@@ -1081,7 +1481,6 @@ state.lastHistory = history || [];
         return rowHtml({
           coverUrl,
           artist: upperArtist(aRaw || "—"),
-          // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
           title: displayTitleFor(aRaw, tRaw0),
           time: fmtTime(entry.ts),
           count,
@@ -1090,9 +1489,11 @@ state.lastHistory = history || [];
           kNorm,
           kRaw,
           aRaw,
-          tRaw: tRaw0
+          tRaw: tRaw0,
+          isNew: isTrackNew(kNorm)
         });
       }).join("");
+
       histEl.querySelectorAll(".voteBtn").forEach((btn) => {
         const kNorm = btn.dataset.norm || "";
         const kRaw = btn.dataset.raw || "";
@@ -1146,9 +1547,11 @@ state.lastHistory = history || [];
           };
         }
       });
+
       const topThisSafe = (topThis || [])
         .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
         .slice(0, 10);
+
       if (!topThisSafe.length){
         if (topThisEmpty) topThisEmpty.classList.remove("hidden");
         topThisEl.innerHTML = "";
@@ -1166,7 +1569,6 @@ state.lastHistory = history || [];
           const move = getChartMove(row, prevRankMap);
           const badge = moveBadgeHtml(currentRank, move.prevRank);
 
-          // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
           return chartRowHtml(
             currentRank,
             coverUrl,
@@ -1174,13 +1576,17 @@ state.lastHistory = history || [];
             displayTitleFor(aRaw, tRaw),
             Number(row.count || 0),
             max,
-            badge
+            badge,
+            "votes",
+            false
           );
         }).join("");
       }
+
       const topPrevSafe = (topPrev || [])
         .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
         .slice(0, 5);
+
       if (!topPrevSafe.length){
         if (topPrevEmpty) topPrevEmpty.classList.remove("hidden");
         topPrevEl.innerHTML = "";
@@ -1193,14 +1599,123 @@ state.lastHistory = history || [];
           const aRaw = String(row.artist || "").trim() || sp.artist || "—";
           const tRaw = String(row.title || "").trim() || sp.title || "—";
           const coverUrl = String(row.cover_url || "").trim() || (coverByNorm[normKey(sp.artist, sp.title)] || "");
-          // ✅ MODIF #2 appliquée ici (ABF CLUB = raw)
-          return chartRowHtml(idx + 1, coverUrl, upperArtist(aRaw), displayTitleFor(aRaw, tRaw), Number(row.count || 0), maxP);
+          return chartRowHtml(
+            idx + 1,
+            coverUrl,
+            upperArtist(aRaw),
+            displayTitleFor(aRaw, tRaw),
+            Number(row.count || 0),
+            maxP,
+            "",
+            "votes",
+            false
+          );
         }).join("");
       }
+
+      const airplayStats = buildAirplayStats(history, coverByNorm);
+
+      if (autoMostPlayedEl){
+        if (!airplayStats.mostPlayed.length){
+          if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.remove("hidden");
+          autoMostPlayedEl.innerHTML = "";
+        } else {
+          if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.add("hidden");
+          const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => Number(x.plays || 0)), 1);
+          autoMostPlayedEl.innerHTML = airplayStats.mostPlayed.map((row, idx) => {
+            return chartRowHtml(
+              idx + 1,
+              row.coverUrl || "",
+              upperArtist(row.artist || "—"),
+              displayTitleFor(row.artist || "", row.title || ""),
+              Number(row.plays || 0),
+              maxAuto,
+              "",
+              "plays",
+              isTrackNew(row.norm)
+            );
+          }).join("");
+        }
+      }
+
+      if (autoTrendingEl){
+        if (!airplayStats.trending.length){
+          if (autoTrendingEmpty) autoTrendingEmpty.classList.remove("hidden");
+          autoTrendingEl.innerHTML = "";
+        } else {
+          if (autoTrendingEmpty) autoTrendingEmpty.classList.add("hidden");
+          autoTrendingEl.innerHTML = airplayStats.trending.map((row, idx) => {
+            const delta = Number(row.delta24 || 0);
+            const rightBadge =
+              delta > 0
+                ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-emerald-500/12 border-emerald-400/25 text-emerald-200 mb-1">+${delta}</div>`
+                : delta < 0
+                ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/12 border-rose-400/25 text-rose-200 mb-1">${delta}</div>`
+                : `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-white/5 border-white/10 text-white/60 mb-1">=</div>`;
+
+            return compactMetricRowHtml({
+              rank: idx + 1,
+              coverUrl: row.coverUrl || "",
+              artist: upperArtist(row.artist || "—"),
+              title: displayTitleFor(row.artist || "", row.title || ""),
+              metricValue: Number(row.plays24h || 0),
+              metricLabel: "24h plays",
+              subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Trend delta: ${delta >= 0 ? "+" : ""}${delta}`,
+              accent: "emerald",
+              isNew: isTrackNew(row.norm),
+              rightBadge,
+            });
+          }).join("");
+        }
+      }
+
+      if (autoTodayEl){
+        if (!airplayStats.today.length){
+          if (autoTodayEmpty) autoTodayEmpty.classList.remove("hidden");
+          autoTodayEl.innerHTML = "";
+        } else {
+          if (autoTodayEmpty) autoTodayEmpty.classList.add("hidden");
+          autoTodayEl.innerHTML = airplayStats.today.map((row, idx) => {
+            return compactMetricRowHtml({
+              rank: idx + 1,
+              coverUrl: row.coverUrl || "",
+              artist: upperArtist(row.artist || "—"),
+              title: displayTitleFor(row.artist || "", row.title || ""),
+              metricValue: Number(row.playsToday || 0),
+              metricLabel: "today",
+              subline: `Latest spin • ${fmtTime(row.latestTs)}`,
+              accent: "cyan",
+              isNew: isTrackNew(row.norm),
+              rightBadge: "",
+            });
+          }).join("");
+        }
+      }
+
+      if (autoNewEntriesEl){
+        if (!airplayStats.newEntries.length){
+          if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.remove("hidden");
+          autoNewEntriesEl.innerHTML = "";
+        } else {
+          if (autoNewEntriesEmpty) autoNewEntriesEmpty.classList.add("hidden");
+          autoNewEntriesEl.innerHTML = airplayStats.newEntries.map((row) => {
+            return newEntryCardHtml({
+              coverUrl: row.coverUrl || "",
+              artist: upperArtist(row.artist || "—"),
+              title: displayTitleFor(row.artist || "", row.title || ""),
+              firstSeen: row.firstSeen,
+              plays: Number(row.plays || 0),
+              isNew: true,
+            });
+          }).join("");
+        }
+      }
+
       if (state.search?.date && state.search?.time){
         const payload = findClosestByDateTime(state.lastHistory, state.search.date, state.search.time, 10);
         renderAirSearchResult(root, payload);
       }
+
       state.lastRenderAt = nowTs();
     } finally {
       state.inFlight = false;
