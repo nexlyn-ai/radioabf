@@ -317,7 +317,6 @@ export const GET: APIRoute = async ({ request }) => {
       fields: "id,track_key,artist,title,played_at,raw",
       sort: "-played_at",
       limit: oversample.toString(),
-      ...(nowIsBad ? {} : { "filter[track_key][_neq]": track_key }),
     });
 
     const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
