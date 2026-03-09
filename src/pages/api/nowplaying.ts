@@ -36,20 +36,13 @@ function cleanNowText(s: string) {
   return out.trim();
 }
 
-// ✅ Filter garbage / partial metadata like "ABF -", "-", "—", "Artist -"
 function isBadRaw(raw: string) {
   const s = String(raw || "").trim();
 
   if (!s) return true;
   if (s === "-" || s === "—" || s === "–") return true;
-
-  // "ABF -" / "ABF —" / "ABF –"
   if (/^\s*abf\s*[-—–]\s*$/i.test(s)) return true;
-
-  // "Artist - " (empty title)
   if (/^.{1,120}\s-\s*$/.test(s)) return true;
-
-  // "- Title" (empty artist)
   if (/^\s*-\s+.{1,200}$/.test(s)) return true;
 
   return false;
@@ -65,10 +58,6 @@ function splitTrack(entry: string) {
   };
 }
 
-/**
- * ✅ Fix mojibake (UTF-8 read as Latin-1 / Win-1252)
- * Ex: "NATÃ©" -> "NATé", "FrÃ©quence" -> "Fréquence"
- */
 function fixMojibake(s: string) {
   const str = String(s || "");
   if (!/[ÃÂâ€“â€”â€˜â€™â€œâ€�]/.test(str)) return str;
@@ -157,11 +146,7 @@ function directusAssetUrl(fileId: string) {
 }
 
 /* -------------------- Tracks: ensure row (RACE-SAFE) -------------------- */
-/**
- * ✅ Robust fix for "track_key must be unique"
- * We try to create; if it already exists (race), we ignore.
- * No cover written. No update.
- */
+
 async function ensureTrackRow(
   track_key: string,
   artist: string,
@@ -183,9 +168,7 @@ async function ensureTrackRow(
     });
   } catch (e: any) {
     const msg = String(e?.message || e || "");
-
     if (/RECORD_NOT_UNIQUE|has to be unique/i.test(msg)) return;
-
     console.warn("[nowplaying] ensureTrackRow failed:", msg);
   }
 }
@@ -215,23 +198,60 @@ async function wasRecentlyPlayed(track_key: string, nowMs: number): Promise<bool
   }
 }
 
-/* -------------------- Cover lookup (tracks cover fields) -------------------- */
+/* -------------------- Directus meta / cover cache -------------------- */
 
-const __coverCache: Map<string, { url: string; exp: number }> =
-  ((globalThis as any).__coverCache as Map<string, { url: string; exp: number }>) || new Map();
+const __trackMetaCache: Map<
+  string,
+  {
+    first_played_at: string;
+    cover_url: string;
+    exp: number;
+  }
+> = ((globalThis as any).__trackMetaCache as Map<
+  string,
+  { first_played_at: string; cover_url: string; exp: number }
+>) || new Map();
 
-async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> {
-  if (!track_key) return "";
+function extractCoverUrlFromTrackRow(row: any): string {
+  const coverVal = row?.[TRACKS_COVER_FIELD];
+  const fileId =
+    typeof coverVal === "string"
+      ? coverVal
+      : coverVal?.id
+        ? String(coverVal.id)
+        : "";
+
+  const coverOverride = String(row?.[TRACKS_COVER_OVERRIDE_FIELD] || "").trim();
+  const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
+
+  if (fileId) return directusAssetUrl(fileId);
+  if (coverOverride) return coverOverride;
+  if (coverUrlField) return coverUrlField;
+  return "";
+}
+
+async function fetchTrackMetaByTrackKey(
+  track_key: string
+): Promise<{ first_played_at: string; cover_url: string }> {
+  if (!track_key) return { first_played_at: "", cover_url: "" };
 
   const now = Date.now();
-  const hit = __coverCache.get(track_key);
-  if (hit && hit.exp > now) return hit.url;
+  const hit = __trackMetaCache.get(track_key);
+  if (hit && hit.exp > now) {
+    return {
+      first_played_at: hit.first_played_at,
+      cover_url: hit.cover_url,
+    };
+  }
 
-  let coverUrl = "";
+  let first_played_at = "";
+  let cover_url = "";
 
   try {
     const params = new URLSearchParams({
       fields: [
+        TRACKS_KEY_FIELD,
+        TRACKS_FIRST_PLAYED_FIELD,
         TRACKS_COVER_FIELD,
         `${TRACKS_COVER_FIELD}.id`,
         TRACKS_COVER_URL_FIELD,
@@ -245,70 +265,98 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
     const j = await r.json();
     const row = j?.data?.[0];
 
-    const coverVal = row?.[TRACKS_COVER_FIELD];
-    const fileId =
-      typeof coverVal === "string"
-        ? coverVal
-        : (coverVal?.id ? String(coverVal.id) : "");
+    first_played_at = String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim();
+    cover_url = extractCoverUrlFromTrackRow(row);
 
-    const coverOverride = String(row?.[TRACKS_COVER_OVERRIDE_FIELD] || "").trim();
-    const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
-
-    if (fileId) {
-      coverUrl = directusAssetUrl(fileId);
-    } else if (coverOverride) {
-      coverUrl = coverOverride;
-    } else if (coverUrlField) {
-      coverUrl = coverUrlField;
-    }
+    __trackMetaCache.set(track_key, {
+      first_played_at,
+      cover_url,
+      exp: now + 30 * 60 * 1000,
+    });
+    (globalThis as any).__trackMetaCache = __trackMetaCache;
   } catch {
-    coverUrl = "";
+    first_played_at = "";
+    cover_url = "";
   }
 
-  if (coverUrl) {
-    __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 });
-    (globalThis as any).__coverCache = __coverCache;
-  } else {
-    __coverCache.delete(track_key);
-  }
-
-  return coverUrl;
+  return { first_played_at, cover_url };
 }
 
-/* -------------------- Track meta lookup (tracks.first_played_at) -------------------- */
-
-const __trackMetaCache: Map<string, { first_played_at: string; exp: number }> =
-  ((globalThis as any).__trackMetaCache as Map<string, { first_played_at: string; exp: number }>) || new Map();
-
-async function fetchTrackFirstPlayedAt(track_key: string): Promise<string> {
-  if (!track_key) return "";
+async function fetchBulkTrackMeta(trackKeys: string[]) {
+  const out = new Map<string, { first_played_at: string; cover_url: string }>();
+  const cleanKeys = [...new Set(trackKeys.map((k) => String(k || "").trim()).filter(Boolean))];
+  if (!cleanKeys.length) return out;
 
   const now = Date.now();
-  const hit = __trackMetaCache.get(track_key);
-  if (hit && hit.exp > now) return hit.first_played_at;
+  const missing: string[] = [];
 
-  let firstPlayedAt = "";
+  for (const key of cleanKeys) {
+    const hit = __trackMetaCache.get(key);
+    if (hit && hit.exp > now) {
+      out.set(key, {
+        first_played_at: hit.first_played_at,
+        cover_url: hit.cover_url,
+      });
+    } else {
+      missing.push(key);
+    }
+  }
+
+  if (!missing.length) return out;
 
   try {
     const params = new URLSearchParams({
-      fields: TRACKS_FIRST_PLAYED_FIELD,
-      limit: "1",
-      [`filter[${TRACKS_KEY_FIELD}][_eq]`]: track_key,
+      fields: [
+        TRACKS_KEY_FIELD,
+        TRACKS_FIRST_PLAYED_FIELD,
+        TRACKS_COVER_FIELD,
+        `${TRACKS_COVER_FIELD}.id`,
+        TRACKS_COVER_URL_FIELD,
+        TRACKS_COVER_OVERRIDE_FIELD,
+      ].join(","),
+      limit: String(Math.min(Math.max(missing.length, 1), 500)),
+      [`filter[${TRACKS_KEY_FIELD}][_in]`]: missing.join(","),
     });
 
     const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
     const j = await r.json();
-    const row = j?.data?.[0];
+    const rows = Array.isArray(j?.data) ? j.data : [];
 
-    firstPlayedAt = String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim();
+    for (const row of rows) {
+      const key = String(row?.[TRACKS_KEY_FIELD] || "").trim();
+      if (!key) continue;
+
+      const meta = {
+        first_played_at: String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim(),
+        cover_url: extractCoverUrlFromTrackRow(row),
+      };
+
+      out.set(key, meta);
+      __trackMetaCache.set(key, {
+        ...meta,
+        exp: now + 30 * 60 * 1000,
+      });
+    }
+
+    for (const key of missing) {
+      if (!out.has(key)) {
+        out.set(key, { first_played_at: "", cover_url: "" });
+        __trackMetaCache.set(key, {
+          first_played_at: "",
+          cover_url: "",
+          exp: now + 5 * 60 * 1000,
+        });
+      }
+    }
+
+    (globalThis as any).__trackMetaCache = __trackMetaCache;
   } catch {
-    firstPlayedAt = "";
+    for (const key of missing) {
+      if (!out.has(key)) out.set(key, { first_played_at: "", cover_url: "" });
+    }
   }
 
-  __trackMetaCache.set(track_key, { first_played_at: firstPlayedAt, exp: now + 30 * 60 * 1000 });
-  (globalThis as any).__trackMetaCache = __trackMetaCache;
-
-  return firstPlayedAt;
+  return out;
 }
 
 /* -------------------- iTunes cover (fallback display-only) -------------------- */
@@ -424,6 +472,16 @@ export const GET: APIRoute = async ({ request }) => {
     const histJson = await histRes.json();
     const historyRaw = histJson?.data || [];
 
+    const trackKeys = [
+      ...new Set(
+        historyRaw
+          .map((row: any) => String(row?.track_key || "").trim())
+          .filter(Boolean)
+      ),
+    ];
+
+    const bulkMeta = await fetchBulkTrackMeta(trackKeys);
+
     const historyMaybe = await Promise.all(
       historyRaw.map(async (row: any) => {
         const a = fixMojibake(String(row.artist || ""));
@@ -434,14 +492,17 @@ export const GET: APIRoute = async ({ request }) => {
 
         if (isBadRaw(raw)) return null;
 
-        let cover_url = await fetchDirectusCoverByTrackKey(tk);
+        const meta = bulkMeta.get(tk) || { first_played_at: "", cover_url: "" };
+
+        let cover_url = String(meta.cover_url || "").trim();
         let cover_source = cover_url ? "directus" : "";
+
         if (!cover_url) {
           cover_url = await fetchItunesCover(a, t);
           if (cover_url) cover_source = "itunes";
         }
 
-        const first_played_at = await fetchTrackFirstPlayedAt(tk);
+        const first_played_at = String(meta.first_played_at || "").trim();
         const first_played_at_ms = toUTCms(first_played_at);
         const is_new = isBlockedShow(a) ? false : isNewFromFirstPlayed(first_played_at);
 
@@ -479,21 +540,22 @@ export const GET: APIRoute = async ({ request }) => {
 
     let nowCover = "";
     let nowCoverSource = "";
-    if (!nowIsBad) {
-      nowCover = await fetchDirectusCoverByTrackKey(track_key);
-      nowCoverSource = nowCover ? "directus" : "";
-      if (!nowCover) {
-        nowCover = await fetchItunesCover(artist, title);
-        if (nowCover) nowCoverSource = "itunes";
-      }
-    }
-
     let nowFirstPlayedAt = "";
     let nowFirstPlayedAtMs = 0;
     let nowIsNew = false;
 
     if (!nowIsBad) {
-      nowFirstPlayedAt = await fetchTrackFirstPlayedAt(track_key);
+      const nowMeta = await fetchTrackMetaByTrackKey(track_key);
+
+      nowCover = String(nowMeta.cover_url || "").trim();
+      nowCoverSource = nowCover ? "directus" : "";
+
+      if (!nowCover) {
+        nowCover = await fetchItunesCover(artist, title);
+        if (nowCover) nowCoverSource = "itunes";
+      }
+
+      nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
       nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
       nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
     }
