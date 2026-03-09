@@ -24,6 +24,7 @@ const ENABLE_ITUNES_FALLBACK =
   (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "true") === "true";
 
 const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000; // 2 min
 
 /* -------------------- Helpers -------------------- */
 
@@ -189,6 +190,31 @@ async function ensureTrackRow(
   }
 }
 
+async function wasRecentlyPlayed(track_key: string, nowMs: number): Promise<boolean> {
+  if (!track_key) return false;
+
+  try {
+    const params = new URLSearchParams({
+      fields: "id,track_key,played_at",
+      sort: "-played_at",
+      limit: "5",
+      [`filter[track_key][_eq]`]: track_key,
+    });
+
+    const res = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
+    const json = await res.json();
+    const rows = Array.isArray(json?.data) ? json.data : [];
+
+    return rows.some((row: any) => {
+      const ts = toUTCms(row?.played_at);
+      if (!ts) return false;
+      return Math.abs(nowMs - ts) <= PLAY_DEDUP_WINDOW_MS;
+    });
+  } catch {
+    return false;
+  }
+}
+
 /* -------------------- Cover lookup (tracks cover fields) -------------------- */
 
 const __coverCache: Map<string, { url: string; exp: number }> =
@@ -239,7 +265,7 @@ async function fetchDirectusCoverByTrackKey(track_key: string): Promise<string> 
     coverUrl = "";
   }
 
-    if (coverUrl) {
+  if (coverUrl) {
     __coverCache.set(track_key, { url: coverUrl, exp: now + 30 * 60 * 1000 });
     (globalThis as any).__coverCache = __coverCache;
   } else {
@@ -325,7 +351,7 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
     }
   } catch {}
 
-   if (cover) {
+  if (cover) {
     __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
     (globalThis as any).__itunesCache = __itunesCache;
   } else {
@@ -365,21 +391,25 @@ export const GET: APIRoute = async ({ request }) => {
     let inserted = false;
 
     if (!nowIsBad && (!last || last.track_key !== track_key)) {
-      await ensureTrackRow(track_key, artist, title, played_at);
+      const recentDuplicate = await wasRecentlyPlayed(track_key, played_at_ms);
 
-      await directusFetch(`/items/${PLAYS_COLLECTION}`, {
-        method: "POST",
-        body: JSON.stringify({
-          track_key,
-          artist: artist || null,
-          title: title || null,
-          played_at,
-          raw: nowText || null,
-        }),
-        headers: { "Content-Type": "application/json" },
-      });
+      if (!recentDuplicate) {
+        await ensureTrackRow(track_key, artist, title, played_at);
 
-      inserted = true;
+        await directusFetch(`/items/${PLAYS_COLLECTION}`, {
+          method: "POST",
+          body: JSON.stringify({
+            track_key,
+            artist: artist || null,
+            title: title || null,
+            played_at,
+            raw: nowText || null,
+          }),
+          headers: { "Content-Type": "application/json" },
+        });
+
+        inserted = true;
+      }
     }
 
     const oversample = Math.min(500, Math.max(limit * 20, limit + 80));
