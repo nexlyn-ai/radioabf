@@ -26,6 +26,9 @@ const ENABLE_ITUNES_FALLBACK =
 const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000; // 2 min
 
+// ✅ protection serveur contre les rafales
+const RESPONSE_CACHE_TTL_MS = 5000;
+
 /* -------------------- Helpers -------------------- */
 
 function cleanNowText(s: string) {
@@ -409,183 +412,265 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
   return cover;
 }
 
+/* -------------------- Response cache / in-flight dedupe -------------------- */
+
+type NowPlayingPayload = {
+  ok: true;
+  inserted: boolean;
+  now: {
+    raw: string;
+    artist: string;
+    title: string;
+    track_key: string;
+    played_at: string;
+    played_at_ms: number;
+    cover_url: string;
+    cover_source: string;
+    first_played_at: string;
+    first_played_at_ms: number;
+    is_new: boolean;
+  };
+  history: any[];
+};
+
+const __responseCache: Map<
+  string,
+  { exp: number; payload: NowPlayingPayload }
+> = ((globalThis as any).__nowPlayingResponseCache as Map<
+  string,
+  { exp: number; payload: NowPlayingPayload }
+>) || new Map();
+
+const __inflightCache: Map<string, Promise<NowPlayingPayload>> =
+  ((globalThis as any).__nowPlayingInflightCache as Map<string, Promise<NowPlayingPayload>>) ||
+  new Map();
+
+(globalThis as any).__nowPlayingResponseCache = __responseCache;
+(globalThis as any).__nowPlayingInflightCache = __inflightCache;
+
+function getResponseCacheKey(limit: number) {
+  return `limit:${limit}`;
+}
+
+function clonePayload<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+/* -------------------- Core builder -------------------- */
+
+async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload> {
+  const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
+  if (!ice.ok) throw new Error(`Icecast failed: ${ice.status}`);
+  const iceJson = await ice.json();
+
+  const nowRaw = extractNowPlaying(iceJson);
+  const nowText = cleanNowText(fixMojibake(nowRaw));
+  const nowIsBad = isBadRaw(nowText);
+
+  const { artist, title } = splitTrack(nowText);
+  const track_key = normKey(artist, title);
+
+  const played_at = new Date().toISOString();
+  const played_at_ms = Date.parse(played_at);
+
+  const lastRes = await directusFetch(
+    `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
+  );
+  const lastJson = await lastRes.json();
+  const last = lastJson?.data?.[0];
+
+  let inserted = false;
+
+  if (!nowIsBad && (!last || last.track_key !== track_key)) {
+    const recentDuplicate = await wasRecentlyPlayed(track_key, played_at_ms);
+
+    if (!recentDuplicate) {
+      await ensureTrackRow(track_key, artist, title, played_at);
+
+      await directusFetch(`/items/${PLAYS_COLLECTION}`, {
+        method: "POST",
+        body: JSON.stringify({
+          track_key,
+          artist: artist || null,
+          title: title || null,
+          played_at,
+          raw: nowText || null,
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      inserted = true;
+    }
+  }
+
+  const oversample = Math.min(500, Math.max(limit * 20, limit + 80));
+
+  const params = new URLSearchParams({
+    fields: "id,track_key,artist,title,played_at,raw",
+    sort: "-played_at",
+    limit: oversample.toString(),
+  });
+
+  const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
+  const histJson = await histRes.json();
+  const historyRaw = histJson?.data || [];
+
+  const trackKeys = [
+    ...new Set(
+      historyRaw
+        .map((row: any) => String(row?.track_key || "").trim())
+        .filter(Boolean)
+    ),
+  ];
+
+  const bulkMeta = await fetchBulkTrackMeta(trackKeys);
+
+  const historyMaybe = await Promise.all(
+    historyRaw.map(async (row: any) => {
+      const a = fixMojibake(String(row.artist || ""));
+      const t = fixMojibake(String(row.title || ""));
+      const tk = String(row.track_key || "");
+      const raw = fixMojibake(String(row.raw || `${a} - ${t}`.trim()).trim());
+      const ts = toUTCms(row.played_at);
+
+      if (isBadRaw(raw)) return null;
+
+      const meta = bulkMeta.get(tk) || { first_played_at: "", cover_url: "" };
+
+      let cover_url = String(meta.cover_url || "").trim();
+      let cover_source = cover_url ? "directus" : "";
+
+      if (!cover_url) {
+        cover_url = await fetchItunesCover(a, t);
+        if (cover_url) cover_source = "itunes";
+      }
+
+      const first_played_at = String(meta.first_played_at || "").trim();
+      const first_played_at_ms = toUTCms(first_played_at);
+      const is_new = isBlockedShow(a) ? false : isNewFromFirstPlayed(first_played_at);
+
+      return {
+        id: row.id,
+        raw,
+        artist: a,
+        title: t,
+        track_key: tk,
+        played_at: row.played_at,
+        played_at_ms: ts,
+        cover_url,
+        cover_source,
+        first_played_at,
+        first_played_at_ms,
+        is_new,
+      };
+    })
+  );
+
+  const cleaned = (historyMaybe || []).filter(Boolean) as any[];
+
+  const seen = new Set<string>();
+  const uniq: any[] = [];
+
+  for (const it of cleaned) {
+    const k = `${String(it.track_key || it.raw || "")}__${Number(it.played_at_ms || 0)}`;
+    if (!it?.raw) continue;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    uniq.push(it);
+  }
+
+  const history = uniq.slice(0, limit);
+
+  let nowCover = "";
+  let nowCoverSource = "";
+  let nowFirstPlayedAt = "";
+  let nowFirstPlayedAtMs = 0;
+  let nowIsNew = false;
+
+  if (!nowIsBad) {
+    const nowMeta = await fetchTrackMetaByTrackKey(track_key);
+
+    nowCover = String(nowMeta.cover_url || "").trim();
+    nowCoverSource = nowCover ? "directus" : "";
+
+    if (!nowCover) {
+      nowCover = await fetchItunesCover(artist, title);
+      if (nowCover) nowCoverSource = "itunes";
+    }
+
+    nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
+    nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
+    nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
+  }
+
+  return {
+    ok: true,
+    inserted,
+    now: {
+      raw: nowIsBad ? "" : nowText,
+      artist: nowIsBad ? "" : artist,
+      title: nowIsBad ? "" : title,
+      track_key: nowIsBad ? "" : track_key,
+      played_at,
+      played_at_ms,
+      cover_url: nowCover,
+      cover_source: nowCoverSource,
+      first_played_at: nowIsBad ? "" : nowFirstPlayedAt,
+      first_played_at_ms: nowIsBad ? 0 : nowFirstPlayedAtMs,
+      is_new: nowIsBad ? false : nowIsNew,
+    },
+    history,
+  };
+}
+
+async function getNowPlayingPayload(limit: number): Promise<NowPlayingPayload> {
+  const key = getResponseCacheKey(limit);
+  const now = Date.now();
+
+  const cached = __responseCache.get(key);
+  if (cached && cached.exp > now) {
+    return clonePayload(cached.payload);
+  }
+
+  const inflight = __inflightCache.get(key);
+  if (inflight) {
+    return clonePayload(await inflight);
+  }
+
+  const promise = buildNowPlayingPayload(limit)
+    .then((payload) => {
+      __responseCache.set(key, {
+        exp: Date.now() + RESPONSE_CACHE_TTL_MS,
+        payload: clonePayload(payload),
+      });
+      return payload;
+    })
+    .finally(() => {
+      __inflightCache.delete(key);
+    });
+
+  __inflightCache.set(key, promise);
+
+  return clonePayload(await promise);
+}
+
 /* -------------------- API -------------------- */
 
 export const GET: APIRoute = async ({ request }) => {
   try {
+    assertEnv();
+
     const url = new URL(request.url);
     const limit = Math.min(400, Math.max(1, Number(url.searchParams.get("limit") || "12")));
 
-    const ice = await fetch(ICECAST_STATUS_URL, { cache: "no-store" });
-    if (!ice.ok) throw new Error(`Icecast failed: ${ice.status}`);
-    const iceJson = await ice.json();
+    const payload = await getNowPlayingPayload(limit);
 
-    const nowRaw = extractNowPlaying(iceJson);
-    const nowText = cleanNowText(fixMojibake(nowRaw));
-    const nowIsBad = isBadRaw(nowText);
-
-    const { artist, title } = splitTrack(nowText);
-    const track_key = normKey(artist, title);
-
-    const played_at = new Date().toISOString();
-    const played_at_ms = Date.parse(played_at);
-
-    const lastRes = await directusFetch(
-      `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
-    );
-    const lastJson = await lastRes.json();
-    const last = lastJson?.data?.[0];
-
-    let inserted = false;
-
-    if (!nowIsBad && (!last || last.track_key !== track_key)) {
-      const recentDuplicate = await wasRecentlyPlayed(track_key, played_at_ms);
-
-      if (!recentDuplicate) {
-        await ensureTrackRow(track_key, artist, title, played_at);
-
-        await directusFetch(`/items/${PLAYS_COLLECTION}`, {
-          method: "POST",
-          body: JSON.stringify({
-            track_key,
-            artist: artist || null,
-            title: title || null,
-            played_at,
-            raw: nowText || null,
-          }),
-          headers: { "Content-Type": "application/json" },
-        });
-
-        inserted = true;
-      }
-    }
-
-    const oversample = Math.min(500, Math.max(limit * 20, limit + 80));
-
-    const params = new URLSearchParams({
-      fields: "id,track_key,artist,title,played_at,raw",
-      sort: "-played_at",
-      limit: oversample.toString(),
+    return new Response(JSON.stringify(payload), {
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "public, max-age=2, s-maxage=5, stale-while-revalidate=20",
+      },
     });
-
-    const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
-    const histJson = await histRes.json();
-    const historyRaw = histJson?.data || [];
-
-    const trackKeys = [
-      ...new Set(
-        historyRaw
-          .map((row: any) => String(row?.track_key || "").trim())
-          .filter(Boolean)
-      ),
-    ];
-
-    const bulkMeta = await fetchBulkTrackMeta(trackKeys);
-
-    const historyMaybe = await Promise.all(
-      historyRaw.map(async (row: any) => {
-        const a = fixMojibake(String(row.artist || ""));
-        const t = fixMojibake(String(row.title || ""));
-        const tk = String(row.track_key || "");
-        const raw = fixMojibake(String(row.raw || `${a} - ${t}`.trim()).trim());
-        const ts = toUTCms(row.played_at);
-
-        if (isBadRaw(raw)) return null;
-
-        const meta = bulkMeta.get(tk) || { first_played_at: "", cover_url: "" };
-
-        let cover_url = String(meta.cover_url || "").trim();
-        let cover_source = cover_url ? "directus" : "";
-
-        if (!cover_url) {
-          cover_url = await fetchItunesCover(a, t);
-          if (cover_url) cover_source = "itunes";
-        }
-
-        const first_played_at = String(meta.first_played_at || "").trim();
-        const first_played_at_ms = toUTCms(first_played_at);
-        const is_new = isBlockedShow(a) ? false : isNewFromFirstPlayed(first_played_at);
-
-        return {
-          id: row.id,
-          raw,
-          artist: a,
-          title: t,
-          track_key: tk,
-          played_at: row.played_at,
-          played_at_ms: ts,
-          cover_url,
-          cover_source,
-          first_played_at,
-          first_played_at_ms,
-          is_new,
-        };
-      })
-    );
-
-    const cleaned = (historyMaybe || []).filter(Boolean) as any[];
-
-    const seen = new Set<string>();
-    const uniq: any[] = [];
-
-    for (const it of cleaned) {
-      const k = `${String(it.track_key || it.raw || "")}__${Number(it.played_at_ms || 0)}`;
-      if (!it?.raw) continue;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      uniq.push(it);
-    }
-
-    const history = uniq.slice(0, limit);
-
-    let nowCover = "";
-    let nowCoverSource = "";
-    let nowFirstPlayedAt = "";
-    let nowFirstPlayedAtMs = 0;
-    let nowIsNew = false;
-
-    if (!nowIsBad) {
-      const nowMeta = await fetchTrackMetaByTrackKey(track_key);
-
-      nowCover = String(nowMeta.cover_url || "").trim();
-      nowCoverSource = nowCover ? "directus" : "";
-
-      if (!nowCover) {
-        nowCover = await fetchItunesCover(artist, title);
-        if (nowCover) nowCoverSource = "itunes";
-      }
-
-      nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
-      nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
-      nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
-    }
-
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        inserted,
-        now: {
-          raw: nowIsBad ? "" : nowText,
-          artist: nowIsBad ? "" : artist,
-          title: nowIsBad ? "" : title,
-          track_key: nowIsBad ? "" : track_key,
-          played_at,
-          played_at_ms,
-          cover_url: nowCover,
-          cover_source: nowCoverSource,
-          first_played_at: nowIsBad ? "" : nowFirstPlayedAt,
-          first_played_at_ms: nowIsBad ? 0 : nowFirstPlayedAtMs,
-          is_new: nowIsBad ? false : nowIsNew,
-        },
-        history,
-      }),
-      {
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          "cache-control": "s-maxage=5, stale-while-revalidate=20",
-        },
-      }
-    );
   } catch (e: any) {
     return new Response(JSON.stringify({ ok: false, error: e?.message || "Server error" }), {
       status: 500,
