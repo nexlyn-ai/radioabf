@@ -94,11 +94,11 @@ export const prerender = false;
                   <div class="mt-1 flex items-center gap-2 min-w-0">
                     <div id="musicTitle" class="text-white/70 text-base md:text-lg truncate min-w-0 flex-1">—</div>
                     <span
-  id="npNewBadge"
-  class="hidden items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/15 border-rose-400/30 text-rose-100 tracking-wide flex-none"
->
-  NEW
-</span>
+                      id="npNewBadge"
+                      class="hidden items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/15 border-rose-400/30 text-rose-100 tracking-wide flex-none"
+                    >
+                      NEW
+                    </span>
                   </div>
                 </div>
                 <button
@@ -479,6 +479,20 @@ export const prerender = false;
     const hh = String(d.getHours()).padStart(2, "0");
     const mi = String(d.getMinutes()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd} • ${hh}:${mi}`;
+  }
+
+  function fmtRelativeSince(ts){
+    if (!ts) return "Recently added";
+    const diff = Math.max(0, nowTs() - Number(ts));
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 60) return mins <= 1 ? "Added 1 min ago" : `Added ${mins} min ago`;
+    if (hours < 24) return hours === 1 ? "Added 1 hour ago" : `Added ${hours} hours ago`;
+    if (days === 0) return "Added today";
+    if (days === 1) return "Added yesterday";
+    return `Added ${days} days ago`;
   }
 
   function startOfLocalDay(ts = nowTs()){
@@ -945,6 +959,31 @@ export const prerender = false;
     `;
   }
 
+  function rotationBadgeHtml(plays){
+    const n = Number(plays || 0);
+    if (n >= 6) {
+      return `<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-amber-500/12 border-amber-400/25 text-amber-200">Heavy rotation</span>`;
+    }
+    if (n >= 4) {
+      return `<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/12 border-rose-400/25 text-rose-200">Hot rotation</span>`;
+    }
+    if (n >= 2) {
+      return `<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-cyan-500/10 border-cyan-400/20 text-cyan-100">Recurrent</span>`;
+    }
+    return "";
+  }
+
+  function trendBadgeHtml(delta){
+    const d = Number(delta || 0);
+    if (d > 0) {
+      return `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-emerald-500/12 border-emerald-400/25 text-emerald-200 mb-1">Rising +${d}</div>`;
+    }
+    if (d < 0) {
+      return `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/12 border-rose-400/25 text-rose-200 mb-1">Falling ${d}</div>`;
+    }
+    return `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-white/5 border-white/10 text-white/60 mb-1">Stable</div>`;
+  }
+
   function rowHtml({ coverUrl, artist, title, time, count, blocked, voted, kNorm, kRaw, aRaw, tRaw, isNew }){
     return `
       <div class="abfHistoryRow ${voted ? "abfVotedRow" : ""} flex items-center justify-between gap-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition rounded-2xl p-3">
@@ -1053,7 +1092,7 @@ export const prerender = false;
     `;
   }
 
-  function chartRowHtml(rank, coverUrl, artist, title, count, max, moveBadge = "", unitLabel = "votes", isNew = false){
+  function chartRowHtml(rank, coverUrl, artist, title, count, max, moveBadge = "", unitLabel = "votes", isNew = false, secondaryBadge = ""){
     const pct = Math.round((Number(count) / Math.max(1, Number(max))) * 100);
     return `
       <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition">
@@ -1071,6 +1110,7 @@ export const prerender = false;
               </div>
             </div>
             <div class="ml-auto flex-none flex items-center gap-2 text-sm text-white/90 font-extrabold tabular-nums">
+              ${secondaryBadge}
               ${moveBadge}
               <span>
                 ${esc(String(count))} <span class="text-white/50 font-normal">${esc(unitLabel)}</span>
@@ -1133,7 +1173,7 @@ export const prerender = false;
             </div>
             <div class="mt-3 flex items-center justify-between gap-3">
               <div class="text-xs text-white/45">
-                First seen • <span class="tabular-nums">${esc(fmtDateTimeShort(firstSeen))}</span>
+                ${esc(fmtRelativeSince(firstSeen))} • <span class="tabular-nums">${esc(fmtDateTimeShort(firstSeen))}</span>
               </div>
               <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-2.5 py-1 rounded-xl tabular-nums">
                 ${esc(String(plays))} plays
@@ -1145,24 +1185,27 @@ export const prerender = false;
     `;
   }
 
-function buildAirplayStats(history, coverByNorm){
-  const now = nowTs();
-  const todayStart = startOfLocalDay(now);
-  const last24hStart = now - DAY;
-  const prev24hStart = now - (2 * DAY);
-  const map = Object.create(null);
-  const dedupe = new Set();
+  function buildAirplayStats(history, coverByNorm){
+    const now = nowTs();
+    const todayStart = startOfLocalDay(now);
+    const last24hStart = now - DAY;
+    const prev24hStart = now - (2 * DAY);
+    const map = Object.create(null);
+    const dedupe = new Set();
 
-  for (const entry of (history || [])){
-    const ts = Number(entry?.ts || 0);
-    const minuteKey = `${String(entry?.t || "").toLowerCase()}_${Math.floor(ts / 60000)}`;
-    if (dedupe.has(minuteKey)) continue;
-    dedupe.add(minuteKey);
+    for (const entry of (history || [])){
+      const ts = Number(entry?.ts || 0);
+      const rawTrack = String(entry?.t || "").trim();
+      if (!rawTrack || !ts) continue;
 
-    const sp = splitTrack(entry?.t || "");
-    const aRaw = String(sp.artist || "").trim();
-    const tRaw = String(sp.title || "").trim();
-	
+      const minuteKey = `${rawTrack.toLowerCase()}_${Math.floor(ts / 60000)}`;
+      if (dedupe.has(minuteKey)) continue;
+      dedupe.add(minuteKey);
+
+      const sp = splitTrack(rawTrack);
+      const aRaw = String(sp.artist || "").trim();
+      const tRaw = String(sp.title || "").trim();
+
       if ((!aRaw && !tRaw) || isBlockedShow(aRaw)) continue;
 
       const n = normKey(aRaw, tRaw);
@@ -1376,14 +1419,14 @@ function buildAirplayStats(history, coverByNorm){
       titleEl.textContent = displayTitleFor(nowArtistRaw, nowTitleRaw0);
 
       if (npNewBadge){
-  if (nowIsNew) {
-    npNewBadge.classList.remove("hidden");
-    npNewBadge.classList.add("inline-flex");
-  } else {
-    npNewBadge.classList.add("hidden");
-    npNewBadge.classList.remove("inline-flex");
-  }
-}
+        if (nowIsNew) {
+          npNewBadge.classList.remove("hidden");
+          npNewBadge.classList.add("inline-flex");
+        } else {
+          npNewBadge.classList.add("hidden");
+          npNewBadge.classList.remove("inline-flex");
+        }
+      }
 
       const nowTime = fmtTime(Number(nowEntry?.ts || 0));
       if (timeEl) timeEl.textContent = nowTime;
@@ -1611,7 +1654,8 @@ function buildAirplayStats(history, coverByNorm){
             max,
             badge,
             "votes",
-            false
+            false,
+            ""
           );
         }).join("");
       }
@@ -1649,7 +1693,8 @@ function buildAirplayStats(history, coverByNorm){
             maxP,
             "",
             "votes",
-            false
+            false,
+            ""
           );
         }).join("");
       }
@@ -1684,7 +1729,8 @@ function buildAirplayStats(history, coverByNorm){
                 maxAuto,
                 "",
                 "plays",
-                Boolean(row.isNew)
+                Boolean(row.isNew),
+                rotationBadgeHtml(Number(row.plays || 0))
               );
             }).join("");
           }
@@ -1699,12 +1745,6 @@ function buildAirplayStats(history, coverByNorm){
             autoTrendingEl.innerHTML = airplayStats.trending.map((row, idx) => {
               if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
               const delta = Number(row.delta24 || 0);
-              const rightBadge =
-                delta > 0
-                  ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-emerald-500/12 border-emerald-400/25 text-emerald-200 mb-1">+${delta}</div>`
-                  : delta < 0
-                  ? `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-rose-500/12 border-rose-400/25 text-rose-200 mb-1">${delta}</div>`
-                  : `<div class="inline-flex items-center justify-center px-2 py-1 rounded-full text-[11px] font-extrabold border bg-white/5 border-white/10 text-white/60 mb-1">=</div>`;
 
               return compactMetricRowHtml({
                 rank: idx + 1,
@@ -1713,10 +1753,10 @@ function buildAirplayStats(history, coverByNorm){
                 title: displayTitleFor(row.artist || "", row.title || ""),
                 metricValue: Number(row.plays24h || 0),
                 metricLabel: "24h plays",
-                subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Trend delta: ${delta >= 0 ? "+" : ""}${delta}`,
+                subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Delta: ${delta >= 0 ? "+" : ""}${delta}`,
                 accent: "emerald",
                 isNew: Boolean(row.isNew),
-                rightBadge,
+                rightBadge: trendBadgeHtml(delta),
               });
             }).join("");
           }
