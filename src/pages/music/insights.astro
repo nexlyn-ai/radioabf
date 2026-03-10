@@ -1016,13 +1016,25 @@ export const prerender = false;
     state.timer = null;
   }
 
-  function startTimer(){
-    stopTimer();
-    state.timer = setInterval(() => {
-      if (state.inFlight) return;
-      render();
-    }, 8000);
-  }
+function startTimer(){
+  stopTimer();
+
+  let statsTick = 0;
+
+  state.timer = setInterval(() => {
+    if (state.inFlight) return;
+
+    render();
+
+    statsTick++;
+
+    if (statsTick >= 8) {   // ~64 secondes
+      fetchMusicStats();
+      statsTick = 0;
+    }
+
+  }, 8000);
+}
 
 function init(){
   if (!isInsightsRoute()) return;
