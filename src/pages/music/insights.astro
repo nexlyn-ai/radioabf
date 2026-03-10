@@ -285,7 +285,7 @@ export const prerender = false;
                     <div class="text-xs text-white/50 mt-1">Fresh tracks recently detected in the rotation</div>
                   </div>
                   <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
-                    Top 12
+                    Top 14
                   </div>
                 </div>
               </div>
@@ -784,7 +784,7 @@ export const prerender = false;
     const newEntries = rows
       .filter((x) => Boolean(x.isNew))
       .sort((a, b) => Number(b.firstSeen || 0) - Number(a.firstSeen || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
-      .slice(0, 12);
+      .slice(0, 14);
 
     return { mostPlayed, today, trending, newEntries };
   }
