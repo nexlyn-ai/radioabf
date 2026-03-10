@@ -204,16 +204,28 @@ export const prerender = false;
             </div>
 
             <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-                Auto charts
-              </span>
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-                Based on live history
-              </span>
-              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-                Updates every 8s
-              </span>
-            </div>
+  <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+    Auto charts
+  </span>
+  <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+    Based on live history
+  </span>
+  <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+    Updates every 8s
+  </span>
+  <span
+    id="tracksIndexedBadge"
+    class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none tabular-nums"
+  >
+    — tracks indexed
+  </span>
+  <span
+    id="airplaysLoggedBadge"
+    class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none tabular-nums"
+  >
+    — airplays logged
+  </span>
+</div>
           </div>
         </div>
 
@@ -1012,14 +1024,18 @@ export const prerender = false;
     }, 8000);
   }
 
-  function init(){
-    if (!isInsightsRoute()) return;
-    const root = getRoot();
-    if (!root) return;
-    state.lastAutoHash = "";
-    render();
-    startTimer();
-  }
+function init(){
+  if (!isInsightsRoute()) return;
+  const root = getRoot();
+  if (!root) return;
+
+  state.lastAutoHash = "";
+
+  fetchMusicStats();
+
+  render();
+  startTimer();
+}
 
   if (!state.bound){
     state.bound = true;
@@ -1034,6 +1050,26 @@ export const prerender = false;
       if (t - state.lastRenderAt > 400) render();
     });
   }
+
+async function fetchMusicStats(){
+  try{
+    const res = await fetch("/api/music-stats", { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+
+    const tracksEl = document.getElementById("tracksIndexedBadge");
+    const airplaysEl = document.getElementById("airplaysLoggedBadge");
+
+    if (tracksEl) {
+      const tracks = Number(data?.tracks || 0);
+      tracksEl.textContent = `${tracks.toLocaleString()} tracks indexed`;
+    }
+
+    if (airplaysEl) {
+      const airplays = Number(data?.airplays || 0);
+      airplaysEl.textContent = `${airplays.toLocaleString()} airplays logged`;
+    }
+  } catch {}
+}
 
   init();
 })();
