@@ -1654,33 +1654,7 @@ function buildAirplayStats(history, coverByNorm){
         }).join("");
       }
 
-const statsSourceRaw = [
-  ...(state.lastNow ? [{
-    t: state.lastNow.t,
-    ts: Number(state.lastNow.ts || 0),
-    cover_url: String(state.lastNow.cover_url || ""),
-    cover_source: String(state.lastNow.cover_source || ""),
-    is_new: Boolean(state.lastNow.is_new),
-    first_played_at_ms: Number(state.lastNow.first_played_at_ms || 0),
-  }] : []),
-  ...history,
-];
-
-const statsSource = [];
-const statsSeen = new Set();
-
-for (const entry of statsSourceRaw) {
-  const raw = String(entry?.t || "").trim();
-  const ts = Number(entry?.ts || 0);
-  if (!raw) continue;
-
-  const key = `${raw.toLowerCase()}__${ts}`;
-  if (statsSeen.has(key)) continue;
-  statsSeen.add(key);
-  statsSource.push(entry);
-}
-
-const airplayStats = buildAirplayStats(statsSource, coverByNorm);
+      const airplayStats = buildAirplayStats(history, coverByNorm);
 
       const autoHash = JSON.stringify({
         mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays, x.coverUrl, x.isNew]),
