@@ -852,9 +852,23 @@ export const prerender = false;
         frameLoop();
       }
 
-      function reattachStudio() {
-        attachToCurrentPage();
-      }
+function reattachStudio() {
+  attachToCurrentPage();
+
+  const tools = window.__abfAudioTools;
+  const graph = tools?.getAudioGraph?.();
+
+  if (graph?.audio && !graph?.analyser) {
+    tools?.ensureAudioGraph?.();
+  }
+
+  if (!graph?.audio) {
+    const globalAudio = window.__abf?.audio || null;
+    if (globalAudio) {
+      tools?.ensureAudioGraph?.();
+    }
+  }
+}
 
       ensureEngineRunning();
 
@@ -869,6 +883,7 @@ export const prerender = false;
       window.addEventListener("pageshow", reattachStudio);
       window.addEventListener("focus", reattachStudio);
       window.addEventListener("resize", reattachStudio);
+	  window.addEventListener("abf:audio-tools-ready", reattachStudio);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") reattachStudio();
       });

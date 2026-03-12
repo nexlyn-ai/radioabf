@@ -1544,10 +1544,15 @@ function apply(root = document){
           }
         }
 		
-		window.__abfAudioTools = window.__abfAudioTools || {};
+window.__abfAudioTools = window.__abfAudioTools || {};
 
 window.__abfAudioTools.ensureAudioGraph = () => {
   ensureAudioGraph();
+
+  try {
+    window.dispatchEvent(new CustomEvent("abf:audio-tools-ready"));
+  } catch {}
+
   return {
     audio,
     audioCtx,
@@ -1574,6 +1579,18 @@ window.__abfAudioTools.getPlayerState = () => ({
   volume: Number(audio?.volume ?? 0),
   currentStreamIndex: Number(S.currentStreamIndex ?? 0)
 });
+
+window.__abfAudioTools.getNowPlayingSnapshot = () => ({
+  artist: document.getElementById("npArtist")?.textContent?.trim() || "",
+  title: document.getElementById("npTitle")?.textContent?.trim() || "",
+  cover: document.getElementById("playerCover")?.getAttribute("src") || ""
+});
+
+function notifyAudioToolsReady(){
+  try {
+    window.dispatchEvent(new CustomEvent("abf:audio-tools-ready"));
+  } catch {}
+}
 		
         async function resumeAudioCtx(){
           try {
@@ -1990,6 +2007,7 @@ if (ft){
               await resumeAudioCtx();
               startVisualizer();
               ensureVisualizerReady();
+			  notifyAudioToolsReady();
               syncUI();
             });
             audio.addEventListener("pause", () => {
@@ -2115,6 +2133,7 @@ if (ft){
           S.__fs.active = false;
           closeFullscreen();
           resetTabOnNav();
+		  notifyAudioToolsReady();
           bindUI();
           fetchNowPlaying();
           window.__abfUpdateLayout?.();
