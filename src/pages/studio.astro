@@ -16,7 +16,7 @@ export const prerender = false;
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(47,194,255,0.10),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.10),transparent_30%)]"></div>
 
-      <div class="relative z-10 grid grid-cols-1 lg:grid-cols-[1.2fr_.8fr] gap-6 items-center">
+      <div class="relative z-10 grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-6 items-start">
         <div class="min-w-0">
           <div class="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
             <span class="relative flex h-2.5 w-2.5">
@@ -31,7 +31,7 @@ export const prerender = false;
           </h1>
 
           <p class="mt-3 text-sm sm:text-base text-white/72 leading-relaxed max-w-2xl">
-            Real-time analysis of the RadioABF player output, with premium live monitoring tools built directly into the experience.
+            Real-time analysis of the RadioABF player output with premium monitoring tools, live metering and spectrum intelligence built directly into the RadioABF experience.
           </p>
 
           <div class="mt-5 flex flex-wrap gap-2">
@@ -42,12 +42,12 @@ export const prerender = false;
               Persistent Audio Graph
             </span>
             <span class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wider text-white/70">
-              Live Spectrum
+              Realtime Analysis
             </span>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
             <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
               Live status
@@ -61,10 +61,26 @@ export const prerender = false;
               Audio context
             </div>
             <div id="heroAudioCtxState" class="mt-2 text-lg font-bold text-white">—</div>
-            <div class="mt-1 text-xs text-white/50">Realtime analysis engine</div>
+            <div class="mt-1 text-xs text-white/50">Realtime engine</div>
           </div>
 
-          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4 col-span-2">
+          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+            <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
+              Dominant zone
+            </div>
+            <div id="heroDominantBand" class="mt-2 text-lg font-bold text-white">—</div>
+            <div class="mt-1 text-xs text-white/50">Current energy focus</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+            <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
+              Stereo width
+            </div>
+            <div id="heroStereoWidth" class="mt-2 text-lg font-bold text-white">—</div>
+            <div class="mt-1 text-xs text-white/50">Field openness</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4 sm:col-span-2">
             <div class="flex items-center gap-3 min-w-0">
               <div class="abfCover w-14 h-14 rounded-2xl border border-white/10 overflow-hidden flex-none">
                 <img id="heroCover" class="hidden" alt="Current cover" />
@@ -174,7 +190,7 @@ export const prerender = false;
     </section>
 
     <!-- ROW 2 -->
-    <section class="grid grid-cols-1 2xl:grid-cols-[1fr_1.1fr] gap-6 mb-6">
+    <section class="grid grid-cols-1 2xl:grid-cols-[.9fr_1.1fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -226,6 +242,17 @@ export const prerender = false;
             </div>
           </div>
         </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Peak</div>
+            <div id="wavePeakText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">RMS</div>
+            <div id="waveRmsText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
@@ -258,7 +285,7 @@ export const prerender = false;
     </section>
 
     <!-- ROW 3 -->
-    <section class="grid grid-cols-1 xl:grid-cols-[1fr_1fr_.8fr] gap-6 mb-6">
+    <section class="grid grid-cols-1 xl:grid-cols-[1fr_1fr_.85fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -277,19 +304,8 @@ export const prerender = false;
           id="waveformCanvas"
           width="1200"
           height="300"
-          class="w-full h-[150px] rounded-xl border border-white/10 bg-black/40"
+          class="w-full h-[180px] rounded-xl border border-white/10 bg-black/40"
         ></canvas>
-
-        <div class="mt-4 grid grid-cols-2 gap-3">
-          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
-            <div class="text-xs text-white/45 uppercase tracking-wider">Peak</div>
-            <div id="wavePeakText" class="mt-2 text-sm font-semibold text-white/85">—</div>
-          </div>
-          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
-            <div class="text-xs text-white/45 uppercase tracking-wider">RMS</div>
-            <div id="waveRmsText" class="mt-2 text-sm font-semibold text-white/85">—</div>
-          </div>
-        </div>
       </div>
 
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
@@ -310,7 +326,7 @@ export const prerender = false;
           id="stereoFieldCanvas"
           width="800"
           height="320"
-          class="w-full h-[160px] rounded-xl border border-white/10 bg-black/40"
+          class="w-full h-[180px] rounded-xl border border-white/10 bg-black/40"
         ></canvas>
 
         <div class="mt-4 rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
@@ -440,6 +456,8 @@ export const prerender = false;
 
           heroPlayerState: $("heroPlayerState"),
           heroAudioCtxState: $("heroAudioCtxState"),
+          heroDominantBand: $("heroDominantBand"),
+          heroStereoWidth: $("heroStereoWidth"),
           heroCover: $("heroCover"),
           heroCoverFallback: $("heroCoverFallback"),
           heroArtist: $("heroArtist"),
@@ -819,6 +837,7 @@ export const prerender = false;
         if (E.elems.stereoBalanceIndicator) E.elems.stereoBalanceIndicator.style.left = `${balancePct}%`;
         if (E.elems.stereoWidthBar) E.elems.stereoWidthBar.style.width = `${Math.round(width)}%`;
         if (E.elems.stereoWidthText) E.elems.stereoWidthText.textContent = `${Math.round(width)}%`;
+        if (E.elems.heroStereoWidth) E.elems.heroStereoWidth.textContent = `${Math.round(width)}%`;
 
         if (E.elems.stereoBalanceText) {
           if (Math.abs(balance) < 0.08) E.elems.stereoBalanceText.textContent = "Centered";
@@ -878,7 +897,7 @@ export const prerender = false;
         const centroid = total > 0 ? weightedSum / total : 0;
         if (E.elems.centroidText) E.elems.centroidText.textContent = centroid > 0 ? `${Math.round(centroid)} Hz` : "—";
 
-        if (E.elems.dominantBandText || E.elems.miniDominantBar) {
+        if (E.elems.dominantBandText || E.elems.miniDominantBar || E.elems.heroDominantBand) {
           const maxVal = Math.max(lowPct, midPct, highPct);
           let label = "Balanced";
           if (maxVal === lowPct) label = "Low / Bass";
@@ -886,6 +905,7 @@ export const prerender = false;
           else if (maxVal === highPct) label = "High";
 
           if (E.elems.dominantBandText) E.elems.dominantBandText.textContent = label;
+          if (E.elems.heroDominantBand) E.elems.heroDominantBand.textContent = label;
           if (E.elems.miniDominantBar) E.elems.miniDominantBar.style.width = `${maxVal}%`;
         }
       }
