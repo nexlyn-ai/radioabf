@@ -120,10 +120,10 @@ export const prerender = false;
               <div class="w-full max-w-[96px] h-full rounded-xl border border-white/10 bg-black/40 p-2">
                 <div class="relative h-full w-full overflow-hidden rounded-lg bg-[linear-gradient(180deg,rgba(239,68,68,0.14)_0%,rgba(250,204,21,0.12)_28%,rgba(34,197,94,0.10)_100%)]">
                   <div
-                    id="vuLeft"
-                    class="absolute inset-x-0 bottom-0 origin-bottom scale-y-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)]"
-                    style="height:100%;"
-                  ></div>
+  id="vuLeft"
+  class="absolute inset-x-0 bottom-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)] transition-[height] duration-75"
+  style="height:0%;"
+></div>
                 </div>
               </div>
             </div>
@@ -138,10 +138,10 @@ export const prerender = false;
               <div class="w-full max-w-[96px] h-full rounded-xl border border-white/10 bg-black/40 p-2">
                 <div class="relative h-full w-full overflow-hidden rounded-lg bg-[linear-gradient(180deg,rgba(239,68,68,0.14)_0%,rgba(250,204,21,0.12)_28%,rgba(34,197,94,0.10)_100%)]">
                   <div
-                    id="vuRight"
-                    class="absolute inset-x-0 bottom-0 origin-bottom scale-y-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)]"
-                    style="height:100%;"
-                  ></div>
+  id="vuRight"
+  class="absolute inset-x-0 bottom-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)] transition-[height] duration-75"
+  style="height:0%;"
+></div>
                 </div>
               </div>
             </div>
@@ -311,8 +311,8 @@ export const prerender = false;
           const levelL = Math.min(1, rmsL * 3.2);
           const levelR = Math.min(1, rmsR * 3.2);
 
-          leftEl.style.transform = `scaleY(${levelL})`;
-          rightEl.style.transform = `scaleY(${levelR})`;
+          leftEl.style.height = `${Math.max(4, levelL * 100)}%`;
+		  rightEl.style.height = `${Math.max(4, levelR * 100)}%`;
 
           if (vuLValue) vuLValue.textContent = `${Math.round(levelL * 100)}%`;
           if (vuRValue) vuRValue.textContent = `${Math.round(levelR * 100)}%`;
