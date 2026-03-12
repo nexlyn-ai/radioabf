@@ -1,0 +1,200 @@
+---
+import Base from "../layouts/Base.astro";
+export const prerender = false;
+---
+
+<Base
+  title="Studio Tools — RadioABF"
+  description="Real-time audio tools and live player analysis on RadioABF."
+  canonical="/studio"
+  image="/og-image.jpg"
+>
+  <div id="studioPageRoot">
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-500/15 blur-[120px]"></div>
+
+      <div class="relative z-10 flex flex-col gap-4">
+        <div class="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
+          Live Audio Tools
+        </div>
+
+        <div class="max-w-3xl">
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+            Studio Monitoring
+          </h1>
+          <p class="mt-3 text-sm sm:text-base text-white/72 leading-relaxed max-w-2xl">
+            Real-time analysis of the RadioABF player output, with premium live monitoring tools built directly into the experience.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Audio Bridge
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              Player Connection
+            </h2>
+          </div>
+
+          <div
+            id="studioBridgeBadge"
+            class="inline-flex items-center justify-center px-3 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] uppercase tracking-wider text-white/70"
+          >
+            waiting
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Audio element</div>
+            <div id="studioAudioState" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Audio context</div>
+            <div id="studioCtxState" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Analyser node</div>
+            <div id="studioAnalyserState" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Player status</div>
+            <div id="studioPlayerState" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+          Live Output
+        </div>
+        <h2 class="mt-1 text-xl font-bold text-white">
+          Now Playing Mirror
+        </h2>
+
+        <div class="mt-4 flex items-center gap-4">
+          <div class="abfCover w-20 h-20 rounded-2xl border border-white/10 overflow-hidden flex-none">
+            <img id="studioCover" class="hidden" alt="Current cover" />
+            <div id="studioCoverFallback" class="abfCoverFallback">
+              <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+            </div>
+          </div>
+
+          <div class="min-w-0">
+            <div id="studioArtist" class="font-semibold text-sm text-white truncate">—</div>
+            <div id="studioTitle" class="mt-1 text-sm text-white/65 truncate">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] p-6 text-center text-white/45 text-sm">
+      Future audio analyzers will appear here in the next step.
+    </section>
+  </div>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+
+      function setCover(url) {
+        const img = $("studioCover");
+        const fb = $("studioCoverFallback");
+        if (!img) return;
+
+        img.onerror = () => {
+          img.removeAttribute("src");
+          img.classList.add("hidden");
+          if (fb) fb.style.display = "";
+        };
+
+        if (url) {
+          img.src = url;
+          img.classList.remove("hidden");
+          if (fb) fb.style.display = "none";
+        } else {
+          img.removeAttribute("src");
+          img.classList.add("hidden");
+          if (fb) fb.style.display = "";
+        }
+      }
+
+      function syncNowPlaying() {
+        const npArtist = document.getElementById("npArtist");
+        const npTitle = document.getElementById("npTitle");
+        const playerCover = document.getElementById("playerCover");
+
+        const artist = npArtist?.textContent?.trim() || "—";
+        const title = npTitle?.textContent?.trim() || "—";
+        const coverUrl = playerCover?.getAttribute("src") || "";
+
+        const a = $("studioArtist");
+        const t = $("studioTitle");
+
+        if (a) a.textContent = artist;
+        if (t) t.textContent = title;
+        setCover(coverUrl);
+      }
+
+      function syncBridge() {
+        const badge = $("studioBridgeBadge");
+        const audioState = $("studioAudioState");
+        const ctxState = $("studioCtxState");
+        const analyserState = $("studioAnalyserState");
+        const playerState = $("studioPlayerState");
+
+        const tools = window.__abfAudioTools;
+        const graph = tools?.getAudioGraph?.();
+        const state = tools?.getPlayerState?.();
+
+        const hasAudio = !!graph?.audio;
+        const hasCtx = !!graph?.audioCtx;
+        const hasAnalyser = !!graph?.analyser;
+
+        if (badge) {
+          badge.textContent = hasAudio ? "connected" : "waiting";
+          badge.className =
+            "inline-flex items-center justify-center px-3 py-1 rounded-xl border text-[11px] uppercase tracking-wider " +
+            (hasAudio
+              ? "border-cyan-400/25 bg-cyan-400/10 text-cyan-200"
+              : "border-white/10 bg-white/5 text-white/70");
+        }
+
+        if (audioState) audioState.textContent = hasAudio ? "Detected" : "Not detected";
+        if (ctxState) ctxState.textContent = hasCtx ? (graph.audioCtx.state || "ready") : "Not initialized";
+        if (analyserState) analyserState.textContent = hasAnalyser ? "Ready" : "Not initialized";
+
+        if (playerState) {
+          if (!state) {
+            playerState.textContent = "Unavailable";
+          } else if (state.isStopped) {
+            playerState.textContent = "Stopped";
+          } else if (state.paused) {
+            playerState.textContent = "Paused";
+          } else {
+            playerState.textContent = "Live";
+          }
+        }
+      }
+
+      function bootStudioPage() {
+        syncBridge();
+        syncNowPlaying();
+      }
+
+      bootStudioPage();
+      document.addEventListener("astro:page-load", bootStudioPage);
+      document.addEventListener("astro:after-swap", bootStudioPage);
+      window.addEventListener("abf:nowplaying-updated", bootStudioPage);
+    })();
+  </script>
+</Base>

@@ -1541,6 +1541,38 @@ function apply(root = document){
             timeData = new Uint8Array(analyser.frequencyBinCount);
           }
         }
+		
+		window.__abfAudioTools = window.__abfAudioTools || {};
+
+window.__abfAudioTools.ensureAudioGraph = () => {
+  ensureAudioGraph();
+  return {
+    audio,
+    audioCtx,
+    analyser,
+    freqData,
+    timeData,
+    sourceNode
+  };
+};
+
+window.__abfAudioTools.getAudioGraph = () => ({
+  audio: audio || null,
+  audioCtx: audioCtx || null,
+  analyser: analyser || null,
+  freqData: freqData || null,
+  timeData: timeData || null,
+  sourceNode: sourceNode || null
+});
+
+window.__abfAudioTools.getPlayerState = () => ({
+  isStopped: !!S.isStopped,
+  paused: !!audio?.paused,
+  muted: !!audio?.muted,
+  volume: Number(audio?.volume ?? 0),
+  currentStreamIndex: Number(S.currentStreamIndex ?? 0)
+});
+		
         async function resumeAudioCtx(){
           try {
             if (audioCtx && audioCtx.state === "suspended") await audioCtx.resume();
