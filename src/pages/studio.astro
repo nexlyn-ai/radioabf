@@ -97,14 +97,76 @@ export const prerender = false;
       </div>
     </section>
 
-    <section class="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] p-6 text-center text-white/45 text-sm">
-      Future audio analyzers will appear here in the next step.
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Signal Level
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              VU Meter
+            </h2>
+          </div>
+
+          <div class="text-xs text-white/45">
+            Live
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="flex items-end justify-center gap-3 h-40">
+              <div class="w-full max-w-[96px] h-full rounded-xl border border-white/10 bg-black/40 p-2">
+                <div class="relative h-full w-full overflow-hidden rounded-lg bg-[linear-gradient(180deg,rgba(239,68,68,0.14)_0%,rgba(250,204,21,0.12)_28%,rgba(34,197,94,0.10)_100%)]">
+                  <div
+                    id="vuLeft"
+                    class="absolute inset-x-0 bottom-0 origin-bottom scale-y-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)]"
+                    style="height:100%;"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <div class="text-xs text-white/45 uppercase tracking-wider">Left</div>
+              <div id="vuLeftValue" class="text-xs text-white/60">0%</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="flex items-end justify-center gap-3 h-40">
+              <div class="w-full max-w-[96px] h-full rounded-xl border border-white/10 bg-black/40 p-2">
+                <div class="relative h-full w-full overflow-hidden rounded-lg bg-[linear-gradient(180deg,rgba(239,68,68,0.14)_0%,rgba(250,204,21,0.12)_28%,rgba(34,197,94,0.10)_100%)]">
+                  <div
+                    id="vuRight"
+                    class="absolute inset-x-0 bottom-0 origin-bottom scale-y-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)]"
+                    style="height:100%;"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <div class="text-xs text-white/45 uppercase tracking-wider">Right</div>
+              <div id="vuRightValue" class="text-xs text-white/60">0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] p-6 flex items-center justify-center text-center text-white/45 text-sm">
+        Future audio analyzers will appear here in the next step.
+      </div>
     </section>
   </div>
 
   <script is:inline data-astro-rerun>
     (() => {
       const $ = (id) => document.getElementById(id);
+
+      window.__abfStudio = window.__abfStudio || {
+        raf: 0,
+        started: false
+      };
 
       function setCover(url) {
         const img = $("studioCover");
@@ -180,21 +242,100 @@ export const prerender = false;
             playerState.textContent = "Stopped";
           } else if (state.paused) {
             playerState.textContent = "Paused";
+          } else if (state.muted) {
+            playerState.textContent = "Muted";
           } else {
             playerState.textContent = "Live";
           }
         }
       }
 
+      function stopVuMeter() {
+        if (window.__abfStudio.raf) {
+          cancelAnimationFrame(window.__abfStudio.raf);
+          window.__abfStudio.raf = 0;
+        }
+        window.__abfStudio.started = false;
+      }
+
+      function startVuMeter() {
+        if (window.__abfStudio.started) return;
+
+        const tools = window.__abfAudioTools;
+        if (!tools?.ensureAudioGraph) return;
+
+        const graph = tools.ensureAudioGraph();
+        if (!graph?.analyser) return;
+
+        const analyser = graph.analyser;
+        const bufferLength = analyser.fftSize || 2048;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const vuL = $("vuLeft");
+        const vuR = $("vuRight");
+        const vuLValue = $("vuLeftValue");
+        const vuRValue = $("vuRightValue");
+
+        if (!vuL || !vuR) return;
+
+        window.__abfStudio.started = true;
+
+        const update = () => {
+          const leftEl = $("vuLeft");
+          const rightEl = $("vuRight");
+
+          if (!leftEl || !rightEl) {
+            stopVuMeter();
+            return;
+          }
+
+          analyser.getByteTimeDomainData(dataArray);
+
+          let sumL = 0;
+          let sumR = 0;
+          const half = Math.floor(bufferLength / 2);
+
+          for (let i = 0; i < half; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sumL += v * v;
+          }
+
+          for (let i = half; i < bufferLength; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sumR += v * v;
+          }
+
+          const rmsL = Math.sqrt(sumL / half);
+          const rmsR = Math.sqrt(sumR / half);
+
+          const levelL = Math.min(1, rmsL * 3.2);
+          const levelR = Math.min(1, rmsR * 3.2);
+
+          leftEl.style.transform = `scaleY(${levelL})`;
+          rightEl.style.transform = `scaleY(${levelR})`;
+
+          if (vuLValue) vuLValue.textContent = `${Math.round(levelL * 100)}%`;
+          if (vuRValue) vuRValue.textContent = `${Math.round(levelR * 100)}%`;
+
+          window.__abfStudio.raf = requestAnimationFrame(update);
+        };
+
+        update();
+      }
+
       function bootStudioPage() {
         syncBridge();
         syncNowPlaying();
+        startVuMeter();
       }
 
       bootStudioPage();
+
       document.addEventListener("astro:page-load", bootStudioPage);
       document.addEventListener("astro:after-swap", bootStudioPage);
       window.addEventListener("abf:nowplaying-updated", bootStudioPage);
+      window.addEventListener("pageshow", bootStudioPage);
+      window.addEventListener("focus", bootStudioPage);
     })();
   </script>
 </Base>
