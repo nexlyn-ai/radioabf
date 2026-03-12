@@ -1530,19 +1530,56 @@ function apply(root = document){
           fx.stopAll();
         }
         // ========= AUDIO GRAPH =========
-        let audioCtx, analyser, freqData, timeData, sourceNode;
-        function ensureAudioGraph(){
-          if (!audioCtx){
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 2048;
-            sourceNode = audioCtx.createMediaElementSource(audio);
-            sourceNode.connect(analyser);
-            analyser.connect(audioCtx.destination);
-            freqData = new Uint8Array(analyser.frequencyBinCount);
-            timeData = new Uint8Array(analyser.frequencyBinCount);
-          }
-        }
+const ABF_GRAPH = window.__abfGraphState = window.__abfGraphState || {
+  audioCtx: null,
+  analyser: null,
+  freqData: null,
+  timeData: null,
+  sourceNode: null
+};
+
+let audioCtx = ABF_GRAPH.audioCtx;
+let analyser = ABF_GRAPH.analyser;
+let freqData = ABF_GRAPH.freqData;
+let timeData = ABF_GRAPH.timeData;
+let sourceNode = ABF_GRAPH.sourceNode;
+
+function syncAudioGraphLocals() {
+  audioCtx = ABF_GRAPH.audioCtx;
+  analyser = ABF_GRAPH.analyser;
+  freqData = ABF_GRAPH.freqData;
+  timeData = ABF_GRAPH.timeData;
+  sourceNode = ABF_GRAPH.sourceNode;
+}
+
+function ensureAudioGraph(){
+  syncAudioGraphLocals();
+
+  if (!ABF_GRAPH.audioCtx){
+    ABF_GRAPH.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    ABF_GRAPH.analyser = ABF_GRAPH.audioCtx.createAnalyser();
+    ABF_GRAPH.analyser.fftSize = 2048;
+
+    ABF_GRAPH.sourceNode = ABF_GRAPH.audioCtx.createMediaElementSource(audio);
+    ABF_GRAPH.sourceNode.connect(ABF_GRAPH.analyser);
+    ABF_GRAPH.analyser.connect(ABF_GRAPH.audioCtx.destination);
+
+    ABF_GRAPH.freqData = new Uint8Array(ABF_GRAPH.analyser.frequencyBinCount);
+    ABF_GRAPH.timeData = new Uint8Array(ABF_GRAPH.analyser.frequencyBinCount);
+  }
+
+  syncAudioGraphLocals();
+}
+
+async function resumeAudioCtx(){
+  ensureAudioGraph();
+  try {
+    if (ABF_GRAPH.audioCtx && ABF_GRAPH.audioCtx.state === "suspended") {
+      await ABF_GRAPH.audioCtx.resume();
+    }
+  } catch {}
+  syncAudioGraphLocals();
+}
 		
 window.__abfAudioTools = window.__abfAudioTools || {};
 
@@ -1555,21 +1592,21 @@ window.__abfAudioTools.ensureAudioGraph = () => {
 
   return {
     audio,
-    audioCtx,
-    analyser,
-    freqData,
-    timeData,
-    sourceNode
+    audioCtx: ABF_GRAPH.audioCtx,
+    analyser: ABF_GRAPH.analyser,
+    freqData: ABF_GRAPH.freqData,
+    timeData: ABF_GRAPH.timeData,
+    sourceNode: ABF_GRAPH.sourceNode
   };
 };
 
 window.__abfAudioTools.getAudioGraph = () => ({
   audio: audio || null,
-  audioCtx: audioCtx || null,
-  analyser: analyser || null,
-  freqData: freqData || null,
-  timeData: timeData || null,
-  sourceNode: sourceNode || null
+  audioCtx: ABF_GRAPH.audioCtx || null,
+  analyser: ABF_GRAPH.analyser || null,
+  freqData: ABF_GRAPH.freqData || null,
+  timeData: ABF_GRAPH.timeData || null,
+  sourceNode: ABF_GRAPH.sourceNode || null
 });
 
 window.__abfAudioTools.getPlayerState = () => ({
@@ -1585,6 +1622,12 @@ window.__abfAudioTools.getNowPlayingSnapshot = () => ({
   title: document.getElementById("npTitle")?.textContent?.trim() || "",
   cover: document.getElementById("playerCover")?.getAttribute("src") || ""
 });
+
+function notifyAudioToolsReady(){
+  try {
+    window.dispatchEvent(new CustomEvent("abf:audio-tools-ready"));
+  } catch {}
+}
 
 function notifyAudioToolsReady(){
   try {
