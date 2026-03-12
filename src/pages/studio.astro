@@ -16,6 +16,10 @@ export const prerender = false;
 
       <div class="relative z-10 flex flex-col gap-4">
         <div class="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-75"></span>
+            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-300"></span>
+          </span>
           Live Audio Tools
         </div>
 
@@ -94,6 +98,17 @@ export const prerender = false;
             <div id="studioTitle" class="mt-1 text-sm text-white/65 truncate">—</div>
           </div>
         </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-3">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Peak</div>
+            <div id="studioPeakText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">RMS</div>
+            <div id="studioRmsText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -109,9 +124,7 @@ export const prerender = false;
             </h2>
           </div>
 
-          <div class="text-xs text-white/45">
-            Live
-          </div>
+          <div class="text-xs text-white/45">Live</div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -120,10 +133,10 @@ export const prerender = false;
               <div class="w-full max-w-[96px] h-full rounded-xl border border-white/10 bg-black/40 p-2">
                 <div class="relative h-full w-full overflow-hidden rounded-lg bg-[linear-gradient(180deg,rgba(239,68,68,0.14)_0%,rgba(250,204,21,0.12)_28%,rgba(34,197,94,0.10)_100%)]">
                   <div
-  id="vuLeft"
-  class="absolute inset-x-0 bottom-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)] transition-[height] duration-75"
-  style="height:0%;"
-></div>
+                    id="vuLeft"
+                    class="absolute inset-x-0 bottom-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)] transition-[height] duration-75"
+                    style="height:0%;"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -138,10 +151,10 @@ export const prerender = false;
               <div class="w-full max-w-[96px] h-full rounded-xl border border-white/10 bg-black/40 p-2">
                 <div class="relative h-full w-full overflow-hidden rounded-lg bg-[linear-gradient(180deg,rgba(239,68,68,0.14)_0%,rgba(250,204,21,0.12)_28%,rgba(34,197,94,0.10)_100%)]">
                   <div
-  id="vuRight"
-  class="absolute inset-x-0 bottom-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)] transition-[height] duration-75"
-  style="height:0%;"
-></div>
+                    id="vuRight"
+                    class="absolute inset-x-0 bottom-0 rounded-b-lg bg-gradient-to-t from-cyan-500 via-blue-400 to-cyan-200 shadow-[0_0_35px_rgba(47,194,255,0.28)] transition-[height] duration-75"
+                    style="height:0%;"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -153,8 +166,108 @@ export const prerender = false;
         </div>
       </div>
 
-      <div class="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] p-6 flex items-center justify-center text-center text-white/45 text-sm">
-        Future audio analyzers will appear here in the next step.
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Frequency Analysis
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              Spectrum Analyzer
+            </h2>
+          </div>
+
+          <div class="text-xs text-white/45">Live</div>
+        </div>
+
+        <canvas
+          id="spectrumCanvas"
+          width="1200"
+          height="360"
+          class="w-full h-[180px] rounded-xl border border-white/10 bg-black/40"
+        ></canvas>
+
+        <div class="mt-3 flex items-center justify-between text-[11px] text-white/40 uppercase tracking-wider">
+          <span>Low</span>
+          <span>Mid</span>
+          <span>High</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Time Domain
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              Waveform
+            </h2>
+          </div>
+
+          <div class="text-xs text-white/45">Live</div>
+        </div>
+
+        <canvas
+          id="waveformCanvas"
+          width="1200"
+          height="300"
+          class="w-full h-[150px] rounded-xl border border-white/10 bg-black/40"
+        ></canvas>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Frequency Bands
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              Low / Mid / High
+            </h2>
+          </div>
+
+          <div class="text-xs text-white/45">Energy</div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Low</div>
+            <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
+              <div id="bandLowBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
+            </div>
+            <div id="bandLowText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Mid</div>
+            <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
+              <div id="bandMidBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
+            </div>
+            <div id="bandMidText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">High</div>
+            <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
+              <div id="bandHighBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
+            </div>
+            <div id="bandHighText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-4">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Spectral centroid</div>
+            <div id="centroidText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Dominant zone</div>
+            <div id="dominantBandText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -165,8 +278,12 @@ export const prerender = false;
 
       window.__abfStudio = window.__abfStudio || {
         raf: 0,
-        started: false
+        running: false
       };
+
+      function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+      }
 
       function setCover(url) {
         const img = $("studioCover");
@@ -250,27 +367,138 @@ export const prerender = false;
         }
       }
 
-      function stopVuMeter() {
-        if (window.__abfStudio.raf) {
-          cancelAnimationFrame(window.__abfStudio.raf);
-          window.__abfStudio.raf = 0;
+      function resizeCanvasToDisplaySize(canvas) {
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.floor(rect.width * dpr));
+        const height = Math.max(1, Math.floor(rect.height * dpr));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
         }
-        window.__abfStudio.started = false;
       }
 
-      function startVuMeter() {
-        if (window.__abfStudio.started) return;
+      function drawSpectrum(ctx, canvas, freqData) {
+        resizeCanvasToDisplaySize(canvas);
+        const width = canvas.width;
+        const height = canvas.height;
 
-        const tools = window.__abfAudioTools;
-        if (!tools?.ensureAudioGraph) return;
+        ctx.clearRect(0, 0, width, height);
 
-        const graph = tools.ensureAudioGraph();
-        if (!graph?.analyser) return;
+        const gradientBg = ctx.createLinearGradient(0, 0, 0, height);
+        gradientBg.addColorStop(0, "rgba(47,194,255,0.05)");
+        gradientBg.addColorStop(1, "rgba(5,11,20,0.0)");
+        ctx.fillStyle = gradientBg;
+        ctx.fillRect(0, 0, width, height);
 
-        const analyser = graph.analyser;
-        const bufferLength = analyser.fftSize || 2048;
-        const dataArray = new Uint8Array(bufferLength);
+        const bars = 80;
+        const step = Math.max(1, Math.floor(freqData.length / bars));
+        const gap = Math.max(2, Math.floor(width * 0.002));
+        const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
 
+        let x = 0;
+
+        for (let i = 0; i < bars; i++) {
+          const start = i * step;
+          const end = Math.min(freqData.length, start + step);
+          let sum = 0;
+
+          for (let j = start; j < end; j++) sum += freqData[j] || 0;
+
+          const avg = end > start ? sum / (end - start) : 0;
+          const v = avg / 255;
+          const barHeight = Math.max(2, v * height);
+
+          const g = ctx.createLinearGradient(0, height - barHeight, 0, height);
+          g.addColorStop(0, "rgba(209,245,255,0.95)");
+          g.addColorStop(0.35, "rgba(92,178,255,0.95)");
+          g.addColorStop(1, "rgba(17,196,236,0.95)");
+
+          ctx.fillStyle = g;
+          ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+
+          x += barWidth + gap;
+          if (x > width) break;
+        }
+
+        ctx.strokeStyle = "rgba(255,255,255,0.07)";
+        ctx.lineWidth = Math.max(1, width / 900);
+        for (let i = 1; i <= 3; i++) {
+          const y = (height / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+      }
+
+      function drawWaveform(ctx, canvas, timeData) {
+        resizeCanvasToDisplaySize(canvas);
+        const width = canvas.width;
+        const height = canvas.height;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const centerY = height / 2;
+
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.lineWidth = Math.max(1, width / 1100);
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(width, centerY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = 0; i < timeData.length; i++) {
+          const v = timeData[i] / 128.0;
+          const y = (v * height) / 2;
+          const x = (i / (timeData.length - 1)) * width;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.lineWidth = Math.max(4, width / 260);
+        ctx.strokeStyle = "rgba(47,194,255,0.20)";
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = 0; i < timeData.length; i++) {
+          const v = timeData[i] / 128.0;
+          const y = (v * height) / 2;
+          const x = (i / (timeData.length - 1)) * width;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.lineWidth = Math.max(2, width / 500);
+        ctx.strokeStyle = "rgba(235,248,255,0.95)";
+        ctx.stroke();
+      }
+
+      function updatePeakAndRms(timeData) {
+        let peak = 0;
+        let sum = 0;
+
+        for (let i = 0; i < timeData.length; i++) {
+          const v = Math.abs((timeData[i] - 128) / 128);
+          if (v > peak) peak = v;
+          sum += v * v;
+        }
+
+        const rms = Math.sqrt(sum / timeData.length);
+
+        const peakPct = Math.round(clamp(peak, 0, 1) * 100);
+        const rmsPct = Math.round(clamp(rms, 0, 1) * 100);
+
+        const peakText = $("studioPeakText");
+        const rmsText = $("studioRmsText");
+
+        if (peakText) peakText.textContent = `${peakPct}%`;
+        if (rmsText) rmsText.textContent = `${rmsPct}%`;
+
+        return { peak, rms, peakPct, rmsPct };
+      }
+
+      function updateVu(timeData) {
         const vuL = $("vuLeft");
         const vuR = $("vuRight");
         const vuLValue = $("vuLeftValue");
@@ -278,55 +506,166 @@ export const prerender = false;
 
         if (!vuL || !vuR) return;
 
-        window.__abfStudio.started = true;
+        const half = Math.floor(timeData.length / 2);
+        let sumL = 0;
+        let sumR = 0;
 
-        const update = () => {
-          const leftEl = $("vuLeft");
-          const rightEl = $("vuRight");
+        for (let i = 0; i < half; i++) {
+          const v = (timeData[i] - 128) / 128;
+          sumL += v * v;
+        }
 
-          if (!leftEl || !rightEl) {
-            stopVuMeter();
+        for (let i = half; i < timeData.length; i++) {
+          const v = (timeData[i] - 128) / 128;
+          sumR += v * v;
+        }
+
+        const rmsL = Math.sqrt(sumL / half);
+        const rmsR = Math.sqrt(sumR / half);
+
+        const levelL = clamp(rmsL * 3.2, 0, 1);
+        const levelR = clamp(rmsR * 3.2, 0, 1);
+
+        vuL.style.height = `${Math.max(4, levelL * 100)}%`;
+        vuR.style.height = `${Math.max(4, levelR * 100)}%`;
+
+        if (vuLValue) vuLValue.textContent = `${Math.round(levelL * 100)}%`;
+        if (vuRValue) vuRValue.textContent = `${Math.round(levelR * 100)}%`;
+      }
+
+      function averageRange(data, start, end) {
+        const s = Math.max(0, start);
+        const e = Math.min(data.length, end);
+        if (e <= s) return 0;
+        let sum = 0;
+        for (let i = s; i < e; i++) sum += data[i];
+        return sum / (e - s);
+      }
+
+      function updateBands(freqData, sampleRate, fftSize) {
+        const binHz = sampleRate / fftSize;
+
+        const lowEnd = Math.max(1, Math.floor(250 / binHz));
+        const midEnd = Math.max(lowEnd + 1, Math.floor(4000 / binHz));
+        const highEnd = freqData.length;
+
+        const low = averageRange(freqData, 0, lowEnd) / 255;
+        const mid = averageRange(freqData, lowEnd, midEnd) / 255;
+        const high = averageRange(freqData, midEnd, highEnd) / 255;
+
+        const lowPct = Math.round(low * 100);
+        const midPct = Math.round(mid * 100);
+        const highPct = Math.round(high * 100);
+
+        const lowBar = $("bandLowBar");
+        const midBar = $("bandMidBar");
+        const highBar = $("bandHighBar");
+
+        const lowText = $("bandLowText");
+        const midText = $("bandMidText");
+        const highText = $("bandHighText");
+
+        if (lowBar) lowBar.style.width = `${lowPct}%`;
+        if (midBar) midBar.style.width = `${midPct}%`;
+        if (highBar) highBar.style.width = `${highPct}%`;
+
+        if (lowText) lowText.textContent = `${lowPct}%`;
+        if (midText) midText.textContent = `${midPct}%`;
+        if (highText) highText.textContent = `${highPct}%`;
+
+        let weightedSum = 0;
+        let total = 0;
+        for (let i = 0; i < freqData.length; i++) {
+          const mag = freqData[i];
+          const freq = i * binHz;
+          weightedSum += freq * mag;
+          total += mag;
+        }
+
+        const centroid = total > 0 ? weightedSum / total : 0;
+        const centroidText = $("centroidText");
+        if (centroidText) {
+          centroidText.textContent = centroid > 0 ? `${Math.round(centroid)} Hz` : "—";
+        }
+
+        const dominantBandText = $("dominantBandText");
+        if (dominantBandText) {
+          const maxVal = Math.max(lowPct, midPct, highPct);
+          let label = "Balanced";
+          if (maxVal === lowPct) label = "Low / Bass";
+          else if (maxVal === midPct) label = "Mid";
+          else if (maxVal === highPct) label = "High";
+          dominantBandText.textContent = label;
+        }
+      }
+
+      function stopLoop() {
+        if (window.__abfStudio.raf) {
+          cancelAnimationFrame(window.__abfStudio.raf);
+          window.__abfStudio.raf = 0;
+        }
+        window.__abfStudio.running = false;
+      }
+
+      function startLoop() {
+        if (window.__abfStudio.running) return;
+
+        const tools = window.__abfAudioTools;
+        if (!tools?.ensureAudioGraph) return;
+
+        const graph = tools.ensureAudioGraph();
+        if (!graph?.analyser || !graph?.audioCtx) return;
+
+        const analyser = graph.analyser;
+        const audioCtx = graph.audioCtx;
+
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.82;
+
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+        const timeData = new Uint8Array(analyser.fftSize);
+
+        const spectrumCanvas = $("spectrumCanvas");
+        const waveformCanvas = $("waveformCanvas");
+        const spectrumCtx = spectrumCanvas?.getContext("2d");
+        const waveformCtx = waveformCanvas?.getContext("2d");
+
+        window.__abfStudio.running = true;
+
+        const frame = () => {
+          const stillThere =
+            $("studioPageRoot") &&
+            $("vuLeft") &&
+            $("spectrumCanvas") &&
+            $("waveformCanvas");
+
+          if (!stillThere) {
+            stopLoop();
             return;
           }
 
-          analyser.getByteTimeDomainData(dataArray);
+          analyser.getByteFrequencyData(freqData);
+          analyser.getByteTimeDomainData(timeData);
 
-          let sumL = 0;
-          let sumR = 0;
-          const half = Math.floor(bufferLength / 2);
+          syncBridge();
+          syncNowPlaying();
+          updateVu(timeData);
+          updatePeakAndRms(timeData);
+          updateBands(freqData, audioCtx.sampleRate || 44100, analyser.fftSize || 2048);
 
-          for (let i = 0; i < half; i++) {
-            const v = (dataArray[i] - 128) / 128;
-            sumL += v * v;
-          }
+          if (spectrumCtx && spectrumCanvas) drawSpectrum(spectrumCtx, spectrumCanvas, freqData);
+          if (waveformCtx && waveformCanvas) drawWaveform(waveformCtx, waveformCanvas, timeData);
 
-          for (let i = half; i < bufferLength; i++) {
-            const v = (dataArray[i] - 128) / 128;
-            sumR += v * v;
-          }
-
-          const rmsL = Math.sqrt(sumL / half);
-          const rmsR = Math.sqrt(sumR / half);
-
-          const levelL = Math.min(1, rmsL * 3.2);
-          const levelR = Math.min(1, rmsR * 3.2);
-
-          leftEl.style.height = `${Math.max(4, levelL * 100)}%`;
-		  rightEl.style.height = `${Math.max(4, levelR * 100)}%`;
-
-          if (vuLValue) vuLValue.textContent = `${Math.round(levelL * 100)}%`;
-          if (vuRValue) vuRValue.textContent = `${Math.round(levelR * 100)}%`;
-
-          window.__abfStudio.raf = requestAnimationFrame(update);
+          window.__abfStudio.raf = requestAnimationFrame(frame);
         };
 
-        update();
+        frame();
       }
 
       function bootStudioPage() {
         syncBridge();
         syncNowPlaying();
-        startVuMeter();
+        startLoop();
       }
 
       bootStudioPage();
@@ -336,6 +675,7 @@ export const prerender = false;
       window.addEventListener("abf:nowplaying-updated", bootStudioPage);
       window.addEventListener("pageshow", bootStudioPage);
       window.addEventListener("focus", bootStudioPage);
+      window.addEventListener("resize", bootStudioPage);
     })();
   </script>
 </Base>
