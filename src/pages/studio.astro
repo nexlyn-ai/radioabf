@@ -222,6 +222,58 @@ export const prerender = false;
         <div class="flex items-center justify-between mb-4">
           <div>
             <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Stereo Field
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              Stereo Analyzer
+            </h2>
+          </div>
+
+          <div class="text-xs text-white/45">Live</div>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+          <div class="text-xs text-white/45 uppercase tracking-wider">Balance</div>
+          <div class="mt-3 relative h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
+            <div class="absolute inset-y-0 left-1/2 w-px bg-white/20"></div>
+            <div
+              id="stereoBalanceIndicator"
+              class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full border border-cyan-300/40 bg-cyan-300/20 shadow-[0_0_18px_rgba(47,194,255,0.30)] transition-[left] duration-100"
+              style="left:50%;"
+            ></div>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs text-white/45 uppercase tracking-wider">
+            <span>L</span>
+            <span id="stereoBalanceText" class="text-white/70 normal-case tracking-normal">Centered</span>
+            <span>R</span>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-4">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Stereo width</div>
+            <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
+              <div id="stereoWidthBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
+            </div>
+            <div id="stereoWidthText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Phase feel</div>
+            <div id="stereoPhaseText" class="mt-3 text-sm font-semibold text-white/85">—</div>
+            <div class="mt-2 text-xs text-white/45">
+              Approximation based on left/right energy difference
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 gap-6 mb-6">
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
               Frequency Bands
             </div>
             <h2 class="mt-1 text-xl font-bold text-white">
@@ -232,7 +284,7 @@ export const prerender = false;
           <div class="text-xs text-white/45">Energy</div>
         </div>
 
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
             <div class="text-xs text-white/45 uppercase tracking-wider">Low</div>
             <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
@@ -258,7 +310,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <div class="mt-5 grid grid-cols-2 gap-4">
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
             <div class="text-xs text-white/45 uppercase tracking-wider">Spectral centroid</div>
             <div id="centroidText" class="mt-2 text-sm font-semibold text-white/85">—</div>
@@ -278,11 +330,31 @@ export const prerender = false;
 
       window.__abfStudio = window.__abfStudio || {
         raf: 0,
-        running: false
+        running: false,
+        pageToken: "",
       };
 
       function clamp(n, min, max) {
         return Math.max(min, Math.min(max, n));
+      }
+
+      function pageAlive() {
+        return !!(
+          $("studioPageRoot") &&
+          $("vuLeft") &&
+          $("vuRight") &&
+          $("spectrumCanvas") &&
+          $("waveformCanvas")
+        );
+      }
+
+      function getPageToken() {
+        const root = $("studioPageRoot");
+        if (!root) return "";
+        if (!root.dataset.studioToken) {
+          root.dataset.studioToken = String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8);
+        }
+        return root.dataset.studioToken;
       }
 
       function setCover(url) {
@@ -353,17 +425,11 @@ export const prerender = false;
         if (analyserState) analyserState.textContent = hasAnalyser ? "Ready" : "Not initialized";
 
         if (playerState) {
-          if (!state) {
-            playerState.textContent = "Unavailable";
-          } else if (state.isStopped) {
-            playerState.textContent = "Stopped";
-          } else if (state.paused) {
-            playerState.textContent = "Paused";
-          } else if (state.muted) {
-            playerState.textContent = "Muted";
-          } else {
-            playerState.textContent = "Live";
-          }
+          if (!state) playerState.textContent = "Unavailable";
+          else if (state.isStopped) playerState.textContent = "Stopped";
+          else if (state.paused) playerState.textContent = "Paused";
+          else if (state.muted) playerState.textContent = "Muted";
+          else playerState.textContent = "Live";
         }
       }
 
@@ -504,7 +570,7 @@ export const prerender = false;
         const vuLValue = $("vuLeftValue");
         const vuRValue = $("vuRightValue");
 
-        if (!vuL || !vuR) return;
+        if (!vuL || !vuR) return { levelL: 0, levelR: 0 };
 
         const half = Math.floor(timeData.length / 2);
         let sumL = 0;
@@ -531,6 +597,38 @@ export const prerender = false;
 
         if (vuLValue) vuLValue.textContent = `${Math.round(levelL * 100)}%`;
         if (vuRValue) vuRValue.textContent = `${Math.round(levelR * 100)}%`;
+
+        return { levelL, levelR };
+      }
+
+      function updateStereo(levelL, levelR) {
+        const indicator = $("stereoBalanceIndicator");
+        const balanceText = $("stereoBalanceText");
+        const widthBar = $("stereoWidthBar");
+        const widthText = $("stereoWidthText");
+        const phaseText = $("stereoPhaseText");
+
+        const total = levelL + levelR;
+        const balance = total > 0 ? (levelR - levelL) / total : 0; // -1 = left / +1 = right
+        const balancePct = ((balance + 1) / 2) * 100;
+        const width = clamp(Math.abs(levelR - levelL) * 180, 0, 100);
+
+        if (indicator) indicator.style.left = `${balancePct}%`;
+        if (widthBar) widthBar.style.width = `${Math.round(width)}%`;
+        if (widthText) widthText.textContent = `${Math.round(width)}%`;
+
+        if (balanceText) {
+          if (Math.abs(balance) < 0.08) balanceText.textContent = "Centered";
+          else if (balance < 0) balanceText.textContent = `Left ${Math.round(Math.abs(balance) * 100)}%`;
+          else balanceText.textContent = `Right ${Math.round(Math.abs(balance) * 100)}%`;
+        }
+
+        if (phaseText) {
+          if (width < 12) phaseText.textContent = "Near mono";
+          else if (width < 35) phaseText.textContent = "Moderate stereo";
+          else if (width < 65) phaseText.textContent = "Wide stereo";
+          else phaseText.textContent = "Very wide / separated";
+        }
       }
 
       function averageRange(data, start, end) {
@@ -584,9 +682,7 @@ export const prerender = false;
 
         const centroid = total > 0 ? weightedSum / total : 0;
         const centroidText = $("centroidText");
-        if (centroidText) {
-          centroidText.textContent = centroid > 0 ? `${Math.round(centroid)} Hz` : "—";
-        }
+        if (centroidText) centroidText.textContent = centroid > 0 ? `${Math.round(centroid)} Hz` : "—";
 
         const dominantBandText = $("dominantBandText");
         if (dominantBandText) {
@@ -607,8 +703,20 @@ export const prerender = false;
         window.__abfStudio.running = false;
       }
 
-      function startLoop() {
-        if (window.__abfStudio.running) return;
+      function startLoop(force = false) {
+        const token = getPageToken();
+
+        if (!pageAlive()) {
+          stopLoop();
+          return;
+        }
+
+        if (!force && window.__abfStudio.running && window.__abfStudio.pageToken === token) {
+          return;
+        }
+
+        stopLoop();
+        window.__abfStudio.pageToken = token;
 
         const tools = window.__abfAudioTools;
         if (!tools?.ensureAudioGraph) return;
@@ -625,21 +733,12 @@ export const prerender = false;
         const freqData = new Uint8Array(analyser.frequencyBinCount);
         const timeData = new Uint8Array(analyser.fftSize);
 
-        const spectrumCanvas = $("spectrumCanvas");
-        const waveformCanvas = $("waveformCanvas");
-        const spectrumCtx = spectrumCanvas?.getContext("2d");
-        const waveformCtx = waveformCanvas?.getContext("2d");
-
         window.__abfStudio.running = true;
 
         const frame = () => {
-          const stillThere =
-            $("studioPageRoot") &&
-            $("vuLeft") &&
-            $("spectrumCanvas") &&
-            $("waveformCanvas");
+          const currentToken = getPageToken();
 
-          if (!stillThere) {
+          if (!pageAlive() || currentToken !== window.__abfStudio.pageToken) {
             stopLoop();
             return;
           }
@@ -649,9 +748,16 @@ export const prerender = false;
 
           syncBridge();
           syncNowPlaying();
-          updateVu(timeData);
+
+          const { levelL, levelR } = updateVu(timeData);
+          updateStereo(levelL, levelR);
           updatePeakAndRms(timeData);
           updateBands(freqData, audioCtx.sampleRate || 44100, analyser.fftSize || 2048);
+
+          const spectrumCanvas = $("spectrumCanvas");
+          const waveformCanvas = $("waveformCanvas");
+          const spectrumCtx = spectrumCanvas?.getContext("2d");
+          const waveformCtx = waveformCanvas?.getContext("2d");
 
           if (spectrumCtx && spectrumCanvas) drawSpectrum(spectrumCtx, spectrumCanvas, freqData);
           if (waveformCtx && waveformCanvas) drawWaveform(waveformCtx, waveformCanvas, timeData);
@@ -662,20 +768,29 @@ export const prerender = false;
         frame();
       }
 
-      function bootStudioPage() {
+      function bootStudioPage(force = false) {
+        if (!pageAlive()) return;
         syncBridge();
         syncNowPlaying();
-        startLoop();
+        startLoop(force);
       }
 
-      bootStudioPage();
+      bootStudioPage(true);
 
-      document.addEventListener("astro:page-load", bootStudioPage);
-      document.addEventListener("astro:after-swap", bootStudioPage);
-      window.addEventListener("abf:nowplaying-updated", bootStudioPage);
-      window.addEventListener("pageshow", bootStudioPage);
-      window.addEventListener("focus", bootStudioPage);
-      window.addEventListener("resize", bootStudioPage);
+      document.addEventListener("astro:page-load", () => bootStudioPage(true));
+      document.addEventListener("astro:after-swap", () => {
+        requestAnimationFrame(() => bootStudioPage(true));
+        setTimeout(() => bootStudioPage(true), 80);
+        setTimeout(() => bootStudioPage(true), 220);
+      });
+
+      window.addEventListener("abf:nowplaying-updated", () => bootStudioPage(false));
+      window.addEventListener("pageshow", () => bootStudioPage(true));
+      window.addEventListener("focus", () => bootStudioPage(false));
+      window.addEventListener("resize", () => bootStudioPage(false));
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") bootStudioPage(true);
+      });
     })();
   </script>
 </Base>
