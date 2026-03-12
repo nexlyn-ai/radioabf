@@ -10,32 +10,85 @@ export const prerender = false;
   image="/og-image.jpg"
 >
   <div id="studioPageRoot">
+    <!-- HERO -->
     <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
       <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
       <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(47,194,255,0.10),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.10),transparent_30%)]"></div>
 
-      <div class="relative z-10 flex flex-col gap-4">
-        <div class="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
-          <span class="relative flex h-2.5 w-2.5">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-75"></span>
-            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-300"></span>
-          </span>
-          Live Audio Tools
-        </div>
+      <div class="relative z-10 grid grid-cols-1 lg:grid-cols-[1.2fr_.8fr] gap-6 items-center">
+        <div class="min-w-0">
+          <div class="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-75"></span>
+              <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-300"></span>
+            </span>
+            Live Audio Tools
+          </div>
 
-        <div class="max-w-3xl">
-          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+          <h1 class="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
             Studio Monitoring
           </h1>
+
           <p class="mt-3 text-sm sm:text-base text-white/72 leading-relaxed max-w-2xl">
             Real-time analysis of the RadioABF player output, with premium live monitoring tools built directly into the experience.
           </p>
+
+          <div class="mt-5 flex flex-wrap gap-2">
+            <span class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wider text-white/70">
+              Player-linked
+            </span>
+            <span class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wider text-white/70">
+              Persistent Audio Graph
+            </span>
+            <span class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wider text-white/70">
+              Live Spectrum
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+            <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
+              Live status
+            </div>
+            <div id="heroPlayerState" class="mt-2 text-lg font-bold text-white">—</div>
+            <div class="mt-1 text-xs text-white/50">Global player bridge</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+            <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
+              Audio context
+            </div>
+            <div id="heroAudioCtxState" class="mt-2 text-lg font-bold text-white">—</div>
+            <div class="mt-1 text-xs text-white/50">Realtime analysis engine</div>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4 col-span-2">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="abfCover w-14 h-14 rounded-2xl border border-white/10 overflow-hidden flex-none">
+                <img id="heroCover" class="hidden" alt="Current cover" />
+                <div id="heroCoverFallback" class="abfCoverFallback">
+                  <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+                </div>
+              </div>
+
+              <div class="min-w-0">
+                <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
+                  Now Playing
+                </div>
+                <div id="heroArtist" class="mt-1 text-sm font-bold text-white truncate">—</div>
+                <div id="heroTitle" class="text-sm text-white/65 truncate">—</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-      <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+    <!-- ROW 1 -->
+    <section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+      <div class="xl:col-span-2 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between gap-3 mb-4">
           <div>
             <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
@@ -109,10 +162,19 @@ export const prerender = false;
             <div id="studioRmsText" class="mt-2 text-sm font-semibold text-white/85">—</div>
           </div>
         </div>
+
+        <div class="mt-4 rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+          <div class="text-xs text-white/45 uppercase tracking-wider">Dominant zone</div>
+          <div id="dominantBandText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          <div class="mt-3 h-2 rounded-full bg-white/5 overflow-hidden border border-white/10">
+            <div id="miniDominantBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- ROW 2 -->
+    <section class="grid grid-cols-1 2xl:grid-cols-[1fr_1.1fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -184,7 +246,7 @@ export const prerender = false;
           id="spectrumCanvas"
           width="1200"
           height="360"
-          class="w-full h-[180px] rounded-xl border border-white/10 bg-black/40"
+          class="w-full h-[220px] rounded-xl border border-white/10 bg-black/40"
         ></canvas>
 
         <div class="mt-3 flex items-center justify-between text-[11px] text-white/40 uppercase tracking-wider">
@@ -195,7 +257,8 @@ export const prerender = false;
       </div>
     </section>
 
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- ROW 3 -->
+    <section class="grid grid-cols-1 xl:grid-cols-[1fr_1fr_.8fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -216,6 +279,17 @@ export const prerender = false;
           height="300"
           class="w-full h-[150px] rounded-xl border border-white/10 bg-black/40"
         ></canvas>
+
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Peak</div>
+            <div id="wavePeakText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">RMS</div>
+            <div id="waveRmsText" class="mt-2 text-sm font-semibold text-white/85">—</div>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
@@ -269,14 +343,12 @@ export const prerender = false;
             <div class="text-xs text-white/45 uppercase tracking-wider">Phase feel</div>
             <div id="stereoPhaseText" class="mt-3 text-sm font-semibold text-white/85">—</div>
             <div class="mt-2 text-xs text-white/45">
-              Premium stereo field approximation from player output
+              Premium stereo field approximation
             </div>
           </div>
         </div>
       </div>
-    </section>
 
-    <section class="grid grid-cols-1 gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -291,40 +363,40 @@ export const prerender = false;
           <div class="text-xs text-white/45">Energy</div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="space-y-4">
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
-            <div class="text-xs text-white/45 uppercase tracking-wider">Low</div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-xs text-white/45 uppercase tracking-wider">Low</div>
+              <div id="bandLowText" class="text-sm font-semibold text-white/85">0%</div>
+            </div>
             <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
               <div id="bandLowBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
             </div>
-            <div id="bandLowText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
           </div>
 
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
-            <div class="text-xs text-white/45 uppercase tracking-wider">Mid</div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-xs text-white/45 uppercase tracking-wider">Mid</div>
+              <div id="bandMidText" class="text-sm font-semibold text-white/85">0%</div>
+            </div>
             <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
               <div id="bandMidBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
             </div>
-            <div id="bandMidText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
           </div>
 
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
-            <div class="text-xs text-white/45 uppercase tracking-wider">High</div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-xs text-white/45 uppercase tracking-wider">High</div>
+              <div id="bandHighText" class="text-sm font-semibold text-white/85">0%</div>
+            </div>
             <div class="mt-3 h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
               <div id="bandHighBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
             </div>
-            <div id="bandHighText" class="mt-3 text-sm font-semibold text-white/85">0%</div>
           </div>
-        </div>
 
-        <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
             <div class="text-xs text-white/45 uppercase tracking-wider">Spectral centroid</div>
             <div id="centroidText" class="mt-2 text-sm font-semibold text-white/85">—</div>
-          </div>
-          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
-            <div class="text-xs text-white/45 uppercase tracking-wider">Dominant zone</div>
-            <div id="dominantBandText" class="mt-2 text-sm font-semibold text-white/85">—</div>
           </div>
         </div>
       </div>
@@ -359,18 +431,29 @@ export const prerender = false;
       function captureElements() {
         return {
           root: $("studioPageRoot"),
+
           bridgeBadge: $("studioBridgeBadge"),
           audioState: $("studioAudioState"),
           ctxState: $("studioCtxState"),
           analyserState: $("studioAnalyserState"),
           playerState: $("studioPlayerState"),
 
+          heroPlayerState: $("heroPlayerState"),
+          heroAudioCtxState: $("heroAudioCtxState"),
+          heroCover: $("heroCover"),
+          heroCoverFallback: $("heroCoverFallback"),
+          heroArtist: $("heroArtist"),
+          heroTitle: $("heroTitle"),
+
           cover: $("studioCover"),
           coverFallback: $("studioCoverFallback"),
           artist: $("studioArtist"),
           title: $("studioTitle"),
+
           peakText: $("studioPeakText"),
           rmsText: $("studioRmsText"),
+          wavePeakText: $("wavePeakText"),
+          waveRmsText: $("waveRmsText"),
 
           vuLeft: $("vuLeft"),
           vuRight: $("vuRight"),
@@ -395,6 +478,7 @@ export const prerender = false;
           bandHighText: $("bandHighText"),
           centroidText: $("centroidText"),
           dominantBandText: $("dominantBandText"),
+          miniDominantBar: $("miniDominantBar"),
         };
       }
 
@@ -463,45 +547,53 @@ export const prerender = false;
         if (elems.ctxState) elems.ctxState.textContent = hasCtx ? (graph.audioCtx.state || "ready") : "Not initialized";
         if (elems.analyserState) elems.analyserState.textContent = hasAnalyser ? "Ready" : "Not initialized";
 
-        if (elems.playerState) {
-          if (!state) elems.playerState.textContent = "Unavailable";
-          else if (state.isStopped) elems.playerState.textContent = "Stopped";
-          else if (state.paused) elems.playerState.textContent = "Paused";
-          else if (state.muted) elems.playerState.textContent = "Muted";
-          else elems.playerState.textContent = "Live";
+        let stateText = "Unavailable";
+        if (state) {
+          if (state.isStopped) stateText = "Stopped";
+          else if (state.paused) stateText = "Paused";
+          else if (state.muted) stateText = "Muted";
+          else stateText = "Live";
+        }
+
+        if (elems.playerState) elems.playerState.textContent = stateText;
+        if (elems.heroPlayerState) elems.heroPlayerState.textContent = stateText;
+        if (elems.heroAudioCtxState) elems.heroAudioCtxState.textContent = hasCtx ? (graph.audioCtx.state || "ready") : "—";
+      }
+
+      function syncCoverPair(imgEl, fallbackEl, url) {
+        if (!imgEl) return;
+
+        imgEl.onerror = () => {
+          imgEl.removeAttribute("src");
+          imgEl.classList.add("hidden");
+          if (fallbackEl) fallbackEl.style.display = "";
+        };
+
+        if (url) {
+          imgEl.src = url;
+          imgEl.classList.remove("hidden");
+          if (fallbackEl) fallbackEl.style.display = "none";
+        } else {
+          imgEl.removeAttribute("src");
+          imgEl.classList.add("hidden");
+          if (fallbackEl) fallbackEl.style.display = "";
         }
       }
 
       function syncNowPlaying() {
         const elems = E.elems;
-        const npArtist = document.getElementById("npArtist");
-        const npTitle = document.getElementById("npTitle");
-        const playerCover = document.getElementById("playerCover");
-
-        const artist = npArtist?.textContent?.trim() || "—";
-        const title = npTitle?.textContent?.trim() || "—";
-        const coverUrl = playerCover?.getAttribute("src") || "";
+        const snap = window.__abfAudioTools?.getNowPlayingSnapshot?.() || {};
+        const artist = snap.artist || "—";
+        const title = snap.title || "—";
+        const coverUrl = snap.cover || "";
 
         if (elems.artist) elems.artist.textContent = artist;
         if (elems.title) elems.title.textContent = title;
+        if (elems.heroArtist) elems.heroArtist.textContent = artist;
+        if (elems.heroTitle) elems.heroTitle.textContent = title;
 
-        if (elems.cover) {
-          elems.cover.onerror = () => {
-            elems.cover.removeAttribute("src");
-            elems.cover.classList.add("hidden");
-            if (elems.coverFallback) elems.coverFallback.style.display = "";
-          };
-
-          if (coverUrl) {
-            elems.cover.src = coverUrl;
-            elems.cover.classList.remove("hidden");
-            if (elems.coverFallback) elems.coverFallback.style.display = "none";
-          } else {
-            elems.cover.removeAttribute("src");
-            elems.cover.classList.add("hidden");
-            if (elems.coverFallback) elems.coverFallback.style.display = "";
-          }
-        }
+        syncCoverPair(elems.cover, elems.coverFallback, coverUrl);
+        syncCoverPair(elems.heroCover, elems.heroCoverFallback, coverUrl);
       }
 
       function drawSpectrum(freqData) {
@@ -522,7 +614,7 @@ export const prerender = false;
         ctx.fillStyle = gradientBg;
         ctx.fillRect(0, 0, width, height);
 
-        const bars = 80;
+        const bars = 84;
         const step = Math.max(1, Math.floor(freqData.length / bars));
         const gap = Math.max(2, Math.floor(width * 0.002));
         const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
@@ -538,12 +630,13 @@ export const prerender = false;
 
           const avg = end > start ? sum / (end - start) : 0;
           const v = avg / 255;
-          const barHeight = Math.max(2, v * height);
+          const barHeight = Math.max(2, Math.pow(v, 1.05) * height);
 
           const g = ctx.createLinearGradient(0, height - barHeight, 0, height);
-          g.addColorStop(0, "rgba(209,245,255,0.95)");
-          g.addColorStop(0.35, "rgba(92,178,255,0.95)");
-          g.addColorStop(1, "rgba(17,196,236,0.95)");
+          g.addColorStop(0, "rgba(233,248,255,0.98)");
+          g.addColorStop(0.25, "rgba(129,212,250,0.96)");
+          g.addColorStop(0.7, "rgba(59,130,246,0.95)");
+          g.addColorStop(1, "rgba(6,182,212,0.95)");
 
           ctx.fillStyle = g;
           ctx.fillRect(x, height - barHeight, barWidth, barHeight);
@@ -592,8 +685,8 @@ export const prerender = false;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        ctx.lineWidth = Math.max(4, width / 260);
-        ctx.strokeStyle = "rgba(47,194,255,0.20)";
+        ctx.lineWidth = Math.max(6, width / 220);
+        ctx.strokeStyle = "rgba(47,194,255,0.18)";
         ctx.stroke();
 
         ctx.beginPath();
@@ -604,8 +697,8 @@ export const prerender = false;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        ctx.lineWidth = Math.max(2, width / 500);
-        ctx.strokeStyle = "rgba(235,248,255,0.95)";
+        ctx.lineWidth = Math.max(2.5, width / 480);
+        ctx.strokeStyle = "rgba(235,248,255,0.96)";
         ctx.stroke();
       }
 
@@ -677,11 +770,15 @@ export const prerender = false;
         }
 
         const rms = Math.sqrt(sum / timeData.length);
+        const peakPct = Math.round(clamp(peak, 0, 1) * 100);
+        const rmsPct = Math.round(clamp(rms, 0, 1) * 100);
 
-        if (E.elems.peakText) E.elems.peakText.textContent = `${Math.round(clamp(peak, 0, 1) * 100)}%`;
-        if (E.elems.rmsText) E.elems.rmsText.textContent = `${Math.round(clamp(rms, 0, 1) * 100)}%`;
+        if (E.elems.peakText) E.elems.peakText.textContent = `${peakPct}%`;
+        if (E.elems.rmsText) E.elems.rmsText.textContent = `${rmsPct}%`;
+        if (E.elems.wavePeakText) E.elems.wavePeakText.textContent = `${peakPct}%`;
+        if (E.elems.waveRmsText) E.elems.waveRmsText.textContent = `${rmsPct}%`;
 
-        return { peak, rms };
+        return { peak, rms, peakPct, rmsPct };
       }
 
       function updateVu(timeData) {
@@ -781,22 +878,16 @@ export const prerender = false;
         const centroid = total > 0 ? weightedSum / total : 0;
         if (E.elems.centroidText) E.elems.centroidText.textContent = centroid > 0 ? `${Math.round(centroid)} Hz` : "—";
 
-        if (E.elems.dominantBandText) {
+        if (E.elems.dominantBandText || E.elems.miniDominantBar) {
           const maxVal = Math.max(lowPct, midPct, highPct);
           let label = "Balanced";
           if (maxVal === lowPct) label = "Low / Bass";
           else if (maxVal === midPct) label = "Mid";
           else if (maxVal === highPct) label = "High";
-          E.elems.dominantBandText.textContent = label;
-        }
-      }
 
-      function stopEngine() {
-        if (E.raf) {
-          cancelAnimationFrame(E.raf);
-          E.raf = 0;
+          if (E.elems.dominantBandText) E.elems.dominantBandText.textContent = label;
+          if (E.elems.miniDominantBar) E.elems.miniDominantBar.style.width = `${maxVal}%`;
         }
-        E.active = false;
       }
 
       function frameLoop() {
@@ -852,23 +943,23 @@ export const prerender = false;
         frameLoop();
       }
 
-function reattachStudio() {
-  attachToCurrentPage();
+      function reattachStudio() {
+        attachToCurrentPage();
 
-  const tools = window.__abfAudioTools;
-  const graph = tools?.getAudioGraph?.();
+        const tools = window.__abfAudioTools;
+        const graph = tools?.getAudioGraph?.();
 
-  if (graph?.audio && !graph?.analyser) {
-    tools?.ensureAudioGraph?.();
-  }
+        if (graph?.audio && !graph?.analyser) {
+          tools?.ensureAudioGraph?.();
+        }
 
-  if (!graph?.audio) {
-    const globalAudio = window.__abf?.audio || null;
-    if (globalAudio) {
-      tools?.ensureAudioGraph?.();
-    }
-  }
-}
+        if (!graph?.audio) {
+          const globalAudio = window.__abf?.audio || null;
+          if (globalAudio) {
+            tools?.ensureAudioGraph?.();
+          }
+        }
+      }
 
       ensureEngineRunning();
 
@@ -883,7 +974,7 @@ function reattachStudio() {
       window.addEventListener("pageshow", reattachStudio);
       window.addEventListener("focus", reattachStudio);
       window.addEventListener("resize", reattachStudio);
-	  window.addEventListener("abf:audio-tools-ready", reattachStudio);
+      window.addEventListener("abf:audio-tools-ready", reattachStudio);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") reattachStudio();
       });
