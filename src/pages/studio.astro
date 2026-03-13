@@ -4,7 +4,7 @@ export const prerender = false;
 ---
 
 <Base
-  title="Studio Tools — RadioABF"
+  title="RadioABF Studio Monitoring — RadioABF"
   description="Real-time audio tools and live player analysis on RadioABF."
   canonical="/studio"
   image="/og-image.jpg"
@@ -27,7 +27,8 @@ export const prerender = false;
           </div>
 
           <h1 class="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
-            Studio Monitoring
+            <span class="text-white">RadioABF</span>
+            <span class="bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-400 bg-clip-text text-transparent"> Studio Monitoring</span>
           </h1>
 
           <p class="mt-3 text-sm sm:text-base text-white/72 leading-relaxed max-w-2xl">
@@ -62,26 +63,6 @@ export const prerender = false;
             </div>
             <div id="heroAudioCtxState" class="mt-2 text-base sm:text-lg font-bold text-white">—</div>
             <div class="mt-1 text-xs text-white/50">Realtime engine</div>
-          </div>
-
-          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
-            <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
-              Dominant zone
-            </div>
-            <div id="heroDominantBand" class="mt-2 text-base sm:text-lg font-bold text-white">—</div>
-            <div class="mt-2 h-2 rounded-full bg-white/5 overflow-hidden border border-white/10">
-              <div id="heroDominantBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
-            <div class="text-[11px] uppercase tracking-[0.16em] text-cyan-200/85 font-semibold">
-              Stereo width
-            </div>
-            <div id="heroStereoWidth" class="mt-2 text-base sm:text-lg font-bold text-white">—</div>
-            <div class="mt-2 h-2 rounded-full bg-white/5 overflow-hidden border border-white/10">
-              <div id="heroStereoWidthBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
-            </div>
           </div>
 
           <div class="rounded-2xl border border-white/10 bg-white/[0.05] p-4 col-span-2">
@@ -125,7 +106,7 @@ export const prerender = false;
     </section>
 
     <!-- ROW 1 -->
-    <section class="grid grid-cols-1 xl:grid-cols-[1.05fr_.95fr] gap-6 mb-6">
+    <section class="grid grid-cols-1 xl:grid-cols-[1.02fr_.98fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -215,7 +196,7 @@ export const prerender = false;
     </section>
 
     <!-- ROW 2 -->
-    <section class="grid grid-cols-1 2xl:grid-cols-[.88fr_1.12fr] gap-6 mb-6">
+    <section class="grid grid-cols-1 2xl:grid-cols-[.9fr_1.1fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -267,6 +248,16 @@ export const prerender = false;
             </div>
           </div>
         </div>
+
+        <div class="mt-4 rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Dominant zone</div>
+            <div id="dominantBandText" class="text-sm font-semibold text-white/85">—</div>
+          </div>
+          <div class="mt-3 h-2 rounded-full bg-white/5 overflow-hidden border border-white/10">
+            <div id="dominantBandBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-100" style="width:0%"></div>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
@@ -299,7 +290,7 @@ export const prerender = false;
     </section>
 
     <!-- ROW 3 -->
-    <section class="grid grid-cols-1 xl:grid-cols-[1fr_1.05fr_.9fr] gap-6 mb-6">
+    <section class="grid grid-cols-1 xl:grid-cols-[1fr_1.18fr_.82fr] gap-6 mb-6">
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -378,7 +369,7 @@ export const prerender = false;
           </div>
         </div>
 
-        <div class="mt-4 grid grid-cols-[1.15fr_.85fr] gap-4">
+        <div class="mt-4 grid grid-cols-[1.2fr_.8fr] gap-4">
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4 min-w-0">
             <div class="flex items-center justify-between gap-3">
               <div class="text-xs text-white/45 uppercase tracking-wider">Stereo width</div>
@@ -391,7 +382,7 @@ export const prerender = false;
 
           <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4 min-w-0">
             <div class="text-xs text-white/45 uppercase tracking-wider">Phase feel</div>
-            <div id="stereoPhaseText" class="mt-3 text-sm font-semibold text-white/85">—</div>
+            <div id="stereoPhaseText" class="mt-3 text-sm font-semibold text-white/85 whitespace-nowrap">—</div>
             <div class="mt-2 text-xs text-white/45">
               Stereo field state
             </div>
@@ -462,6 +453,7 @@ export const prerender = false;
         active: false,
         attached: false,
         elems: {},
+        stereoTrail: []
       };
 
       const E = window.__abfStudioEngine;
@@ -492,8 +484,6 @@ export const prerender = false;
           heroAudioCtxState: $("heroAudioCtxState"),
           heroDominantBand: $("heroDominantBand"),
           heroDominantBar: $("heroDominantBar"),
-          heroStereoWidth: $("heroStereoWidth"),
-          heroStereoWidthBar: $("heroStereoWidthBar"),
           heroPeakText: $("heroPeakText"),
           heroPeakBar: $("heroPeakBar"),
           heroRmsText: $("heroRmsText"),
@@ -510,11 +500,6 @@ export const prerender = false;
           rmsText: $("studioRmsText"),
           peakBar: $("studioPeakBar"),
           rmsBar: $("studioRmsBar"),
-
-          wavePeakText: $("wavePeakText"),
-          waveRmsText: $("waveRmsText"),
-          wavePeakBar: $("wavePeakBar"),
-          waveRmsBar: $("waveRmsBar"),
 
           crestFactorText: $("crestFactorText"),
           crestFactorBar: $("crestFactorBar"),
@@ -543,6 +528,7 @@ export const prerender = false;
           bandHighText: $("bandHighText"),
           centroidText: $("centroidText"),
           dominantBandText: $("dominantBandText"),
+          dominantBandBar: $("dominantBandBar"),
         };
       }
 
@@ -653,7 +639,6 @@ export const prerender = false;
 
         if (elems.artist) elems.artist.textContent = artist;
         if (elems.title) elems.title.textContent = title;
-
         syncCoverPair(elems.cover, elems.coverFallback, coverUrl);
       }
 
@@ -810,12 +795,23 @@ export const prerender = false;
           const y = cy - (left + right) * radius * 0.55;
 
           const mag = Math.min(1, (Math.abs(left) + Math.abs(right)) * 0.9);
-          const alpha = 0.05 + mag * 0.22;
-          const size = 1 + mag * 2.2;
+          E.stereoTrail.push({ x, y, mag, life: 1 });
+        }
 
+        if (E.stereoTrail.length > 220) {
+          E.stereoTrail.splice(0, E.stereoTrail.length - 220);
+        }
+
+        E.stereoTrail = E.stereoTrail
+          .map((p) => ({ ...p, life: p.life - 0.04 }))
+          .filter((p) => p.life > 0);
+
+        for (const p of E.stereoTrail) {
+          const alpha = 0.03 + p.mag * 0.16 * p.life;
+          const size = 0.8 + p.mag * 2.0 * p.life;
           ctx.fillStyle = `rgba(47,194,255,${alpha})`;
           ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -836,16 +832,12 @@ export const prerender = false;
 
         if (E.elems.peakText) E.elems.peakText.textContent = `${peakPct}%`;
         if (E.elems.rmsText) E.elems.rmsText.textContent = `${rmsPct}%`;
-        if (E.elems.wavePeakText) E.elems.wavePeakText.textContent = `${peakPct}%`;
-        if (E.elems.waveRmsText) E.elems.waveRmsText.textContent = `${rmsPct}%`;
 
         if (E.elems.heroPeakText) E.elems.heroPeakText.textContent = `${peakPct}%`;
         if (E.elems.heroRmsText) E.elems.heroRmsText.textContent = `${rmsPct}%`;
 
         if (E.elems.peakBar) E.elems.peakBar.style.width = `${peakPct}%`;
         if (E.elems.rmsBar) E.elems.rmsBar.style.width = `${rmsPct}%`;
-        if (E.elems.wavePeakBar) E.elems.wavePeakBar.style.width = `${peakPct}%`;
-        if (E.elems.waveRmsBar) E.elems.waveRmsBar.style.width = `${rmsPct}%`;
         if (E.elems.heroPeakBar) E.elems.heroPeakBar.style.width = `${peakPct}%`;
         if (E.elems.heroRmsBar) E.elems.heroRmsBar.style.width = `${rmsPct}%`;
 
@@ -904,8 +896,6 @@ export const prerender = false;
         if (E.elems.stereoBalanceIndicator) E.elems.stereoBalanceIndicator.style.left = `${balancePct}%`;
         if (E.elems.stereoWidthBar) E.elems.stereoWidthBar.style.width = `${Math.round(width)}%`;
         if (E.elems.stereoWidthText) E.elems.stereoWidthText.textContent = `${Math.round(width)}%`;
-        if (E.elems.heroStereoWidth) E.elems.heroStereoWidth.textContent = `${Math.round(width)}%`;
-        if (E.elems.heroStereoWidthBar) E.elems.heroStereoWidthBar.style.width = `${Math.round(width)}%`;
 
         if (E.elems.stereoBalanceText) {
           if (Math.abs(balance) < 0.08) E.elems.stereoBalanceText.textContent = "Centered";
@@ -974,6 +964,7 @@ export const prerender = false;
         if (E.elems.dominantBandText) E.elems.dominantBandText.textContent = label;
         if (E.elems.heroDominantBand) E.elems.heroDominantBand.textContent = label;
         if (E.elems.heroFocusText) E.elems.heroFocusText.textContent = label;
+        if (E.elems.dominantBandBar) E.elems.dominantBandBar.style.width = `${maxVal}%`;
         if (E.elems.heroDominantBar) E.elems.heroDominantBar.style.width = `${maxVal}%`;
         if (E.elems.heroFocusBar) E.elems.heroFocusBar.style.width = `${maxVal}%`;
       }
