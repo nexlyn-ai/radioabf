@@ -5,7 +5,7 @@ export const prerender = false;
 
 <Base
   title="RadioABF Studio Monitoring — RadioABF"
-  description="Real-time audio tools and live player analysis on RadioABF."
+  description="Real-time audio analysis environment connected to the RadioABF player."
   canonical="/studio"
   image="/og-image.jpg"
 >
@@ -28,11 +28,14 @@ export const prerender = false;
 
           <h1 class="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
             <span class="text-white">RadioABF</span>
-            <span class="bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-400 bg-clip-text text-transparent"> Studio Monitoring</span>
+            <span class="bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              {" "}Studio Monitoring
+            </span>
           </h1>
 
           <p class="mt-3 text-sm sm:text-base text-white/72 leading-relaxed max-w-2xl">
-            Premium real-time monitoring of the RadioABF player output with live metering, spectrum analysis, waveform tracking and stereo field intelligence.
+            Premium real-time monitoring of the RadioABF player output with live metering,
+            spectrum analysis, waveform tracking, stereo field intelligence and a full waterfall spectrogram.
           </p>
 
           <div class="mt-5 flex flex-wrap gap-2">
@@ -444,6 +447,26 @@ export const prerender = false;
             </div>
           </div>
         </div>
+
+        <div class="mt-4 rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Phase correlation</div>
+            <div id="phaseCorrelationText" class="text-sm font-semibold text-white/85">0.00</div>
+          </div>
+          <div class="mt-3 relative h-3 rounded-full bg-white/5 overflow-hidden border border-white/10">
+            <div class="absolute inset-y-0 left-1/2 w-px bg-white/20"></div>
+            <div
+              id="phaseCorrelationIndicator"
+              class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full border border-cyan-300/40 bg-cyan-300/20 shadow-[0_0_18px_rgba(47,194,255,0.30)] transition-[left] duration-100"
+              style="left:50%;"
+            ></div>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs text-white/45 uppercase tracking-wider">
+            <span>-1</span>
+            <span>0</span>
+            <span>+1</span>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
@@ -495,6 +518,45 @@ export const prerender = false;
             <div class="text-xs text-white/45 uppercase tracking-wider">Spectral centroid</div>
             <div id="centroidText" class="mt-2 text-sm font-semibold text-white/85">—</div>
           </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#050B14]/70 p-4">
+            <div class="text-xs text-white/45 uppercase tracking-wider">Kick / transient</div>
+            <div id="kickDetectText" class="mt-2 text-sm font-semibold text-white/85">Idle</div>
+            <div class="mt-3 h-2 rounded-full bg-white/5 overflow-hidden border border-white/10">
+              <div id="kickDetectBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-[width] duration-75" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 4 -->
+    <section class="grid grid-cols-1 gap-6 mb-6">
+      <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/85 font-semibold">
+              Time / Frequency
+            </div>
+            <h2 class="mt-1 text-xl font-bold text-white">
+              Spectrogram
+            </h2>
+          </div>
+
+          <div class="text-xs text-white/45">Waterfall</div>
+        </div>
+
+        <canvas
+          id="spectrogramCanvas"
+          width="1400"
+          height="420"
+          class="w-full h-[240px] rounded-xl border border-white/10 bg-black/40"
+        ></canvas>
+
+        <div class="mt-3 flex items-center justify-between text-[11px] text-white/40 uppercase tracking-wider">
+          <span>Low</span>
+          <span>Mid</span>
+          <span>High</span>
         </div>
       </div>
     </section>
@@ -509,7 +571,8 @@ export const prerender = false;
         active: false,
         attached: false,
         elems: {},
-        stereoTrail: []
+        stereoTrail: [],
+        lastKick: 0,
       };
 
       const E = window.__abfStudioEngine;
@@ -575,6 +638,7 @@ export const prerender = false;
           spectrumCanvas: $("spectrumCanvas"),
           waveformCanvas: $("waveformCanvas"),
           stereoFieldCanvas: $("stereoFieldCanvas"),
+          spectrogramCanvas: $("spectrogramCanvas"),
 
           spectrumTiltText: $("spectrumTiltText"),
           spectrumBrightnessText: $("spectrumBrightnessText"),
@@ -587,6 +651,8 @@ export const prerender = false;
           stereoWidthBar: $("stereoWidthBar"),
           stereoWidthText: $("stereoWidthText"),
           stereoPhaseText: $("stereoPhaseText"),
+          phaseCorrelationIndicator: $("phaseCorrelationIndicator"),
+          phaseCorrelationText: $("phaseCorrelationText"),
 
           bandLowBar: $("bandLowBar"),
           bandMidBar: $("bandMidBar"),
@@ -597,6 +663,9 @@ export const prerender = false;
           centroidText: $("centroidText"),
           dominantBandText: $("dominantBandText"),
           dominantBandBar: $("dominantBandBar"),
+
+          kickDetectText: $("kickDetectText"),
+          kickDetectBar: $("kickDetectBar"),
         };
       }
 
@@ -607,7 +676,8 @@ export const prerender = false;
           elems.vuRight &&
           elems.spectrumCanvas &&
           elems.waveformCanvas &&
-          elems.stereoFieldCanvas
+          elems.stereoFieldCanvas &&
+          elems.spectrogramCanvas
         );
       }
 
@@ -884,6 +954,44 @@ export const prerender = false;
         }
       }
 
+      function drawSpectrogram(freqData) {
+        const canvas = E.elems.spectrogramCanvas;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        resizeCanvasToDisplaySize(canvas);
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        const existing = ctx.getImageData(0, 0, width, height - 1);
+        ctx.putImageData(existing, 0, 1);
+
+        const bins = freqData.length;
+        const slice = Math.max(1, Math.floor(bins / width));
+
+        for (let x = 0; x < width; x++) {
+          let sum = 0;
+          let count = 0;
+
+          for (let i = x * slice; i < (x + 1) * slice && i < bins; i++) {
+            sum += freqData[i];
+            count++;
+          }
+
+          const avg = count ? sum / count : 0;
+          const v = avg / 255;
+
+          const r = Math.floor(20 + v * 235);
+          const g = Math.floor(60 + v * 180);
+          const b = Math.floor(120 + v * 135);
+
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.fillRect(x, 0, 1, 1);
+        }
+      }
+
       function updatePeakAndRms(timeData) {
         let peak = 0;
         let sum = 0;
@@ -958,7 +1066,7 @@ export const prerender = false;
         return { levelL, levelR };
       }
 
-      function updateStereo(levelL, levelR) {
+      function updateStereo(timeData, levelL, levelR) {
         const total = levelL + levelR;
         const balance = total > 0 ? (levelR - levelL) / total : 0;
         const balancePct = ((balance + 1) / 2) * 100;
@@ -984,7 +1092,23 @@ export const prerender = false;
           else E.elems.stereoPhaseText.textContent = "Very wide / separated";
         }
 
-        return { width };
+        // Approx phase correlation
+        let corrSum = 0;
+        let count = 0;
+        const half = Math.floor(timeData.length / 2);
+        for (let i = 0; i < half; i += 2) {
+          const l = (timeData[i] - 128) / 128;
+          const r = (timeData[i + half] - 128) / 128;
+          corrSum += l * r;
+          count++;
+        }
+        const corr = count > 0 ? clamp(corrSum / count, -1, 1) : 0;
+        const corrPct = ((corr + 1) / 2) * 100;
+
+        if (E.elems.phaseCorrelationIndicator) E.elems.phaseCorrelationIndicator.style.left = `${corrPct}%`;
+        if (E.elems.phaseCorrelationText) E.elems.phaseCorrelationText.textContent = corr.toFixed(2);
+
+        return { width, corr };
       }
 
       function averageRange(data, start, end) {
@@ -1048,7 +1172,6 @@ export const prerender = false;
         if (E.elems.heroDominantBar) E.elems.heroDominantBar.style.width = `${maxVal}%`;
         if (E.elems.heroFocusBar) E.elems.heroFocusBar.style.width = `${maxVal}%`;
 
-        // Spectrum focus metrics
         const tilt = lowPct - highPct;
         let tiltText = "Balanced";
         if (tilt > 18) tiltText = "Warm / low-heavy";
@@ -1064,6 +1187,24 @@ export const prerender = false;
         if (E.elems.spectrumBrightnessBar) E.elems.spectrumBrightnessBar.style.width = `${brightness}%`;
         if (E.elems.spectrumSpreadText) E.elems.spectrumSpreadText.textContent = `${spread}%`;
         if (E.elems.spectrumSpreadBar) E.elems.spectrumSpreadBar.style.width = `${spread}%`;
+
+        // Kick / transient detector
+        const kickBins = Math.max(6, Math.floor(120 / binHz));
+        let kickEnergy = 0;
+        for (let i = 0; i < kickBins; i++) kickEnergy += freqData[i] || 0;
+        kickEnergy = kickEnergy / kickBins;
+        const kickPct = Math.round(clamp(kickEnergy / 255, 0, 1) * 100);
+
+        const now = Date.now();
+        if (kickPct > 65 && now - E.lastKick > 160) {
+          E.lastKick = now;
+        }
+
+        const activeKick = now - E.lastKick < 180;
+        if (E.elems.kickDetectText) E.elems.kickDetectText.textContent = activeKick ? "Detected" : "Idle";
+        if (E.elems.kickDetectBar) E.elems.kickDetectBar.style.width = `${kickPct}%`;
+
+        return { centroid, brightness, spread };
       }
 
       function frameLoop() {
@@ -1099,13 +1240,14 @@ export const prerender = false;
             syncNowPlaying();
 
             const { levelL, levelR } = updateVu(timeData);
-            updateStereo(levelL, levelR);
+            updateStereo(timeData, levelL, levelR);
             updatePeakAndRms(timeData);
             updateBands(freqData, audioCtx.sampleRate || 44100, analyser.fftSize || 2048);
 
             drawSpectrum(freqData);
             drawWaveform(timeData);
             drawStereoField(timeData);
+            drawSpectrogram(freqData);
           }
         }
 
@@ -1151,6 +1293,7 @@ export const prerender = false;
       window.addEventListener("focus", reattachStudio);
       window.addEventListener("resize", reattachStudio);
       window.addEventListener("abf:audio-tools-ready", reattachStudio);
+
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") reattachStudio();
       });
