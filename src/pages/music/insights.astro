@@ -840,7 +840,7 @@ export const prerender = false;
       const autoNewEntriesEl = root.querySelector("#autoNewEntries");
       const autoNewEntriesEmpty = root.querySelector("#autoNewEntriesEmpty");
 
-      const serverData = await fetchServerNowPlaying(400);
+      const serverData = await fetchServerNowPlaying(240);
       const history = serverData.history || [];
       const nowEntry = serverData.now || history[0] || null;
 
@@ -1021,19 +1021,20 @@ function startTimer(){
 
   let statsTick = 0;
 
-  state.timer = setInterval(() => {
-    if (state.inFlight) return;
+state.timer = setInterval(() => {
+  if (document.hidden) return;
+  if (state.inFlight) return;
 
-    render();
+  render();
 
-    statsTick++;
+  statsTick++;
 
-    if (statsTick >= 8) {   // ~64 secondes
-      fetchMusicStats();
-      statsTick = 0;
-    }
+  if (statsTick >= 2) {   // ~60 secondes
+    fetchMusicStats();
+    statsTick = 0;
+  }
 
-  }, 8000);
+}, 30000);
 }
 
 function init(){

@@ -27,7 +27,7 @@ const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000; // 2 min
 
 // ✅ protection serveur contre les rafales
-const RESPONSE_CACHE_TTL_MS = 5000;
+const RESPONSE_CACHE_TTL_MS = 30000;
 
 /* -------------------- Helpers -------------------- */
 
@@ -503,7 +503,7 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
     }
   }
 
-  const oversample = Math.min(500, Math.max(limit * 20, limit + 80));
+  const oversample = Math.min(300, Math.max(limit + 40, Math.floor(limit * 1.25)));
 
   const params = new URLSearchParams({
     fields: "id,track_key,artist,title,played_at,raw",
@@ -587,21 +587,23 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
   let nowFirstPlayedAtMs = 0;
   let nowIsNew = false;
 
-  if (!nowIsBad) {
-    const nowMeta = await fetchTrackMetaByTrackKey(track_key);
+if (!nowIsBad) {
+  const nowMeta =
+    bulkMeta.get(track_key) ||
+    (await fetchTrackMetaByTrackKey(track_key));
 
-    nowCover = String(nowMeta.cover_url || "").trim();
-    nowCoverSource = nowCover ? "directus" : "";
+  nowCover = String(nowMeta.cover_url || "").trim();
+  nowCoverSource = nowCover ? "directus" : "";
 
-    if (!nowCover) {
-      nowCover = await fetchItunesCover(artist, title);
-      if (nowCover) nowCoverSource = "itunes";
-    }
-
-    nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
-    nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
-    nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
+  if (!nowCover) {
+    nowCover = await fetchItunesCover(artist, title);
+    if (nowCover) nowCoverSource = "itunes";
   }
+
+  nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
+  nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
+  nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
+}
 
   return {
     ok: true,
