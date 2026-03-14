@@ -494,7 +494,7 @@ export const prerender = false;
     return n ? String(state.coverMemory[n] || "") : "";
   }
 
-  async function fetchServerNowPlaying(limit = 400){
+  async function fetchServerNowPlaying(limit = 800){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
       const data = await res.json().catch(()=> ({}));
@@ -843,7 +843,7 @@ export const prerender = false;
       const autoNewEntriesEl = root.querySelector("#autoNewEntries");
       const autoNewEntriesEmpty = root.querySelector("#autoNewEntriesEmpty");
 
-      const serverData = await fetchServerNowPlaying(1500);
+      const serverData = await fetchServerNowPlaying(800);
       const history = serverData.history || [];
       const nowEntry = serverData.now || history[0] || null;
 
