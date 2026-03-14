@@ -29,6 +29,17 @@ const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000; // 2 min
 // ✅ protection serveur contre les rafales
 const RESPONSE_CACHE_TTL_MS = 30000;
 
+// ✅ nouveau : plafond plus haut pour permettre un historique plus profond
+//    sans changer l'architecture générale.
+//    Ajustable via env si besoin.
+const MAX_NOWPLAYING_LIMIT = Math.min(
+  5000,
+  Math.max(
+    100,
+    Number(import.meta.env.NOWPLAYING_MAX_LIMIT || process.env.NOWPLAYING_MAX_LIMIT || "2000")
+  )
+);
+
 /* -------------------- Helpers -------------------- */
 
 function cleanNowText(s: string) {
@@ -146,6 +157,12 @@ async function directusFetch(path: string, init: RequestInit = {}) {
 
 function directusAssetUrl(fileId: string) {
   return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
+}
+
+function parseRequestedLimit(raw: string | null): number {
+  const n = Number(raw || "12");
+  if (!Number.isFinite(n)) return 12;
+  return Math.trunc(n);
 }
 
 /* -------------------- Tracks: ensure row (RACE-SAFE) -------------------- */
@@ -503,7 +520,14 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
     }
   }
 
-  const oversample = Math.min(300, Math.max(limit + 40, Math.floor(limit * 1.25)));
+  // ✅ oversample dynamique :
+  // - assez large pour absorber la déduplication
+  // - sans exploser inutilement la charge
+  // - plafonné par MAX_NOWPLAYING_LIMIT
+  const oversample = Math.min(
+    MAX_NOWPLAYING_LIMIT,
+    Math.max(limit + 80, Math.ceil(limit * 1.2))
+  );
 
   const params = new URLSearchParams({
     fields: "id,track_key,artist,title,played_at,raw",
@@ -587,23 +611,23 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
   let nowFirstPlayedAtMs = 0;
   let nowIsNew = false;
 
-if (!nowIsBad) {
-  const nowMeta =
-    bulkMeta.get(track_key) ||
-    (await fetchTrackMetaByTrackKey(track_key));
+  if (!nowIsBad) {
+    const nowMeta =
+      bulkMeta.get(track_key) ||
+      (await fetchTrackMetaByTrackKey(track_key));
 
-  nowCover = String(nowMeta.cover_url || "").trim();
-  nowCoverSource = nowCover ? "directus" : "";
+    nowCover = String(nowMeta.cover_url || "").trim();
+    nowCoverSource = nowCover ? "directus" : "";
 
-  if (!nowCover) {
-    nowCover = await fetchItunesCover(artist, title);
-    if (nowCover) nowCoverSource = "itunes";
+    if (!nowCover) {
+      nowCover = await fetchItunesCover(artist, title);
+      if (nowCover) nowCoverSource = "itunes";
+    }
+
+    nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
+    nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
+    nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
   }
-
-  nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
-  nowFirstPlayedAtMs = toUTCms(nowFirstPlayedAt);
-  nowIsNew = isBlockedShow(artist) ? false : isNewFromFirstPlayed(nowFirstPlayedAt);
-}
 
   return {
     ok: true,
@@ -663,7 +687,8 @@ export const GET: APIRoute = async ({ request }) => {
     assertEnv();
 
     const url = new URL(request.url);
-    const limit = Math.min(400, Math.max(1, Number(url.searchParams.get("limit") || "12")));
+    const requestedLimit = parseRequestedLimit(url.searchParams.get("limit"));
+    const limit = Math.min(MAX_NOWPLAYING_LIMIT, Math.max(1, requestedLimit));
 
     const payload = await getNowPlayingPayload(limit);
 
