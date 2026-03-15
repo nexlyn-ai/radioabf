@@ -55,7 +55,7 @@ export const prerender = false;
       Covers: Manual → Fallback
     </span>
     <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-      Updates every 8s
+      Updates every 15s
     </span>
   </div>
 
@@ -1755,7 +1755,7 @@ export const prerender = false;
     state.timer = setInterval(() => {
       if (state.inFlight) return;
       render();
-    }, 8000);
+    }, 15000);
   }
 
   function init(){
