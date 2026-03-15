@@ -28,8 +28,10 @@ const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000;
 
 const RESPONSE_CACHE_TTL_MS = 10000;
+const TRACK_META_CACHE_TTL_MS = 60 * 60 * 1000;
+const TRACK_META_NEGATIVE_CACHE_TTL_MS = 10 * 60 * 1000;
 const DEEZER_TIMEOUT_MS = 2500;
-const DEEZER_HISTORY_FALLBACK_LIMIT = 20;
+const DEEZER_HISTORY_FALLBACK_LIMIT = 0;
 
 const MAX_NOWPLAYING_LIMIT = Math.min(
   5000,
@@ -94,7 +96,7 @@ function normKey(artist: string, title: string) {
 }
 
 function stripMixSuffix(title: string) {
-  return title
+  return String(title || "")
     .replace(/\((original|extended|radio|club|edit|mix)[^)]+\)/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -148,6 +150,16 @@ function assertEnv() {
   if (!DIRECTUS_TOKEN) throw new Error("DIRECTUS_TOKEN missing");
 }
 
+function directusAssetUrl(fileId: string) {
+  return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
+}
+
+function parseRequestedLimit(raw: string | null): number {
+  const n = Number(raw || "12");
+  if (!Number.isFinite(n)) return 12;
+  return Math.trunc(n);
+}
+
 async function directusFetch(path: string, init: RequestInit = {}) {
   assertEnv();
 
@@ -169,16 +181,6 @@ async function directusFetch(path: string, init: RequestInit = {}) {
   }
 
   return res;
-}
-
-function directusAssetUrl(fileId: string) {
-  return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
-}
-
-function parseRequestedLimit(raw: string | null): number {
-  const n = Number(raw || "12");
-  if (!Number.isFinite(n)) return 12;
-  return Math.trunc(n);
 }
 
 async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
@@ -271,6 +273,8 @@ const __trackMetaCache: Map<
   { first_played_at: string; cover_url: string; exp: number }
 >) || new Map();
 
+(globalThis as any).__trackMetaCache = __trackMetaCache;
+
 function extractCoverUrlFromTrackRow(row: any): string {
   const coverVal = row?.[TRACKS_COVER_FIELD];
   const fileId =
@@ -283,15 +287,13 @@ function extractCoverUrlFromTrackRow(row: any): string {
   const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
   const coverOverride = row?.[TRACKS_COVER_OVERRIDE_FIELD] === true;
 
-  // cover_override est un booléen, pas une URL
-  // s'il est activé, on privilégie la cover manuelle/locale
+  // cover_override = booléen de priorité, pas une URL
   if (coverOverride) {
     if (fileId) return directusAssetUrl(fileId);
     if (coverUrlField) return coverUrlField;
     return "";
   }
 
-  // comportement normal
   if (fileId) return directusAssetUrl(fileId);
   if (coverUrlField) return coverUrlField;
 
@@ -339,12 +341,14 @@ async function fetchTrackMetaByTrackKey(
     __trackMetaCache.set(track_key, {
       first_played_at,
       cover_url,
-      exp: now + 30 * 60 * 1000,
+      exp: now + (cover_url || first_played_at ? TRACK_META_CACHE_TTL_MS : TRACK_META_NEGATIVE_CACHE_TTL_MS),
     });
-    (globalThis as any).__trackMetaCache = __trackMetaCache;
   } catch {
-    first_played_at = "";
-    cover_url = "";
+    __trackMetaCache.set(track_key, {
+      first_played_at: "",
+      cover_url: "",
+      exp: now + TRACK_META_NEGATIVE_CACHE_TTL_MS,
+    });
   }
 
   return { first_played_at, cover_url };
@@ -355,19 +359,8 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
   const cleanKeys = [...new Set(trackKeys.map((k) => String(k || "").trim()).filter(Boolean))];
   if (!cleanKeys.length) return out;
 
-  const now = Date.now();
-
   await Promise.all(
     cleanKeys.map(async (key) => {
-      const hit = __trackMetaCache.get(key);
-      if (hit && hit.exp > now) {
-        out.set(key, {
-          first_played_at: hit.first_played_at,
-          cover_url: hit.cover_url,
-        });
-        return;
-      }
-
       const meta = await fetchTrackMetaByTrackKey(key);
       out.set(key, meta);
     })
@@ -380,6 +373,8 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
 
 const __deezerCache: Map<string, { url: string; exp: number }> =
   ((globalThis as any).__deezerCache as Map<string, { url: string; exp: number }>) || new Map();
+
+(globalThis as any).__deezerCache = __deezerCache;
 
 async function fetchDeezerCover(artist: string, title: string): Promise<string> {
   if (!ENABLE_DEEZER_FALLBACK) return "";
@@ -442,7 +437,6 @@ async function fetchDeezerCover(artist: string, title: string): Promise<string> 
     url: cover,
     exp: now + (cover ? 6 * 60 * 60 * 1000 : 30 * 60 * 1000),
   });
-  (globalThis as any).__deezerCache = __deezerCache;
 
   return cover;
 }
@@ -560,6 +554,8 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
         .filter(Boolean)
     ),
   ];
+
+  if (track_key) trackKeys.unshift(track_key);
 
   const bulkMeta = await fetchBulkTrackMeta(trackKeys);
 
