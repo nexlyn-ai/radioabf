@@ -79,7 +79,7 @@ export const prerender = false;
             Only the latest 7 days are kept, so each new week replaces the previous sessions automatically.
           </p>
           <p class="text-white/50">
-            Playback opens directly in the main RadioABF player. No download button is exposed on this page.
+            Playback opens directly in the main RadioABF player. No direct source URL is exposed on this page.
           </p>
         </div>
       </div>
@@ -238,24 +238,6 @@ export const prerender = false;
       transform: translateY(-1px);
       filter: brightness(1.04);
     }
-
-    .podcastGhostBtn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:.5rem;
-      padding:.72rem 1rem;
-      border-radius:1rem;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.05);
-      color:rgba(255,255,255,.86);
-      font-weight:700;
-      transition: background .15s ease, transform .15s ease;
-    }
-    .podcastGhostBtn:hover{
-      background:rgba(255,255,255,.10);
-      transform: translateY(-1px);
-    }
   </style>
 
   <script is:inline data-astro-rerun>
@@ -270,6 +252,7 @@ export const prerender = false;
       const reloadBtn = document.getElementById("reloadPodcastsBtn");
 
       const FALLBACK_COVER = "/logo-abf.png";
+      let podcastsItems = [];
 
       function esc(s) {
         return String(s || "")
@@ -311,8 +294,7 @@ export const prerender = false;
         const desc = esc(item.description || "Automatic replay generated from the RadioABF archive.");
         const date = esc(item.display_date || item.date || "");
         const time = esc(item.time || "");
-        const stream = esc(item.stream_url || "");
-        const itemJson = esc(JSON.stringify(item));
+        const id = esc(item.id || "");
 
         featured.innerHTML = `
           <div class="flex flex-col md:flex-row gap-4 md:gap-5 items-start">
@@ -346,17 +328,9 @@ export const prerender = false;
                 <button
                   type="button"
                   class="podcastPlayBtn"
-                  data-podcast='${itemJson}'
+                  data-podcast-id="${id}"
                 >
                   ▶ Play in player
-                </button>
-
-                <button
-                  type="button"
-                  class="podcastGhostBtn"
-                  data-copy-url="${stream}"
-                >
-                  Copy audio URL
                 </button>
               </div>
             </div>
@@ -382,8 +356,7 @@ export const prerender = false;
           const desc = esc(item.description || "Automatic replay generated from the RadioABF archive.");
           const date = esc(item.display_date || item.date || "");
           const time = esc(item.time || "");
-          const stream = esc(item.stream_url || "");
-          const itemJson = esc(JSON.stringify(item));
+          const id = esc(item.id || "");
 
           return `
             <article class="podcastCard p-4">
@@ -413,33 +386,14 @@ export const prerender = false;
                 <button
                   type="button"
                   class="podcastPlayBtn"
-                  data-podcast='${itemJson}'
+                  data-podcast-id="${id}"
                 >
                   ▶ Play
-                </button>
-
-                <button
-                  type="button"
-                  class="podcastGhostBtn"
-                  data-copy-url="${stream}"
-                >
-                  Copy URL
                 </button>
               </div>
             </article>
           `;
         }).join("");
-      }
-
-      async function copyText(text, btn) {
-        try {
-          await navigator.clipboard.writeText(text);
-          if (btn) {
-            const old = btn.textContent;
-            btn.textContent = "Copied";
-            setTimeout(() => { btn.textContent = old; }, 1200);
-          }
-        } catch {}
       }
 
       async function loadPodcasts() {
@@ -456,6 +410,7 @@ export const prerender = false;
           }
 
           const items = Array.isArray(data.items) ? data.items : [];
+          podcastsItems = items;
 
           if (countBadge) {
             countBadge.textContent = `${items.length} replay${items.length > 1 ? "s" : ""}`;
@@ -465,6 +420,7 @@ export const prerender = false;
           renderCards(items);
         } catch (err) {
           console.error("[podcasts] load error:", err);
+          podcastsItems = [];
           if (countBadge) countBadge.textContent = "Unavailable";
           renderFeatured(null);
           renderCards([]);
@@ -476,14 +432,25 @@ export const prerender = false;
         root.dataset.bound = "1";
 
         document.addEventListener("click", async (e) => {
-          const playBtn = e.target.closest("[data-podcast]");
+          const playBtn = e.target.closest("[data-podcast-id]");
           if (playBtn) {
             e.preventDefault();
 
-            try {
-              const payload = JSON.parse(playBtn.getAttribute("data-podcast") || "{}");
+            const id = playBtn.getAttribute("data-podcast-id") || "";
+            const payload = podcastsItems.find((x) => String(x.id) === String(id));
 
-              const ok = await window.__abfPlayPodcast?.({
+            if (!payload) {
+              console.warn("Podcast payload not found for id:", id);
+              return;
+            }
+
+            try {
+              if (typeof window.__abfPlayPodcast !== "function") {
+                console.warn("window.__abfPlayPodcast is not available.");
+                return;
+              }
+
+              const ok = await window.__abfPlayPodcast({
                 id: payload.id,
                 url: payload.stream_url,
                 artist: payload.title || "ABF CLUB",
@@ -495,19 +462,16 @@ export const prerender = false;
 
               if (!ok) {
                 console.warn("Podcast playback could not start.");
+                return;
               }
+
+              const playerContainer = document.getElementById("playerContainer");
+              playerContainer?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
             } catch (err) {
               console.error("Podcast play error:", err);
             }
 
             return;
-          }
-
-          const copyBtn = e.target.closest("[data-copy-url]");
-          if (copyBtn) {
-            e.preventDefault();
-            const url = copyBtn.getAttribute("data-copy-url") || "";
-            if (url) copyText(url, copyBtn);
           }
         });
 
