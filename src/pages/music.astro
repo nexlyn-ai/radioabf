@@ -27,39 +27,35 @@ export const prerender = false;
               Now playing, full history, and weekly community charts — updated live.
             </p>
           </div>
-         <div class="flex flex-col items-start lg:items-end gap-3">
+          <div class="flex flex-col items-start lg:items-end gap-3">
+            <div class="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+              <a
+                href="/music"
+                class="text-xs text-black font-semibold border border-cyan-300/30 bg-cyan-300 px-4 py-2 rounded-xl flex-none"
+              >
+                Music Portal
+              </a>
 
-  <!-- Navigation Music / Insights -->
-  <div class="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar">
-    <a
-      href="/music"
-      class="text-xs text-black font-semibold border border-cyan-300/30 bg-cyan-300 px-4 py-2 rounded-xl flex-none"
-    >
-      Music Portal
-    </a>
+              <a
+                href="/music/insights"
+                class="text-xs text-white/70 border border-white/10 bg-white/5 px-4 py-2 rounded-xl hover:bg-white/10 transition flex-none"
+              >
+                Airplay Insights
+              </a>
+            </div>
 
-    <a
-      href="/music/insights"
-      class="text-xs text-white/70 border border-white/10 bg-white/5 px-4 py-2 rounded-xl hover:bg-white/10 transition flex-none"
-    >
-      Airplay Insights
-    </a>
-  </div>
-
-  <!-- Badges -->
-  <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
-    <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-      Vote: 1 / track / day
-    </span>
-    <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-      Covers: Manual → Fallback
-    </span>
-    <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-      Updates every 15s
-    </span>
-  </div>
-
-</div>
+            <div class="flex items-center justify-start lg:justify-end gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+                Vote: 1 / track / day
+              </span>
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+                Covers: Manual → Fallback
+              </span>
+              <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
+                Updates every 15s
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -228,7 +224,6 @@ export const prerender = false;
       </aside>
     </section>
 
-
     <style>
       .tabular-nums { font-variant-numeric: tabular-nums; }
       .scrollbar-thin::-webkit-scrollbar { width: 6px; }
@@ -369,6 +364,16 @@ export const prerender = false;
       .replace(/'/g,"&#039;");
   }
 
+  function cleanText(v){
+    const s = String(v ?? "").trim();
+    return /^undefined$/i.test(s) || /^null$/i.test(s) ? "" : s;
+  }
+
+  function safeCount(v){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
   function fmtTime(ts){
     if (!ts) return "--:--";
     const d = new Date(ts);
@@ -417,45 +422,57 @@ export const prerender = false;
   }
 
   function splitTrack(entry){
-    const s = String(entry || "").trim().replace(/^undefined\s*-\s*/i, "");
+    let s = cleanText(entry);
+
+    if (!s) {
+      return { artist: "", title: "" };
+    }
+
+    s = s.replace(/^undefined\s*-\s*/i, "").replace(/\s+/g, " ").trim();
+
     const idx = s.indexOf(" - ");
 
     if (idx === -1) {
-      const artistOnly = s.trim();
       return {
-        artist: /^undefined$/i.test(artistOnly) ? "" : artistOnly,
+        artist: cleanText(s),
         title: ""
       };
     }
 
-    const artist = s.slice(0, idx).trim();
-    const title = s.slice(idx + 3).trim();
+    const artist = cleanText(s.slice(0, idx));
+    const title = cleanText(s.slice(idx + 3));
 
-    return {
-      artist: /^undefined$/i.test(artist) ? "" : artist,
-      title: /^undefined$/i.test(title) ? "" : title,
-    };
+    return { artist, title };
   }
 
   function normKey(artist, title){
-    return (String(artist || "") + " - " + String(title || ""))
+    const a = cleanText(artist);
+    const t = cleanText(title);
+
+    return `${a} - ${t}`
       .toLowerCase()
       .replace(/\u00A0/g, " ")
       .replace(/\s+/g, " ")
       .replace(/[“”"']/g, "")
-      .trim();
+      .trim()
+      .replace(/^-+\s*/, "")
+      .replace(/\s*-+$/, "");
   }
 
   function rawKey(artist, title){
-    const a = /^undefined$/i.test(String(artist || "").trim()) ? "" : String(artist || "").trim();
-    const t = /^undefined$/i.test(String(title || "").trim()) ? "" : String(title || "").trim();
-    return `${a} - ${t}`.trim();
+    const a = cleanText(artist);
+    const t = cleanText(title);
+
+    if (a && t) return `${a} - ${t}`;
+    if (a) return a;
+    if (t) return t;
+    return "";
   }
 
-  function upperArtist(s){ return String(s || "—").trim().toUpperCase(); }
+  function upperArtist(s){ return String(cleanText(s) || "—").trim().toUpperCase(); }
 
   function titleCaseEN(input){
-    const s = String(input || "").trim();
+    const s = String(cleanText(input) || "").trim();
     if (!s) return "—";
     const lowerWords = new Set([
       "a","an","the","and","but","or","nor","for","so","yet",
@@ -482,12 +499,12 @@ export const prerender = false;
   }
 
   function isBlockedShow(artist){
-    return /^abf\s*club\b/i.test(String(artist || "").trim());
+    return /^abf\s*club\b/i.test(String(cleanText(artist) || "").trim());
   }
 
   function displayTitleFor(artistRaw, titleRaw){
-    if (isBlockedShow(artistRaw)) return String(titleRaw || "—").trim() || "—";
-    const clean = stripTitleSuffixes(titleRaw);
+    if (isBlockedShow(artistRaw)) return String(cleanText(titleRaw) || "—").trim() || "—";
+    const clean = stripTitleSuffixes(cleanText(titleRaw));
     return titleCaseEN(clean || "—");
   }
 
@@ -547,10 +564,10 @@ export const prerender = false;
 
       let now = null;
       if (data?.now) {
-        const rawNow = String(data?.now?.raw || "").trim();
-        const a = String(data?.now?.artist || "").trim();
-        const t = String(data?.now?.title || "").trim();
-        const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
+        const rawNow = cleanText(data?.now?.raw);
+        const a = cleanText(data?.now?.artist);
+        const t = cleanText(data?.now?.title);
+        const raw = rawNow || (a || t ? rawKey(a, t) : "");
         if (raw) {
           now = {
             t: raw,
@@ -568,7 +585,7 @@ export const prerender = false;
       const history = [];
       if (Array.isArray(data?.history)){
         for (const row of data.history){
-          const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
+          const raw = cleanText(row?.raw) || rawKey(cleanText(row?.artist), cleanText(row?.title));
           if (!raw) continue;
           history.push({
             t: raw,
@@ -669,10 +686,19 @@ export const prerender = false;
 
   async function apiVote(trackKeyRaw, artist = "", title = ""){
     const week = getISOWeekId();
+    const safeArtist = cleanText(artist);
+    const safeTitle = cleanText(title);
+    const safeTrackKey = cleanText(trackKeyRaw) || rawKey(safeArtist, safeTitle);
+
     const res = await fetch("/api/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ week, track_key: trackKeyRaw, artist, title }),
+      body: JSON.stringify({
+        week,
+        track_key: safeTrackKey,
+        artist: safeArtist,
+        title: safeTitle
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.ok === false){
@@ -699,8 +725,8 @@ export const prerender = false;
     const byNorm = Object.create(null);
 
     for (const row of (topRows || [])){
-      const tk = String(row?.track_key || "").trim();
-      const c = Number(row?.count || 0);
+      const tk = cleanText(row?.track_key);
+      const c = safeCount(row?.count);
       if (!tk) continue;
 
       exact[tk] = c;
@@ -713,16 +739,16 @@ export const prerender = false;
 
     return {
       getCount(trackKeyRaw, artistMaybe, titleMaybe){
-        const k = String(trackKeyRaw || "").trim();
-        if (k && exact[k] != null) return exact[k];
-        if (k && lower[k.toLowerCase()] != null) return lower[k];
+        const k = cleanText(trackKeyRaw);
+        if (k && exact[k] != null) return safeCount(exact[k]);
+        if (k && lower[k.toLowerCase()] != null) return safeCount(lower[k.toLowerCase()]);
 
         const sp = k
           ? splitTrack(k)
-          : { artist: String(artistMaybe || ""), title: String(titleMaybe || "") };
+          : { artist: cleanText(artistMaybe), title: cleanText(titleMaybe) };
 
         const n = normKey(sp.artist, sp.title);
-        if (n && byNorm[n] != null) return byNorm[n];
+        if (n && byNorm[n] != null) return safeCount(byNorm[n]);
 
         return 0;
       }
@@ -930,7 +956,7 @@ export const prerender = false;
           title="${blocked ? "Voting disabled for ABF CLUB" : (voted ? "Already voted today" : "Vote")}"
           style="${(blocked || voted) ? "opacity:0.55;cursor:not-allowed;" : ""}"
         >
-          👍 <span class="voteCount tabular-nums">${esc(String(count ?? 0))}</span>
+          👍 <span class="voteCount tabular-nums">${esc(String(safeCount(count)))}</span>
         </button>
       </div>
     `;
@@ -946,12 +972,12 @@ export const prerender = false;
   function buildRankMap(rows){
     const map = Object.create(null);
     (rows || []).forEach((row, idx) => {
-      const tk = String(row?.track_key || "").trim();
+      const tk = cleanText(row?.track_key);
       if (!tk) return;
 
       const sp = splitTrack(tk);
-      const a = String(row?.artist || "").trim() || sp.artist || "";
-      const t = String(row?.title || "").trim() || sp.title || "";
+      const a = cleanText(row?.artist) || sp.artist || "";
+      const t = cleanText(row?.title) || sp.title || "";
       const n = normKey(a, t);
 
       if (n) map[n] = idx + 1;
@@ -961,10 +987,10 @@ export const prerender = false;
   }
 
   function getChartMove(row, prevRankMap){
-    const tk = String(row?.track_key || "").trim();
+    const tk = cleanText(row?.track_key);
     const sp = splitTrack(tk);
-    const a = String(row?.artist || "").trim() || sp.artist || "";
-    const t = String(row?.title || "").trim() || sp.title || "";
+    const a = cleanText(row?.artist) || sp.artist || "";
+    const t = cleanText(row?.title) || sp.title || "";
     const n = normKey(a, t);
 
     const prevRank =
@@ -1010,7 +1036,8 @@ export const prerender = false;
   }
 
   function chartRowHtml(rank, coverUrl, artist, title, count, max, moveBadge = "", unitLabel = "votes", isNew = false, secondaryBadge = ""){
-    const pct = Math.round((Number(count) / Math.max(1, Number(max))) * 100);
+    const safe = safeCount(count);
+    const pct = Math.round((safe / Math.max(1, safeCount(max))) * 100);
     return `
       <li class="group flex items-center gap-4 p-4 rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition">
         <div class="flex-none w-10 h-10 rounded-2xl border ${rankBadgeClass(rank)} flex items-center justify-center text-sm font-extrabold tabular-nums">
@@ -1030,7 +1057,7 @@ export const prerender = false;
               ${secondaryBadge}
               ${moveBadge}
               <span>
-                ${esc(String(count))} <span class="text-white/50 font-normal">${esc(unitLabel)}</span>
+                ${esc(String(safe))} <span class="text-white/50 font-normal">${esc(unitLabel)}</span>
               </span>
             </div>
           </div>
@@ -1066,7 +1093,7 @@ export const prerender = false;
         </div>
         <div class="flex-none text-right">
           ${rightBadge || ""}
-          <div class="text-sm font-extrabold text-white tabular-nums">${esc(String(metricValue))}</div>
+          <div class="text-sm font-extrabold text-white tabular-nums">${esc(String(safeCount(metricValue)))}</div>
           <div class="text-[11px] text-white/45 uppercase tracking-wide">${esc(metricLabel)}</div>
         </div>
       </div>
@@ -1093,7 +1120,7 @@ export const prerender = false;
                 ${esc(fmtRelativeSince(firstSeen))} • <span class="tabular-nums">${esc(fmtDateTimeShort(firstSeen))}</span>
               </div>
               <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-2.5 py-1 rounded-xl tabular-nums">
-                ${esc(String(plays))} plays
+                ${esc(String(safeCount(plays)))} plays
               </div>
             </div>
           </div>
@@ -1112,7 +1139,7 @@ export const prerender = false;
 
     for (const entry of (history || [])){
       const ts = Number(entry?.ts || 0);
-      const rawTrack = String(entry?.t || "").trim();
+      const rawTrack = cleanText(entry?.t);
       if (!rawTrack || !ts) continue;
 
       const minuteKey = `${rawTrack.toLowerCase()}_${Math.floor(ts / 60000)}`;
@@ -1120,8 +1147,8 @@ export const prerender = false;
       dedupe.add(minuteKey);
 
       const sp = splitTrack(rawTrack);
-      const aRaw = String(sp.artist || "").trim();
-      const tRaw = String(sp.title || "").trim();
+      const aRaw = cleanText(sp.artist);
+      const tRaw = cleanText(sp.title);
 
       if ((!aRaw && !tRaw) || isBlockedShow(aRaw)) continue;
 
@@ -1177,23 +1204,23 @@ export const prerender = false;
 
     const mostPlayed = rows
       .slice()
-      .sort((a, b) => Number(b.plays || 0) - Number(a.plays || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
+      .sort((a, b) => safeCount(b.plays) - safeCount(a.plays) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
       .slice(0, 8);
 
     const today = rows
-      .filter((x) => Number(x.playsToday || 0) > 0)
-      .sort((a, b) => Number(b.playsToday || 0) - Number(a.playsToday || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
+      .filter((x) => safeCount(x.playsToday) > 0)
+      .sort((a, b) => safeCount(b.playsToday) - safeCount(a.playsToday) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
       .slice(0, 6);
 
     const trending = rows
       .map((x) => ({
         ...x,
-        delta24: Number(x.plays24h || 0) - Number(x.playsPrev24h || 0),
+        delta24: safeCount(x.plays24h) - safeCount(x.playsPrev24h),
       }))
-      .filter((x) => Number(x.plays24h || 0) > 0 || Number(x.playsPrev24h || 0) > 0)
+      .filter((x) => safeCount(x.plays24h) > 0 || safeCount(x.playsPrev24h) > 0)
       .sort((a, b) =>
-        Number(b.delta24 || 0) - Number(a.delta24 || 0) ||
-        Number(b.plays24h || 0) - Number(a.plays24h || 0) ||
+        safeCount(b.delta24) - safeCount(a.delta24) ||
+        safeCount(b.plays24h) - safeCount(a.plays24h) ||
         Number(b.latestTs || 0) - Number(a.latestTs || 0)
       )
       .slice(0, 6);
@@ -1258,7 +1285,7 @@ export const prerender = false;
       const seen = new Set();
 
       for (const e of historyServer) {
-        const raw = String(e?.t || "").trim();
+        const raw = cleanText(e?.t);
         const ts = Number(e?.ts || 0);
         const key = `${raw.toLowerCase()}__${ts}`;
         if (!raw) continue;
@@ -1275,11 +1302,15 @@ export const prerender = false;
       }
 
       for (const e of historyLocal) {
-        const key = `${String(e?.t || "")}__${Number(e?.ts || 0)}`;
-        if (!e?.t) continue;
+        const raw = cleanText(e?.t);
+        const key = `${raw}__${Number(e?.ts || 0)}`;
+        if (!raw) continue;
         if (seen.has(key)) continue;
         seen.add(key);
-        history.push(e);
+        history.push({
+          ...e,
+          t: raw,
+        });
         if (history.length >= 400) break;
       }
 
@@ -1331,8 +1362,8 @@ export const prerender = false;
 
       const nowEntry = state.lastNow || history[0] || null;
       const current = splitTrack(nowEntry?.t || "");
-      const nowArtistRaw = String(current.artist || "").trim();
-      const nowTitleRaw0 = String(current.title || "").trim();
+      const nowArtistRaw = cleanText(current.artist);
+      const nowTitleRaw0 = cleanText(current.title);
       const nowKNorm = normKey(nowArtistRaw, nowTitleRaw0);
       const nowIsNew = nowEntry && nowEntry.is_new === true;
 
@@ -1373,7 +1404,14 @@ export const prerender = false;
       ]);
 
       const topPrevFullSafe = (topPrev || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")));
+        .filter((x) => {
+          if (!x) return false;
+          const tk = cleanText(x.track_key);
+          if (!tk) return false;
+          const sp = splitTrack(tk);
+          const artist = cleanText(x.artist) || sp.artist || "";
+          return !isBlockedShow(artist);
+        });
 
       const prevRankMap = buildRankMap(topPrevFullSafe);
       const voteIndex = buildVoteIndex(topThis || []);
@@ -1383,7 +1421,7 @@ export const prerender = false;
       const nowBlocked = isBlockedShow(nowArtistRaw);
       const nowAlready = isVoted(nowKNorm);
 
-      if (nowVoteCount) nowVoteCount.textContent = String(nowCount);
+      if (nowVoteCount) nowVoteCount.textContent = String(safeCount(nowCount));
 
       if (nowVoteBtn){
         nowVoteBtn.style.display = "inline-flex";
@@ -1412,9 +1450,9 @@ export const prerender = false;
             if (!btn) return;
             const blocked = btn.dataset.blocked === "1";
             const kNorm = btn.dataset.norm || "";
-            const kRaw = btn.dataset.raw || "";
-            const a = btn.dataset.artist || "";
-            const t = btn.dataset.title || "";
+            const kRaw = cleanText(btn.dataset.raw || "");
+            const a = cleanText(btn.dataset.artist || "");
+            const t = cleanText(btn.dataset.title || "");
 
             if (blocked){
               blockedVoteMsg();
@@ -1454,8 +1492,8 @@ export const prerender = false;
       const rows = history.slice(1, 1 + limit);
       histEl.innerHTML = rows.map((entry) => {
         const t = splitTrack(entry.t);
-        const aRaw = String(t.artist || "").trim();
-        const tRaw0 = String(t.title || "").trim();
+        const aRaw = cleanText(t.artist);
+        const tRaw0 = cleanText(t.title);
         const kNorm = normKey(aRaw, tRaw0);
         const kRaw = rawKey(aRaw, tRaw0);
         const coverUrl =
@@ -1475,7 +1513,7 @@ export const prerender = false;
           artist: upperArtist(aRaw || "—"),
           title: displayTitleFor(aRaw, tRaw0),
           time: fmtTime(entry.ts),
-          count,
+          count: safeCount(count),
           blocked,
           voted,
           kNorm,
@@ -1488,12 +1526,12 @@ export const prerender = false;
 
       histEl.querySelectorAll(".voteBtn").forEach((btn) => {
         const kNorm = btn.dataset.norm || "";
-        const kRaw = btn.dataset.raw || "";
-        const a = btn.dataset.artist || "";
-        const t0 = btn.dataset.title || "";
+        const kRaw = cleanText(btn.dataset.raw || "");
+        const a = cleanText(btn.dataset.artist || "");
+        const t0 = cleanText(btn.dataset.title || "");
         const blocked = btn.dataset.blocked === "1";
         const countEl = btn.querySelector(".voteCount");
-        const c = voteIndex.getCount(kRaw, a, t0);
+        const c = safeCount(voteIndex.getCount(kRaw, a, t0));
         if (countEl) countEl.textContent = String(c);
 
         const row = btn.closest(".abfHistoryRow");
@@ -1545,7 +1583,14 @@ export const prerender = false;
       });
 
       const topThisSafe = (topThis || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
+        .filter((x) => {
+          if (!x) return false;
+          const tk = cleanText(x.track_key);
+          if (!tk) return false;
+          const sp = splitTrack(tk);
+          const artist = cleanText(x.artist) || sp.artist || "";
+          return !isBlockedShow(artist);
+        })
         .slice(0, 10);
 
       if (!topThisSafe.length){
@@ -1553,12 +1598,12 @@ export const prerender = false;
         topThisEl.innerHTML = "";
       } else {
         if (topThisEmpty) topThisEmpty.classList.add("hidden");
-        const max = Math.max(...topThisSafe.map(x => Number(x.count || 0)), 1);
+        const max = Math.max(...topThisSafe.map(x => safeCount(x.count)), 1);
         topThisEl.innerHTML = topThisSafe.map((row, idx) => {
-          const tk = String(row.track_key || "");
+          const tk = cleanText(row.track_key);
           const sp = splitTrack(tk);
-          const aRaw = String(row.artist || "").trim() || sp.artist || "—";
-          const tRaw = String(row.title || "").trim() || sp.title || "—";
+          const aRaw = cleanText(row.artist) || sp.artist || "";
+          const tRaw = cleanText(row.title) || sp.title || "";
           const n = normKey(aRaw, tRaw);
           const coverUrl =
             String(row.cover_url || "").trim() ||
@@ -1577,7 +1622,7 @@ export const prerender = false;
             coverUrl,
             upperArtist(aRaw),
             displayTitleFor(aRaw, tRaw),
-            Number(row.count || 0),
+            safeCount(row.count),
             max,
             badge,
             "votes",
@@ -1588,7 +1633,14 @@ export const prerender = false;
       }
 
       const topPrevSafe = (topPrev || [])
-        .filter(x => x && x.track_key && !isBlockedShow(String(x.artist || "")))
+        .filter((x) => {
+          if (!x) return false;
+          const tk = cleanText(x.track_key);
+          if (!tk) return false;
+          const sp = splitTrack(tk);
+          const artist = cleanText(x.artist) || sp.artist || "";
+          return !isBlockedShow(artist);
+        })
         .slice(0, 5);
 
       if (!topPrevSafe.length){
@@ -1596,12 +1648,12 @@ export const prerender = false;
         topPrevEl.innerHTML = "";
       } else {
         if (topPrevEmpty) topPrevEmpty.classList.add("hidden");
-        const maxP = Math.max(...topPrevSafe.map(x => Number(x.count || 0)), 1);
+        const maxP = Math.max(...topPrevSafe.map(x => safeCount(x.count)), 1);
         topPrevEl.innerHTML = topPrevSafe.map((row, idx) => {
-          const tk = String(row.track_key || "");
+          const tk = cleanText(row.track_key);
           const sp = splitTrack(tk);
-          const aRaw = String(row.artist || "").trim() || sp.artist || "—";
-          const tRaw = String(row.title || "").trim() || sp.title || "—";
+          const aRaw = cleanText(row.artist) || sp.artist || "";
+          const tRaw = cleanText(row.title) || sp.title || "";
           const n = normKey(aRaw, tRaw);
           const coverUrl =
             String(row.cover_url || "").trim() ||
@@ -1616,7 +1668,7 @@ export const prerender = false;
             coverUrl,
             upperArtist(aRaw),
             displayTitleFor(aRaw, tRaw),
-            Number(row.count || 0),
+            safeCount(row.count),
             maxP,
             "",
             "votes",
@@ -1644,7 +1696,7 @@ export const prerender = false;
             autoMostPlayedEl.innerHTML = "";
           } else {
             if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.add("hidden");
-            const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => Number(x.plays || 0)), 1);
+            const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => safeCount(x.plays)), 1);
             autoMostPlayedEl.innerHTML = airplayStats.mostPlayed.map((row, idx) => {
               if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
               return chartRowHtml(
@@ -1652,12 +1704,12 @@ export const prerender = false;
                 row.coverUrl || "",
                 upperArtist(row.artist || "—"),
                 displayTitleFor(row.artist || "", row.title || ""),
-                Number(row.plays || 0),
+                safeCount(row.plays),
                 maxAuto,
                 "",
                 "plays",
                 Boolean(row.isNew),
-                rotationBadgeHtml(Number(row.plays || 0))
+                rotationBadgeHtml(safeCount(row.plays))
               );
             }).join("");
           }
@@ -1671,16 +1723,16 @@ export const prerender = false;
             if (autoTrendingEmpty) autoTrendingEmpty.classList.add("hidden");
             autoTrendingEl.innerHTML = airplayStats.trending.map((row, idx) => {
               if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
-              const delta = Number(row.delta24 || 0);
+              const delta = safeCount(row.delta24);
 
               return compactMetricRowHtml({
                 rank: idx + 1,
                 coverUrl: row.coverUrl || "",
                 artist: upperArtist(row.artist || "—"),
                 title: displayTitleFor(row.artist || "", row.title || ""),
-                metricValue: Number(row.plays24h || 0),
+                metricValue: safeCount(row.plays24h),
                 metricLabel: "24h plays",
-                subline: `Previous 24h: ${Number(row.playsPrev24h || 0)} • Delta: ${delta >= 0 ? "+" : ""}${delta}`,
+                subline: `Previous 24h: ${safeCount(row.playsPrev24h)} • Delta: ${delta >= 0 ? "+" : ""}${delta}`,
                 accent: "emerald",
                 isNew: Boolean(row.isNew),
                 rightBadge: trendBadgeHtml(delta),
@@ -1702,7 +1754,7 @@ export const prerender = false;
                 coverUrl: row.coverUrl || "",
                 artist: upperArtist(row.artist || "—"),
                 title: displayTitleFor(row.artist || "", row.title || ""),
-                metricValue: Number(row.playsToday || 0),
+                metricValue: safeCount(row.playsToday),
                 metricLabel: "today",
                 subline: `Latest spin • ${fmtTime(row.latestTs)}`,
                 accent: "cyan",
@@ -1726,7 +1778,7 @@ export const prerender = false;
                 artist: upperArtist(row.artist || "—"),
                 title: displayTitleFor(row.artist || "", row.title || ""),
                 firstSeen: row.firstSeen,
-                plays: Number(row.plays || 0),
+                plays: safeCount(row.plays),
                 isNew: true,
               });
             }).join("");
