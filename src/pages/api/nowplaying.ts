@@ -33,7 +33,7 @@ const RESPONSE_CACHE_TTL_MS = 10000;
 const ITUNES_TIMEOUT_MS = 2500;
 
 // ✅ on limite le fallback iTunes sur l'historique
-const ITUNES_HISTORY_FALLBACK_LIMIT = 4;
+const ITUNES_HISTORY_FALLBACK_LIMIT = 20;
 
 // ✅ plafond max
 const MAX_NOWPLAYING_LIMIT = Math.min(
