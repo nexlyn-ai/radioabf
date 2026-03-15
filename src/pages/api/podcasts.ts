@@ -24,7 +24,6 @@ type Occurrence = {
 };
 
 type DirectusListResp<T> = { data: T[] };
-
 type ArchiveIndex = Record<string, string[]>;
 
 type PodcastItem = {
@@ -44,7 +43,6 @@ type PodcastItem = {
 const PIGE_BASE = "https://pige.radioabf.com";
 const PIGE_INDEX_URL = `${PIGE_BASE}/archive-index.json`;
 const PARIS_TZ = "Europe/Paris";
-const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 function safeStr(v: unknown): string {
   return typeof v === "string" ? v : v == null ? "" : String(v);
@@ -93,7 +91,6 @@ function normalizeDay(v: unknown): string {
   };
 
   if (map[raw]) return map[raw];
-
   const raw3 = raw.slice(0, 3);
   return map[raw3] || "";
 }
@@ -110,6 +107,12 @@ function normalizeTime(v: unknown): string {
   return `${hh}:${mm}`;
 }
 
+function parseTimeToMinutes(t: string): number {
+  const m = safeStr(t).match(/^(\d{2}):(\d{2})$/);
+  if (!m) return -1;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
 function hourFromTime(t: string): string {
   const m = t.match(/^(\d{2}):(\d{2})$/);
   if (!m) return "";
@@ -119,11 +122,7 @@ function hourFromTime(t: string): string {
 function isAbfClubOccurrence(row: Occurrence): boolean {
   const title = safeStr(row.program?.title).trim().toLowerCase();
   const desc = safeStr(row.program?.description).trim().toLowerCase();
-
-  return (
-    title.includes("abf club") ||
-    desc.includes("abf club")
-  );
+  return title.includes("abf club") || desc.includes("abf club");
 }
 
 function getCoverUrl(program: Program | null | undefined): string {
@@ -153,7 +152,9 @@ function formatDisplayDate(date: string): string {
   }
 }
 
-function getParisDateParts(date: Date): { date: string; dayKey: string } {
+function getParisNowParts() {
+  const now = new Date();
+
   const dateFmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: PARIS_TZ,
     year: "numeric",
@@ -166,25 +167,52 @@ function getParisDateParts(date: Date): { date: string; dayKey: string } {
     weekday: "short",
   });
 
-  const dateStr = dateFmt.format(date); // YYYY-MM-DD
-  const weekdayRaw = weekdayFmt.format(date).toLowerCase().slice(0, 3);
-  const dayKey = normalizeDay(weekdayRaw);
+  const hourFmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: PARIS_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 
-  return { date: dateStr, dayKey };
+  return {
+    date: dateFmt.format(now),
+    dayKey: normalizeDay(weekdayFmt.format(now).toLowerCase().slice(0, 3)),
+    time: hourFmt.format(now),
+    minutes: parseTimeToMinutes(hourFmt.format(now)),
+  };
 }
 
-function getLast7ParisDays(): Array<{ date: string; dayKey: string }> {
-  const out: Array<{ date: string; dayKey: string }> = [];
-  const now = new Date();
+function shiftDate(date: string, deltaDays: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now);
-    d.setUTCDate(d.getUTCDate() - i);
-    const parts = getParisDateParts(d);
-    out.push(parts);
+function findReplayDateForSlot(
+  occurrenceDay: string,
+  occurrenceTime: string,
+  nowParts: { date: string; dayKey: string; minutes: number }
+): string | null {
+  const slotMinutes = parseTimeToMinutes(occurrenceTime);
+  if (slotMinutes < 0) return null;
+
+  const dayOrder = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const nowIdx = dayOrder.indexOf(nowParts.dayKey);
+  const slotIdx = dayOrder.indexOf(occurrenceDay);
+
+  if (nowIdx < 0 || slotIdx < 0) return null;
+
+  let daysBack = (nowIdx - slotIdx + 7) % 7;
+
+  // Same weekday but show not aired yet -> use previous week
+  if (daysBack === 0 && nowParts.minutes < slotMinutes) {
+    daysBack = 7;
   }
 
-  return out.sort((a, b) => a.date.localeCompare(b.date));
+  return shiftDate(nowParts.date, -daysBack);
 }
 
 async function fetchArchiveIndex(): Promise<ArchiveIndex> {
@@ -215,45 +243,44 @@ export const GET: APIRoute = async () => {
     ]);
 
     const rows = (directusResp?.data ?? []).filter(isAbfClubOccurrence);
-    const last7Days = getLast7ParisDays();
+    const nowParts = getParisNowParts();
 
     const items: PodcastItem[] = [];
 
-    for (const day of last7Days) {
-      const dayRows = rows.filter(
-        (row) => normalizeDay(row.day_of_week) === day.dayKey
-      );
+    for (const row of rows) {
+      const dayKey = normalizeDay(row.day_of_week);
+      const time = normalizeTime(row.start_time);
+      const hour = hourFromTime(time);
 
-      const availableHours = Array.isArray(archiveIndex[day.date])
-        ? archiveIndex[day.date].map((h) => String(h).padStart(2, "0"))
+      if (!dayKey || !time || !hour) continue;
+
+      const replayDate = findReplayDateForSlot(dayKey, time, nowParts);
+      if (!replayDate) continue;
+
+      const availableHours = Array.isArray(archiveIndex[replayDate])
+        ? archiveIndex[replayDate].map((h) => String(h).padStart(2, "0"))
         : [];
 
-      for (const row of dayRows) {
-        const time = normalizeTime(row.start_time);
-        const hour = hourFromTime(time);
-        if (!time || !hour) continue;
+      if (!availableHours.includes(hour)) continue;
 
-        if (!availableHours.includes(hour)) continue;
+      const program = row.program || null;
+      const title = safeStr(program?.title) || "ABF Club";
+      const description = safeStr(program?.description) || "";
+      const cover = getCoverUrl(program);
 
-        const program = row.program || null;
-        const title = safeStr(program?.title) || "ABF Club";
-        const description = safeStr(program?.description) || "";
-        const cover = getCoverUrl(program);
-
-        items.push({
-          id: `${day.date}-${hour}-${row.id}`,
-          date: day.date,
-          display_date: formatDisplayDate(day.date),
-          day_key: day.dayKey,
-          hour,
-          time,
-          title,
-          description,
-          cover,
-          stream_url: buildArchiveUrl(day.date, hour),
-          source: "pige",
-        });
-      }
+      items.push({
+        id: `${replayDate}-${hour}-${row.id}`,
+        date: replayDate,
+        display_date: formatDisplayDate(replayDate),
+        day_key: dayKey,
+        hour,
+        time,
+        title,
+        description,
+        cover,
+        stream_url: buildArchiveUrl(replayDate, hour),
+        source: "pige",
+      });
     }
 
     items.sort((a, b) => {
