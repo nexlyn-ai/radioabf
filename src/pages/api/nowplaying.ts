@@ -19,23 +19,18 @@ const TRACKS_FIRST_PLAYED_FIELD = "first_played_at";
 const TRACKS_COVER_URL_FIELD = "cover_url";
 const TRACKS_COVER_OVERRIDE_FIELD = "cover_override";
 
-// ✅ iTunes fallback ON (UNIQUEMENT pour l'AFFICHAGE, jamais écrit en base)
-const ENABLE_ITUNES_FALLBACK =
-  (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "true") === "true";
+// ✅ Deezer fallback ON (affichage uniquement)
+const ENABLE_DEEZER_FALLBACK =
+  (import.meta.env.ENABLE_DEEZER_FALLBACK || process.env.ENABLE_DEEZER_FALLBACK || "true") ===
+  "true";
 
 const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000;
 
-// ✅ cache réponse plus court pour éviter de figer trop longtemps
 const RESPONSE_CACHE_TTL_MS = 10000;
+const DEEZER_TIMEOUT_MS = 2500;
+const DEEZER_HISTORY_FALLBACK_LIMIT = 20;
 
-// ✅ timeout iTunes pour ne pas bloquer la route trop longtemps
-const ITUNES_TIMEOUT_MS = 2500;
-
-// ✅ on limite le fallback iTunes sur l'historique
-const ITUNES_HISTORY_FALLBACK_LIMIT = 20;
-
-// ✅ plafond max
 const MAX_NOWPLAYING_LIMIT = Math.min(
   5000,
   Math.max(
@@ -180,7 +175,12 @@ async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
     const res = await fetch(url, {
       cache: "no-store",
       signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "RadioABF/1.0 (+https://radioabf.com)",
+      },
     });
+
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -269,10 +269,6 @@ function extractCoverUrlFromTrackRow(row: any): string {
   const coverOverride = String(row?.[TRACKS_COVER_OVERRIDE_FIELD] || "").trim();
   const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
 
-  // ✅ priorité logique :
-  // 1. override manuel
-  // 2. asset directus
-  // 3. url distante stockée
   if (coverOverride) return coverOverride;
   if (fileId) return directusAssetUrl(fileId);
   if (coverUrlField) return coverUrlField;
@@ -338,131 +334,80 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
   if (!cleanKeys.length) return out;
 
   const now = Date.now();
-  const missing: string[] = [];
 
-  for (const key of cleanKeys) {
-    const hit = __trackMetaCache.get(key);
-    if (hit && hit.exp > now) {
-      out.set(key, {
-        first_played_at: hit.first_played_at,
-        cover_url: hit.cover_url,
-      });
-    } else {
-      missing.push(key);
-    }
-  }
-
-  if (!missing.length) return out;
-
-  try {
-    const fields = [
-      TRACKS_KEY_FIELD,
-      TRACKS_FIRST_PLAYED_FIELD,
-      TRACKS_COVER_FIELD,
-      `${TRACKS_COVER_FIELD}.id`,
-      TRACKS_COVER_URL_FIELD,
-      TRACKS_COVER_OVERRIDE_FIELD,
-    ].join(",");
-
-    // ✅ correction importante :
-    // on évite filter[_in]=a,b,c car track_key peut contenir des virgules
-    const filter = {
-      _or: missing.map((key) => ({
-        [TRACKS_KEY_FIELD]: { _eq: key },
-      })),
-    };
-
-    const params = new URLSearchParams({
-      fields,
-      limit: String(Math.min(Math.max(missing.length, 1), 500)),
-      filter: JSON.stringify(filter),
-    });
-
-    const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
-    const j = await r.json();
-    const rows = Array.isArray(j?.data) ? j.data : [];
-
-    for (const row of rows) {
-      const key = String(row?.[TRACKS_KEY_FIELD] || "").trim();
-      if (!key) continue;
-
-      const meta = {
-        first_played_at: String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim(),
-        cover_url: extractCoverUrlFromTrackRow(row),
-      };
-
-      out.set(key, meta);
-      __trackMetaCache.set(key, {
-        ...meta,
-        exp: now + 30 * 60 * 1000,
-      });
-    }
-
-    for (const key of missing) {
-      if (!out.has(key)) {
-        out.set(key, { first_played_at: "", cover_url: "" });
-        __trackMetaCache.set(key, {
-          first_played_at: "",
-          cover_url: "",
-          exp: now + 5 * 60 * 1000,
+  await Promise.all(
+    cleanKeys.map(async (key) => {
+      const hit = __trackMetaCache.get(key);
+      if (hit && hit.exp > now) {
+        out.set(key, {
+          first_played_at: hit.first_played_at,
+          cover_url: hit.cover_url,
         });
+        return;
       }
-    }
 
-    (globalThis as any).__trackMetaCache = __trackMetaCache;
-  } catch {
-    for (const key of missing) {
-      if (!out.has(key)) out.set(key, { first_played_at: "", cover_url: "" });
-    }
-  }
+      const meta = await fetchTrackMetaByTrackKey(key);
+      out.set(key, meta);
+    })
+  );
 
   return out;
 }
 
-/* -------------------- iTunes cover (fallback display-only) -------------------- */
+/* -------------------- Deezer cover (fallback display-only) -------------------- */
 
-const __itunesCache: Map<string, { url: string; exp: number }> =
-  ((globalThis as any).__itunesCache as Map<string, { url: string; exp: number }>) || new Map();
+const __deezerCache: Map<string, { url: string; exp: number }> =
+  ((globalThis as any).__deezerCache as Map<string, { url: string; exp: number }>) || new Map();
 
-async function fetchItunesCover(artist: string, title: string): Promise<string> {
-  if (!ENABLE_ITUNES_FALLBACK) return "";
+async function fetchDeezerCover(artist: string, title: string): Promise<string> {
+  if (!ENABLE_DEEZER_FALLBACK) return "";
   if (!artist || !title) return "";
 
   const key = normKey(artist, title);
   const now = Date.now();
-  const hit = __itunesCache.get(key);
+  const hit = __deezerCache.get(key);
   if (hit && hit.exp > now) return hit.url;
 
   let cover = "";
 
   try {
-    let term = `${artist} ${title}`;
-    let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
+    const queries = [
+      `${artist} ${title}`,
+      `${artist} ${stripMixSuffix(title)}`,
+      `${artist} ${title}`.replace(/\bfeat\.?\b/gi, "").replace(/\s{2,}/g, " ").trim(),
+    ].filter(Boolean);
 
-    let j = await fetchJsonWithTimeout(url, ITUNES_TIMEOUT_MS);
-    let art = j?.results?.[0]?.artworkUrl100;
-    if (art) cover = String(art).replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
+    for (const qRaw of [...new Set(queries)]) {
+      const q = encodeURIComponent(qRaw);
+      const url = `https://api.deezer.com/search?q=${q}`;
+      const j = await fetchJsonWithTimeout(url, DEEZER_TIMEOUT_MS);
 
-    if (!cover) {
-      const cleanTitle = stripMixSuffix(title);
-      if (cleanTitle && cleanTitle !== title) {
-        term = `${artist} ${cleanTitle}`;
-        url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
+      const rows = Array.isArray(j?.data) ? j.data : [];
+      if (!rows.length) continue;
 
-        j = await fetchJsonWithTimeout(url, ITUNES_TIMEOUT_MS);
-        art = j?.results?.[0]?.artworkUrl100;
-        if (art) cover = String(art).replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
-      }
+      const best = rows.find((item: any) => {
+        const itemArtist = String(item?.artist?.name || "").toLowerCase();
+        const wantArtist = String(artist || "").toLowerCase();
+        return itemArtist.includes(wantArtist) || wantArtist.includes(itemArtist);
+      }) || rows[0];
+
+      cover = String(
+        best?.album?.cover_xl ||
+          best?.album?.cover_big ||
+          best?.album?.cover_medium ||
+          best?.album?.cover ||
+          ""
+      ).trim();
+
+      if (cover) break;
     }
   } catch {}
 
-  if (cover) {
-    __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
-    (globalThis as any).__itunesCache = __itunesCache;
-  } else {
-    __itunesCache.set(key, { url: "", exp: now + 30 * 60 * 1000 });
-    (globalThis as any).__itunesCache = __itunesCache;
-  }
+  __deezerCache.set(key, {
+    url: cover,
+    exp: now + (cover ? 6 * 60 * 60 * 1000 : 30 * 60 * 1000),
+  });
+  (globalThis as any).__deezerCache = __deezerCache;
 
   return cover;
 }
@@ -583,7 +528,7 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
 
   const bulkMeta = await fetchBulkTrackMeta(trackKeys);
 
-  let historyItunesFallbackCount = 0;
+  let historyDeezerFallbackCount = 0;
 
   const historyMaybe = await Promise.all(
     historyRaw.map(async (row: any) => {
@@ -600,14 +545,13 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
       let cover_url = String(meta.cover_url || "").trim();
       let cover_source = cover_url ? "directus" : "";
 
-      // ✅ on limite iTunes sur l'historique pour garder la route rapide
-      if (!cover_url && historyItunesFallbackCount < ITUNES_HISTORY_FALLBACK_LIMIT) {
-        const fallback = await fetchItunesCover(a, t);
+      if (!cover_url && historyDeezerFallbackCount < DEEZER_HISTORY_FALLBACK_LIMIT) {
+        const fallback = await fetchDeezerCover(a, t);
         if (fallback) {
           cover_url = fallback;
-          cover_source = "itunes";
+          cover_source = "deezer";
         }
-        historyItunesFallbackCount++;
+        historyDeezerFallbackCount++;
       }
 
       const first_played_at = String(meta.first_played_at || "").trim();
@@ -659,10 +603,10 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
     nowCoverSource = nowCover ? "directus" : "";
 
     if (!nowCover) {
-      const fallback = await fetchItunesCover(artist, title);
+      const fallback = await fetchDeezerCover(artist, title);
       if (fallback) {
         nowCover = fallback;
-        nowCoverSource = "itunes";
+        nowCoverSource = "deezer";
       }
     }
 
