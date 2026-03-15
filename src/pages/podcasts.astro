@@ -1,0 +1,522 @@
+---
+import Base from "../layouts/Base.astro";
+export const prerender = false;
+---
+
+<Base
+  title="Podcasts — RadioABF"
+  description="Listen again to the latest ABF Club replays from the past 7 days on RadioABF."
+  canonical="/podcasts"
+  image="/og-image.jpg"
+>
+  <div id="podcastsPageRoot">
+    <!-- HERO -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 mb-6 shadow-2xl">
+      <div class="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-cyan-500/15 blur-[120px]"></div>
+      <div class="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[120px]"></div>
+
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Podcasts
+            </div>
+
+            <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">
+              ABF Club <span class="text-cyan-200">replays</span>
+            </h1>
+
+            <p class="text-white/65 mt-3 max-w-2xl">
+              Listen again to the latest ABF Club sessions from the past 7 days — directly in the RadioABF player.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl text-sm text-white/80">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span id="podcastsCountBadge">Loading…</span>
+            </div>
+            <div class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl text-sm text-white/80">
+              <span class="text-cyan-200">7 days</span>
+              <span class="text-white/35">•</span>
+              <span>ABF Club only</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED / INFO -->
+    <section class="grid grid-cols-1 xl:grid-cols-[1.3fr_.7fr] gap-6 mb-6">
+      <div class="rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 shadow-2xl">
+        <div class="flex items-center gap-3 text-sm tracking-widest text-white/55 uppercase mb-3">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full"></span>
+          Latest replay
+        </div>
+
+        <div id="featuredReplay" class="min-h-[160px]">
+          <div class="animate-pulse">
+            <div class="h-7 w-56 bg-white/10 rounded-xl mb-3"></div>
+            <div class="h-4 w-full max-w-xl bg-white/10 rounded-lg mb-2"></div>
+            <div class="h-4 w-full max-w-lg bg-white/10 rounded-lg mb-5"></div>
+            <div class="h-10 w-32 bg-white/10 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 shadow-2xl">
+        <div class="flex items-center gap-3 text-sm tracking-widest text-white/55 uppercase mb-3">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full"></span>
+          About
+        </div>
+
+        <div class="space-y-3 text-sm text-white/70 leading-relaxed">
+          <p>
+            These replays are generated automatically from RadioABF archive segments and matched with the ABF Club schedule.
+          </p>
+          <p>
+            Only the latest 7 days are kept, so each new week replaces the previous sessions automatically.
+          </p>
+          <p class="text-white/50">
+            Playback opens directly in the main RadioABF player. No download button is exposed on this page.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIST -->
+    <section class="rounded-3xl border border-white/10 bg-[#0A1F33] p-5 sm:p-6 shadow-2xl">
+      <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
+        <div>
+          <div class="text-sm tracking-widest text-white/55 uppercase mb-2">This week</div>
+          <h2 class="text-2xl font-extrabold leading-tight">Available podcast replays</h2>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="reloadPodcastsBtn"
+            type="button"
+            class="inline-flex items-center justify-center px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold text-white/85"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div id="podcastsError" class="hidden mb-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100"></div>
+
+      <div id="podcastsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4 animate-pulse">
+          <div class="h-44 rounded-2xl bg-white/10 mb-4"></div>
+          <div class="h-5 w-40 rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-24 rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-full rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-4/5 rounded-lg bg-white/10 mb-4"></div>
+          <div class="h-10 w-28 rounded-xl bg-white/10"></div>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4 animate-pulse">
+          <div class="h-44 rounded-2xl bg-white/10 mb-4"></div>
+          <div class="h-5 w-40 rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-24 rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-full rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-4/5 rounded-lg bg-white/10 mb-4"></div>
+          <div class="h-10 w-28 rounded-xl bg-white/10"></div>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4 animate-pulse">
+          <div class="h-44 rounded-2xl bg-white/10 mb-4"></div>
+          <div class="h-5 w-40 rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-24 rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-full rounded-lg bg-white/10 mb-2"></div>
+          <div class="h-4 w-4/5 rounded-lg bg-white/10 mb-4"></div>
+          <div class="h-10 w-28 rounded-xl bg-white/10"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <style is:inline>
+    .podcastCard{
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(255,255,255,.10);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .podcastCard:hover{
+      transform: translateY(-2px);
+      border-color: rgba(47,194,255,.24);
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+    }
+
+    .podcastCardGlow{
+      position:absolute;
+      inset:auto auto -80px -80px;
+      width:180px;
+      height:180px;
+      border-radius:999px;
+      background: radial-gradient(circle, rgba(47,194,255,.18), transparent 70%);
+      pointer-events:none;
+      filter: blur(10px);
+    }
+
+    .podcastCover{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+      background:
+        radial-gradient(120% 120% at 30% 20%, rgba(47,194,255,.26), rgba(20,92,143,.16) 45%, rgba(10,31,51,1) 100%);
+    }
+
+    .podcastCover img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
+    .podcastCoverFallback{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      background:
+        radial-gradient(120% 120% at 30% 20%, rgba(47,194,255,.26), rgba(20,92,143,.16) 45%, rgba(10,31,51,1) 100%);
+    }
+
+    .podcastCoverFallback img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.95;
+    }
+
+    .podcastBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      padding:.4rem .7rem;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      font-size:.72rem;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:rgba(255,255,255,.78);
+      white-space:nowrap;
+    }
+
+    .podcastDesc{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .podcastPlayBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:.55rem;
+      padding:.72rem 1rem;
+      border-radius:1rem;
+      border:1px solid rgba(47,194,255,.28);
+      background: linear-gradient(90deg, rgba(20,92,143,.92), rgba(47,194,255,.92));
+      color:#fff;
+      font-weight:800;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .podcastPlayBtn:hover{
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .podcastGhostBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:.5rem;
+      padding:.72rem 1rem;
+      border-radius:1rem;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.05);
+      color:rgba(255,255,255,.86);
+      font-weight:700;
+      transition: background .15s ease, transform .15s ease;
+    }
+    .podcastGhostBtn:hover{
+      background:rgba(255,255,255,.10);
+      transform: translateY(-1px);
+    }
+  </style>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      const root = document.getElementById("podcastsPageRoot");
+      if (!root) return;
+
+      const grid = document.getElementById("podcastsGrid");
+      const featured = document.getElementById("featuredReplay");
+      const errorBox = document.getElementById("podcastsError");
+      const countBadge = document.getElementById("podcastsCountBadge");
+      const reloadBtn = document.getElementById("reloadPodcastsBtn");
+
+      const FALLBACK_COVER = "/logo-abf.png";
+
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function showError(msg) {
+        if (errorBox) {
+          errorBox.textContent = msg;
+          errorBox.classList.remove("hidden");
+        }
+      }
+
+      function hideError() {
+        if (errorBox) {
+          errorBox.textContent = "";
+          errorBox.classList.add("hidden");
+        }
+      }
+
+      function renderFeatured(item) {
+        if (!featured) return;
+
+        if (!item) {
+          featured.innerHTML = `
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-white/65">
+              No replay available right now.
+            </div>
+          `;
+          return;
+        }
+
+        const cover = item.cover ? esc(item.cover) : "";
+        const title = esc(item.title || "ABF Club");
+        const desc = esc(item.description || "Automatic replay generated from the RadioABF archive.");
+        const date = esc(item.display_date || item.date || "");
+        const time = esc(item.time || "");
+        const stream = esc(item.stream_url || "");
+        const itemJson = esc(JSON.stringify(item));
+
+        featured.innerHTML = `
+          <div class="flex flex-col md:flex-row gap-4 md:gap-5 items-start">
+            <div class="w-full md:w-[280px] flex-none">
+              <div class="podcastCover">
+                ${
+                  cover
+                    ? `<img src="${cover}" alt="${title}" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" />`
+                    : ``
+                }
+                <div class="podcastCoverFallback" style="${cover ? "display:none" : "display:grid"}">
+                  <img src="${FALLBACK_COVER}" alt="ABF" loading="lazy" decoding="async" />
+                </div>
+              </div>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap mb-3">
+                <span class="podcastBadge">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                  Latest replay
+                </span>
+                <span class="podcastBadge">${date}</span>
+                <span class="podcastBadge">${time}</span>
+              </div>
+
+              <h3 class="text-2xl font-extrabold leading-tight">${title}</h3>
+              <p class="text-white/65 mt-3 leading-relaxed max-w-2xl">${desc}</p>
+
+              <div class="flex items-center gap-3 flex-wrap mt-5">
+                <button
+                  type="button"
+                  class="podcastPlayBtn"
+                  data-podcast='${itemJson}'
+                >
+                  ▶ Play in player
+                </button>
+
+                <button
+                  type="button"
+                  class="podcastGhostBtn"
+                  data-copy-url="${stream}"
+                >
+                  Copy audio URL
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderCards(items) {
+        if (!grid) return;
+
+        if (!items.length) {
+          grid.innerHTML = `
+            <div class="md:col-span-2 xl:col-span-3 rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-8 text-center text-white/60">
+              No ABF Club replay available for the past 7 days.
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = items.map((item) => {
+          const cover = item.cover ? esc(item.cover) : "";
+          const title = esc(item.title || "ABF Club");
+          const desc = esc(item.description || "Automatic replay generated from the RadioABF archive.");
+          const date = esc(item.display_date || item.date || "");
+          const time = esc(item.time || "");
+          const stream = esc(item.stream_url || "");
+          const itemJson = esc(JSON.stringify(item));
+
+          return `
+            <article class="podcastCard p-4">
+              <div class="podcastCardGlow"></div>
+
+              <div class="podcastCover mb-4">
+                ${
+                  cover
+                    ? `<img src="${cover}" alt="${title}" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" />`
+                    : ``
+                }
+                <div class="podcastCoverFallback" style="${cover ? "display:none" : "display:grid"}">
+                  <img src="${FALLBACK_COVER}" alt="ABF" loading="lazy" decoding="async" />
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap mb-3">
+                <span class="podcastBadge">ABF Club</span>
+                <span class="podcastBadge">${date}</span>
+                <span class="podcastBadge">${time}</span>
+              </div>
+
+              <h3 class="text-lg font-extrabold leading-snug">${title}</h3>
+              <p class="podcastDesc text-sm text-white/65 mt-2 leading-relaxed">${desc}</p>
+
+              <div class="flex items-center gap-2 flex-wrap mt-4">
+                <button
+                  type="button"
+                  class="podcastPlayBtn"
+                  data-podcast='${itemJson}'
+                >
+                  ▶ Play
+                </button>
+
+                <button
+                  type="button"
+                  class="podcastGhostBtn"
+                  data-copy-url="${stream}"
+                >
+                  Copy URL
+                </button>
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      async function copyText(text, btn) {
+        try {
+          await navigator.clipboard.writeText(text);
+          if (btn) {
+            const old = btn.textContent;
+            btn.textContent = "Copied";
+            setTimeout(() => { btn.textContent = old; }, 1200);
+          }
+        } catch {}
+      }
+
+      async function loadPodcasts() {
+        hideError();
+
+        if (countBadge) countBadge.textContent = "Loading…";
+
+        try {
+          const res = await fetch("/api/podcasts", { cache: "no-store" });
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok || !data?.ok) {
+            throw new Error(data?.error || "Unable to load podcasts.");
+          }
+
+          const items = Array.isArray(data.items) ? data.items : [];
+
+          if (countBadge) {
+            countBadge.textContent = `${items.length} replay${items.length > 1 ? "s" : ""}`;
+          }
+
+          renderFeatured(items[0] || null);
+          renderCards(items);
+        } catch (err) {
+          console.error("[podcasts] load error:", err);
+          if (countBadge) countBadge.textContent = "Unavailable";
+          renderFeatured(null);
+          renderCards([]);
+          showError("Unable to load podcast replays right now.");
+        }
+      }
+
+      if (!root.dataset.bound) {
+        root.dataset.bound = "1";
+
+        document.addEventListener("click", async (e) => {
+          const playBtn = e.target.closest("[data-podcast]");
+          if (playBtn) {
+            e.preventDefault();
+
+            try {
+              const payload = JSON.parse(playBtn.getAttribute("data-podcast") || "{}");
+
+              const ok = await window.__abfPlayPodcast?.({
+                id: payload.id,
+                url: payload.stream_url,
+                artist: payload.title || "ABF CLUB",
+                title: `${payload.display_date || payload.date || ""} • ${payload.time || ""}`.trim(),
+                cover: payload.cover || "",
+                date: payload.date || "",
+                show: payload.title || "ABF Club"
+              });
+
+              if (!ok) {
+                console.warn("Podcast playback could not start.");
+              }
+            } catch (err) {
+              console.error("Podcast play error:", err);
+            }
+
+            return;
+          }
+
+          const copyBtn = e.target.closest("[data-copy-url]");
+          if (copyBtn) {
+            e.preventDefault();
+            const url = copyBtn.getAttribute("data-copy-url") || "";
+            if (url) copyText(url, copyBtn);
+          }
+        });
+
+        reloadBtn?.addEventListener("click", loadPodcasts);
+      }
+
+      loadPodcasts();
+      document.addEventListener("astro:page-load", loadPodcasts);
+      document.addEventListener("astro:after-swap", loadPodcasts);
+    })();
+  </script>
+</Base>
