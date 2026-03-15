@@ -52,6 +52,22 @@ async function dFetch(path: string, init?: RequestInit) {
 }
 
 // ----------------------
+// Small sanitizers
+// ----------------------
+function cleanText(v: unknown) {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  if (/^undefined$/i.test(s)) return "";
+  if (/^null$/i.test(s)) return "";
+  return s;
+}
+
+function safeCount(v: unknown, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+// ----------------------
 // Week helpers
 // ----------------------
 // ISO week id: "YYYY-W07"
@@ -67,12 +83,11 @@ function isoWeekId(d = new Date()) {
 }
 
 function pickWeek(input?: string | null) {
-  const w = String(input || "").trim();
+  const w = cleanText(input);
   return w || isoWeekId();
 }
 
 function todayISO() {
-  // format YYYY-MM-DD
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -80,24 +95,52 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
+// ----------------------
+// Track helpers
+// ----------------------
+function joinTrackKey(artist?: string | null, title?: string | null) {
+  const a = cleanText(artist);
+  const t = cleanText(title);
+  if (a && t) return `${a} - ${t}`;
+  if (a) return a;
+  if (t) return t;
+  return "";
+}
+
 // Normalize track_key so we don't store duplicates with different casing/spaces/quotes
 function normTrackKey(k: string) {
-  return String(k || "")
-    .trim()
+  const s = cleanText(k);
+  if (!s) return "";
+
+  return s
     .toLowerCase()
-    .replace(/\u00A0/g, " ") // nbsp -> space
+    .replace(/\u00A0/g, " ")
     .replace(/\s+/g, " ")
     .replace(/[“”"']/g, "")
+    .trim()
+    .replace(/^undefined\s*-\s*/i, "")
+    .replace(/\s*-\s*undefined$/i, "")
     .trim();
 }
 
 function splitFromTrackKey(track_key: string) {
-  const s = String(track_key || "").trim();
+  let s = cleanText(track_key);
+
+  if (!s) return { artist: "", title: "" };
+
+  s = s.replace(/^undefined\s*-\s*/i, "").replace(/\s+/g, " ").trim();
+
   const idx = s.indexOf(" - ");
-  if (idx === -1) return { artist: s, title: "" };
+  if (idx === -1) {
+    return {
+      artist: cleanText(s),
+      title: "",
+    };
+  }
+
   return {
-    artist: s.slice(0, idx).trim(),
-    title: s.slice(idx + 3).trim(),
+    artist: cleanText(s.slice(0, idx)),
+    title: cleanText(s.slice(idx + 3)),
   };
 }
 
@@ -105,15 +148,13 @@ function splitFromTrackKey(track_key: string) {
 // ✅ ABF CLUB guard (SERVER-SIDE)
 // ----------------------
 function isABFClubTrackKey(track_key_raw: string) {
-  const raw = String(track_key_raw || "").trim();
+  const raw = cleanText(track_key_raw);
   if (!raw) return false;
 
-  // match "ABF CLUB - ..." or "ABFCLUB - ..." (tolerant spaces)
   if (/^abf\s*club\b/i.test(raw)) return true;
 
-  // also match if artist part is ABF CLUB (from "Artist - Title")
   const sp = splitFromTrackKey(raw);
-  if (/^abf\s*club\b/i.test(String(sp.artist || "").trim())) return true;
+  if (/^abf\s*club\b/i.test(cleanText(sp.artist))) return true;
 
   return false;
 }
@@ -129,7 +170,6 @@ async function ipHash(ip: string) {
 }
 
 function getClientIp(request: Request) {
-  // Vercel / proxies
   const xff = request.headers.get("x-forwarded-for") || "";
   const first = xff.split(",")[0]?.trim();
   return first || request.headers.get("x-real-ip") || "0.0.0.0";
@@ -140,7 +180,6 @@ function getClientIp(request: Request) {
 // ----------------------
 function fileUrl(fileId?: string | null) {
   if (!fileId) return "";
-  // Directus assets endpoint
   return `${DIRECTUS_URL}/assets/${fileId}`;
 }
 
@@ -152,12 +191,16 @@ const itunesMemCache: Map<string, ItunesCacheEntry> =
 (globalThis as any).__abfItunesVoteCache = itunesMemCache;
 
 async function fetchItunesCover(artist: string, title: string): Promise<string> {
-  const key = normTrackKey(`${artist} - ${title}`);
+  const safeArtist = cleanText(artist);
+  const safeTitle = cleanText(title);
+  const key = normTrackKey(joinTrackKey(safeArtist, safeTitle));
+  if (!key) return "";
+
   const now = Date.now();
   const hit = itunesMemCache.get(key);
   if (hit && hit.exp > now) return hit.url || "";
 
-  const term = encodeURIComponent(`${artist} ${title}`.trim());
+  const term = encodeURIComponent(`${safeArtist} ${safeTitle}`.trim());
   const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
 
   try {
@@ -168,7 +211,7 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
     }
     const j = await r.json().catch(() => ({} as any));
     const item = (j as any)?.results?.[0];
-    const art100 = String(item?.artworkUrl100 || "");
+    const art100 = cleanText(item?.artworkUrl100);
     const art600 = art100
       ? art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg")
       : "";
@@ -220,13 +263,15 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
     const coverId =
       typeof coverVal === "string"
         ? coverVal
-        : (coverVal?.id ? String(coverVal.id) : "");
+        : coverVal?.id
+        ? String(coverVal.id)
+        : "";
 
     map.set(normalized, {
       id: r?.id,
-      track_key: String(r?.track_key || ""),
-      artist: r?.artist ?? null,
-      title: r?.title ?? null,
+      track_key: cleanText(r?.track_key),
+      artist: cleanText(r?.artist) || null,
+      title: cleanText(r?.title) || null,
       cover_art: coverId || null,
     });
   }
@@ -257,31 +302,34 @@ export const GET: APIRoute = async ({ url }) => {
 
     // 2) Aggregate by normalized track_key
     const map = new Map<string, { track_key: string; count: number }>();
+
     for (const r of rows) {
-      const raw = String(r?.track_key || "").trim();
+      const raw = cleanText(r?.track_key);
       if (!raw) continue;
 
-      // ✅ SERVER-SIDE: exclude ABF CLUB from charts too
       if (isABFClubTrackKey(raw)) continue;
 
       const nk = normTrackKey(raw);
       if (!nk) continue;
 
-      const c = Number(r?.count ?? 1) || 1;
+      const c = safeCount(r?.count, 1) || 1;
       const prev = map.get(nk);
-      if (!prev) map.set(nk, { track_key: raw, count: c });
-      else prev.count += c;
+
+      if (!prev) {
+        map.set(nk, { track_key: raw, count: c });
+      } else {
+        prev.count += c;
+      }
     }
 
     const topRaw = Array.from(map.entries())
       .map(([nk, v]) => ({ nk, ...v }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => safeCount(b.count) - safeCount(a.count));
 
     // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
     const trackKeyList = topRaw.map((x) => x.nk);
     const tracksByKey = await getTracksByKeys(trackKeyList);
 
-    // Optional debug
     const debug = url.searchParams.get("debug") === "1";
     if (debug) {
       return json({
@@ -301,18 +349,19 @@ export const GET: APIRoute = async ({ url }) => {
         const tkNorm = row.nk;
         const trow = tracksByKey.get(tkNorm);
 
-        const displayTrackKey = String(row.track_key || "").trim() || tkNorm;
+        const displayTrackKey = cleanText(row.track_key) || tkNorm;
 
         const split = splitFromTrackKey(displayTrackKey);
+
         const artist =
-          String(trow?.artist || "").trim() || String(split.artist || "").trim();
+          cleanText(trow?.artist) || cleanText(split.artist);
+
         const title =
-          String(trow?.title || "").trim() || String(split.title || "").trim();
+          cleanText(trow?.title) || cleanText(split.title);
 
         const cover_art = trow?.cover_art ?? null;
         let cover_url = cover_art ? fileUrl(cover_art) : "";
 
-        // Fallback iTunes (only if Directus cover is missing)
         if (!cover_url && artist && title) {
           cover_url = await fetchItunesCover(artist, title);
         }
@@ -321,7 +370,7 @@ export const GET: APIRoute = async ({ url }) => {
           track_key: displayTrackKey,
           artist,
           title,
-          count: row.count,
+          count: safeCount(row.count),
           cover_art,
           cover_url,
         };
@@ -341,10 +390,15 @@ export const POST: APIRoute = async ({ request }) => {
     const body = await request.json().catch(() => null);
     const week = pickWeek(body?.week);
 
-    const track_key_raw = String(body?.track_key || "").trim();
+    const bodyTrackKey = cleanText(body?.track_key);
+    const bodyArtist = cleanText(body?.artist);
+    const bodyTitle = cleanText(body?.title);
+
+    const reconstructedTrackKey = joinTrackKey(bodyArtist, bodyTitle);
+    const track_key_raw = bodyTrackKey || reconstructedTrackKey;
+
     if (!track_key_raw) return bad(400, "Missing track_key");
 
-    // ✅ SERVER-SIDE: hard block ABF CLUB voting
     if (isABFClubTrackKey(track_key_raw)) {
       return json(
         {
@@ -356,16 +410,13 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Normalize before storage / check
     const track_key = normTrackKey(track_key_raw);
     if (!track_key) return bad(400, "Invalid track_key");
 
-    // Rate limiting: 1 vote per track per day per IP
     const ip = getClientIp(request);
     const iph = await ipHash(ip);
     const vote_day = todayISO();
 
-    // Check existing vote (ip + day + week + track)
     const checkFields = ["id"].join(",");
     const checkRes = await dFetch(
       `/items/${COLLECTION}?fields=${encodeURIComponent(checkFields)}` +
@@ -395,13 +446,12 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Insert vote
     const res = await dFetch(`/items/${COLLECTION}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         week,
-        track_key, // stored normalized
+        track_key,
         ip_hash: iph,
         vote_day,
         count: 1,
@@ -413,7 +463,7 @@ export const POST: APIRoute = async ({ request }) => {
       return bad(res.status, `Directus POST failed: ${txt}`);
     }
 
-    return json({ ok: true, week });
+    return json({ ok: true, week, track_key });
   } catch (e: any) {
     return bad(500, e?.message || "Server error");
   }
