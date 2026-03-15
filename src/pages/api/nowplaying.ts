@@ -24,14 +24,18 @@ const ENABLE_ITUNES_FALLBACK =
   (import.meta.env.ENABLE_ITUNES_FALLBACK || process.env.ENABLE_ITUNES_FALLBACK || "true") === "true";
 
 const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000; // 2 min
+const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000;
 
-// ✅ protection serveur contre les rafales
-const RESPONSE_CACHE_TTL_MS = 30000;
+// ✅ cache réponse plus court pour éviter de figer trop longtemps
+const RESPONSE_CACHE_TTL_MS = 10000;
 
-// ✅ nouveau : plafond plus haut pour permettre un historique plus profond
-//    sans changer l'architecture générale.
-//    Ajustable via env si besoin.
+// ✅ timeout iTunes pour ne pas bloquer la route trop longtemps
+const ITUNES_TIMEOUT_MS = 2500;
+
+// ✅ on limite le fallback iTunes sur l'historique
+const ITUNES_HISTORY_FALLBACK_LIMIT = 4;
+
+// ✅ plafond max
 const MAX_NOWPLAYING_LIMIT = Math.min(
   5000,
   Math.max(
@@ -137,6 +141,7 @@ function assertEnv() {
 
 async function directusFetch(path: string, init: RequestInit = {}) {
   assertEnv();
+
   const res = await fetch(`${DIRECTUS_URL}${path}`, {
     ...init,
     headers: {
@@ -144,6 +149,7 @@ async function directusFetch(path: string, init: RequestInit = {}) {
       Accept: "application/json",
       ...(init.headers || {}),
     },
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -152,6 +158,7 @@ async function directusFetch(path: string, init: RequestInit = {}) {
       `Directus ${path} failed: ${res.status} ${res.statusText}${txt ? ` — ${txt}` : ""}`
     );
   }
+
   return res;
 }
 
@@ -163,6 +170,24 @@ function parseRequestedLimit(raw: string | null): number {
   const n = Number(raw || "12");
   if (!Number.isFinite(n)) return 12;
   return Math.trunc(n);
+}
+
+async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /* -------------------- Tracks: ensure row (RACE-SAFE) -------------------- */
@@ -244,9 +269,14 @@ function extractCoverUrlFromTrackRow(row: any): string {
   const coverOverride = String(row?.[TRACKS_COVER_OVERRIDE_FIELD] || "").trim();
   const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
 
-  if (fileId) return directusAssetUrl(fileId);
+  // ✅ priorité logique :
+  // 1. override manuel
+  // 2. asset directus
+  // 3. url distante stockée
   if (coverOverride) return coverOverride;
+  if (fileId) return directusAssetUrl(fileId);
   if (coverUrlField) return coverUrlField;
+
   return "";
 }
 
@@ -325,17 +355,27 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
   if (!missing.length) return out;
 
   try {
+    const fields = [
+      TRACKS_KEY_FIELD,
+      TRACKS_FIRST_PLAYED_FIELD,
+      TRACKS_COVER_FIELD,
+      `${TRACKS_COVER_FIELD}.id`,
+      TRACKS_COVER_URL_FIELD,
+      TRACKS_COVER_OVERRIDE_FIELD,
+    ].join(",");
+
+    // ✅ correction importante :
+    // on évite filter[_in]=a,b,c car track_key peut contenir des virgules
+    const filter = {
+      _or: missing.map((key) => ({
+        [TRACKS_KEY_FIELD]: { _eq: key },
+      })),
+    };
+
     const params = new URLSearchParams({
-      fields: [
-        TRACKS_KEY_FIELD,
-        TRACKS_FIRST_PLAYED_FIELD,
-        TRACKS_COVER_FIELD,
-        `${TRACKS_COVER_FIELD}.id`,
-        TRACKS_COVER_URL_FIELD,
-        TRACKS_COVER_OVERRIDE_FIELD,
-      ].join(","),
+      fields,
       limit: String(Math.min(Math.max(missing.length, 1), 500)),
-      [`filter[${TRACKS_KEY_FIELD}][_in]`]: missing.join(","),
+      filter: JSON.stringify(filter),
     });
 
     const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
@@ -394,27 +434,24 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
   if (hit && hit.exp > now) return hit.url;
 
   let cover = "";
+
   try {
     let term = `${artist} ${title}`;
     let url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
-    let r = await fetch(url, { cache: "no-store" });
-    if (r.ok) {
-      const j = await r.json();
-      const art = j?.results?.[0]?.artworkUrl100;
-      if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
-    }
+
+    let j = await fetchJsonWithTimeout(url, ITUNES_TIMEOUT_MS);
+    let art = j?.results?.[0]?.artworkUrl100;
+    if (art) cover = String(art).replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
 
     if (!cover) {
       const cleanTitle = stripMixSuffix(title);
       if (cleanTitle && cleanTitle !== title) {
         term = `${artist} ${cleanTitle}`;
         url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
-        r = await fetch(url, { cache: "no-store" });
-        if (r.ok) {
-          const j = await r.json();
-          const art = j?.results?.[0]?.artworkUrl100;
-          if (art) cover = art.replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
-        }
+
+        j = await fetchJsonWithTimeout(url, ITUNES_TIMEOUT_MS);
+        art = j?.results?.[0]?.artworkUrl100;
+        if (art) cover = String(art).replace(/100x100bb\.jpg$/i, "600x600bb.jpg");
       }
     }
   } catch {}
@@ -423,7 +460,8 @@ async function fetchItunesCover(artist: string, title: string): Promise<string> 
     __itunesCache.set(key, { url: cover, exp: now + 6 * 60 * 60 * 1000 });
     (globalThis as any).__itunesCache = __itunesCache;
   } else {
-    __itunesCache.delete(key);
+    __itunesCache.set(key, { url: "", exp: now + 30 * 60 * 1000 });
+    (globalThis as any).__itunesCache = __itunesCache;
   }
 
   return cover;
@@ -520,10 +558,6 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
     }
   }
 
-  // ✅ oversample dynamique :
-  // - assez large pour absorber la déduplication
-  // - sans exploser inutilement la charge
-  // - plafonné par MAX_NOWPLAYING_LIMIT
   const oversample = Math.min(
     MAX_NOWPLAYING_LIMIT,
     Math.max(limit + 80, Math.ceil(limit * 1.2))
@@ -537,7 +571,7 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
 
   const histRes = await directusFetch(`/items/${PLAYS_COLLECTION}?${params.toString()}`);
   const histJson = await histRes.json();
-  const historyRaw = histJson?.data || [];
+  const historyRaw = Array.isArray(histJson?.data) ? histJson.data : [];
 
   const trackKeys = [
     ...new Set(
@@ -548,6 +582,8 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
   ];
 
   const bulkMeta = await fetchBulkTrackMeta(trackKeys);
+
+  let historyItunesFallbackCount = 0;
 
   const historyMaybe = await Promise.all(
     historyRaw.map(async (row: any) => {
@@ -564,9 +600,14 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
       let cover_url = String(meta.cover_url || "").trim();
       let cover_source = cover_url ? "directus" : "";
 
-      if (!cover_url) {
-        cover_url = await fetchItunesCover(a, t);
-        if (cover_url) cover_source = "itunes";
+      // ✅ on limite iTunes sur l'historique pour garder la route rapide
+      if (!cover_url && historyItunesFallbackCount < ITUNES_HISTORY_FALLBACK_LIMIT) {
+        const fallback = await fetchItunesCover(a, t);
+        if (fallback) {
+          cover_url = fallback;
+          cover_source = "itunes";
+        }
+        historyItunesFallbackCount++;
       }
 
       const first_played_at = String(meta.first_played_at || "").trim();
@@ -612,16 +653,17 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
   let nowIsNew = false;
 
   if (!nowIsBad) {
-    const nowMeta =
-      bulkMeta.get(track_key) ||
-      (await fetchTrackMetaByTrackKey(track_key));
+    const nowMeta = bulkMeta.get(track_key) || (await fetchTrackMetaByTrackKey(track_key));
 
     nowCover = String(nowMeta.cover_url || "").trim();
     nowCoverSource = nowCover ? "directus" : "";
 
     if (!nowCover) {
-      nowCover = await fetchItunesCover(artist, title);
-      if (nowCover) nowCoverSource = "itunes";
+      const fallback = await fetchItunesCover(artist, title);
+      if (fallback) {
+        nowCover = fallback;
+        nowCoverSource = "itunes";
+      }
     }
 
     nowFirstPlayedAt = String(nowMeta.first_played_at || "").trim();
