@@ -53,7 +53,7 @@ export const prerender = false;
                 Based on live history
               </span>
               <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-                Updates every 8s
+                Updates every 30s
               </span>
             </div>
           </div>
@@ -172,7 +172,7 @@ export const prerender = false;
               <li><strong>Most played</strong><br />Tracks with the strongest recent rotation.</li>
               <li><strong>Trending now</strong><br />Momentum over the last 24h versus previous 24h.</li>
               <li><strong>Most played today</strong><br />Today’s highest spin count.</li>
-              <li><strong>New entries</strong><br />Tracks still inside their 7-day fresh window.</li>
+              <li><strong>New entries</strong><br />Fresh tracks recently detected in the rotation.</li>
             </ul>
 
             <p class="mt-4 text-sm text-white/80 italic">
@@ -211,7 +211,7 @@ export const prerender = false;
                 Based on live history
               </span>
               <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-                Updates every 8s
+                Updates every 30s
               </span>
               <span
                 id="tracksIndexedBadge"
@@ -235,7 +235,7 @@ export const prerender = false;
               <div class="p-5 border-b border-white/10 flex items-start justify-between gap-4">
                 <div class="min-w-0">
                   <div class="text-sm text-white/60 uppercase tracking-wider">Most played on RadioABF</div>
-                  <div class="text-xs text-white/50 mt-1">Top rotation over the last 7 days</div>
+                  <div class="text-xs text-white/50 mt-1">Top rotation from recent airplay history</div>
                 </div>
                 <div class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-1.5 rounded-xl flex-none">
                   Top 10
@@ -318,17 +318,16 @@ export const prerender = false;
       .no-scrollbar::-webkit-scrollbar { display:none; }
       .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
 
-      #npCoverSource.directus {
+      #npCoverSource.manual {
         background: rgba(168,85,247,0.12);
         border-color: rgba(168,85,247,0.3);
         color: rgba(216,180,254,0.95);
       }
-      #npCoverSource.itunes {
+      #npCoverSource.fallback {
         background: rgba(236,72,153,0.12);
         border-color: rgba(236,72,153,0.3);
         color: rgba(249,168,212,0.95);
       }
-      #npCoverSource.other,
       #npCoverSource.none {
         background: rgba(255,255,255,0.05);
         border-color: rgba(255,255,255,0.15);
@@ -348,6 +347,7 @@ export const prerender = false;
     inFlight: false,
     lastRenderAt: 0,
     coverMemory: {},
+    coverSourceMemory: {},
     lastAutoHash: "",
   });
 
@@ -494,6 +494,18 @@ export const prerender = false;
     return n ? String(state.coverMemory[n] || "") : "";
   }
 
+  function rememberCoverSource(norm, source){
+    const n = String(norm || "").trim();
+    const s = String(source || "").trim();
+    if (!n || !s) return;
+    state.coverSourceMemory[n] = s;
+  }
+
+  function getRememberedCoverSource(norm){
+    const n = String(norm || "").trim();
+    return n ? String(state.coverSourceMemory[n] || "") : "";
+  }
+
   async function fetchServerNowPlaying(limit = 800){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -559,13 +571,12 @@ export const prerender = false;
     const src = String(explicitSource || "").toLowerCase().trim();
     const u = String(coverUrl || "").toLowerCase().trim();
 
-    if (src.includes("directus")) return "directus";
-    if (src.includes("itunes") || src.includes("apple")) return "itunes";
-    if (u.includes("mzstatic.com")) return "itunes";
-    if (u.includes("/assets/") || u.includes("directus")) return "directus";
+    if (src.includes("manual")) return "manual";
+    if (src.includes("directus")) return "manual";
+    if (u.includes("/assets/") || u.includes("directus")) return "manual";
 
     if (!u) return "none";
-    return "other";
+    return "fallback";
   }
 
   function setCoverSourceBadge(root, coverUrl, explicitSource){
@@ -576,13 +587,12 @@ export const prerender = false;
 
     el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
     el.textContent =
-      kind === "directus" ? "Directus cover" :
-      kind === "itunes"   ? "iTunes cover"   :
+      kind === "manual"   ? "Manual cover" :
+      kind === "fallback" ? "Fallback cover" :
       "No cover";
 
-    if (kind === "directus") el.classList.add("directus");
-    if (kind === "itunes") el.classList.add("itunes");
-    if (kind === "other") el.classList.add("other");
+    if (kind === "manual") el.classList.add("manual");
+    if (kind === "fallback") el.classList.add("fallback");
     if (kind === "none") el.classList.add("none");
 
     el.classList.remove("hidden");
@@ -709,7 +719,6 @@ export const prerender = false;
     const todayStart = startOfLocalDay(now);
     const last24hStart = now - DAY;
     const prev24hStart = now - (2 * DAY);
-    const last7dStart = now - (7 * DAY);
     const map = Object.create(null);
     const dedupe = new Set();
 
@@ -738,7 +747,6 @@ export const prerender = false;
             String(coverByNorm?.[n] || "").trim() ||
             getRememberedCover(n),
           plays: 0,
-          plays7d: 0,
           playsToday: 0,
           plays24h: 0,
           playsPrev24h: 0,
@@ -750,7 +758,6 @@ export const prerender = false;
 
       const item = map[n];
       item.plays += 1;
-      if (ts >= last7dStart) item.plays7d += 1;
       if (ts >= todayStart) item.playsToday += 1;
       if (ts >= last24hStart) item.plays24h += 1;
       else if (ts >= prev24hStart) item.playsPrev24h += 1;
@@ -774,8 +781,8 @@ export const prerender = false;
     const rows = Object.values(map);
 
     const mostPlayed = rows
-      .filter((x) => Number(x.plays7d || 0) > 0)
-      .sort((a, b) => Number(b.plays7d || 0) - Number(a.plays7d || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
+      .filter((x) => Number(x.plays || 0) > 0)
+      .sort((a, b) => Number(b.plays || 0) - Number(a.plays || 0) || Number(b.latestTs || 0) - Number(a.latestTs || 0))
       .slice(0, 10);
 
     const today = rows
@@ -852,8 +859,12 @@ export const prerender = false;
         const t = splitTrack(entry.t);
         const n = normKey(t.artist, t.title);
         const u = String(entry.cover_url || "").trim();
+        const s = String(entry.cover_source || "").trim();
         if (!n) continue;
+
         if (u) rememberCover(n, u);
+        if (s) rememberCoverSource(n, s);
+
         coverByNorm[n] = u || getRememberedCover(n) || "";
       }
 
@@ -872,9 +883,15 @@ export const prerender = false;
           coverByNorm[nowKNorm] ||
           getRememberedCover(nowKNorm);
 
+        const nowCoverSource =
+          String(nowEntry?.cover_source || "").trim() ||
+          getRememberedCoverSource(nowKNorm);
+
         if (nowCover) rememberCover(nowKNorm, nowCover);
+        if (nowCoverSource) rememberCoverSource(nowKNorm, nowCoverSource);
+
         setCover(nowCover, root);
-        setCoverSourceBadge(root, nowCover, String(nowEntry?.cover_source || ""));
+        setCoverSourceBadge(root, nowCover, nowCoverSource);
 
         if (npNewBadge){
           if (Boolean(nowEntry?.is_new)) {
@@ -905,7 +922,7 @@ export const prerender = false;
 
       const autoHash = JSON.stringify({
         now: nowEntry ? [nowEntry.t, nowEntry.ts, nowEntry.cover_url, nowEntry.is_new] : [],
-        mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays7d, x.coverUrl, x.isNew]),
+        mostPlayed: airplayStats.mostPlayed.map(x => [x.norm, x.plays, x.coverUrl, x.isNew]),
         trending: airplayStats.trending.map(x => [x.norm, x.plays24h, x.playsPrev24h, x.coverUrl, x.isNew]),
         today: airplayStats.today.map(x => [x.norm, x.playsToday, x.coverUrl, x.isNew]),
         newEntries: airplayStats.newEntries.map(x => [x.norm, x.firstSeen, x.coverUrl, x.isNew]),
@@ -920,7 +937,7 @@ export const prerender = false;
             autoMostPlayedEl.innerHTML = "";
           } else {
             if (autoMostPlayedEmpty) autoMostPlayedEmpty.classList.add("hidden");
-            const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => Number(x.plays7d || 0)), 1);
+            const maxAuto = Math.max(...airplayStats.mostPlayed.map(x => Number(x.plays || 0)), 1);
             autoMostPlayedEl.innerHTML = airplayStats.mostPlayed.map((row, idx) => {
               if (row.coverUrl) rememberCover(row.norm, row.coverUrl);
               return chartRowHtml(
@@ -928,11 +945,11 @@ export const prerender = false;
                 row.coverUrl || "",
                 upperArtist(row.artist || "—"),
                 displayTitleFor(row.artist || "", row.title || ""),
-                Number(row.plays7d || 0),
+                Number(row.plays || 0),
                 maxAuto,
-                "7d plays",
+                "plays",
                 Boolean(row.isNew),
-                rotationBadgeHtml(Number(row.plays7d || 0))
+                rotationBadgeHtml(Number(row.plays || 0))
               );
             }).join("");
           }
@@ -1048,7 +1065,6 @@ export const prerender = false;
     state.lastAutoHash = "";
 
     fetchMusicStats();
-
     render();
     startTimer();
   }
