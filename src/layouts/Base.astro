@@ -1740,11 +1740,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           return S.__tabFx;
         }
 
-        function refreshTabFxAfterSwap(){
-          const fx = ensureTabFx();
-          fx.state.baseTitle = document.title || fx.state.baseTitle;
-          fx.update(!isPodcastMode() && isLiveNow(), getCurrentArtist(), getCurrentTitle());
-        }
+    function refreshTabFxAfterSwap(){
+  const fx = ensureTabFx();
+  fx.state.baseTitle = document.title || fx.state.baseTitle;
+
+  if (isPodcastMode()) {
+    fx.update(false, "", "");
+    return;
+  }
+
+  fx.update(isLiveNow(), getCurrentArtist(), getCurrentTitle());
+}
 
         function resetTabOnNav(){
           const fx = ensureTabFx();
@@ -2485,28 +2491,34 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         ensureTabFx();
         bindUI();
 
-        const onAstroNav = () => {
-          S.__fs.active = false;
-          closeFullscreen();
-          resetTabOnNav();
-          notifyAudioToolsReady();
-          bindUI();
+const onAstroNav = () => {
+  S.__fs.active = false;
+  closeFullscreen();
+  resetTabOnNav();
+  notifyAudioToolsReady();
+  bindUI();
 
-          if (isLiveMode()) {
-            fetchNowPlaying();
-          }
+  if (isPodcastMode()) {
+    setPlayerMeta({
+      artist: S.podcast?.artist || "ABF CLUB",
+      title: S.podcast?.title || "Podcast Replay",
+      cover: S.podcast?.cover || ""
+    });
+  } else {
+    fetchNowPlaying();
+  }
 
-          window.__abfUpdateLayout?.();
+  window.__abfUpdateLayout?.();
 
-          if (!audio.paused){
-            ensureVisualizerReady();
-            requestAnimationFrame(() => ensureVisualizerReady());
-            setTimeout(() => ensureVisualizerReady(), 120);
-          }
+  if (!audio.paused){
+    ensureVisualizerReady();
+    requestAnimationFrame(() => ensureVisualizerReady());
+    setTimeout(() => ensureVisualizerReady(), 120);
+  }
 
-          syncUI();
-          fmtApply();
-        };
+  syncUI();
+  fmtApply();
+};
 
         document.addEventListener("astro:page-load", onAstroNav);
         document.addEventListener("astro:after-swap", onAstroNav);
