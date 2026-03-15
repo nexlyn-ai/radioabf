@@ -2641,6 +2641,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
 
         const BUILDS = [
+		  {
+          v: "3.5.4",
+          d: "Mar 15, 2026",
+          t: "New Podcasts experience added to RadioABF. This release introduces a dedicated Podcasts page for ABF Club replays, powered by automatic schedule matching and archive retrieval from the latest 7 days of antenna recordings. Podcast sessions now open directly in the global RadioABF player with a dedicated replay mode, while direct source exposure has been removed from the interface. Desktop and mobile navigation were updated to integrate the new Podcasts section across the site."
+          },
           {
             v: "3.5.3",
             d: "Mar 13, 2026",
