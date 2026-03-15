@@ -52,7 +52,7 @@ export const prerender = false;
       Vote: 1 / track / day
     </span>
     <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-      Covers: Directus → Fallback
+      Covers: Manual → Fallback
     </span>
     <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
       Updates every 8s
@@ -217,7 +217,7 @@ export const prerender = false;
             <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2 list-disc pl-5">
               <li><strong>1 vote per track per day.</strong><br />Every listener helps shape the weekly ABF chart.</li>
               <li><strong>ABF CLUB shows are not votable.</strong><br />Only individual tracks count toward the charts.</li>
-              <li><strong>Covers system:</strong><br />Directus first when a cover is manually uploaded,<br />otherwise automatic fallback cover.</li>
+              <li><strong>Covers system:</strong><br />Manual cover first when artwork is uploaded,<br />otherwise automatic fallback cover.</li>
               <li><strong>Weekly rankings reset every Monday (ISO week).</strong><br />Fresh chart, fresh competition.</li>
             </ul>
             <p class="mt-4 text-sm text-white/80 italic">
@@ -273,21 +273,21 @@ export const prerender = false;
         cursor: not-allowed !important;
         background: rgba(255,255,255,0.03) !important;
       }
-#npCoverSource.directus {
-  background: rgba(168,85,247,0.12);
-  border-color: rgba(168,85,247,0.3);
-  color: rgba(216,180,254,0.95);
-}
-#npCoverSource.fallback {
-  background: rgba(236,72,153,0.12);
-  border-color: rgba(236,72,153,0.3);
-  color: rgba(249,168,212,0.95);
-}
-#npCoverSource.none {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.8);
-}
+      #npCoverSource.manual {
+        background: rgba(168,85,247,0.12);
+        border-color: rgba(168,85,247,0.3);
+        color: rgba(216,180,254,0.95);
+      }
+      #npCoverSource.fallback {
+        background: rgba(236,72,153,0.12);
+        border-color: rgba(236,72,153,0.3);
+        color: rgba(249,168,212,0.95);
+      }
+      #npCoverSource.none {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.8);
+      }
       .no-scrollbar::-webkit-scrollbar{ display:none; }
       .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
     </style>
@@ -310,6 +310,7 @@ export const prerender = false;
     search: { date: "", time: "" },
     searchBound: false,
     coverMemory: {},
+    coverSourceMemory: {},
     lastAutoHash: "",
   });
 
@@ -526,6 +527,18 @@ export const prerender = false;
     return n ? String(state.coverMemory[n] || "") : "";
   }
 
+  function rememberCoverSource(norm, source){
+    const n = String(norm || "").trim();
+    const s = String(source || "").trim();
+    if (!n || !s) return;
+    state.coverSourceMemory[n] = s;
+  }
+
+  function getRememberedCoverSource(norm){
+    const n = String(norm || "").trim();
+    return n ? String(state.coverSourceMemory[n] || "") : "";
+  }
+
   async function fetchServerNowPlaying(limit = 400){
     try{
       const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -587,35 +600,36 @@ export const prerender = false;
     }
   }
 
-function inferCoverSource(coverUrl, explicitSource){
-  const src = String(explicitSource || "").toLowerCase().trim();
-  const u = String(coverUrl || "").toLowerCase().trim();
+  function inferCoverSource(coverUrl, explicitSource){
+    const src = String(explicitSource || "").toLowerCase().trim();
+    const u = String(coverUrl || "").toLowerCase().trim();
 
-  if (src.includes("directus")) return "directus";
-  if (u.includes("/assets/") || u.includes("directus")) return "directus";
+    if (src.includes("manual")) return "manual";
+    if (src.includes("directus")) return "manual";
+    if (u.includes("/assets/") || u.includes("directus")) return "manual";
 
-  if (!u) return "none";
-  return "fallback";
-}
+    if (!u) return "none";
+    return "fallback";
+  }
 
-function setCoverSourceBadge(root, coverUrl, explicitSource){
-  const el = root?.querySelector("#npCoverSource");
-  if (!el) return;
+  function setCoverSourceBadge(root, coverUrl, explicitSource){
+    const el = root?.querySelector("#npCoverSource");
+    if (!el) return;
 
-  const kind = inferCoverSource(coverUrl, explicitSource);
+    const kind = inferCoverSource(coverUrl, explicitSource);
 
-  el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
-  el.textContent =
-    kind === "directus" ? "Manual cover" :
-    kind === "fallback" ? "Fallback cover" :
-    "No cover";
+    el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
+    el.textContent =
+      kind === "manual"   ? "Manual cover" :
+      kind === "fallback" ? "Fallback cover" :
+      "No cover";
 
-  if (kind === "directus") el.classList.add("directus");
-  if (kind === "fallback") el.classList.add("fallback");
-  if (kind === "none") el.classList.add("none");
+    if (kind === "manual") el.classList.add("manual");
+    if (kind === "fallback") el.classList.add("fallback");
+    if (kind === "none") el.classList.add("none");
 
-  el.classList.remove("hidden");
-}
+    el.classList.remove("hidden");
+  }
 
   function coverHtmlByUrl(url, sizeClass = "w-12 h-12 rounded-2xl"){
     const u = String(url || "").trim();
@@ -701,7 +715,7 @@ function setCoverSourceBadge(root, coverUrl, explicitSource){
       getCount(trackKeyRaw, artistMaybe, titleMaybe){
         const k = String(trackKeyRaw || "").trim();
         if (k && exact[k] != null) return exact[k];
-        if (k && lower[k.toLowerCase()] != null) return lower[k.toLowerCase()];
+        if (k && lower[k.toLowerCase()] != null) return lower[k];
 
         const sp = k
           ? splitTrack(k)
@@ -1306,8 +1320,12 @@ function setCoverSourceBadge(root, coverUrl, explicitSource){
         const t = splitTrack(entry.t);
         const n = normKey(t.artist, t.title);
         const u = String(entry.cover_url || "").trim();
+        const s = String(entry.cover_source || "").trim();
         if (!n) continue;
+
         if (u) rememberCover(n, u);
+        if (s) rememberCoverSource(n, s);
+
         coverByNorm[n] = u || getRememberedCover(n) || "";
       }
 
@@ -1339,9 +1357,15 @@ function setCoverSourceBadge(root, coverUrl, explicitSource){
         coverByNorm[normKey(nowArtistRaw, nowTitleRaw0)] ||
         getRememberedCover(nowKNorm);
 
+      const nowCoverSource =
+        String(nowEntry?.cover_source || "").trim() ||
+        getRememberedCoverSource(nowKNorm);
+
       if (nowCover) rememberCover(nowKNorm, nowCover);
+      if (nowCoverSource) rememberCoverSource(nowKNorm, nowCoverSource);
+
       setCover(nowCover, root);
-      setCoverSourceBadge(root, nowCover, String(nowEntry?.cover_source || ""));
+      setCoverSourceBadge(root, nowCover, nowCoverSource);
 
       const [{ top: topThis }, { top: topPrev }] = await Promise.all([
         apiGetTopWeek(week),
