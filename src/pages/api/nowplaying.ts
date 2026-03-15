@@ -12,7 +12,7 @@ const DIRECTUS_TOKEN =
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
 
-// ✅ ton schéma Directus
+// ✅ schéma Directus
 const TRACKS_KEY_FIELD = "track_key";
 const TRACKS_COVER_FIELD = "cover_art";
 const TRACKS_FIRST_PLAYED_FIELD = "first_played_at";
@@ -96,6 +96,20 @@ function normKey(artist: string, title: string) {
 function stripMixSuffix(title: string) {
   return title
     .replace(/\((original|extended|radio|club|edit|mix)[^)]+\)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function cleanDeezerQueryPart(s: string) {
+  return String(s || "")
+    .replace(/\[(.*?)\]/g, " ")
+    .replace(/\((.*?)\)/g, " ")
+    .replace(/\bfeat\.?\b/gi, " ")
+    .replace(/\bft\.?\b/gi, " ")
+    .replace(/\bvs\.?\b/gi, " ")
+    .replace(/\s+&\s+/g, " ")
+    .replace(/\s+and\s+/gi, " ")
+    .replace(/[']/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
@@ -266,10 +280,18 @@ function extractCoverUrlFromTrackRow(row: any): string {
         ? String(coverVal.id)
         : "";
 
-  const coverOverride = String(row?.[TRACKS_COVER_OVERRIDE_FIELD] || "").trim();
   const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
+  const coverOverride = row?.[TRACKS_COVER_OVERRIDE_FIELD] === true;
 
-  if (coverOverride) return coverOverride;
+  // cover_override est un booléen, pas une URL
+  // s'il est activé, on privilégie la cover manuelle/locale
+  if (coverOverride) {
+    if (fileId) return directusAssetUrl(fileId);
+    if (coverUrlField) return coverUrlField;
+    return "";
+  }
+
+  // comportement normal
   if (fileId) return directusAssetUrl(fileId);
   if (coverUrlField) return coverUrlField;
 
@@ -371,11 +393,19 @@ async function fetchDeezerCover(artist: string, title: string): Promise<string> 
   let cover = "";
 
   try {
+    const artistClean = cleanDeezerQueryPart(artist);
+    const titleClean = cleanDeezerQueryPart(title);
+    const titleNoMix = cleanDeezerQueryPart(stripMixSuffix(title));
+
     const queries = [
       `${artist} ${title}`,
-      `${artist} ${stripMixSuffix(title)}`,
-      `${artist} ${title}`.replace(/\bfeat\.?\b/gi, "").replace(/\s{2,}/g, " ").trim(),
-    ].filter(Boolean);
+      `${artistClean} ${titleClean}`,
+      `${artistClean} ${titleNoMix}`,
+      titleClean,
+      titleNoMix,
+    ]
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
 
     for (const qRaw of [...new Set(queries)]) {
       const q = encodeURIComponent(qRaw);
@@ -385,11 +415,16 @@ async function fetchDeezerCover(artist: string, title: string): Promise<string> 
       const rows = Array.isArray(j?.data) ? j.data : [];
       if (!rows.length) continue;
 
-      const best = rows.find((item: any) => {
-        const itemArtist = String(item?.artist?.name || "").toLowerCase();
-        const wantArtist = String(artist || "").toLowerCase();
-        return itemArtist.includes(wantArtist) || wantArtist.includes(itemArtist);
-      }) || rows[0];
+      const wantArtist = artistClean.toLowerCase();
+
+      const best =
+        rows.find((item: any) => {
+          const itemArtist = cleanDeezerQueryPart(String(item?.artist?.name || "")).toLowerCase();
+          return (
+            (wantArtist && itemArtist.includes(wantArtist)) ||
+            (itemArtist && wantArtist.includes(itemArtist))
+          );
+        }) || rows[0];
 
       cover = String(
         best?.album?.cover_xl ||
