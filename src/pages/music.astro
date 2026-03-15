@@ -52,7 +52,7 @@ export const prerender = false;
       Vote: 1 / track / day
     </span>
     <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
-      Covers: Directus → iTunes
+      Covers: Directus → Fallback
     </span>
     <span class="text-xs text-white/70 border border-white/10 bg-white/5 px-3 py-2 rounded-xl flex-none">
       Updates every 8s
@@ -217,7 +217,7 @@ export const prerender = false;
             <ul class="mt-3 text-sm text-white/70 leading-relaxed space-y-2 list-disc pl-5">
               <li><strong>1 vote per track per day.</strong><br />Every listener helps shape the weekly ABF chart.</li>
               <li><strong>ABF CLUB shows are not votable.</strong><br />Only individual tracks count toward the charts.</li>
-              <li><strong>Covers system:</strong><br />Directus first when a cover is manually uploaded,<br />otherwise automatic iTunes fallback.</li>
+              <li><strong>Covers system:</strong><br />Directus first when a cover is manually uploaded,<br />otherwise automatic fallback cover.</li>
               <li><strong>Weekly rankings reset every Monday (ISO week).</strong><br />Fresh chart, fresh competition.</li>
             </ul>
             <p class="mt-4 text-sm text-white/80 italic">
@@ -273,22 +273,21 @@ export const prerender = false;
         cursor: not-allowed !important;
         background: rgba(255,255,255,0.03) !important;
       }
-      #npCoverSource.directus {
-        background: rgba(168,85,247,0.12);
-        border-color: rgba(168,85,247,0.3);
-        color: rgba(216,180,254,0.95);
-      }
-      #npCoverSource.itunes {
-        background: rgba(236,72,153,0.12);
-        border-color: rgba(236,72,153,0.3);
-        color: rgba(249,168,212,0.95);
-      }
-      #npCoverSource.other,
-      #npCoverSource.none {
-        background: rgba(255,255,255,0.05);
-        border-color: rgba(255,255,255,0.15);
-        color: rgba(255,255,255,0.8);
-      }
+#npCoverSource.directus {
+  background: rgba(168,85,247,0.12);
+  border-color: rgba(168,85,247,0.3);
+  color: rgba(216,180,254,0.95);
+}
+#npCoverSource.fallback {
+  background: rgba(236,72,153,0.12);
+  border-color: rgba(236,72,153,0.3);
+  color: rgba(249,168,212,0.95);
+}
+#npCoverSource.none {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.8);
+}
       .no-scrollbar::-webkit-scrollbar{ display:none; }
       .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
     </style>
@@ -588,38 +587,35 @@ export const prerender = false;
     }
   }
 
-  function inferCoverSource(coverUrl, explicitSource){
-    const src = String(explicitSource || "").toLowerCase().trim();
-    const u = String(coverUrl || "").toLowerCase().trim();
+function inferCoverSource(coverUrl, explicitSource){
+  const src = String(explicitSource || "").toLowerCase().trim();
+  const u = String(coverUrl || "").toLowerCase().trim();
 
-    if (src.includes("directus")) return "directus";
-    if (src.includes("itunes") || src.includes("apple")) return "itunes";
-    if (u.includes("mzstatic.com")) return "itunes";
-    if (u.includes("/assets/") || u.includes("directus")) return "directus";
+  if (src.includes("directus")) return "directus";
+  if (u.includes("/assets/") || u.includes("directus")) return "directus";
 
-    if (!u) return "none";
-    return "other";
-  }
+  if (!u) return "none";
+  return "fallback";
+}
 
-  function setCoverSourceBadge(root, coverUrl, explicitSource){
-    const el = root?.querySelector("#npCoverSource");
-    if (!el) return;
+function setCoverSourceBadge(root, coverUrl, explicitSource){
+  const el = root?.querySelector("#npCoverSource");
+  if (!el) return;
 
-    const kind = inferCoverSource(coverUrl, explicitSource);
+  const kind = inferCoverSource(coverUrl, explicitSource);
 
-    el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
-    el.textContent =
-      kind === "directus" ? "Directus cover" :
-      kind === "itunes"   ? "iTunes cover"   :
-      "No cover";
+  el.className = "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border tabular-nums";
+  el.textContent =
+    kind === "directus" ? "Manual cover" :
+    kind === "fallback" ? "Fallback cover" :
+    "No cover";
 
-    if (kind === "directus") el.classList.add("directus");
-    if (kind === "itunes") el.classList.add("itunes");
-    if (kind === "other") el.classList.add("other");
-    if (kind === "none") el.classList.add("none");
+  if (kind === "directus") el.classList.add("directus");
+  if (kind === "fallback") el.classList.add("fallback");
+  if (kind === "none") el.classList.add("none");
 
-    el.classList.remove("hidden");
-  }
+  el.classList.remove("hidden");
+}
 
   function coverHtmlByUrl(url, sizeClass = "w-12 h-12 rounded-2xl"){
     const u = String(url || "").trim();
