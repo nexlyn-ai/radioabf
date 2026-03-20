@@ -746,6 +746,7 @@ try {
 <script is:inline data-astro-rerun>
 (() => {
   // ✅ on autorise le re-render sur astro swaps, mais on évite de re-binder les listeners globaux
+  const CACHE_TTL = 30000;
   const PROGRAMS_DIR = "/images/programs/";
   const HISTORY_KEY = "abf_history"; // fallback legacy (lecture seulement)
   // -------------------------
@@ -936,7 +937,7 @@ try {
   window.__abfHomeVotesCache = __homeVotesCache;
   async function getTopWeekCached(week){
     const now = Date.now();
-    if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 8000) {
+    if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 30000) {
       return __homeVotesCache.top || [];
     }
     const data = await apiGetTopWeek(week);
@@ -1573,7 +1574,7 @@ function formatWorldTimeLabel(timeHHMM){
 window.__abfHomeTimer = setInterval(async () => {
   await renderNowPlayingAndLast();
   renderOnAirTonight();
-}, 8000);
+}, 30000);
 
 // 🔁 Refresh plus lent : votes (Top + #1)
 window.__abfHomeVoteTimer = setInterval(async () => {

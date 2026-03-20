@@ -2313,7 +2313,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           if (!S.__npTimer){
             fetchNowPlaying();
-            S.__npTimer = setInterval(fetchNowPlaying, 10000);
+            S.__npTimer = setInterval(fetchNowPlaying, 30000);
           }
 
           if (!S.__bound){
