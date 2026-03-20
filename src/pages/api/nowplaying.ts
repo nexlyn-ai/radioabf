@@ -32,6 +32,7 @@ const TRACK_META_CACHE_TTL_MS = 60 * 60 * 1000;
 const TRACK_META_NEGATIVE_CACHE_TTL_MS = 10 * 60 * 1000;
 const DEEZER_TIMEOUT_MS = 2500;
 const DEEZER_HISTORY_FALLBACK_LIMIT = 0;
+const BULK_TRACK_META_CHUNK_SIZE = 100;
 
 const MAX_NOWPLAYING_LIMIT = Math.min(
   5000,
@@ -300,19 +301,39 @@ function extractCoverUrlFromTrackRow(row: any): string {
   return "";
 }
 
+function getTrackMetaCacheHit(track_key: string) {
+  const now = Date.now();
+  const hit = __trackMetaCache.get(track_key);
+  if (!hit || hit.exp <= now) return null;
+  return {
+    first_played_at: hit.first_played_at,
+    cover_url: hit.cover_url,
+  };
+}
+
+function setTrackMetaCache(
+  track_key: string,
+  first_played_at: string,
+  cover_url: string
+) {
+  __trackMetaCache.set(track_key, {
+    first_played_at,
+    cover_url,
+    exp:
+      Date.now() +
+      (cover_url || first_played_at
+        ? TRACK_META_CACHE_TTL_MS
+        : TRACK_META_NEGATIVE_CACHE_TTL_MS),
+  });
+}
+
 async function fetchTrackMetaByTrackKey(
   track_key: string
 ): Promise<{ first_played_at: string; cover_url: string }> {
   if (!track_key) return { first_played_at: "", cover_url: "" };
 
-  const now = Date.now();
-  const hit = __trackMetaCache.get(track_key);
-  if (hit && hit.exp > now) {
-    return {
-      first_played_at: hit.first_played_at,
-      cover_url: hit.cover_url,
-    };
-  }
+  const cached = getTrackMetaCacheHit(track_key);
+  if (cached) return cached;
 
   let first_played_at = "";
   let cover_url = "";
@@ -338,17 +359,9 @@ async function fetchTrackMetaByTrackKey(
     first_played_at = String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim();
     cover_url = extractCoverUrlFromTrackRow(row);
 
-    __trackMetaCache.set(track_key, {
-      first_played_at,
-      cover_url,
-      exp: now + (cover_url || first_played_at ? TRACK_META_CACHE_TTL_MS : TRACK_META_NEGATIVE_CACHE_TTL_MS),
-    });
+    setTrackMetaCache(track_key, first_played_at, cover_url);
   } catch {
-    __trackMetaCache.set(track_key, {
-      first_played_at: "",
-      cover_url: "",
-      exp: now + TRACK_META_NEGATIVE_CACHE_TTL_MS,
-    });
+    setTrackMetaCache(track_key, "", "");
   }
 
   return { first_played_at, cover_url };
@@ -359,12 +372,76 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
   const cleanKeys = [...new Set(trackKeys.map((k) => String(k || "").trim()).filter(Boolean))];
   if (!cleanKeys.length) return out;
 
-  await Promise.all(
-    cleanKeys.map(async (key) => {
-      const meta = await fetchTrackMetaByTrackKey(key);
-      out.set(key, meta);
-    })
-  );
+  const missing: string[] = [];
+
+  // 1) cache hits
+  for (const key of cleanKeys) {
+    const cached = getTrackMetaCacheHit(key);
+    if (cached) {
+      out.set(key, cached);
+    } else {
+      missing.push(key);
+    }
+  }
+
+  if (!missing.length) return out;
+
+  // 2) directus bulk by chunks
+  for (let i = 0; i < missing.length; i += BULK_TRACK_META_CHUNK_SIZE) {
+    const chunk = missing.slice(i, i + BULK_TRACK_META_CHUNK_SIZE);
+
+    try {
+      const params = new URLSearchParams();
+      params.set(
+        "fields",
+        [
+          TRACKS_KEY_FIELD,
+          TRACKS_FIRST_PLAYED_FIELD,
+          TRACKS_COVER_FIELD,
+          `${TRACKS_COVER_FIELD}.id`,
+          TRACKS_COVER_URL_FIELD,
+          TRACKS_COVER_OVERRIDE_FIELD,
+        ].join(",")
+      );
+      params.set("limit", String(chunk.length));
+
+      chunk.forEach((trackKey, idx) => {
+        params.set(`filter[_or][${idx}][${TRACKS_KEY_FIELD}][_eq]`, trackKey);
+      });
+
+      const r = await directusFetch(`/items/${TRACKS_COLLECTION}?${params.toString()}`);
+      const j = await r.json();
+      const rows = Array.isArray(j?.data) ? j.data : [];
+
+      const found = new Set<string>();
+
+      for (const row of rows) {
+        const key = String(row?.[TRACKS_KEY_FIELD] || "").trim();
+        if (!key) continue;
+
+        const first_played_at = String(row?.[TRACKS_FIRST_PLAYED_FIELD] || "").trim();
+        const cover_url = extractCoverUrlFromTrackRow(row);
+
+        out.set(key, { first_played_at, cover_url });
+        setTrackMetaCache(key, first_played_at, cover_url);
+        found.add(key);
+      }
+
+      for (const key of chunk) {
+        if (!found.has(key)) {
+          out.set(key, { first_played_at: "", cover_url: "" });
+          setTrackMetaCache(key, "", "");
+        }
+      }
+    } catch {
+      for (const key of chunk) {
+        if (!out.has(key)) {
+          out.set(key, { first_played_at: "", cover_url: "" });
+          setTrackMetaCache(key, "", "");
+        }
+      }
+    }
+  }
 
   return out;
 }
