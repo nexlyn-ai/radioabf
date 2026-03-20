@@ -15,45 +15,25 @@ type NewsItem = {
   date_created?: string | null;
 };
 
-type VideoItem = {
-  id: number | string;
-  status: string;
-  title: string;
-  slug?: string | null;
-  excerpt?: string | null;
-  cover?: string | null;
-  published_at?: string | null;
-  date_created?: string | null;
+type DirectusResp = {
+  data: NewsItem[];
 };
 
-type DirectusResp = { data: NewsItem[] };
-type DirectusVideosResp = { data: VideoItem[] };
-
 // Dernières news (3)
-const newsFields = "id,status,title,slug,excerpt,cover,published_at,date_created";
+const fields = "id,status,title,slug,excerpt,cover,published_at,date_created";
+
 let latestNews: NewsItem[] = [];
+
 try {
   const resp = await directusGet<DirectusResp>(
-    `/items/news?fields=${encodeURIComponent(newsFields)}&filter[status][_eq]=published&sort=-published_at,-date_created&limit=3`
+    `/items/news?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&sort=-published_at,-date_created&limit=3`
   );
   latestNews = resp?.data ?? [];
 } catch {
   latestNews = [];
 }
 
-// Dernières vidéos (3)
-const videoFields = "id,status,title,slug,excerpt,cover,published_at,date_created";
-let latestVideos: VideoItem[] = [];
-try {
-  const resp = await directusGet<DirectusVideosResp>(
-    `/items/videos?fields=${encodeURIComponent(videoFields)}&filter[status][_eq]=published&sort=-published_at,-date_created&limit=3`
-  );
-  latestVideos = resp?.data ?? [];
-} catch {
-  latestVideos = [];
-}
-
-// Cache Vercel (home SSR)
+// Cache home SSR
 Astro.response.headers.set(
   "Cache-Control",
   "public, s-maxage=180, stale-while-revalidate=86400"
@@ -88,7 +68,9 @@ type Occurrence = {
   program?: Program | null;
 };
 
-type DirectusListResp<T> = { data: T[] };
+type DirectusListResp<T> = {
+  data: T[];
+};
 
 function safeStr(v: any): string {
   return typeof v === "string" ? v : v == null ? "" : String(v);
@@ -97,10 +79,11 @@ function safeStr(v: any): string {
 function normalizeDay(v: any): string {
   const s = safeStr(v).toLowerCase().trim();
 
-  if (["mon","tue","wed","thu","fri","sat","sun"].includes(s)) return s;
+  if (["mon", "tue", "wed", "thu", "fri", "sat", "sun"].includes(s)) return s;
 
   const n = Number(s);
   if (!Number.isNaN(n)) {
+    // Support 1..7 (1=lun ... 7=dim)
     if (n === 1) return "mon";
     if (n === 2) return "tue";
     if (n === 3) return "wed";
@@ -109,6 +92,7 @@ function normalizeDay(v: any): string {
     if (n === 6) return "sat";
     if (n === 7) return "sun";
 
+    // Support 0..6 (0=dim ... 6=sam)
     if (n === 0) return "sun";
     if (n === 1) return "mon";
     if (n === 2) return "tue";
@@ -137,7 +121,13 @@ function normalizeTimeFromDirectus(v: any): string {
 
 function buildScheduleFromOccurrences(rows: Occurrence[]) {
   const schedule: Record<string, any[]> = {
-    mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: []
+    mon: [],
+    tue: [],
+    wed: [],
+    thu: [],
+    fri: [],
+    sat: [],
+    sun: [],
   };
 
   for (const row of rows || []) {
@@ -146,14 +136,17 @@ function buildScheduleFromOccurrences(rows: Occurrence[]) {
 
     const time = normalizeTimeFromDirectus(row.start_time) || "00:00";
     const p = row.program || null;
-
     const title = safeStr(p?.title) || "Untitled program";
-    const desc  = safeStr(p?.description) || "";
-
+    const desc = safeStr(p?.description) || "";
     const coverId = safeStr(p?.cover);
-    const imgUrl  = coverId ? directusAsset(coverId) : "";
+    const imgUrl = coverId ? directusAsset(coverId) : "";
 
-    schedule[day].push({ time, img: imgUrl, title, desc });
+    schedule[day].push({
+      time,
+      img: imgUrl,
+      title,
+      desc,
+    });
   }
 
   return schedule;
@@ -162,12 +155,12 @@ function buildScheduleFromOccurrences(rows: Occurrence[]) {
 let directusSchedule: Record<string, any[]> | null = null;
 
 try {
-  const fields =
+  const scheduleFields =
     "id,status,day_of_week,start_time,end_time,is_live," +
     "program.id,program.status,program.title,program.description,program.cover";
 
   const resp = await directusGet<DirectusListResp<Occurrence>>(
-    `/items/program_occurrences?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&filter[program][status][_eq]=published&limit=500&sort=day_of_week,start_time`
+    `/items/program_occurrences?fields=${encodeURIComponent(scheduleFields)}&filter[status][_eq]=published&filter[program][status][_eq]=published&limit=500&sort=day_of_week,start_time`
   );
 
   directusSchedule = buildScheduleFromOccurrences(resp?.data ?? []);
@@ -178,82 +171,69 @@ try {
 ---
 
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
-  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl abfClubAura abfPremiumCard">
-    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
-    <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
-    <div class="absolute inset-0 opacity-[0.06] pointer-events-none"
-         style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.65) 1px, transparent 0); background-size: 22px 22px;"></div>
+  <!-- BIG NOW PLAYING HERO -->
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
+    <div class="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-cyan-500/20 blur-[120px]"></div>
+    <div class="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full bg-blue-600/20 blur-[120px]"></div>
 
     <div class="relative z-10">
-      <div class="flex flex-wrap items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
-        <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-        <span>Now Playing</span>
-        <span class="abfTrendBadge abfTrendBadge--live">Live</span>
-        <span class="abfTrendBadge abfTrendBadge--hot">Club</span>
+      <div class="mb-4 flex items-center gap-3 text-sm uppercase tracking-widest text-white/60">
+        <span class="h-2 w-2 animate-pulse rounded-full bg-cyan-400"></span>
+        Now Playing
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-        <div class="lg:col-span-2 min-w-0">
-          <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+      <div class="grid grid-cols-1 items-center gap-8 lg:grid-cols-3">
+        <!-- LEFT -->
+        <div class="min-w-0 lg:col-span-2">
+          <div class="flex flex-col items-center gap-6 md:flex-row md:items-start">
             <div
               id="homeCoverWrapper"
-              class="abfCover w-40 h-40 md:w-52 md:h-52 rounded-3xl border border-white/10 overflow-hidden flex-none shadow-xl transition-all duration-500 ring-1 ring-cyan-400/15"
+              class="abfCover h-40 w-40 flex-none overflow-hidden rounded-3xl border border-white/10 shadow-xl transition-all duration-500 md:h-52 md:w-52"
             >
-              <img id="homeCover" class="hidden" alt="Pochette actuelle" />
+              <img id="homeCover" class="hidden" alt="Current cover" />
               <div class="abfCoverFallback">
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2 mb-3">
-                <span class="abfTrendBadge abfTrendBadge--heavy">Heavy Rotation</span>
-                <span class="abfTrendBadge abfTrendBadge--rising">Premium Club Flow</span>
+              <div
+                id="homeArtist"
+                data-abf-artist
+                class="line-clamp-2 break-words text-2xl font-extrabold leading-tight md:text-4xl"
+              >
+                —
               </div>
 
-              <div id="homeArtist" data-abf-artist class="text-2xl md:text-4xl font-extrabold leading-tight line-clamp-2 break-words">—</div>
-              <div id="homeTitle" data-abf-title class="mt-1 text-white/70 text-base md:text-lg line-clamp-2 break-words">—</div>
+              <div
+                id="homeTitle"
+                data-abf-title
+                class="mt-1 line-clamp-2 break-words text-base text-white/70 md:text-lg"
+              >
+                —
+              </div>
 
-              <div class="mt-4 flex gap-2 flex-nowrap overflow-x-auto">
+              <div class="mt-4 flex flex-nowrap gap-2 overflow-x-auto">
                 <button
                   id="jumpToPlayer"
                   type="button"
-                  class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
-                         px-3 py-1.5 rounded-lg text-xs font-semibold
-                         shadow-md shadow-cyan-500/20
-                         hover:scale-[1.02] transition whitespace-nowrap"
+                  class="whitespace-nowrap rounded-lg bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] px-3 py-1.5 text-xs font-semibold shadow-md shadow-cyan-500/20 transition hover:scale-[1.02]"
                 >
                   Open player ↓
                 </button>
 
                 <a
                   href="/music"
-                  class="border border-white/20
-                         px-3 py-1.5 rounded-lg text-xs
-                         text-white/80 hover:bg-white/5
-                         transition whitespace-nowrap"
+                  class="whitespace-nowrap rounded-lg border border-white/20 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/5"
                 >
                   Vote & charts
                 </a>
 
                 <a
                   href="/programs"
-                  class="border border-white/20
-                         px-3 py-1.5 rounded-lg text-xs
-                         text-white/80 hover:bg-white/5
-                         transition whitespace-nowrap"
+                  class="whitespace-nowrap rounded-lg border border-white/20 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/5"
                 >
                   Programs
-                </a>
-
-                <a
-                  href="/videos"
-                  class="border border-white/20
-                         px-3 py-1.5 rounded-lg text-xs
-                         text-white/80 hover:bg-white/5
-                         transition whitespace-nowrap"
-                >
-                  Videos
                 </a>
               </div>
 
@@ -264,25 +244,21 @@ try {
           </div>
         </div>
 
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 abfPremiumCard">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="text-sm text-white/50 uppercase tracking-wider">
-              This week
-            </div>
-            <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>
-          </div>
+        <!-- RIGHT -->
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div class="mb-3 text-sm uppercase tracking-wider text-white/50">This week</div>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between border-b border-white/5 pb-3">
-              <div class="text-white/70 text-sm">Top voted tracks</div>
-              <a class="text-cyan-300 hover:text-cyan-200 text-sm" href="/music">See →</a>
+              <div class="text-sm text-white/70">Top voted tracks</div>
+              <a class="text-sm text-cyan-300 hover:text-cyan-200" href="/music">See →</a>
             </div>
 
-            <div id="heroTop1" class="rounded-2xl border border-white/10 bg-white/5 p-3 hidden">
+            <div id="heroTop1" class="hidden rounded-2xl border border-white/10 bg-white/5 p-3">
               <div class="flex items-center gap-3">
                 <div
                   id="heroTop1CoverWrap"
-                  class="abfCover w-12 h-12 rounded-xl border border-white/10 overflow-hidden flex-none"
+                  class="abfCover h-12 w-12 flex-none overflow-hidden rounded-xl border border-white/10"
                 >
                   <img id="heroTop1Cover" class="hidden" alt="" />
                   <div class="abfCoverFallback">
@@ -291,319 +267,216 @@ try {
                 </div>
 
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2">
-                    <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
-                    <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
-                  </div>
-                  <div id="heroTop1Artist" data-abf-artist class="font-semibold text-sm truncate">—</div>
-                  <div id="heroTop1Title" data-abf-title class="text-xs text-white/70 truncate">—</div>
+                  <div class="text-xs uppercase tracking-wider text-white/50">#1</div>
+                  <div id="heroTop1Artist" data-abf-artist class="truncate text-sm font-semibold">—</div>
+                  <div id="heroTop1Title" data-abf-title class="truncate text-xs text-white/70">—</div>
                 </div>
               </div>
             </div>
-
-            <div id="heroTop1Empty" class="text-white/60 text-sm hidden">
-              No votes yet — be the first 🙂
-            </div>
-
-            <div class="text-white/70 text-sm">
-              Vote on tracks you love and shape the weekly chart.
-            </div>
-
-            <a
-              href="/music"
-              class="inline-flex items-center justify-center w-full
-                     bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
-                     px-5 py-3 rounded-xl font-semibold
-                     shadow-lg shadow-cyan-500/25
-                     hover:scale-[1.01] transition"
-            >
-              Vote now
-            </a>
           </div>
+
+          <div id="heroTop1Empty" class="hidden text-sm text-white/60">
+            No votes yet — be the first 🙂
+          </div>
+
+          <div class="mt-4 text-sm text-white/70">
+            Vote on tracks you love and shape the weekly chart.
+          </div>
+
+          <a
+            href="/music"
+            class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] px-5 py-3 font-semibold shadow-lg shadow-cyan-500/25 transition hover:scale-[1.01]"
+          >
+            Vote now
+          </a>
         </div>
       </div>
     </div>
   </section>
 
-  <style is:inline>
-    .line-clamp-2{
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-    }
-    .abfHomeSectionGlow{
-      position: relative;
-      overflow: hidden;
-    }
-    .abfHomeSectionGlow::before{
-      content:"";
-      position:absolute;
-      inset:-20%;
-      pointer-events:none;
-      background:
-        radial-gradient(35% 35% at 10% 10%, rgba(47,194,255,.08), transparent 70%),
-        radial-gradient(35% 35% at 90% 20%, rgba(20,92,143,.10), transparent 72%);
-      opacity:.85;
-    }
-    .abfHomeSectionGlow > *{
-      position:relative;
-      z-index:1;
-    }
-  </style>
-
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow abfPremiumCard">
-    <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-3">
-        <div class="text-sm text-white/50 uppercase tracking-wider">
-          Last played
-        </div>
-        <span class="abfTrendBadge abfTrendBadge--new">New Flow</span>
-      </div>
-      <a href="/music" class="text-cyan-300 hover:text-cyan-200 text-sm">
-        Full history →
-      </a>
+  <!-- LAST PLAYED -->
+  <section class="mt-8 rounded-2xl border border-white/10 bg-[#0A1F33] p-6">
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <div class="text-sm uppercase tracking-wider text-white/50">Last played</div>
+      <a href="/music" class="text-sm text-cyan-300 hover:text-cyan-200">Full history →</a>
     </div>
 
     <div
       id="homeLastCarousel"
-      class="flex gap-4 overflow-x-auto pb-2
-             snap-x snap-mandatory
-             [-ms-overflow-style:none] [scrollbar-width:none]"
+      class="snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] flex gap-4"
     ></div>
-
-    <style is:inline>
-      #homeLastCarousel::-webkit-scrollbar{ display:none; }
-    </style>
   </section>
 
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow abfPremiumCard">
-    <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-3">
-        <div class="text-sm text-white/50 uppercase tracking-wider">
-          On Air
-        </div>
-        <span class="abfTrendBadge abfTrendBadge--live">Live Radar</span>
-      </div>
-      <a href="/programs" class="text-cyan-300 hover:text-cyan-200 text-sm">Full schedule →</a>
+  <!-- ON AIR -->
+  <section class="mt-8 rounded-2xl border border-white/10 bg-[#0A1F33] p-6">
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <div class="text-sm uppercase tracking-wider text-white/50">On Air</div>
+      <a href="/programs" class="text-sm text-cyan-300 hover:text-cyan-200">Full schedule →</a>
     </div>
+
     <div id="onAirTonight" class="text-white/70"></div>
   </section>
 
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow abfPremiumCard">
-    <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-3">
-        <div class="text-sm text-white/50 uppercase tracking-wider">
-          Latest News
-        </div>
-        <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>
-      </div>
-      <a href="/news" class="text-cyan-300 hover:text-cyan-200 text-sm">
-        All news →
-      </a>
+  <!-- LATEST NEWS -->
+  <section class="mt-8 rounded-2xl border border-white/10 bg-[#0A1F33] p-6">
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <div class="text-sm uppercase tracking-wider text-white/50">Latest News</div>
+      <a href="/news" class="text-sm text-cyan-300 hover:text-cyan-200">All news →</a>
     </div>
 
-    {latestNews?.length ? (
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {latestNews.map((post) => {
-          const dateLabel = fmtDate(post.published_at || post.date_created);
-          const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
-          return (
-            <a
-              href={`/news/${post.slug}`}
-              class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden abfPremiumCard"
-            >
-              <div class="relative aspect-[16/9] bg-gradient-to-br from-[#145C8F] to-[#2FC2FF]">
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt=""
-                    class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : null}
-                <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
-                <div class="absolute top-3 left-3">
-                  <span class="abfTrendBadge abfTrendBadge--new">News</span>
-                </div>
-                <div class="absolute left-4 bottom-3 right-4 flex items-end justify-between gap-3">
-                  <div class="min-w-0">
-                    <div class="text-[11px] text-white/65 uppercase tracking-wider">
-                      {dateLabel || ""}
-                    </div>
-                    <div class="mt-1 font-extrabold text-base leading-tight truncate">
-                      {post.title}
-                    </div>
-                  </div>
-                  <div class="flex-none w-9 h-9 rounded-xl border border-white/15 bg-white/5 grid place-items-center text-cyan-200/90">
-                    →
-                  </div>
-                </div>
-              </div>
-              <div class="p-4">
-                <p class="text-white/70 text-sm leading-relaxed line-clamp-2">
-                  {post.excerpt ?? ""}
-                </p>
-              </div>
-            </a>
-          );
-        })}
-      </div>
-    ) : (
-      <div class="text-white/60 text-sm">
-        No news yet — check back soon.
-      </div>
-    )}
-  </section>
+    {
+      latestNews?.length ? (
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {latestNews.map((post) => {
+            const dateLabel = fmtDate(post.published_at || post.date_created);
+            const cover = post.cover
+              ? directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 })
+              : "";
 
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow abfPremiumCard">
-    <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-3">
-        <div class="text-sm text-white/50 uppercase tracking-wider">
-          Latest Videos
+            return (
+              <a
+                href={`/news/${post.slug}`}
+                class="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition hover:bg-white/10"
+              >
+                <div class="relative aspect-[16/9] bg-gradient-to-br from-[#145C8F] to-[#2FC2FF]">
+                  {cover ? (
+                    <img
+                      src={cover}
+                      alt=""
+                      class="absolute inset-0 h-full w-full object-cover opacity-90 transition group-hover:opacity-100"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : null}
+
+                  <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
+
+                  <div class="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="text-[11px] uppercase tracking-wider text-white/65">
+                        {dateLabel || ""}
+                      </div>
+                      <div class="mt-1 truncate text-base font-extrabold leading-tight">
+                        {post.title}
+                      </div>
+                    </div>
+
+                    <div class="grid h-9 w-9 flex-none place-items-center rounded-xl border border-white/15 bg-white/5 text-cyan-200/90">
+                      →
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-4">
+                  <p class="line-clamp-2 text-sm leading-relaxed text-white/70">
+                    {post.excerpt ?? ""}
+                  </p>
+                </div>
+              </a>
+            );
+          })}
         </div>
-        <span class="abfTrendBadge abfTrendBadge--rising">Fresh Drops</span>
-      </div>
-      <a href="/videos" class="text-cyan-300 hover:text-cyan-200 text-sm">
-        All videos →
-      </a>
-    </div>
-
-    {latestVideos?.length ? (
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {latestVideos.map((video) => {
-          const dateLabel = fmtDate(video.published_at || video.date_created);
-          const cover = directusAsset(video.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
-          return (
-            <a
-              href="/videos"
-              class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden abfPremiumCard"
-            >
-              <div class="relative aspect-video bg-gradient-to-br from-[#145C8F] to-[#2FC2FF]">
-                {cover ? (
-                  <img
-                    src={cover}
-                    alt=""
-                    class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-[1.03] transition duration-500"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : null}
-
-                <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/80 via-[#050B14]/10 to-transparent"></div>
-
-                <div class="absolute top-3 left-3 flex items-center gap-2">
-                  <span class="abfTrendBadge abfTrendBadge--hot">Video</span>
-                </div>
-
-                <div class="absolute inset-0 grid place-items-center pointer-events-none">
-                  <div class="w-14 h-14 rounded-full border border-white/20 bg-black/35 backdrop-blur-sm grid place-items-center text-white text-lg shadow-xl">
-                    ▶
-                  </div>
-                </div>
-
-                <div class="absolute left-4 bottom-3 right-4">
-                  <div class="text-[11px] text-white/65 uppercase tracking-wider">
-                    {dateLabel || ""}
-                  </div>
-                  <div class="mt-1 font-extrabold text-base leading-tight truncate">
-                    {video.title}
-                  </div>
-                </div>
-              </div>
-
-              <div class="p-4">
-                <p class="text-white/70 text-sm leading-relaxed line-clamp-2">
-                  {video.excerpt ?? "Watch the latest RadioABF video content."}
-                </p>
-              </div>
-            </a>
-          );
-        })}
-      </div>
-    ) : (
-      <div class="text-white/60 text-sm">
-        No videos yet — check back soon.
-      </div>
-    )}
+      ) : (
+        <div class="text-sm text-white/60">No news yet — check back soon.</div>
+      )
+    }
   </section>
-  
-    <div class="mt-8 rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden abfHomeSectionGlow abfPremiumCard">
-    <div class="p-5 flex items-center justify-between gap-4">
+
+  <!-- TOP THIS WEEK -->
+  <div class="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33]">
+    <div class="flex items-center justify-between gap-4 p-5">
       <div>
-        <div class="flex items-center gap-3">
-          <div class="text-sm text-white/50 uppercase tracking-wider">Top this week</div>
-          <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
-        </div>
-        <div class="text-white/70 text-sm mt-1">Top voted tracks (this week).</div>
+        <div class="text-sm uppercase tracking-wider text-white/50">Top this week</div>
+        <div class="mt-1 text-sm text-white/70">Top voted tracks (this week).</div>
       </div>
-      <a href="/music" class="text-cyan-200 hover:text-cyan-100 text-sm transition">
+
+      <a href="/music" class="text-sm text-cyan-200 transition hover:text-cyan-100">
         Vote & charts →
       </a>
     </div>
 
     <div class="border-t border-white/10 p-4">
-      <div id="topWeekGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <article
-            class="rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
-            data-topweek-card
-          >
-            <div class="p-3 flex items-center gap-3">
-              <div class="abfCover w-12 h-12 rounded-xl border border-white/10 overflow-hidden flex-none">
-                <img class="hidden" alt="" />
-                <div class="abfCoverFallback">
-                  <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+      <div
+        id="topWeekGrid"
+        class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      >
+        {
+          Array.from({ length: 8 }).map((_, i) => (
+            <article
+              class="overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition hover:bg-white/10"
+              data-topweek-card
+            >
+              <div class="flex items-center gap-3 p-3">
+                <div class="abfCover h-12 w-12 flex-none overflow-hidden rounded-xl border border-white/10">
+                  <img class="hidden" alt="" />
+                  <div class="abfCoverFallback">
+                    <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+                  </div>
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs uppercase tracking-wider text-white/50" data-rank>
+                    #{i + 1}
+                  </div>
+                  <div class="truncate text-sm font-semibold" data-artist>
+                    —
+                  </div>
+                  <div class="truncate text-xs text-white/70" data-title>
+                    —
+                  </div>
+                </div>
+
+                <div class="flex-none text-xs text-white/50" data-count>
+                  —
                 </div>
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <div class="text-xs text-white/50 uppercase tracking-wider" data-rank>#{i + 1}</div>
-                  {i === 0 && <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>}
-                  {i === 1 && <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>}
-                  {i === 2 && <span class="abfTrendBadge abfTrendBadge--rising">Rising</span>}
-                </div>
-                <div class="font-semibold text-sm truncate" data-artist>—</div>
-                <div class="text-xs text-white/70 truncate" data-title>—</div>
-              </div>
-              <div class="flex-none text-xs text-white/50" data-count>—</div>
-            </div>
-          </article>
-        ))}
+            </article>
+          ))
+        }
       </div>
 
-      <div id="topWeekEmpty" class="mt-4 text-white/50 text-sm hidden">
-        No votes yet this week — go vote on
-        <a class="text-cyan-200 hover:text-cyan-100 transition" href="/music">/music</a> 🙂
+      <div id="topWeekEmpty" class="mt-4 hidden text-sm text-white/50">
+        No votes yet this week — go vote on{" "}
+        <a class="text-cyan-200 transition hover:text-cyan-100" href="/music">/music</a> 🙂
       </div>
     </div>
   </div>
 
-  <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
-    <div class="rounded-2xl border border-white/10 p-4 overflow-hidden relative
-                bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] abfPremiumCard">
-      <div class="absolute -top-24 -right-24 w-[240px] h-[240px] bg-cyan-500/20 rounded-full blur-[80px]"></div>
+  <!-- FEATURE MINI CARDS -->
+  <div class="mt-8 grid grid-cols-1 gap-3 md:grid-cols-3">
+    <!-- Card 1 -->
+    <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] p-4">
+      <div class="absolute -right-24 -top-24 h-[240px] w-[240px] rounded-full bg-cyan-500/20 blur-[80px]"></div>
+
       <div class="relative">
-        <div class="flex items-center gap-2 mb-1">
-          <div class="text-xs text-white/50 uppercase tracking-wider">New</div>
-          <span class="abfTrendBadge abfTrendBadge--new">Premium</span>
-        </div>
-        <div class="font-extrabold text-lg">ABF Live in UHD &amp; HD</div>
-        <p class="text-sm text-white/70 mt-1">
-          Ultra clean stream modes via stable HTTPS endpoints — bypass firewalls, corporate networks (best-effort availability).
+        <div class="text-xs uppercase tracking-wider text-white/50">New</div>
+        <div class="text-lg font-extrabold">ABF Live in UHD &amp; HD</div>
+
+        <p class="mt-1 text-sm text-white/70">
+          Ultra clean stream modes via stable HTTPS endpoints — bypass firewalls,
+          corporate networks (best-effort availability).
         </p>
+
         <div class="mt-3 flex items-center gap-2 text-xs">
-          <span class="px-2 py-1 rounded-xl border border-white/10 bg-white/5 text-cyan-200">UHD</span>
-          <span class="px-2 py-1 rounded-xl border border-white/10 bg-white/5 text-white/80">HD</span>
-          <span class="px-2 py-1 rounded-xl border border-white/10 bg-white/5 text-white/80">SD</span>
-          <span class="px-2 py-1 rounded-xl border border-white/10 bg-white/5 text-white/80">Low Data</span>
+          <span class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-cyan-200">
+            UHD
+          </span>
+          <span class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-white/80">
+            HD
+          </span>
+          <span class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-white/80">
+            SD
+          </span>
+          <span class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-white/80">
+            Low Data
+          </span>
         </div>
+
         <div class="mt-3">
           <button
             id="openStreamQualityModal"
             type="button"
-            class="inline-flex items-center text-sm text-cyan-200 hover:text-cyan-100 transition"
+            class="inline-flex items-center text-sm text-cyan-200 transition hover:text-cyan-100"
           >
             Learn more →
           </button>
@@ -611,53 +484,54 @@ try {
       </div>
     </div>
 
-    <div class="rounded-2xl border border-white/10 p-4
-                bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220] abfPremiumCard">
-      <div class="flex items-center gap-2 mb-1">
-        <div class="text-xs text-white/50 uppercase tracking-wider">Audio</div>
-        <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
-      </div>
-      <div class="font-extrabold text-lg">Lossless FLAC Mode</div>
-      <p class="text-sm text-white/70 mt-1">
+    <!-- Card 2 -->
+    <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220] p-4">
+      <div class="text-xs uppercase tracking-wider text-white/50">Audio</div>
+      <div class="text-lg font-extrabold">Lossless FLAC Mode</div>
+
+      <p class="mt-1 text-sm text-white/70">
         For audiophiles: maximum quality when available.
       </p>
+
       <div class="mt-3 flex items-center gap-2">
         <button
           id="openFlacModal"
           type="button"
-          class="inline-flex items-center gap-2 text-sm text-cyan-200 hover:text-cyan-100 transition
-                 px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+          class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-cyan-200 transition hover:bg-white/10 hover:text-cyan-100"
         >
           What is FLAC? →
         </button>
+
         <button
           id="openFlacModal2"
           type="button"
-          class="inline-flex items-center text-sm text-white/70 hover:text-white transition"
+          class="inline-flex items-center text-sm text-white/70 transition hover:text-white"
         >
           Learn more →
         </button>
       </div>
     </div>
 
-    <div class="rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] relative overflow-hidden abfPremiumCard">
-      <div class="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+    <!-- Card 3 -->
+    <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] p-4">
+      <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl"></div>
 
       <div class="relative z-10">
-        <div class="flex items-center gap-2 mb-1">
-          <div class="text-xs text-white/50 uppercase tracking-wider">Independent & Ad-Free</div>
-          <span class="abfTrendBadge abfTrendBadge--rising">Support</span>
+        <div class="mb-1 text-xs uppercase tracking-wider text-white/50">
+          Independent & Ad-Free
         </div>
-        <div class="font-extrabold text-lg leading-tight">Buy us a coffee? ☕</div>
-        <p class="text-sm text-white/70 mt-2">
-          Radio ABF stays 100% independent thanks to you.<br class="hidden sm:block">
+        <div class="text-lg font-extrabold leading-tight">Buy us a coffee? ☕</div>
+
+        <p class="mt-2 text-sm text-white/70">
+          Radio ABF stays 100% independent thanks to you.
+          <br class="hidden sm:block" />
           A small donation helps cover servers, streaming, and music rights.
         </p>
 
         <button
           id="openSupportModal"
           type="button"
-          class="inline-flex mt-4 items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] font-semibold text-sm shadow-md shadow-cyan-500/25 hover:scale-[1.02] transition"
+          class="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] px-5 py-2.5 text-sm font-semibold shadow-md shadow-cyan-500/25 transition hover:scale-[1.02]"
         >
           Support us →
         </button>
@@ -665,39 +539,55 @@ try {
     </div>
   </div>
 
+  <!-- STREAM QUALITY MODAL -->
   <div id="streamQualityModal" class="abfModal" aria-hidden="true">
     <div class="abfModalBackdrop" data-close="streamquality"></div>
     <div class="abfModalWrap">
       <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Stream qualities info">
         <div class="abfModalTop">
           <div class="abfModalTitle">Stream Qualities, HTTPS Proxy & HLS</div>
-          <button class="abfModalClose" id="streamQualityClose" type="button" aria-label="Close">✕</button>
+          <button class="abfModalClose" id="streamQualityClose" type="button" aria-label="Close">
+            ✕
+          </button>
         </div>
 
         <div class="abfModalBody">
-          <div class="space-y-5 text-sm text-white/75 leading-relaxed">
-            <p class="text-white/90 font-semibold">
+          <div class="space-y-5 text-sm leading-relaxed text-white/75">
+            <p class="font-semibold text-white/90">
               ABF offers multiple stream qualities via secure HTTPS proxy endpoints.
             </p>
 
             <p>
-              Direct Icecast streams provide the lowest latency for live radio.
-              HLS versions are also available for extended compatibility (Safari, iOS, Smart TVs).
+              Direct Icecast streams provide the lowest latency for live radio. HLS versions
+              are also available for extended compatibility (Safari, iOS, Smart TVs).
             </p>
 
             <ul class="space-y-3">
-              <li><span class="font-semibold text-cyan-200">UHD (FLAC ~728kbps)</span>: Lossless studio quality — maximum fidelity.</li>
-              <li><span class="font-semibold text-white/90">HD (MP3 320kbps)</span>: High bitrate for excellent clarity.</li>
-              <li><span class="font-semibold text-white/90">SD (MP3 128kbps)</span>: Balanced quality for everyday listening.</li>
-              <li><span class="font-semibold text-white/90">Low (AAC+ 32kbps)</span>: Ultra-light for mobile data or unstable networks.</li>
+              <li>
+                <span class="font-semibold text-cyan-200">UHD (FLAC ~728kbps)</span>:
+                Lossless studio quality — maximum fidelity.
+              </li>
+              <li>
+                <span class="font-semibold text-white/90">HD (MP3 320kbps)</span>:
+                High bitrate for excellent clarity.
+              </li>
+              <li>
+                <span class="font-semibold text-white/90">SD (MP3 128kbps)</span>:
+                Balanced quality for everyday listening.
+              </li>
+              <li>
+                <span class="font-semibold text-white/90">Low (AAC+ 32kbps)</span>:
+                Ultra-light for mobile data or unstable networks.
+              </li>
             </ul>
 
             <p>
-              The embedded player auto-selects the best quality, but you can manually force one in the controls.
+              The embedded player auto-selects the best quality, but you can manually force one
+              in the controls.
             </p>
 
-            <div class="pt-5 border-t border-white/10">
-              <p class="text-white/90 font-semibold mb-3">How to use in external players</p>
+            <div class="border-t border-white/10 pt-5">
+              <p class="mb-3 font-semibold text-white/90">How to use in external players</p>
               <ul class="space-y-2 text-sm">
                 <li><strong>Windows</strong>: VLC → Media → Open Network Stream → paste URL.</li>
                 <li><strong>Mac</strong>: VLC or IINA → File → Open Network.</li>
@@ -707,61 +597,96 @@ try {
               </ul>
             </div>
 
-            <div class="pt-6 border-t border-white/10">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="px-2 py-1 text-xs rounded bg-cyan-500/15 text-cyan-300 border border-cyan-400/30">
+            <div class="border-t border-white/10 pt-6">
+              <div class="mb-3 flex items-center gap-2">
+                <span class="rounded border border-cyan-400/30 bg-cyan-500/15 px-2 py-1 text-xs text-cyan-300">
                   ⚡ Low Latency • Recommended
                 </span>
               </div>
-              <p class="text-white/90 font-semibold mb-3">
-                Direct HTTPS Streams (Icecast)
-              </p>
+
+              <p class="mb-3 font-semibold text-white/90">Direct HTTPS Streams (Icecast)</p>
+
               <ul class="space-y-2 text-cyan-200">
-                <li>• UHD FLAC 728kbps:
-                  <a href="https://stream.radioabf.com/abf-uhd.flac" class="underline hover:text-cyan-100" target="_blank" rel="noopener noreferrer">
+                <li>
+                  • UHD FLAC 728kbps:
+                  <a
+                    href="https://stream.radioabf.com/abf-uhd.flac"
+                    class="underline hover:text-cyan-100"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     https://stream.radioabf.com/abf-uhd.flac
                   </a>
                 </li>
-                <li>• HD MP3 320kbps:
-                  <a href="https://stream.radioabf.com/abf-hd.mp3" class="underline hover:text-cyan-100" target="_blank" rel="noopener noreferrer">
+                <li>
+                  • HD MP3 320kbps:
+                  <a
+                    href="https://stream.radioabf.com/abf-hd.mp3"
+                    class="underline hover:text-cyan-100"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     https://stream.radioabf.com/abf-hd.mp3
                   </a>
                 </li>
-                <li>• SD MP3 128kbps:
-                  <a href="https://stream.radioabf.com/abf-sd.mp3" class="underline hover:text-cyan-100" target="_blank" rel="noopener noreferrer">
+                <li>
+                  • SD MP3 128kbps:
+                  <a
+                    href="https://stream.radioabf.com/abf-sd.mp3"
+                    class="underline hover:text-cyan-100"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     https://stream.radioabf.com/abf-sd.mp3
                   </a>
                 </li>
-                <li>• Low AAC+ 32kbps:
-                  <a href="https://stream.radioabf.com/abf-low.aac" class="underline hover:text-cyan-100" target="_blank" rel="noopener noreferrer">
+                <li>
+                  • Low AAC+ 32kbps:
+                  <a
+                    href="https://stream.radioabf.com/abf-low.aac"
+                    class="underline hover:text-cyan-100"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     https://stream.radioabf.com/abf-low.aac
                   </a>
                 </li>
               </ul>
             </div>
 
-            <div class="pt-6 border-t border-white/10">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="px-2 py-1 text-xs rounded bg-purple-500/15 text-purple-300 border border-purple-400/30">
+            <div class="border-t border-white/10 pt-6">
+              <div class="mb-3 flex items-center gap-2">
+                <span class="rounded border border-purple-400/30 bg-purple-500/15 px-2 py-1 text-xs text-purple-300">
                   📺 HLS Compatible • iOS / Safari / Smart TV
                 </span>
               </div>
-              <p class="text-white/90 font-semibold mb-2">
-                HLS Streams (Secondary Option)
+
+              <p class="mb-2 font-semibold text-white/90">HLS Streams (Secondary Option)</p>
+              <p class="mb-3 text-xs text-white/60">
+                HLS uses segmented delivery for better compatibility. Slightly higher latency
+                compared to Icecast.
               </p>
-              <p class="text-xs text-white/60 mb-3">
-                HLS uses segmented delivery for better compatibility.
-                Slightly higher latency compared to Icecast.
-              </p>
+
               <ul class="space-y-2 text-cyan-200">
-                <li>• Auto (Master HLS MP3 — recommended):
-                  <a href="https://stream.radioabf.com/hls/abf.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener">
+                <li>
+                  • Auto (Master HLS MP3 — recommended):
+                  <a
+                    href="https://stream.radioabf.com/hls/abf.m3u8"
+                    class="underline hover:text-cyan-100"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     https://stream.radioabf.com/hls/abf.m3u8
                   </a>
                 </li>
-
-                <li>• Low Data (HLS AAC+ 32kbps):
-                  <a href="https://stream.radioabf.com/hls/abf-low.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener">
+                <li>
+                  • Low Data (HLS AAC+ 32kbps):
+                  <a
+                    href="https://stream.radioabf.com/hls/abf-low.m3u8"
+                    class="underline hover:text-cyan-100"
+                    target="_blank"
+                    rel="noopener"
+                  >
                     https://stream.radioabf.com/hls/abf-low.m3u8
                   </a>
                 </li>
@@ -773,6 +698,7 @@ try {
     </div>
   </div>
 
+  <!-- FLAC MODAL -->
   <div id="flacModal" class="abfModal" aria-hidden="true">
     <div class="abfModalBackdrop" data-close="flac"></div>
     <div class="abfModalWrap">
@@ -781,27 +707,30 @@ try {
           <div class="abfModalTitle">FLAC Mode</div>
           <button class="abfModalClose" id="flacClose" type="button" aria-label="Close">✕</button>
         </div>
+
         <div class="abfModalBody">
-          <div class="space-y-3 text-sm text-white/75 leading-relaxed">
-            <p class="text-white/85 font-semibold">
-              Lossless audio, studio-like clarity.
-            </p>
+          <div class="space-y-3 text-sm leading-relaxed text-white/75">
+            <p class="font-semibold text-white/85">Lossless audio, studio-like clarity.</p>
+
             <p>
-              FLAC (Free Lossless Audio Codec) preserves the original audio signal without compression artifacts.
-              It’s ideal for high-end headphones, DACs, and speakers—especially in quiet listening environments.
+              FLAC (Free Lossless Audio Codec) preserves the original audio signal without
+              compression artifacts. It’s ideal for high-end headphones, DACs, and speakers
+              — especially in quiet listening environments.
             </p>
+
             <p>
-              Heads up: FLAC uses significantly more bandwidth than MP3/AAC. If your connection is unstable,
-              you may get smoother playback with MP3 320 or AAC+.
+              Heads up: FLAC uses significantly more bandwidth than MP3/AAC. If your connection
+              is unstable, you may get smoother playback with MP3 320 or AAC+.
             </p>
+
             <div class="mt-4 flex flex-wrap gap-2">
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80 text-xs">
+              <span class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80">
                 Best on Wi-Fi / Fiber
               </span>
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/80 text-xs">
+              <span class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80">
                 Higher data usage
               </span>
-              <span class="px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-cyan-200 text-xs">
+              <span class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-cyan-200">
                 Premium clarity
               </span>
             </div>
@@ -811,67 +740,76 @@ try {
     </div>
   </div>
 
+  <!-- SUPPORT MODAL -->
   <div id="supportModal" class="abfModal" aria-hidden="true">
     <div class="abfModalBackdrop" data-close="support"></div>
     <div class="abfModalWrap">
       <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Support Radio ABF">
         <div class="abfModalTop">
           <div class="abfModalTitle">Buy us a coffee to keep ABF alive? ☕</div>
-          <button class="abfModalClose" id="supportClose" type="button" aria-label="Close">✕</button>
+          <button class="abfModalClose" id="supportClose" type="button" aria-label="Close">
+            ✕
+          </button>
         </div>
 
-        <div class="abfModalBody p-6 space-y-6 text-center sm:text-left">
-          <div class="text-white/80 leading-relaxed">
-            <p class="text-lg font-semibold mb-3">Radio ABF is:</p>
-            <ul class="space-y-2 text-sm text-white/75 list-disc list-inside mx-auto sm:mx-0 max-w-md">
-              <li>24/7 high-quality sound, no ads</li>
-              <li>Exclusive mixes and passionate residents</li>
-              <li>100% independent (no big labels or corporations)</li>
-              <li>Servers, streaming costs and music rights to cover</li>
-            </ul>
+        <div class="abfModalBody p-6 text-center sm:text-left">
+          <div class="space-y-6">
+            <div class="leading-relaxed text-white/80">
+              <p class="mb-3 text-lg font-semibold">Radio ABF is:</p>
+              <ul class="mx-auto max-w-md list-inside list-disc space-y-2 text-sm text-white/75 sm:mx-0">
+                <li>24/7 high-quality sound, no ads</li>
+                <li>Exclusive mixes and passionate residents</li>
+                <li>100% independent (no big labels or corporations)</li>
+                <li>Servers, streaming costs and music rights to cover</li>
+              </ul>
+            </div>
+
+            <p class="font-medium text-white/90">
+              Even <strong>€3</strong> makes a real difference. Thank you so much ♥
+            </p>
+
+            <a
+              href="https://www.buymeacoffee.com/radioabf"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-3 rounded-2xl bg-[#FFDD00] px-7 py-4 text-base font-bold text-black shadow-lg transition hover:scale-105 hover:bg-[#FFDD00]/90"
+            >
+              <img
+                src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
+                alt="Buy Me a Coffee"
+                class="h-6 w-6"
+              />
+              Buy us a coffee (or more!)
+            </a>
+
+            <p class="pt-4 text-xs text-white/50">
+              Secure payment • One-time or become a monthly supporter
+            </p>
           </div>
-
-          <p class="text-white/90 font-medium">
-            Even <strong>€3</strong> makes a real difference. Thank you so much ♥
-          </p>
-
-          <a
-            href="https://www.buymeacoffee.com/radioabf"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-[#FFDD00] text-black font-bold text-base shadow-lg hover:bg-[#FFDD00]/90 transition transform hover:scale-105"
-          >
-            <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy Me a Coffee" class="h-6 w-6">
-            Buy us a coffee (or more!)
-          </a>
-
-          <p class="text-xs text-white/50 pt-4">
-            Secure payment • One-time or become a monthly supporter
-          </p>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Directus schedule injection -->
   <script is:inline define:vars={{ directusSchedule }}>
     window.__abfProgramsFromDirectus = directusSchedule ?? null;
   </script>
 
   <script is:inline data-astro-rerun>
     (() => {
-      const PROGRAMS_DIR = "/images/programs/";
       const HISTORY_KEY = "abf_history";
 
-      function getISOWeekId(d = new Date()){
+      function getISOWeekId(d = new Date()) {
         const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         const dayNum = date.getUTCDay() || 7;
         date.setUTCDate(date.getUTCDate() + 4 - dayNum);
         const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
         const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-        return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
+        return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
       }
 
-      function normalizeDashes(s){
+      function normalizeDashes(s) {
         return String(s || "")
           .replace(/\s+—\s+/g, " - ")
           .replace(/\s+–\s+/g, " - ")
@@ -879,56 +817,56 @@ try {
           .trim();
       }
 
-      function splitTrack(entry){
+      function splitTrack(entry) {
         const s = normalizeDashes(String(entry || "").trim().replace(/^undefined\s*-\s*/i, ""));
         const idx = s.indexOf(" - ");
         if (idx === -1) return { artist: s, title: "" };
-        return { artist: s.slice(0, idx).trim(), title: s.slice(idx + 3).trim() };
+        return {
+          artist: s.slice(0, idx).trim(),
+          title: s.slice(idx + 3).trim(),
+        };
       }
 
-      function cleanTitleForDisplay(title){
+      function cleanTitleForDisplay(title) {
         let t = String(title || "").trim();
         if (!t) return "";
 
         const killWords =
           "(?:original|extended|radio|club|dub|edit|mix|version|remix|rework|bootleg|vip|instrumental|acapella|a cappella|mono|stereo|clean|explicit|single|album|live|demo)";
 
-        for (let i = 0; i < 6; i++){
+        for (let i = 0; i < 6; i++) {
           const before = t;
-
           t = t.replace(
             new RegExp(`\\s*[\\(\\[][^\\)\\]]*?\\b${killWords}\\b[^\\)\\]]*[\\)\\]]\\s*$`, "i"),
             ""
           );
-
           t = t.replace(new RegExp(`\\s*(?:-|–|—)\\s*${killWords}\\b.*$`, "i"), "");
           t = t.replace(/\s{2,}/g, " ").trim();
-
           if (t === before) break;
         }
 
         return t;
       }
 
-      function cleanArtistForDisplay(artist){
+      function cleanArtistForDisplay(artist) {
         return String(artist || "").replace(/\s{2,}/g, " ").trim();
       }
 
-      function normKey(a,t){
+      function normKey(a, t) {
         return (a + " - " + t)
           .toLowerCase()
-          .replace(/\s+/g," ")
-          .replace(/[“”"']/g,"")
+          .replace(/\s+/g, " ")
+          .replace(/[“”"']/g, "")
           .trim();
       }
 
-      function esc(s){
+      function esc(s) {
         return String(s || "")
-          .replace(/&/g,"&amp;")
-          .replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;")
-          .replace(/"/g,"&quot;")
-          .replace(/'/g,"&#039;");
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
       }
 
       function coverHtmlByUrl(url, sizeClass = "w-14 h-14 rounded-2xl") {
@@ -943,11 +881,12 @@ try {
         `;
       }
 
-      function setCover(url){
+      function setCover(url) {
         const img = document.getElementById("homeCover");
         if (!img) return;
+
         const u = String(url || "").trim();
-        if (u){
+        if (u) {
           img.src = u;
           img.classList.remove("hidden");
         } else {
@@ -956,11 +895,12 @@ try {
         }
       }
 
-      function setHeroTop1Cover(url){
+      function setHeroTop1Cover(url) {
         const img = document.getElementById("heroTop1Cover");
         if (!img) return;
+
         const u = String(url || "").trim();
-        if (u){
+        if (u) {
           img.src = u;
           img.classList.remove("hidden");
         } else {
@@ -969,59 +909,75 @@ try {
         }
       }
 
-      function loadHistoryLocal(){
+      function loadHistoryLocal() {
         let raw = [];
-        try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-        catch{ raw = []; }
+        try {
+          raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        } catch {
+          raw = [];
+        }
 
-        return (raw || []).map((x) => {
-          if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
-          if (x && typeof x === "object" && typeof x.t === "string"){
-            return { t: x.t, ts: Number(x.ts) || 0, cover_url: String(x.cover_url || "") };
-          }
-          return null;
-        }).filter(Boolean);
+        return (raw || [])
+          .map((x) => {
+            if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
+            if (x && typeof x === "object" && typeof x.t === "string") {
+              return {
+                t: x.t,
+                ts: Number(x.ts) || 0,
+                cover_url: String(x.cover_url || ""),
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
       }
 
-      async function fetchServerNowPlaying(limit = 12){
-        try{
+      async function fetchServerNowPlaying(limit = 12) {
+        try {
           const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
-          const data = await res.json().catch(()=> ({}));
+          const data = await res.json().catch(() => ({}));
           if (!data?.ok) return [];
 
           const out = [];
 
-          if (data?.now){
+          if (data?.now) {
             const rawNow = String(data?.now?.raw || "").trim();
             const a = String(data?.now?.artist || "").trim();
             const t = String(data?.now?.title || "").trim();
             const raw = rawNow || (a || t ? `${a} - ${t}`.trim() : "");
-            if (raw){
+
+            if (raw) {
               out.push({
                 t: raw,
-                ts: Number(data?.now?.played_at_ms) ||
-                    (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
-                cover_url: String(data?.now?.cover_url || "")
+                ts:
+                  Number(data?.now?.played_at_ms) ||
+                  (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+                cover_url: String(data?.now?.cover_url || ""),
               });
             }
           }
 
-          if (Array.isArray(data?.history)){
-            for (const row of data.history){
-              const raw = String(row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || "").trim();
+          if (Array.isArray(data?.history)) {
+            for (const row of data.history) {
+              const raw = String(
+                row?.raw || `${row?.artist || ""} - ${row?.title || ""}`.trim() || ""
+              ).trim();
               if (!raw) continue;
+
               out.push({
                 t: raw,
-                ts: Number(row?.played_at_ms) ||
-                    (row?.played_at ? new Date(row.played_at).getTime() : 0),
-                cover_url: String(row?.cover_url || "")
+                ts:
+                  Number(row?.played_at_ms) ||
+                  (row?.played_at ? new Date(row.played_at).getTime() : 0),
+                cover_url: String(row?.cover_url || ""),
               });
             }
           }
 
           const seen = new Set();
           const deduped = [];
-          for (const item of out){
+
+          for (const item of out) {
             const k = String(item.t || "").toLowerCase();
             if (!k || seen.has(k)) continue;
             seen.add(k);
@@ -1029,13 +985,15 @@ try {
           }
 
           return deduped.slice(0, limit);
-        }catch{
+        } catch {
           return [];
         }
       }
 
-      async function apiGetTopWeek(week){
-        const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, { cache: "no-store" });
+      async function apiGetTopWeek(week) {
+        const r = await fetch(`/api/vote?week=${encodeURIComponent(week)}`, {
+          cache: "no-store",
+        });
         if (!r.ok) return { week, top: [] };
         const j = await r.json().catch(() => ({}));
         return { week: j?.week || week, top: Array.isArray(j?.top) ? j.top : [] };
@@ -1044,9 +1002,9 @@ try {
       let __homeVotesCache = window.__abfHomeVotesCache || { week: "", ts: 0, top: [] };
       window.__abfHomeVotesCache = __homeVotesCache;
 
-      async function getTopWeekCached(week){
+      async function getTopWeekCached(week) {
         const now = Date.now();
-        if (__homeVotesCache.week === week && (now - __homeVotesCache.ts) < 8000) {
+        if (__homeVotesCache.week === week && now - __homeVotesCache.ts < 8000) {
           return __homeVotesCache.top || [];
         }
         const data = await apiGetTopWeek(week);
@@ -1055,16 +1013,17 @@ try {
         return __homeVotesCache.top || [];
       }
 
-      async function renderNowPlayingAndLast(){
+      async function renderNowPlayingAndLast() {
         const artistEl = document.getElementById("homeArtist");
         const titleEl = document.getElementById("homeTitle");
         const host = document.getElementById("homeLastCarousel");
+
         if (!artistEl || !titleEl || !host) return;
 
         let history = await fetchServerNowPlaying(12);
         if (!history.length) history = loadHistoryLocal();
 
-        if (!history.length){
+        if (!history.length) {
           artistEl.textContent = "—";
           titleEl.textContent = "—";
           setCover("");
@@ -1074,7 +1033,7 @@ try {
         }
 
         const coverByNorm = {};
-        for (const entry of history){
+        for (const entry of history) {
           const t = splitTrack(entry.t);
           const n = normKey(t.artist, t.title);
           const u = String(entry.cover_url || "").trim();
@@ -1086,67 +1045,63 @@ try {
         const current = splitTrack(currentEntry.t);
 
         const artistRaw = (current.artist || "").trim();
-        const titleRaw  = (current.title  || "").trim();
+        const titleRaw = (current.title || "").trim();
 
         artistEl.textContent = artistRaw || "—";
-        titleEl.textContent  = titleRaw  || "—";
+        titleEl.textContent = titleRaw || "—";
 
         setCover(
-          String(currentEntry.cover_url || "").trim() ||
-          coverByNorm[normKey(artistRaw, titleRaw)] ||
-          ""
+          String(currentEntry.cover_url || "").trim() || coverByNorm[normKey(artistRaw, titleRaw)] || ""
         );
 
-        try { window.ABF_FMT?.apply(document); } catch {}
+        try {
+          window.ABF_FMT?.apply(document);
+        } catch {}
 
         const items = history.slice(1, 4);
-        if (!items.length){
+
+        if (!items.length) {
           host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
           return;
         }
 
-        host.innerHTML = items.map((entry, idx) => {
-          const t = splitTrack(entry.t);
-          const a  = (t.artist || "").trim();
-          const ti = (t.title  || "").trim();
-          const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
-          const badge =
-            idx === 0
-              ? `<span class="abfTrendBadge abfTrendBadge--hot">Hot</span>`
-              : idx === 1
-              ? `<span class="abfTrendBadge abfTrendBadge--rising">Rising</span>`
-              : `<span class="abfTrendBadge abfTrendBadge--new">Fresh</span>`;
+        host.innerHTML = items
+          .map((entry) => {
+            const t = splitTrack(entry.t);
+            const a = (t.artist || "").trim();
+            const ti = (t.title || "").trim();
+            const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
 
-          return `
-            <a href="/music"
-               class="snap-start flex-none w-[260px] md:w-[300px]
-                      rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
-                      transition p-4 flex items-center gap-4 abfPremiumCard">
-              ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
-              <div class="min-w-0 flex-1">
-                <div class="mb-2">${badge}</div>
-                <div class="font-semibold text-white truncate" data-abf-artist>${esc(a || "—")}</div>
-                <div class="text-white/60 text-sm truncate" data-abf-title>${esc(ti || "—")}</div>
-              </div>
-            </a>
-          `;
-        }).join("");
+            return `
+              <a href="/music" class="snap-start flex-none w-[260px] md:w-[300px] rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition p-4 flex items-center gap-4">
+                ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
+                <div class="min-w-0">
+                  <div class="truncate font-semibold text-white" data-abf-artist>${esc(a || "—")}</div>
+                  <div class="truncate text-sm text-white/60" data-abf-title>${esc(ti || "—")}</div>
+                </div>
+              </a>
+            `;
+          })
+          .join("");
 
-        try { window.ABF_FMT?.apply(document); } catch {}
+        try {
+          window.ABF_FMT?.apply(document);
+        } catch {}
       }
 
-      async function renderHeroTop1(){
+      async function renderHeroTop1() {
         const box = document.getElementById("heroTop1");
         const empty = document.getElementById("heroTop1Empty");
         const aEl = document.getElementById("heroTop1Artist");
         const tEl = document.getElementById("heroTop1Title");
+
         if (!box || !empty || !aEl || !tEl) return;
 
         const week = getISOWeekId();
         const top = await getTopWeekCached(week);
         const first = top?.[0];
 
-        if (!first || !first.track_key){
+        if (!first || !first.track_key) {
           box.classList.add("hidden");
           empty.classList.remove("hidden");
           setHeroTop1Cover("");
@@ -1155,45 +1110,54 @@ try {
 
         const artistRaw = cleanArtistForDisplay(first.artist) || "—";
         const titleRaw = cleanTitleForDisplay(first.title) || "—";
+
         aEl.textContent = artistRaw;
         tEl.textContent = titleRaw;
 
         const coverByNorm = window.__abfHomeCoverByNorm || {};
         const url =
-          String(first.cover_url || "").trim() ||
-          coverByNorm[normKey(artistRaw, titleRaw)] ||
-          "";
+          String(first.cover_url || "").trim() || coverByNorm[normKey(artistRaw, titleRaw)] || "";
 
         setHeroTop1Cover(url);
+
         empty.classList.add("hidden");
         box.classList.remove("hidden");
 
-        try { window.ABF_FMT?.apply(document); } catch {}
+        try {
+          window.ABF_FMT?.apply(document);
+        } catch {}
       }
-	  
-	        async function renderTop(){
+
+      async function renderTop() {
         const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
         const empty = document.getElementById("topWeekEmpty");
+
         if (!cards.length) return;
 
         const week = getISOWeekId();
         const top = await getTopWeekCached(week);
         const coverByNorm = window.__abfHomeCoverByNorm || {};
 
-        if (!top.length){
+        if (!top.length) {
           if (empty) empty.classList.remove("hidden");
+
           cards.forEach((card, i) => {
             const rankEl = card.querySelector("[data-rank]");
             const aEl = card.querySelector("[data-artist]");
             const tEl = card.querySelector("[data-title]");
             const cEl = card.querySelector("[data-count]");
             const img = card.querySelector("img");
-            if (rankEl) rankEl.textContent = `#${i+1}`;
+
+            if (rankEl) rankEl.textContent = `#${i + 1}`;
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "Vote on /music to build this chart";
             if (cEl) cEl.textContent = "";
-            if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
+            if (img) {
+              img.removeAttribute("src");
+              img.classList.add("hidden");
+            }
           });
+
           return;
         }
 
@@ -1206,28 +1170,28 @@ try {
           const cEl = card.querySelector("[data-count]");
           const img = card.querySelector("img");
 
-          if (rankEl) rankEl.textContent = `#${i+1}`;
+          if (rankEl) rankEl.textContent = `#${i + 1}`;
 
           const row = top[i];
-          if (!row){
+          if (!row) {
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "—";
             if (cEl) cEl.textContent = "";
-            if (img){ img.removeAttribute("src"); img.classList.add("hidden"); }
+            if (img) {
+              img.removeAttribute("src");
+              img.classList.add("hidden");
+            }
             return;
           }
 
           const artistRaw = cleanArtistForDisplay(row.artist) || "—";
           const titleRaw = cleanTitleForDisplay(row.title) || "—";
           const count = Number(row.count) || 0;
-
           const coverUrl =
-            String(row.cover_url || "").trim() ||
-            coverByNorm[normKey(artistRaw, titleRaw)] ||
-            "";
+            String(row.cover_url || "").trim() || coverByNorm[normKey(artistRaw, titleRaw)] || "";
 
-          if (img){
-            if (coverUrl){
+          if (img) {
+            if (coverUrl) {
               img.src = coverUrl;
               img.classList.remove("hidden");
             } else {
@@ -1236,21 +1200,31 @@ try {
             }
           }
 
-          if (aEl){ aEl.textContent = artistRaw; aEl.setAttribute("data-abf-artist",""); }
-          if (tEl){ tEl.textContent = titleRaw; tEl.setAttribute("data-abf-title",""); }
+          if (aEl) {
+            aEl.textContent = artistRaw;
+            aEl.setAttribute("data-abf-artist", "");
+          }
+
+          if (tEl) {
+            tEl.textContent = titleRaw;
+            tEl.setAttribute("data-abf-title", "");
+          }
+
           if (cEl) cEl.textContent = `${count}`;
         });
 
-        try { window.ABF_FMT?.apply(document); } catch {}
+        try {
+          window.ABF_FMT?.apply(document);
+        } catch {}
       }
 
-      function getSchedule(){
+      function getSchedule() {
         const raw = window.__abfProgramsFromDirectus;
         if (raw && typeof raw === "object") return raw;
         return { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
       }
 
-      function dayKey(){
+      function dayKey() {
         const d = new Date().getDay();
         if (d === 0) return "sun";
         if (d === 1) return "mon";
@@ -1261,40 +1235,25 @@ try {
         return "sat";
       }
 
-      function parseTimeToMinutesFlexible(t){
-        const s = String(t || "").trim();
-        const m = s.match(/^(\d{1,2})[:h](\d{2})(?::\d{2})?$/i);
-        if (!m) return null;
-        const hh = Number(m[1]);
-        const mm = Number(m[2]);
-        if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-        return hh * 60 + mm;
-      }
-
-      function fmtCountdown(ms){
+      function fmtCountdown(ms) {
         if (ms <= 0) return "Starting now";
         const totalMin = Math.floor(ms / 60000);
         const h = Math.floor(totalMin / 60);
         const m = totalMin % 60;
         if (h <= 0) return `Starts in ${m}m`;
-        return `Starts in ${h}h ${String(m).padStart(2,"0")}m`;
+        return `Starts in ${h}h ${String(m).padStart(2, "0")}m`;
       }
 
-      function injectOnAirStylesOnce(){
+      function injectOnAirStylesOnce() {
         if (document.getElementById("abfHomeOnAirStyles")) return;
+
         const st = document.createElement("style");
         st.id = "abfHomeOnAirStyles";
         st.textContent = `
           .onAirCard{
             border-color: rgba(248,113,113,.35) !important;
-            background: radial-gradient(1200px 220px at 20% 0%,
-              rgba(239,68,68,0.22),
-              rgba(255,255,255,0.05) 45%,
-              rgba(255,255,255,0.03) 100%);
-            box-shadow:
-              0 0 0 1px rgba(239,68,68,0.15) inset,
-              0 20px 70px rgba(239,68,68,0.14),
-              0 10px 35px rgba(0,0,0,0.35);
+            background: radial-gradient(1200px 220px at 20% 0%, rgba(239,68,68,0.22), rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.03) 100%);
+            box-shadow: 0 0 0 1px rgba(239,68,68,0.15) inset, 0 20px 70px rgba(239,68,68,0.14), 0 10px 35px rgba(0,0,0,0.35);
             position: relative;
           }
           .onAirCard::before{
@@ -1303,31 +1262,34 @@ try {
             inset:-1px;
             border-radius: 1rem;
             pointer-events:none;
-            background: linear-gradient(90deg,
-              rgba(239,68,68,0.22),
-              rgba(239,68,68,0.10),
-              rgba(239,68,68,0.22));
+            background: linear-gradient(90deg, rgba(239,68,68,0.22), rgba(239,68,68,0.10), rgba(239,68,68,0.22));
             filter: blur(18px);
             opacity: .55;
-          }
-          .line-clamp-2{
-            display:-webkit-box;
-            -webkit-line-clamp:2;
-            -webkit-box-orient:vertical;
-            overflow:hidden;
           }
         `;
         document.head.appendChild(st);
       }
 
-      function minutesToHHMM(min){
+      function parseTimeToMinutesFlexible(t) {
+        const s = String(t || "").trim();
+        const m = s.match(/^(\d{1,2})[:h](\d{2})(?::\d{2})?$/i);
+        if (!m) return null;
+
+        const hh = Number(m[1]);
+        const mm = Number(m[2]);
+        if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+
+        return hh * 60 + mm;
+      }
+
+      function minutesToHHMM(min) {
         const m = ((min % 1440) + 1440) % 1440;
         const hh = Math.floor(m / 60);
         const mm = m % 60;
-        return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+        return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
       }
 
-      function getTimeZoneOffsetMinutes(date, timeZone){
+      function getTimeZoneOffsetMinutes(date, timeZone) {
         const dtf = new Intl.DateTimeFormat("en-US", {
           timeZone,
           year: "numeric",
@@ -1339,9 +1301,7 @@ try {
           hour12: false,
         });
 
-        const parts = Object.fromEntries(
-          dtf.formatToParts(date).map(p => [p.type, p.value])
-        );
+        const parts = Object.fromEntries(dtf.formatToParts(date).map((p) => [p.type, p.value]));
 
         const asUTC = Date.UTC(
           Number(parts.year),
@@ -1355,45 +1315,46 @@ try {
         return Math.round((asUTC - date.getTime()) / 60000);
       }
 
-      function formatWorldTimeLabel(timeHHMM){
+      function formatWorldTimeLabel(timeHHMM) {
         const minsParis = parseTimeToMinutesFlexible(timeHHMM);
         if (minsParis == null) return esc(timeHHMM || "");
 
         const now = new Date();
         const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris");
-
         const utcMins = minsParis - offset;
         const utcHHMM = minutesToHHMM(utcMins);
-
         const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
 
         return (
-          minutesToHHMM(minsParis) + " " + tzLabel +
+          minutesToHHMM(minsParis) +
+          " " +
+          tzLabel +
           ' <span class="text-white/60 font-medium">(Paris)</span>' +
           ' <span class="text-white/30">•</span> ' +
-          '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
+          `<span class="text-white/80 font-semibold">${utcHHMM} UTC</span>`
         );
       }
 
-      function renderOnAirTonight(){
+      function renderOnAirTonight() {
         const host = document.getElementById("onAirTonight");
         if (!host) return;
 
         const day = dayKey();
         const schedule = getSchedule();
+
         const items = (schedule[day] || [])
-          .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
-          .filter(x => x.min !== null)
-          .sort((a,b) => a.min - b.min);
+          .map((x) => ({ ...x, min: parseTimeToMinutesFlexible(x.time) }))
+          .filter((x) => x.min !== null)
+          .sort((a, b) => a.min - b.min);
 
         const now = new Date();
         const nowMin = now.getHours() * 60 + now.getMinutes();
 
         let liveIndex = -1;
-        for (let i=0;i<items.length;i++){
+        for (let i = 0; i < items.length; i++) {
           const startMin = items[i].min;
-          const endMin = (i < items.length - 1) ? items[i+1].min : 24*60;
-          if (startMin <= nowMin && nowMin < endMin){
+          const endMin = i < items.length - 1 ? items[i + 1].min : 24 * 60;
+          if (startMin <= nowMin && nowMin < endMin) {
             liveIndex = i;
             break;
           }
@@ -1403,38 +1364,42 @@ try {
         let mode = "next";
         let subline = "";
 
-        if (liveIndex >= 0){
+        if (liveIndex >= 0) {
           mode = "live";
           selected = items.slice(liveIndex, liveIndex + 3);
-          const endMin = (liveIndex < items.length - 1) ? items[liveIndex+1].min : 24*60;
+
+          const endMin = liveIndex < items.length - 1 ? items[liveIndex + 1].min : 24 * 60;
           const end = new Date(now);
-          end.setHours(Math.floor(endMin/60), endMin%60, 0, 0);
-          const msLeft = (end ? end.getTime() : 0) - now.getTime();
-          const totalMin = Math.max(0, Math.floor(msLeft/60000));
-          const h = Math.floor(totalMin/60);
-          const m = totalMin%60;
-          subline = (h <= 0) ? `Ends in ${m}m` : `Ends in ${h}h ${String(m).padStart(2,"0")}m`;
+          end.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
+
+          const msLeft = end.getTime() - now.getTime();
+          const totalMin = Math.max(0, Math.floor(msLeft / 60000));
+          const h = Math.floor(totalMin / 60);
+          const m = totalMin % 60;
+
+          subline = h <= 0 ? `Ends in ${m}m` : `Ends in ${h}h ${String(m).padStart(2, "0")}m`;
         } else {
-          selected = items.filter(x => x.min >= nowMin).slice(0, 3);
-          if (selected[0]){
+          selected = items.filter((x) => x.min >= nowMin).slice(0, 3);
+
+          if (selected[0]) {
             const start = new Date(now);
-            start.setHours(Math.floor(selected[0].min/60), selected[0].min%60, 0, 0);
-            subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
+            start.setHours(Math.floor(selected[0].min / 60), selected[0].min % 60, 0, 0);
+            subline = fmtCountdown(start.getTime() - now.getTime());
           }
         }
 
-        if (!selected.length){
-          const order = ["mon","tue","wed","thu","fri","sat","sun"];
+        if (!selected.length) {
+          const order = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
           const curIndex = order.indexOf(day);
           const rotate = order.slice(curIndex + 1).concat(order.slice(0, curIndex + 1));
 
-          for (const dk of rotate){
+          for (const dk of rotate) {
             const arr = (schedule[dk] || [])
-              .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
-              .filter(x => x.min !== null)
-              .sort((a,b) => a.min - b.min);
+              .map((x) => ({ ...x, min: parseTimeToMinutesFlexible(x.time) }))
+              .filter((x) => x.min !== null)
+              .sort((a, b) => a.min - b.min);
 
-            if (arr.length){
+            if (arr.length) {
               selected = arr.slice(0, 3);
               mode = "next";
               subline = `Next shows: ${dk.toUpperCase()}`;
@@ -1442,16 +1407,11 @@ try {
             }
           }
 
-          if (!selected.length){
+          if (!selected.length) {
             host.innerHTML = `
-              <div class="text-white/70">
-                No schedule found yet — check the full schedule.
-              </div>
+              <div class="text-white/70">No schedule found yet — check the full schedule.</div>
               <div class="mt-4">
-                <a href="/programs"
-                   class="inline-flex items-center justify-center
-                          bg-white/5 hover:bg-white/10 border border-white/10
-                          rounded-xl px-5 py-3 text-white/85 transition">
+                <a href="/programs" class="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-white/85 transition hover:bg-white/10">
                   Open schedule →
                 </a>
               </div>
@@ -1463,148 +1423,167 @@ try {
         const first = selected[0];
         const others = selected.slice(1);
 
-        const badge = (mode === "live")
-          ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-200 text-xs font-semibold tracking-wider">
-               <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
-               LIVE NOW
-             </span>`
-          : `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-semibold tracking-wider">
-               NEXT
-             </span>`;
+        const badge =
+          mode === "live"
+            ? `
+              <span class="inline-flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/15 px-3 py-1 text-xs font-semibold tracking-wider text-red-200">
+                <span class="h-2 w-2 animate-pulse rounded-full bg-red-400"></span> LIVE NOW
+              </span>
+            `
+            : `
+              <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wider text-white/80">
+                NEXT
+              </span>
+            `;
 
-        const liveWrapClass = (mode === "live") ? "onAirCard" : "";
-        let firstDisplayTitle = first.title;
+        const liveWrapClass = mode === "live" ? "onAirCard" : "";
+
+        let firstDisplayTitle = first.title || "";
         if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
           const parts = firstDisplayTitle.split(" - ", 2);
-          firstDisplayTitle = parts[0] + " - " + parts[1].toUpperCase();
+          firstDisplayTitle = parts[0] + " - " + (parts[1] || "").toUpperCase();
         }
 
         host.innerHTML = `
           <div class="space-y-4">
-            <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5 ${liveWrapClass}">
-              <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 ${liveWrapClass}">
+              <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                 ${badge}
-                <div class="text-white/50 text-sm">${esc(subline || "")}</div>
+                <div class="text-sm text-white/50">${esc(subline || "")}</div>
               </div>
-              <div class="flex flex-col md:flex-row gap-6 items-stretch">
-                <div class="w-full md:w-56 flex-none">
-                  <div class="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden flex items-center justify-center p-2">
-                    <img
-                      src="${esc(first.img || "")}"
-                      alt="${esc(first.title)}"
-                      class="w-full h-full object-contain"
-                      loading="lazy"
-                      decoding="async"
-                    />
+
+              <div class="flex flex-col items-stretch gap-6 md:flex-row">
+                <div class="w-full flex-none md:w-56">
+                  <div class="h-full rounded-2xl border border-white/10 bg-black/20 p-2 overflow-hidden flex items-center justify-center">
+                    ${
+                      first.img
+                        ? `<img src="${esc(first.img)}" alt="${esc(first.title)}" class="h-full w-full object-contain" loading="lazy" decoding="async" />`
+                        : `<img src="/logo-abf.png" alt="ABF" class="h-full w-full object-contain opacity-80" loading="lazy" decoding="async" />`
+                    }
                   </div>
                 </div>
+
                 <div class="min-w-0 flex-1">
-                  <div class="text-cyan-300 font-bold text-xl md:text-2xl">
+                  <div class="text-xl font-bold text-cyan-300 md:text-2xl">
                     ${formatWorldTimeLabel(first.time)}
                   </div>
-                  <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
+
+                  <div class="mt-2 truncate text-xl font-semibold text-white md:text-2xl">
                     ${esc(firstDisplayTitle)}
                   </div>
-                  <div class="mt-2 text-white/70 text-base md:text-lg leading-relaxed">
-                    ${esc(first.desc)}
+
+                  <div class="mt-2 text-base leading-relaxed text-white/70 md:text-lg">
+                    ${esc(first.desc || "")}
                   </div>
-                  <div class="mt-5 flex gap-3 flex-wrap">
-                    <a href="/programs"
-                       class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
-                              px-6 py-3 rounded-xl font-semibold shadow-lg shadow-cyan-500/20
-                              hover:scale-[1.01] transition">
+
+                  <div class="mt-5 flex flex-wrap gap-3">
+                    <a href="/programs" class="rounded-xl bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] px-6 py-3 font-semibold shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01]">
                       View schedule
                     </a>
-                    <button id="onAirRemindBtn"
-                            type="button"
-                            class="bg-white/5 hover:bg-white/10 border border-white/10
-                                   rounded-xl px-6 py-3 text-white/85 transition">
+
+                    <button id="onAirRemindBtn" type="button" class="rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-white/85 transition hover:bg-white/10">
                       Remind me
                     </button>
                   </div>
-                  <div id="onAirRemindNote" class="mt-3 text-white/50 text-sm hidden">
+
+                  <div id="onAirRemindNote" class="mt-3 hidden text-sm text-white/50">
                     Reminder saved locally (this device).
                   </div>
                 </div>
               </div>
             </div>
 
-            ${others.length ? `
-              <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5">
-                <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
-                  ${mode === "live" ? "Up next" : "Later"}
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  ${others.map(x => {
-                    let displayTitle = x.title;
-                    if (displayTitle.startsWith("ABF CLUB - ")) {
-                      const parts = displayTitle.split(" - ", 2);
-                      displayTitle = parts[0] + " - " + parts[1].toUpperCase();
-                    }
-                    return `
-                      <div class="flex gap-4 items-center border border-white/10 rounded-xl p-3 bg-white/5 hover:bg-white/10 transition">
-                        <div class="w-24 flex-none">
-                          <div class="h-24 rounded-xl overflow-hidden border border-white/10 bg-black/20 flex items-center justify-center p-1">
-                            <img
-                              src="${esc(x.img || "")}"
-                              alt="${esc(x.title)}"
-                              class="w-full h-full object-contain"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          </div>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                          <div class="flex items-center justify-between gap-2">
-                            <div class="text-cyan-300 font-bold text-sm">
-                              ${formatWorldTimeLabel(x.time)}
+            ${
+              others.length
+                ? `
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+                    <div class="mb-4 text-sm uppercase tracking-wider text-white/50">
+                      ${mode === "live" ? "Up next" : "Later"}
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      ${others
+                        .map((x) => {
+                          let displayTitle = x.title || "";
+                          if (displayTitle.startsWith("ABF CLUB - ")) {
+                            const parts = displayTitle.split(" - ", 2);
+                            displayTitle = parts[0] + " - " + (parts[1] || "").toUpperCase();
+                          }
+
+                          return `
+                            <div class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10">
+                              <div class="w-24 flex-none">
+                                <div class="flex h-24 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/20 p-1">
+                                  ${
+                                    x.img
+                                      ? `<img src="${esc(x.img)}" alt="${esc(x.title)}" class="h-full w-full object-contain" loading="lazy" decoding="async" />`
+                                      : `<img src="/logo-abf.png" alt="ABF" class="h-full w-full object-contain opacity-80" loading="lazy" decoding="async" />`
+                                  }
+                                </div>
+                              </div>
+
+                              <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between gap-2">
+                                  <div class="text-sm font-bold text-cyan-300">
+                                    ${formatWorldTimeLabel(x.time)}
+                                  </div>
+                                </div>
+
+                                <div class="mt-1 truncate text-sm font-semibold text-white">
+                                  ${esc(displayTitle)}
+                                </div>
+
+                                <div class="line-clamp-2 mt-1 text-xs leading-snug text-white/60">
+                                  ${esc(x.desc || "")}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div class="mt-1 text-white font-semibold text-sm truncate">
-                            ${esc(displayTitle)}
-                          </div>
-                          <div class="mt-1 text-white/60 text-xs leading-snug line-clamp-2">
-                            ${esc(x.desc || "")}
-                          </div>
-                        </div>
-                      </div>
-                    `;
-                  }).join("")}
-                </div>
-              </div>
-            ` : ""}
+                          `;
+                        })
+                        .join("")}
+                    </div>
+                  </div>
+                `
+                : ""
+            }
           </div>
         `;
 
         const remindBtn = document.getElementById("onAirRemindBtn");
         const note = document.getElementById("onAirRemindNote");
-        if (remindBtn){
+
+        if (remindBtn) {
           remindBtn.onclick = () => {
-            try{
-              const target = (mode === "live" && selected[1]) ? selected[1] : selected[0];
+            try {
+              const target = mode === "live" && selected[1] ? selected[1] : selected[0];
               const ts = (() => {
                 const d = new Date();
-                d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
-                return d ? d.getTime() : 0;
+                d.setHours(Math.floor(target.min / 60), target.min % 60, 0, 0);
+                return d.getTime();
               })();
 
-              localStorage.setItem("abf_remind_next_show", JSON.stringify({
-                day,
-                time: target.time,
-                title: target.title,
-                ts
-              }));
+              localStorage.setItem(
+                "abf_remind_next_show",
+                JSON.stringify({
+                  day,
+                  time: target.time,
+                  title: target.title,
+                  ts,
+                })
+              );
 
               if (note) note.classList.remove("hidden");
-            }catch{}
+            } catch {}
           };
         }
       }
 
-      function bindHomeModalsOnce(){
+      function bindHomeModalsOnce() {
         if (window.__abfHomeModalsBound) return;
 
-        const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
+        const lockScroll = (on) => {
+          document.documentElement.style.overflow = on ? "hidden" : "";
+        };
 
         const openModal = (id) => {
           const modal = document.getElementById(id);
@@ -1627,10 +1606,12 @@ try {
             openModal("flacModal");
             return;
           }
+
           if (t?.closest?.("#openStreamQualityModal")) {
             openModal("streamQualityModal");
             return;
           }
+
           if (t?.closest?.("#openSupportModal")) {
             openModal("supportModal");
             return;
@@ -1640,10 +1621,12 @@ try {
             closeModal("flacModal");
             return;
           }
+
           if (t?.closest?.("#streamQualityClose")) {
             closeModal("streamQualityModal");
             return;
           }
+
           if (t?.closest?.("#supportClose")) {
             closeModal("supportModal");
             return;
@@ -1660,16 +1643,18 @@ try {
           }
           if (closeKey === "support") {
             closeModal("supportModal");
-            return;
           }
         });
 
         document.addEventListener("keydown", (e) => {
           if (e.key !== "Escape") return;
+
           const flac = document.getElementById("flacModal");
           if (flac && flac.getAttribute("aria-hidden") === "false") closeModal("flacModal");
+
           const qual = document.getElementById("streamQualityModal");
           if (qual && qual.getAttribute("aria-hidden") === "false") closeModal("streamQualityModal");
+
           const support = document.getElementById("supportModal");
           if (support && support.getAttribute("aria-hidden") === "false") closeModal("supportModal");
         });
@@ -1677,16 +1662,17 @@ try {
         window.__abfHomeModalsBound = true;
       }
 
-      async function initHome(){
+      async function initHome() {
         injectOnAirStylesOnce();
         bindHomeModalsOnce();
+
         await renderNowPlayingAndLast();
         renderOnAirTonight();
         await renderTop();
         await renderHeroTop1();
 
         const jump = document.getElementById("jumpToPlayer");
-        if (jump && !jump.dataset.bound){
+        if (jump && !jump.dataset.bound) {
           jump.dataset.bound = "1";
           jump.onclick = () => {
             window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
@@ -1706,28 +1692,44 @@ try {
           await renderHeroTop1();
         }, 30000);
 
-        if (!window.__abfOnAirTimer){
+        if (!window.__abfOnAirTimer) {
           window.__abfOnAirTimer = setInterval(renderOnAirTonight, 30000);
         }
       }
 
-      function initHomePage(){
+      function initHomePage() {
         if (window.location.pathname !== "/") return;
         requestAnimationFrame(() => requestAnimationFrame(initHome));
       }
 
       initHomePage();
 
-      if (!window.__abfHomeListeners){
+      if (!window.__abfHomeListeners) {
         document.addEventListener("astro:page-load", initHomePage);
         document.addEventListener("astro:after-swap", initHomePage);
+
         document.addEventListener("astro:before-swap", () => {
           if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
           if (window.__abfHomeVoteTimer) clearInterval(window.__abfHomeVoteTimer);
         });
+
         window.addEventListener("abf:history-updated", initHomePage);
+
         window.__abfHomeListeners = true;
       }
     })();
   </script>
+
+  <style is:inline>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    #homeLastCarousel::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
 </Base>
