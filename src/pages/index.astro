@@ -15,25 +15,25 @@ type NewsItem = {
   date_created?: string | null;
 };
 
-type DirectusNewsResp = { data: NewsItem[] };
-
 type VideoItem = {
   id: number | string;
   status: string;
-  slug: string;
   title: string;
-  description?: string | null;
-  youtube_url?: string | null;
-  category?: string | null;
+  slug?: string | null;
+  excerpt?: string | null;
+  cover?: string | null;
+  published_at?: string | null;
+  date_created?: string | null;
 };
 
+type DirectusResp = { data: NewsItem[] };
 type DirectusVideosResp = { data: VideoItem[] };
 
-// -------------------- latest news --------------------
+// Dernières news (3)
 const newsFields = "id,status,title,slug,excerpt,cover,published_at,date_created";
 let latestNews: NewsItem[] = [];
 try {
-  const resp = await directusGet<DirectusNewsResp>(
+  const resp = await directusGet<DirectusResp>(
     `/items/news?fields=${encodeURIComponent(newsFields)}&filter[status][_eq]=published&sort=-published_at,-date_created&limit=3`
   );
   latestNews = resp?.data ?? [];
@@ -41,11 +41,12 @@ try {
   latestNews = [];
 }
 
-// -------------------- latest videos --------------------
+// Dernières vidéos (3)
+const videoFields = "id,status,title,slug,excerpt,cover,published_at,date_created";
 let latestVideos: VideoItem[] = [];
 try {
   const resp = await directusGet<DirectusVideosResp>(
-    `/items/videos?fields=id,status,slug,title,description,youtube_url,category&filter[status][_eq]=published&sort=-id&limit=3`
+    `/items/videos?fields=${encodeURIComponent(videoFields)}&filter[status][_eq]=published&sort=-published_at,-date_created&limit=3`
   );
   latestVideos = resp?.data ?? [];
 } catch {
@@ -68,30 +69,6 @@ const fmtDate = (iso?: string | null) => {
     year: "numeric",
   });
 };
-
-function youtubeIdFromUrl(url?: string | null) {
-  if (!url) return null;
-  try {
-    const u = new URL(url);
-
-    if (u.hostname.includes("youtu.be")) {
-      return u.pathname.split("/").filter(Boolean)[0] ?? null;
-    }
-    if (u.searchParams.get("v")) return u.searchParams.get("v");
-
-    const parts = u.pathname.split("/").filter(Boolean);
-
-    const embedIndex = parts.indexOf("embed");
-    if (embedIndex !== -1) return parts[embedIndex + 1] ?? null;
-
-    const shortsIndex = parts.indexOf("shorts");
-    if (shortsIndex !== -1) return parts[shortsIndex + 1] ?? null;
-
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 type Program = {
   id: string | number;
@@ -159,7 +136,9 @@ function normalizeTimeFromDirectus(v: any): string {
 }
 
 function buildScheduleFromOccurrences(rows: Occurrence[]) {
-  const schedule: Record<string, any[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+  const schedule: Record<string, any[]> = {
+    mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: []
+  };
 
   for (const row of rows || []) {
     const day = normalizeDay(row.day_of_week);
@@ -169,10 +148,10 @@ function buildScheduleFromOccurrences(rows: Occurrence[]) {
     const p = row.program || null;
 
     const title = safeStr(p?.title) || "Untitled program";
-    const desc = safeStr(p?.description) || "";
+    const desc  = safeStr(p?.description) || "";
 
     const coverId = safeStr(p?.cover);
-    const imgUrl = coverId ? directusAsset(coverId) : "";
+    const imgUrl  = coverId ? directusAsset(coverId) : "";
 
     schedule[day].push({ time, img: imgUrl, title, desc });
   }
@@ -199,15 +178,18 @@ try {
 ---
 
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
-  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl abfHomeSectionGlow abfPremiumCard">
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl abfClubAura abfPremiumCard">
     <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
     <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+    <div class="absolute inset-0 opacity-[0.06] pointer-events-none"
+         style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.65) 1px, transparent 0); background-size: 22px 22px;"></div>
 
     <div class="relative z-10">
-      <div class="flex items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
+      <div class="flex flex-wrap items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-        Now Playing
+        <span>Now Playing</span>
         <span class="abfTrendBadge abfTrendBadge--live">Live</span>
+        <span class="abfTrendBadge abfTrendBadge--hot">Club</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
@@ -215,19 +197,24 @@ try {
           <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
             <div
               id="homeCoverWrapper"
-              class="abfCover w-40 h-40 md:w-52 md:h-52 rounded-3xl border border-white/10 overflow-hidden flex-none shadow-xl transition-all duration-500"
+              class="abfCover w-40 h-40 md:w-52 md:h-52 rounded-3xl border border-white/10 overflow-hidden flex-none shadow-xl transition-all duration-500 ring-1 ring-cyan-400/15"
             >
-              <img id="homeCover" class="hidden" alt="Current cover" />
+              <img id="homeCover" class="hidden" alt="Pochette actuelle" />
               <div class="abfCoverFallback">
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-3">
+                <span class="abfTrendBadge abfTrendBadge--heavy">Heavy Rotation</span>
+                <span class="abfTrendBadge abfTrendBadge--rising">Premium Club Flow</span>
+              </div>
+
               <div id="homeArtist" data-abf-artist class="text-2xl md:text-4xl font-extrabold leading-tight line-clamp-2 break-words">—</div>
               <div id="homeTitle" data-abf-title class="mt-1 text-white/70 text-base md:text-lg line-clamp-2 break-words">—</div>
 
-              <div class="mt-4 flex gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+              <div class="mt-4 flex gap-2 flex-nowrap overflow-x-auto">
                 <button
                   id="jumpToPlayer"
                   type="button"
@@ -258,6 +245,16 @@ try {
                 >
                   Programs
                 </a>
+
+                <a
+                  href="/videos"
+                  class="border border-white/20
+                         px-3 py-1.5 rounded-lg text-xs
+                         text-white/80 hover:bg-white/5
+                         transition whitespace-nowrap"
+                >
+                  Videos
+                </a>
               </div>
 
               <div class="mt-3 text-sm text-white/50">
@@ -268,8 +265,10 @@ try {
         </div>
 
         <div class="bg-white/5 border border-white/10 rounded-2xl p-6 abfPremiumCard">
-          <div class="flex items-center gap-2 text-sm text-white/50 uppercase tracking-wider mb-3">
-            <span>This week</span>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="text-sm text-white/50 uppercase tracking-wider">
+              This week
+            </div>
             <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>
           </div>
 
@@ -292,7 +291,10 @@ try {
                 </div>
 
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
+                  <div class="flex items-center gap-2">
+                    <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
+                    <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
+                  </div>
                   <div id="heroTop1Artist" data-abf-artist class="font-semibold text-sm truncate">—</div>
                   <div id="heroTop1Title" data-abf-title class="text-xs text-white/70 truncate">—</div>
                 </div>
@@ -324,21 +326,12 @@ try {
   </section>
 
   <style is:inline>
-    .line-clamp-1{
-      display:-webkit-box;
-      -webkit-line-clamp:1;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-    }
     .line-clamp-2{
       display:-webkit-box;
       -webkit-line-clamp:2;
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
-    .no-scrollbar::-webkit-scrollbar{ display:none; }
-    .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
-
     .abfHomeSectionGlow{
       position: relative;
       overflow: hidden;
@@ -346,33 +339,26 @@ try {
     .abfHomeSectionGlow::before{
       content:"";
       position:absolute;
-      inset:-25%;
+      inset:-20%;
       pointer-events:none;
       background:
-        radial-gradient(38% 38% at 15% 20%, rgba(47,194,255,.08), transparent 70%),
-        radial-gradient(30% 30% at 85% 10%, rgba(20,92,143,.10), transparent 72%),
-        radial-gradient(42% 42% at 50% 90%, rgba(47,194,255,.05), transparent 74%);
-      animation: abfHomeAura 11s ease-in-out infinite;
-      z-index: 0;
+        radial-gradient(35% 35% at 10% 10%, rgba(47,194,255,.08), transparent 70%),
+        radial-gradient(35% 35% at 90% 20%, rgba(20,92,143,.10), transparent 72%);
+      opacity:.85;
     }
     .abfHomeSectionGlow > *{
-      position: relative;
-      z-index: 1;
-    }
-    @keyframes abfHomeAura {
-      0% { opacity:.28; transform:scale(1); }
-      50% { opacity:.5; transform:scale(1.04); }
-      100% { opacity:.28; transform:scale(1); }
+      position:relative;
+      z-index:1;
     }
   </style>
 
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow">
+  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow abfPremiumCard">
     <div class="flex items-center justify-between gap-4 mb-4">
       <div class="flex items-center gap-3">
         <div class="text-sm text-white/50 uppercase tracking-wider">
           Last played
         </div>
-        <span class="abfTrendBadge abfTrendBadge--heavy">Heavy Rotation</span>
+        <span class="abfTrendBadge abfTrendBadge--new">New Flow</span>
       </div>
       <a href="/music" class="text-cyan-300 hover:text-cyan-200 text-sm">
         Full history →
@@ -391,13 +377,13 @@ try {
     </style>
   </section>
 
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow">
+  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfHomeSectionGlow abfPremiumCard">
     <div class="flex items-center justify-between gap-4 mb-4">
       <div class="flex items-center gap-3">
         <div class="text-sm text-white/50 uppercase tracking-wider">
           On Air
         </div>
-        <span class="abfTrendBadge abfTrendBadge--live">Schedule</span>
+        <span class="abfTrendBadge abfTrendBadge--live">Live Radar</span>
       </div>
       <a href="/programs" class="text-cyan-300 hover:text-cyan-200 text-sm">Full schedule →</a>
     </div>
@@ -410,7 +396,7 @@ try {
         <div class="text-sm text-white/50 uppercase tracking-wider">
           Latest News
         </div>
-        <span class="abfTrendBadge abfTrendBadge--new">Fresh</span>
+        <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>
       </div>
       <a href="/news" class="text-cyan-300 hover:text-cyan-200 text-sm">
         All news →
@@ -422,7 +408,6 @@ try {
         {latestNews.map((post) => {
           const dateLabel = fmtDate(post.published_at || post.date_created);
           const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
-
           return (
             <a
               href={`/news/${post.slug}`}
@@ -433,18 +418,15 @@ try {
                   <img
                     src={cover}
                     alt=""
-                    class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition duration-500"
+                    class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : null}
-
                 <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
-
                 <div class="absolute top-3 left-3">
                   <span class="abfTrendBadge abfTrendBadge--new">News</span>
                 </div>
-
                 <div class="absolute left-4 bottom-3 right-4 flex items-end justify-between gap-3">
                   <div class="min-w-0">
                     <div class="text-[11px] text-white/65 uppercase tracking-wider">
@@ -459,7 +441,6 @@ try {
                   </div>
                 </div>
               </div>
-
               <div class="p-4">
                 <p class="text-white/70 text-sm leading-relaxed line-clamp-2">
                   {post.excerpt ?? ""}
@@ -492,19 +473,18 @@ try {
     {latestVideos?.length ? (
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         {latestVideos.map((video) => {
-          const yid = youtubeIdFromUrl(video.youtube_url);
-          const thumb = yid ? `https://i.ytimg.com/vi/${yid}/hqdefault.jpg` : null;
-
+          const dateLabel = fmtDate(video.published_at || video.date_created);
+          const cover = directusAsset(video.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
           return (
             <a
-              href={`/videos/${video.slug}`}
+              href="/videos"
               class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden abfPremiumCard"
             >
               <div class="relative aspect-video bg-gradient-to-br from-[#145C8F] to-[#2FC2FF]">
-                {thumb ? (
+                {cover ? (
                   <img
-                    src={thumb}
-                    alt={video.title}
+                    src={cover}
+                    alt=""
                     class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-[1.03] transition duration-500"
                     loading="lazy"
                     decoding="async"
@@ -515,9 +495,6 @@ try {
 
                 <div class="absolute top-3 left-3 flex items-center gap-2">
                   <span class="abfTrendBadge abfTrendBadge--hot">Video</span>
-                  {video.category ? (
-                    <span class="abfTrendBadge abfTrendBadge--new">{video.category}</span>
-                  ) : null}
                 </div>
 
                 <div class="absolute inset-0 grid place-items-center pointer-events-none">
@@ -527,6 +504,9 @@ try {
                 </div>
 
                 <div class="absolute left-4 bottom-3 right-4">
+                  <div class="text-[11px] text-white/65 uppercase tracking-wider">
+                    {dateLabel || ""}
+                  </div>
                   <div class="mt-1 font-extrabold text-base leading-tight truncate">
                     {video.title}
                   </div>
@@ -535,7 +515,7 @@ try {
 
               <div class="p-4">
                 <p class="text-white/70 text-sm leading-relaxed line-clamp-2">
-                  {video.description ?? "Watch the latest RadioABF video content."}
+                  {video.excerpt ?? "Watch the latest RadioABF video content."}
                 </p>
               </div>
             </a>
@@ -548,13 +528,13 @@ try {
       </div>
     )}
   </section>
-
-  <div class="mt-8 rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden abfHomeSectionGlow">
+  
+    <div class="mt-8 rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden abfHomeSectionGlow abfPremiumCard">
     <div class="p-5 flex items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-3">
           <div class="text-sm text-white/50 uppercase tracking-wider">Top this week</div>
-          <span class="abfTrendBadge abfTrendBadge--hot">Trending</span>
+          <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
         </div>
         <div class="text-white/70 text-sm mt-1">Top voted tracks (this week).</div>
       </div>
@@ -578,7 +558,12 @@ try {
                 </div>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="text-xs text-white/50 uppercase tracking-wider" data-rank>#{i + 1}</div>
+                <div class="flex items-center gap-2">
+                  <div class="text-xs text-white/50 uppercase tracking-wider" data-rank>#{i + 1}</div>
+                  {i === 0 && <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>}
+                  {i === 1 && <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>}
+                  {i === 2 && <span class="abfTrendBadge abfTrendBadge--rising">Rising</span>}
+                </div>
                 <div class="font-semibold text-sm truncate" data-artist>—</div>
                 <div class="text-xs text-white/70 truncate" data-title>—</div>
               </div>
@@ -630,7 +615,7 @@ try {
                 bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220] abfPremiumCard">
       <div class="flex items-center gap-2 mb-1">
         <div class="text-xs text-white/50 uppercase tracking-wider">Audio</div>
-        <span class="abfTrendBadge abfTrendBadge--heavy">Lossless</span>
+        <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
       </div>
       <div class="font-extrabold text-lg">Lossless FLAC Mode</div>
       <p class="text-sm text-white/70 mt-1">
@@ -770,12 +755,13 @@ try {
               </p>
               <ul class="space-y-2 text-cyan-200">
                 <li>• Auto (Master HLS MP3 — recommended):
-                  <a href="https://stream.radioabf.com/hls/abf.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener noreferrer">
+                  <a href="https://stream.radioabf.com/hls/abf.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener">
                     https://stream.radioabf.com/hls/abf.m3u8
                   </a>
                 </li>
+
                 <li>• Low Data (HLS AAC+ 32kbps):
-                  <a href="https://stream.radioabf.com/hls/abf-low.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener noreferrer">
+                  <a href="https://stream.radioabf.com/hls/abf-low.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener">
                     https://stream.radioabf.com/hls/abf-low.m3u8
                   </a>
                 </li>
@@ -870,9 +856,10 @@ try {
   <script is:inline define:vars={{ directusSchedule }}>
     window.__abfProgramsFromDirectus = directusSchedule ?? null;
   </script>
-  
-    <script is:inline data-astro-rerun>
+
+  <script is:inline data-astro-rerun>
     (() => {
+      const PROGRAMS_DIR = "/images/programs/";
       const HISTORY_KEY = "abf_history";
 
       function getISOWeekId(d = new Date()){
@@ -984,8 +971,8 @@ try {
 
       function loadHistoryLocal(){
         let raw = [];
-        try { raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-        catch { raw = []; }
+        try{ raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+        catch{ raw = []; }
 
         return (raw || []).map((x) => {
           if (typeof x === "string") return { t: x, ts: 0, cover_url: "" };
@@ -1042,7 +1029,7 @@ try {
           }
 
           return deduped.slice(0, limit);
-        } catch {
+        }catch{
           return [];
         }
       }
@@ -1102,7 +1089,7 @@ try {
         const titleRaw  = (current.title  || "").trim();
 
         artistEl.textContent = artistRaw || "—";
-        titleEl.textContent  = titleRaw || "—";
+        titleEl.textContent  = titleRaw  || "—";
 
         setCover(
           String(currentEntry.cover_url || "").trim() ||
@@ -1118,19 +1105,26 @@ try {
           return;
         }
 
-        host.innerHTML = items.map((entry) => {
+        host.innerHTML = items.map((entry, idx) => {
           const t = splitTrack(entry.t);
           const a  = (t.artist || "").trim();
           const ti = (t.title  || "").trim();
           const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
+          const badge =
+            idx === 0
+              ? `<span class="abfTrendBadge abfTrendBadge--hot">Hot</span>`
+              : idx === 1
+              ? `<span class="abfTrendBadge abfTrendBadge--rising">Rising</span>`
+              : `<span class="abfTrendBadge abfTrendBadge--new">Fresh</span>`;
 
           return `
             <a href="/music"
                class="snap-start flex-none w-[260px] md:w-[300px]
                       rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
-                      transition p-4 flex items-center gap-4">
+                      transition p-4 flex items-center gap-4 abfPremiumCard">
               ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
-              <div class="min-w-0">
+              <div class="min-w-0 flex-1">
+                <div class="mb-2">${badge}</div>
                 <div class="font-semibold text-white truncate" data-abf-artist>${esc(a || "—")}</div>
                 <div class="text-white/60 text-sm truncate" data-abf-title>${esc(ti || "—")}</div>
               </div>
@@ -1161,7 +1155,6 @@ try {
 
         const artistRaw = cleanArtistForDisplay(first.artist) || "—";
         const titleRaw = cleanTitleForDisplay(first.title) || "—";
-
         aEl.textContent = artistRaw;
         tEl.textContent = titleRaw;
 
@@ -1177,8 +1170,8 @@ try {
 
         try { window.ABF_FMT?.apply(document); } catch {}
       }
-
-      async function renderTop(){
+	  
+	        async function renderTop(){
         const cards = Array.from(document.querySelectorAll("[data-topweek-card]"));
         const empty = document.getElementById("topWeekEmpty");
         if (!cards.length) return;
@@ -1195,7 +1188,6 @@ try {
             const tEl = card.querySelector("[data-title]");
             const cEl = card.querySelector("[data-count]");
             const img = card.querySelector("img");
-
             if (rankEl) rankEl.textContent = `#${i+1}`;
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "Vote on /music to build this chart";
@@ -1228,6 +1220,7 @@ try {
           const artistRaw = cleanArtistForDisplay(row.artist) || "—";
           const titleRaw = cleanTitleForDisplay(row.title) || "—";
           const count = Number(row.count) || 0;
+
           const coverUrl =
             String(row.cover_url || "").trim() ||
             coverByNorm[normKey(artistRaw, titleRaw)] ||
@@ -1278,58 +1271,6 @@ try {
         return hh * 60 + mm;
       }
 
-      function minutesToHHMM(min){
-        const m = ((min % 1440) + 1440) % 1440;
-        const hh = Math.floor(m / 60);
-        const mm = m % 60;
-        return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
-      }
-
-      function getTimeZoneOffsetMinutes(date, timeZone){
-        const dtf = new Intl.DateTimeFormat("en-US", {
-          timeZone,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        });
-        const parts = Object.fromEntries(
-          dtf.formatToParts(date).map(p => [p.type, p.value])
-        );
-        const asUTC = Date.UTC(
-          Number(parts.year),
-          Number(parts.month) - 1,
-          Number(parts.day),
-          Number(parts.hour),
-          Number(parts.minute),
-          Number(parts.second)
-        );
-        return Math.round((asUTC - date.getTime()) / 60000);
-      }
-
-      function formatWorldTimeLabel(timeHHMM){
-        const minsParis = parseTimeToMinutesFlexible(timeHHMM);
-        if (minsParis == null) return esc(timeHHMM || "");
-
-        const now = new Date();
-        const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris");
-
-        const utcMins = minsParis - offset;
-        const utcHHMM = minutesToHHMM(utcMins);
-
-        const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
-
-        return (
-          minutesToHHMM(minsParis) + " " + tzLabel +
-          ' <span class="text-white/60 font-medium">(Paris)</span>' +
-          ' <span class="text-white/30">•</span> ' +
-          '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
-        );
-      }
-
       function fmtCountdown(ms){
         if (ms <= 0) return "Starting now";
         const totalMin = Math.floor(ms / 60000);
@@ -1369,8 +1310,69 @@ try {
             filter: blur(18px);
             opacity: .55;
           }
+          .line-clamp-2{
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+          }
         `;
         document.head.appendChild(st);
+      }
+
+      function minutesToHHMM(min){
+        const m = ((min % 1440) + 1440) % 1440;
+        const hh = Math.floor(m / 60);
+        const mm = m % 60;
+        return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+      }
+
+      function getTimeZoneOffsetMinutes(date, timeZone){
+        const dtf = new Intl.DateTimeFormat("en-US", {
+          timeZone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+
+        const parts = Object.fromEntries(
+          dtf.formatToParts(date).map(p => [p.type, p.value])
+        );
+
+        const asUTC = Date.UTC(
+          Number(parts.year),
+          Number(parts.month) - 1,
+          Number(parts.day),
+          Number(parts.hour),
+          Number(parts.minute),
+          Number(parts.second)
+        );
+
+        return Math.round((asUTC - date.getTime()) / 60000);
+      }
+
+      function formatWorldTimeLabel(timeHHMM){
+        const minsParis = parseTimeToMinutesFlexible(timeHHMM);
+        if (minsParis == null) return esc(timeHHMM || "");
+
+        const now = new Date();
+        const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris");
+
+        const utcMins = minsParis - offset;
+        const utcHHMM = minutesToHHMM(utcMins);
+
+        const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
+
+        return (
+          minutesToHHMM(minsParis) + " " + tzLabel +
+          ' <span class="text-white/60 font-medium">(Paris)</span>' +
+          ' <span class="text-white/30">•</span> ' +
+          '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
+        );
       }
 
       function renderOnAirTonight(){
@@ -1379,7 +1381,6 @@ try {
 
         const day = dayKey();
         const schedule = getSchedule();
-
         const items = (schedule[day] || [])
           .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
           .filter(x => x.min !== null)
@@ -1408,7 +1409,7 @@ try {
           const endMin = (liveIndex < items.length - 1) ? items[liveIndex+1].min : 24*60;
           const end = new Date(now);
           end.setHours(Math.floor(endMin/60), endMin%60, 0, 0);
-          const msLeft = end.getTime() - now.getTime();
+          const msLeft = (end ? end.getTime() : 0) - now.getTime();
           const totalMin = Math.max(0, Math.floor(msLeft/60000));
           const h = Math.floor(totalMin/60);
           const m = totalMin%60;
@@ -1418,7 +1419,7 @@ try {
           if (selected[0]){
             const start = new Date(now);
             start.setHours(Math.floor(selected[0].min/60), selected[0].min%60, 0, 0);
-            subline = fmtCountdown(start.getTime() - now.getTime());
+            subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
           }
         }
 
@@ -1427,14 +1428,13 @@ try {
           const curIndex = order.indexOf(day);
           const rotate = order.slice(curIndex + 1).concat(order.slice(0, curIndex + 1));
 
-          let nextDay = "";
           for (const dk of rotate){
             const arr = (schedule[dk] || [])
               .map(x => ({...x, min: parseTimeToMinutesFlexible(x.time)}))
               .filter(x => x.min !== null)
               .sort((a,b) => a.min - b.min);
+
             if (arr.length){
-              nextDay = dk;
               selected = arr.slice(0, 3);
               mode = "next";
               subline = `Next shows: ${dk.toUpperCase()}`;
@@ -1473,7 +1473,6 @@ try {
              </span>`;
 
         const liveWrapClass = (mode === "live") ? "onAirCard" : "";
-
         let firstDisplayTitle = first.title;
         if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
           const parts = firstDisplayTitle.split(" - ", 2);
@@ -1529,6 +1528,7 @@ try {
                 </div>
               </div>
             </div>
+
             ${others.length ? `
               <div class="rounded-2xl bg-white/5 border border-white/10 p-4 md:p-5">
                 <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
@@ -1585,7 +1585,7 @@ try {
               const ts = (() => {
                 const d = new Date();
                 d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
-                return d.getTime();
+                return d ? d.getTime() : 0;
               })();
 
               localStorage.setItem("abf_remind_next_show", JSON.stringify({
@@ -1594,6 +1594,7 @@ try {
                 title: target.title,
                 ts
               }));
+
               if (note) note.classList.remove("hidden");
             }catch{}
           };
@@ -1665,13 +1666,10 @@ try {
 
         document.addEventListener("keydown", (e) => {
           if (e.key !== "Escape") return;
-
           const flac = document.getElementById("flacModal");
           if (flac && flac.getAttribute("aria-hidden") === "false") closeModal("flacModal");
-
           const qual = document.getElementById("streamQualityModal");
           if (qual && qual.getAttribute("aria-hidden") === "false") closeModal("streamQualityModal");
-
           const support = document.getElementById("supportModal");
           if (support && support.getAttribute("aria-hidden") === "false") closeModal("supportModal");
         });
@@ -1696,12 +1694,13 @@ try {
         }
 
         if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
+        if (window.__abfHomeVoteTimer) clearInterval(window.__abfHomeVoteTimer);
+
         window.__abfHomeTimer = setInterval(async () => {
           await renderNowPlayingAndLast();
           renderOnAirTonight();
         }, 8000);
 
-        if (window.__abfHomeVoteTimer) clearInterval(window.__abfHomeVoteTimer);
         window.__abfHomeVoteTimer = setInterval(async () => {
           await renderTop();
           await renderHeroTop1();
