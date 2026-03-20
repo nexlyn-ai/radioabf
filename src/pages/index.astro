@@ -130,7 +130,14 @@ function normalizeDay(v: any): string {
     if (n === 5) return "fri";
     if (n === 6) return "sat";
     if (n === 7) return "sun";
+
     if (n === 0) return "sun";
+    if (n === 1) return "mon";
+    if (n === 2) return "tue";
+    if (n === 3) return "wed";
+    if (n === 4) return "thu";
+    if (n === 5) return "fri";
+    if (n === 6) return "sat";
   }
 
   if (s === "monday") return "mon";
@@ -191,7 +198,7 @@ try {
 
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
   <!-- BIG NOW PLAYING HERO -->
-  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl abfClubAura abfPremiumCard">
+  <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
     <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-cyan-500/20 rounded-full blur-[120px]"></div>
     <div class="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]"></div>
 
@@ -199,7 +206,6 @@ try {
       <div class="flex items-center gap-3 mb-4 text-sm tracking-widest text-white/60 uppercase">
         <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
         Now Playing
-        <span class="abfTrendBadge abfTrendBadge--live">Live</span>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
@@ -209,7 +215,7 @@ try {
               id="homeCoverWrapper"
               class="abfCover w-40 h-40 md:w-52 md:h-52 rounded-3xl border border-white/10 overflow-hidden flex-none shadow-xl transition-all duration-500"
             >
-              <img id="homeCover" class="hidden" alt="Current cover" />
+              <img id="homeCover" class="hidden" alt="Pochette actuelle" />
               <div class="abfCoverFallback">
                 <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
               </div>
@@ -219,7 +225,7 @@ try {
               <div id="homeArtist" data-abf-artist class="text-2xl md:text-4xl font-extrabold leading-tight line-clamp-2 break-words">—</div>
               <div id="homeTitle" data-abf-title class="mt-1 text-white/70 text-base md:text-lg line-clamp-2 break-words">—</div>
 
-              <div class="mt-4 flex gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+              <div class="mt-4 flex gap-2 flex-nowrap overflow-x-auto">
                 <button
                   id="jumpToPlayer"
                   type="button"
@@ -259,12 +265,9 @@ try {
           </div>
         </div>
 
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 abfPremiumCard">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="text-sm text-white/50 uppercase tracking-wider">
-              This week
-            </div>
-            <span class="abfTrendBadge abfTrendBadge--hot">Hot</span>
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <div class="text-sm text-white/50 uppercase tracking-wider mb-3">
+            This week
           </div>
 
           <div class="space-y-3">
@@ -286,9 +289,7 @@ try {
                 </div>
 
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
-                  </div>
+                  <div class="text-xs text-white/50 uppercase tracking-wider">#1</div>
                   <div id="heroTop1Artist" data-abf-artist class="font-semibold text-sm truncate">—</div>
                   <div id="heroTop1Title" data-abf-title class="text-xs text-white/70 truncate">—</div>
                 </div>
@@ -320,67 +321,19 @@ try {
   </section>
 
   <style is:inline>
-    .line-clamp-1{
-      display:-webkit-box;
-      -webkit-line-clamp:1;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-    }
     .line-clamp-2{
       display:-webkit-box;
       -webkit-line-clamp:2;
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
-    .no-scrollbar::-webkit-scrollbar{ display:none; }
-    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-
-    .abfVoteMiniBadge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:22px;
-      padding:0 8px;
-      border-radius:999px;
-      font-size:10px;
-      line-height:1;
-      font-weight:900;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.05);
-      color:rgba(255,255,255,.88);
-      white-space:nowrap;
-      box-shadow:0 8px 24px rgba(0,0,0,.20);
-    }
-    .abfVoteMiniBadge--new{
-      border-color:rgba(47,194,255,.32);
-      background:rgba(47,194,255,.12);
-      color:rgba(210,245,255,.96);
-    }
-    .abfVoteMiniBadge--hot{
-      border-color:rgba(249,115,22,.34);
-      background:rgba(249,115,22,.12);
-      color:rgba(255,231,214,.96);
-    }
-    .abfVoteMiniBadge--heavy{
-      border-color:rgba(168,85,247,.34);
-      background:rgba(168,85,247,.12);
-      color:rgba(243,232,255,.96);
-    }
-    .abfVoteMiniBadge--recurrent{
-      border-color:rgba(34,197,94,.34);
-      background:rgba(34,197,94,.12);
-      color:rgba(220,252,231,.96);
-    }
   </style>
 
   <!-- LAST PLAYED -->
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfPremiumCard">
+  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6">
     <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-2 text-sm text-white/50 uppercase tracking-wider">
-        <span>Last played</span>
-        <span class="abfTrendBadge abfTrendBadge--rising">Recent</span>
+      <div class="text-sm text-white/50 uppercase tracking-wider">
+        Last played
       </div>
       <a href="/music" class="text-cyan-300 hover:text-cyan-200 text-sm">
         Full history →
@@ -400,11 +353,10 @@ try {
   </section>
 
   <!-- ON AIR -->
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfPremiumCard">
+  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6">
     <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-2 text-sm text-white/50 uppercase tracking-wider">
-        <span>On Air</span>
-        <span class="abfTrendBadge abfTrendBadge--live">Live</span>
+      <div class="text-sm text-white/50 uppercase tracking-wider">
+        On Air
       </div>
       <a href="/programs" class="text-cyan-300 hover:text-cyan-200 text-sm">Full schedule →</a>
     </div>
@@ -412,11 +364,10 @@ try {
   </section>
 
   <!-- LATEST NEWS -->
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfPremiumCard">
+  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6">
     <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-2 text-sm text-white/50 uppercase tracking-wider">
-        <span>Latest News</span>
-        <span class="abfTrendBadge abfTrendBadge--new">New</span>
+      <div class="text-sm text-white/50 uppercase tracking-wider">
+        Latest News
       </div>
       <a href="/news" class="text-cyan-300 hover:text-cyan-200 text-sm">
         All news →
@@ -425,16 +376,13 @@ try {
 
     {latestNews?.length ? (
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {latestNews.map((post, idx) => {
+        {latestNews.map((post) => {
           const dateLabel = fmtDate(post.published_at || post.date_created);
           const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
-          const badgeClass = idx === 0 ? "abfTrendBadge abfTrendBadge--hot" : "abfTrendBadge abfTrendBadge--new";
-          const badgeLabel = idx === 0 ? "Hot" : "New";
-
           return (
             <a
               href={`/news/${post.slug}`}
-              class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden abfPremiumCard"
+              class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
             >
               <div class="relative aspect-[16/9] bg-gradient-to-br from-[#145C8F] to-[#2FC2FF]">
                 {cover ? (
@@ -447,11 +395,6 @@ try {
                   />
                 ) : null}
                 <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
-
-                <div class="absolute left-4 top-4">
-                  <span class={badgeClass}>{badgeLabel}</span>
-                </div>
-
                 <div class="absolute left-4 bottom-3 right-4 flex items-end justify-between gap-3">
                   <div class="min-w-0">
                     <div class="text-[11px] text-white/65 uppercase tracking-wider">
@@ -483,13 +426,10 @@ try {
   </section>
 
   <!-- Top this week -->
-  <div class="mt-8 rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden abfPremiumCard">
+  <div class="mt-8 rounded-3xl border border-white/10 bg-[#0A1F33] overflow-hidden">
     <div class="p-5 flex items-center justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2 text-sm text-white/50 uppercase tracking-wider">
-          <span>Top this week</span>
-          <span class="abfTrendBadge abfTrendBadge--hot">Club picks</span>
-        </div>
+        <div class="text-sm text-white/50 uppercase tracking-wider">Top this week</div>
         <div class="text-white/70 text-sm mt-1">Top voted tracks (this week).</div>
       </div>
       <a href="/music" class="text-cyan-200 hover:text-cyan-100 text-sm transition">
@@ -499,7 +439,7 @@ try {
 
     <div class="border-t border-white/10 p-4">
       <div id="topWeekGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map(() => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <article
             class="rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
             data-topweek-card
@@ -511,19 +451,12 @@ try {
                   <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
                 </div>
               </div>
-
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="abfVoteMiniBadge" data-rank-badge>—</span>
-                </div>
+                <div class="text-xs text-white/50 uppercase tracking-wider" data-rank>#{i + 1}</div>
                 <div class="font-semibold text-sm truncate" data-artist>—</div>
                 <div class="text-xs text-white/70 truncate" data-title>—</div>
               </div>
-
-              <div class="flex-none text-right">
-                <div class="text-[11px] text-white/40 uppercase tracking-wider">Votes</div>
-                <div class="text-xs text-white/70" data-count>—</div>
-              </div>
+              <div class="flex-none text-xs text-white/50" data-count>—</div>
             </div>
           </article>
         ))}
@@ -537,11 +470,10 @@ try {
   </div>
 
   <!-- LATEST VIDEOS -->
-  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6 abfPremiumCard">
+  <section class="mt-8 bg-[#0A1F33] border border-white/10 rounded-2xl p-6">
     <div class="flex items-center justify-between gap-4 mb-4">
-      <div class="flex items-center gap-2 text-sm text-white/50 uppercase tracking-wider">
-        <span>Latest Videos</span>
-        <span class="abfTrendBadge abfTrendBadge--new">New</span>
+      <div class="text-sm text-white/50 uppercase tracking-wider">
+        Latest Videos
       </div>
       <a href="/videos" class="text-cyan-300 hover:text-cyan-200 text-sm">
         All videos →
@@ -550,16 +482,14 @@ try {
 
     {latestVideos?.length ? (
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {latestVideos.map((video, idx) => {
+        {latestVideos.map((video) => {
           const yid = youtubeIdFromUrl(video.youtube_url);
           const thumb = yid ? `https://i.ytimg.com/vi/${yid}/hqdefault.jpg` : null;
-          const badgeClass = idx === 0 ? "abfTrendBadge abfTrendBadge--hot" : "abfTrendBadge abfTrendBadge--new";
-          const badgeLabel = idx === 0 ? "Hot" : "New";
 
           return (
             <a
               href={`/videos/${video.slug}`}
-              class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden abfPremiumCard"
+              class="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
             >
               <div class="relative aspect-video bg-gradient-to-br from-[#145C8F] to-[#2FC2FF]">
                 {thumb ? (
@@ -573,10 +503,6 @@ try {
                 ) : null}
 
                 <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
-
-                <div class="absolute left-4 top-4">
-                  <span class={badgeClass}>{badgeLabel}</span>
-                </div>
 
                 <div class="absolute left-4 bottom-3 right-4 flex items-end justify-between gap-3">
                   <div class="min-w-0">
@@ -611,13 +537,12 @@ try {
 
   <!-- Feature mini-cards -->
   <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
-    <div class="rounded-2xl border border-white/10 p-4 overflow-hidden relative bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14] abfPremiumCard">
+    <!-- Card 1 -->
+    <div class="rounded-2xl border border-white/10 p-4 overflow-hidden relative
+                bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14]">
       <div class="absolute -top-24 -right-24 w-[240px] h-[240px] bg-cyan-500/20 rounded-full blur-[80px]"></div>
       <div class="relative">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="abfTrendBadge abfTrendBadge--new">New</span>
-          <span class="abfTrendBadge abfTrendBadge--heavy">Premium</span>
-        </div>
+        <div class="text-xs text-white/50 uppercase tracking-wider">New</div>
         <div class="font-extrabold text-lg">ABF Live in UHD &amp; HD</div>
         <p class="text-sm text-white/70 mt-1">
           Ultra clean stream modes via stable HTTPS endpoints — bypass firewalls, corporate networks (best-effort availability).
@@ -640,11 +565,10 @@ try {
       </div>
     </div>
 
-    <div class="rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220] abfPremiumCard">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="abfTrendBadge abfTrendBadge--heavy">Heavy</span>
-        <span class="abfTrendBadge abfTrendBadge--rising">Audiophile</span>
-      </div>
+    <!-- Card 2 -->
+    <div class="rounded-2xl border border-white/10 p-4
+                bg-gradient-to-br from-[#0B2540] via-[#0A1F33] to-[#061220]">
+      <div class="text-xs text-white/50 uppercase tracking-wider">Audio</div>
       <div class="font-extrabold text-lg">Lossless FLAC Mode</div>
       <p class="text-sm text-white/70 mt-1">
         For audiophiles: maximum quality when available.
@@ -668,17 +592,15 @@ try {
       </div>
     </div>
 
-    <div class="rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] relative overflow-hidden abfPremiumCard">
+    <!-- Card 3 -->
+    <div class="rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] relative overflow-hidden">
       <div class="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
 
       <div class="relative z-10">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="abfTrendBadge abfTrendBadge--hot">Support</span>
-          <span class="abfTrendBadge abfTrendBadge--live">Independent</span>
-        </div>
+        <div class="text-xs text-white/50 uppercase tracking-wider mb-1">Independent & Ad-Free</div>
         <div class="font-extrabold text-lg leading-tight">Buy us a coffee? ☕</div>
         <p class="text-sm text-white/70 mt-2">
-          Radio ABF stays 100% independent thanks to you.<br class="hidden sm:block" />
+          Radio ABF stays 100% independent thanks to you.<br class="hidden sm:block">
           A small donation helps cover servers, streaming, and music rights.
         </p>
 
@@ -692,8 +614,8 @@ try {
       </div>
     </div>
   </div>
-  
-    <!-- STREAM QUALITY MODAL -->
+
+  <!-- STREAM QUALITY MODAL -->
   <div id="streamQualityModal" class="abfModal" aria-hidden="true">
     <div class="abfModalBackdrop" data-close="streamquality"></div>
     <div class="abfModalWrap">
@@ -778,6 +700,7 @@ try {
                 <li>• Auto (Master HLS MP3 — recommended):
                   <a href="https://stream.radioabf.com/hls/abf.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener">https://stream.radioabf.com/hls/abf.m3u8</a>
                 </li>
+
                 <li>• Low Data (HLS AAC+ 32kbps):
                   <a href="https://stream.radioabf.com/hls/abf-low.m3u8" class="underline hover:text-cyan-100" target="_blank" rel="noopener">https://stream.radioabf.com/hls/abf-low.m3u8</a>
                 </li>
@@ -798,6 +721,7 @@ try {
           <div class="abfModalTitle">FLAC Mode</div>
           <button class="abfModalClose" id="flacClose" type="button" aria-label="Close">✕</button>
         </div>
+
         <div class="abfModalBody">
           <div class="space-y-3 text-sm text-white/75 leading-relaxed">
             <p class="text-white/85 font-semibold">
@@ -827,8 +751,8 @@ try {
       </div>
     </div>
   </div>
-
-  <!-- SUPPORT / DONATION MODAL -->
+  
+    <!-- SUPPORT MODAL -->
   <div id="supportModal" class="abfModal" aria-hidden="true">
     <div class="abfModalBackdrop" data-close="support"></div>
     <div class="abfModalWrap">
@@ -859,7 +783,7 @@ try {
             rel="noopener noreferrer"
             class="inline-flex items-center gap-3 px-7 py-4 rounded-2xl bg-[#FFDD00] text-black font-bold text-base shadow-lg hover:bg-[#FFDD00]/90 transition transform hover:scale-105"
           >
-            <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy Me a Coffee" class="h-6 w-6" />
+            <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy Me a Coffee" class="h-6 w-6">
             Buy us a coffee (or more!)
           </a>
 
@@ -871,11 +795,12 @@ try {
     </div>
   </div>
 
-  <!-- Directus schedule injection -->
+  <!-- ✅ Directus schedule injection (HOME) -->
   <script is:inline define:vars={{ directusSchedule }}>
     window.__abfProgramsFromDirectus = directusSchedule ?? null;
   </script>
 
+  <!-- SCRIPT -->
   <script is:inline data-astro-rerun>
     (() => {
       const PROGRAMS_DIR = "/images/programs/";
@@ -914,11 +839,14 @@ try {
 
         for (let i = 0; i < 6; i++){
           const before = t;
+
           t = t.replace(
             new RegExp(`\\s*[\\(\\[][^\\)\\]]*?\\b${killWords}\\b[^\\)\\]]*[\\)\\]]\\s*$`, "i"),
             ""
           );
+
           t = t.replace(new RegExp(`\\s*(?:-|–|—)\\s*${killWords}\\b.*$`, "i"), "");
+
           t = t.replace(/\s{2,}/g, " ").trim();
           if (t === before) break;
         }
@@ -1071,17 +999,6 @@ try {
         return __homeVotesCache.top || [];
       }
 
-      function getVoteBadge(rank, count){
-        const c = Number(count) || 0;
-
-        if (rank === 1) return { label: "Heavy", cls: "abfVoteMiniBadge abfVoteMiniBadge--heavy" };
-        if (rank === 2) return { label: "Hot", cls: "abfVoteMiniBadge abfVoteMiniBadge--hot" };
-        if (c <= 1) return { label: "New", cls: "abfVoteMiniBadge abfVoteMiniBadge--new" };
-        if (c >= 4) return { label: "Heavy", cls: "abfVoteMiniBadge abfVoteMiniBadge--heavy" };
-        if (rank >= 3 && rank <= 6) return { label: "Recurrent", cls: "abfVoteMiniBadge abfVoteMiniBadge--recurrent" };
-        return { label: "Hot", cls: "abfVoteMiniBadge abfVoteMiniBadge--hot" };
-      }
-
       async function renderNowPlayingAndLast(){
         const artistEl = document.getElementById("homeArtist");
         const titleEl = document.getElementById("homeTitle");
@@ -1132,23 +1049,18 @@ try {
           return;
         }
 
-        host.innerHTML = items.map((entry, idx) => {
+        host.innerHTML = items.map((entry) => {
           const t = splitTrack(entry.t);
           const a  = (t.artist || "").trim();
           const ti = (t.title  || "").trim();
           const url = String(entry.cover_url || "").trim() || coverByNorm[normKey(a, ti)] || "";
-          const badge = idx === 0
-            ? `<span class="abfTrendBadge abfTrendBadge--hot">Recent</span>`
-            : `<span class="abfTrendBadge abfTrendBadge--rising">Played</span>`;
-
           return `
             <a href="/music"
                class="snap-start flex-none w-[260px] md:w-[300px]
                       rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10
-                      transition p-4 flex items-center gap-4 abfPremiumCard">
+                      transition p-4 flex items-center gap-4">
               ${coverHtmlByUrl(url, "w-14 h-14 rounded-2xl")}
-              <div class="min-w-0 flex-1">
-                <div class="mb-2">${badge}</div>
+              <div class="min-w-0">
                 <div class="font-semibold text-white truncate" data-abf-artist>${esc(a || "—")}</div>
                 <div class="text-white/60 text-sm truncate" data-abf-title>${esc(ti || "—")}</div>
               </div>
@@ -1158,8 +1070,8 @@ try {
 
         try { window.ABF_FMT?.apply(document); } catch {}
       }
-	  
-	        async function renderHeroTop1(){
+
+      async function renderHeroTop1(){
         const box = document.getElementById("heroTop1");
         const empty = document.getElementById("heroTop1Empty");
         const aEl = document.getElementById("heroTop1Artist");
@@ -1191,6 +1103,7 @@ try {
         setHeroTop1Cover(url);
         empty.classList.add("hidden");
         box.classList.remove("hidden");
+
         try { window.ABF_FMT?.apply(document); } catch {}
       }
 
@@ -1205,16 +1118,13 @@ try {
 
         if (!top.length){
           if (empty) empty.classList.remove("hidden");
-          cards.forEach((card) => {
-            const badgeEl = card.querySelector("[data-rank-badge]");
+          cards.forEach((card, i) => {
+            const rankEl = card.querySelector("[data-rank]");
             const aEl = card.querySelector("[data-artist]");
             const tEl = card.querySelector("[data-title]");
             const cEl = card.querySelector("[data-count]");
             const img = card.querySelector("img");
-            if (badgeEl) {
-              badgeEl.textContent = "—";
-              badgeEl.className = "abfVoteMiniBadge";
-            }
+            if (rankEl) rankEl.textContent = `#${i+1}`;
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "Vote on /music to build this chart";
             if (cEl) cEl.textContent = "";
@@ -1226,18 +1136,16 @@ try {
         if (empty) empty.classList.add("hidden");
 
         cards.forEach((card, i) => {
-          const badgeEl = card.querySelector("[data-rank-badge]");
+          const rankEl = card.querySelector("[data-rank]");
           const aEl = card.querySelector("[data-artist]");
           const tEl = card.querySelector("[data-title]");
           const cEl = card.querySelector("[data-count]");
           const img = card.querySelector("img");
-          const row = top[i];
 
+          if (rankEl) rankEl.textContent = `#${i+1}`;
+
+          const row = top[i];
           if (!row){
-            if (badgeEl) {
-              badgeEl.textContent = "—";
-              badgeEl.className = "abfVoteMiniBadge";
-            }
             if (aEl) aEl.textContent = "—";
             if (tEl) tEl.textContent = "—";
             if (cEl) cEl.textContent = "";
@@ -1248,7 +1156,6 @@ try {
           const artistRaw = cleanArtistForDisplay(row.artist) || "—";
           const titleRaw = cleanTitleForDisplay(row.title) || "—";
           const count = Number(row.count) || 0;
-
           const coverUrl =
             String(row.cover_url || "").trim() ||
             coverByNorm[normKey(artistRaw, titleRaw)] ||
@@ -1264,20 +1171,8 @@ try {
             }
           }
 
-          const badge = getVoteBadge(i + 1, count);
-          if (badgeEl) {
-            badgeEl.textContent = badge.label;
-            badgeEl.className = badge.cls;
-          }
-
-          if (aEl){
-            aEl.textContent = artistRaw;
-            aEl.setAttribute("data-abf-artist","");
-          }
-          if (tEl){
-            tEl.textContent = titleRaw;
-            tEl.setAttribute("data-abf-title","");
-          }
+          if (aEl){ aEl.textContent = artistRaw; aEl.setAttribute("data-abf-artist",""); }
+          if (tEl){ tEl.textContent = titleRaw; tEl.setAttribute("data-abf-title",""); }
           if (cEl) cEl.textContent = `${count}`;
         });
 
@@ -1309,58 +1204,6 @@ try {
         const mm = Number(m[2]);
         if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
         return hh * 60 + mm;
-      }
-
-      function minutesToHHMM(min){
-        const m = ((min % 1440) + 1440) % 1440;
-        const hh = Math.floor(m / 60);
-        const mm = m % 60;
-        return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
-      }
-
-      function getTimeZoneOffsetMinutes(date, timeZone){
-        const dtf = new Intl.DateTimeFormat("en-US", {
-          timeZone,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        });
-        const parts = Object.fromEntries(
-          dtf.formatToParts(date).map(p => [p.type, p.value])
-        );
-        const asUTC = Date.UTC(
-          Number(parts.year),
-          Number(parts.month) - 1,
-          Number(parts.day),
-          Number(parts.hour),
-          Number(parts.minute),
-          Number(parts.second)
-        );
-        return Math.round((asUTC - date.getTime()) / 60000);
-      }
-
-      function formatWorldTimeLabel(timeHHMM){
-        const minsParis = parseTimeToMinutesFlexible(timeHHMM);
-        if (minsParis == null) return esc(timeHHMM || "");
-
-        const now = new Date();
-        const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris");
-
-        const utcMins = minsParis - offset;
-        const utcHHMM = minutesToHHMM(utcMins);
-
-        const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
-
-        return (
-          minutesToHHMM(minsParis) + " " + tzLabel +
-          ' <span class="text-white/60 font-medium">(Paris)</span>' +
-          ' <span class="text-white/30">•</span> ' +
-          '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
-        );
       }
 
       function fmtCountdown(ms){
@@ -1402,8 +1245,64 @@ try {
             filter: blur(18px);
             opacity: .55;
           }
+          .line-clamp-2{
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+          }
         `;
         document.head.appendChild(st);
+      }
+
+      function minutesToHHMM(min){
+        const m = ((min % 1440) + 1440) % 1440;
+        const hh = Math.floor(m / 60);
+        const mm = m % 60;
+        return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+      }
+
+      function getTimeZoneOffsetMinutes(date, timeZone){
+        const dtf = new Intl.DateTimeFormat("en-US", {
+          timeZone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+        const parts = Object.fromEntries(
+          dtf.formatToParts(date).map(p => [p.type, p.value])
+        );
+        const asUTC = Date.UTC(
+          Number(parts.year),
+          Number(parts.month) - 1,
+          Number(parts.day),
+          Number(parts.hour),
+          Number(parts.minute),
+          Number(parts.second)
+        );
+        return Math.round((asUTC - date.getTime()) / 60000);
+      }
+
+      function formatWorldTimeLabel(timeHHMM){
+        const minsParis = parseTimeToMinutesFlexible(timeHHMM);
+        if (minsParis == null) return esc(timeHHMM || "");
+
+        const now = new Date();
+        const offset = getTimeZoneOffsetMinutes(now, "Europe/Paris");
+        const utcMins = minsParis - offset;
+        const utcHHMM = minutesToHHMM(utcMins);
+        const tzLabel = offset === 60 ? "CET" : offset === 120 ? "CEST" : "CET";
+
+        return (
+          minutesToHHMM(minsParis) + " " + tzLabel +
+          ' <span class="text-white/60 font-medium">(Paris)</span>' +
+          ' <span class="text-white/30">•</span> ' +
+          '<span class="text-white/80 font-semibold">' + utcHHMM + " UTC</span>"
+        );
       }
 
       function renderOnAirTonight(){
@@ -1440,7 +1339,7 @@ try {
           const endMin = (liveIndex < items.length - 1) ? items[liveIndex+1].min : 24*60;
           const end = new Date(now);
           end.setHours(Math.floor(endMin/60), endMin%60, 0, 0);
-          const msLeft = end.getTime() - now.getTime();
+          const msLeft = (end ? end.getTime() : 0) - now.getTime();
           const totalMin = Math.max(0, Math.floor(msLeft/60000));
           const h = Math.floor(totalMin/60);
           const m = totalMin%60;
@@ -1450,7 +1349,7 @@ try {
           if (selected[0]){
             const start = new Date(now);
             start.setHours(Math.floor(selected[0].min/60), selected[0].min%60, 0, 0);
-            subline = fmtCountdown(start.getTime() - now.getTime());
+            subline = fmtCountdown(((start ? start.getTime() : 0) - now.getTime()));
           }
         }
 
@@ -1506,7 +1405,6 @@ try {
 
         const liveWrapClass = (mode === "live") ? "onAirCard" : "";
         let firstDisplayTitle = first.title;
-
         if (firstDisplayTitle.startsWith("ABF CLUB - ")) {
           const parts = firstDisplayTitle.split(" - ", 2);
           firstDisplayTitle = parts[0] + " - " + parts[1].toUpperCase();
@@ -1537,12 +1435,15 @@ try {
                   <div class="text-cyan-300 font-bold text-xl md:text-2xl">
                     ${formatWorldTimeLabel(first.time)}
                   </div>
+
                   <div class="mt-2 text-white font-semibold text-xl md:text-2xl truncate">
                     ${esc(firstDisplayTitle)}
                   </div>
+
                   <div class="mt-2 text-white/70 text-base md:text-lg leading-relaxed">
                     ${esc(first.desc)}
                   </div>
+
                   <div class="mt-5 flex gap-3 flex-wrap">
                     <a href="/programs"
                        class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
@@ -1550,6 +1451,7 @@ try {
                               hover:scale-[1.01] transition">
                       View schedule
                     </a>
+
                     <button id="onAirRemindBtn"
                             type="button"
                             class="bg-white/5 hover:bg-white/10 border border-white/10
@@ -1557,6 +1459,7 @@ try {
                       Remind me
                     </button>
                   </div>
+
                   <div id="onAirRemindNote" class="mt-3 text-white/50 text-sm hidden">
                     Reminder saved locally (this device).
                   </div>
@@ -1569,6 +1472,7 @@ try {
                 <div class="text-sm text-white/50 uppercase tracking-wider mb-4">
                   ${mode === "live" ? "Up next" : "Later"}
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   ${others.map(x => {
                     let displayTitle = x.title;
@@ -1589,13 +1493,18 @@ try {
                             />
                           </div>
                         </div>
+
                         <div class="min-w-0 flex-1">
-                          <div class="text-cyan-300 font-bold text-sm">
-                            ${formatWorldTimeLabel(x.time)}
+                          <div class="flex items-center justify-between gap-2">
+                            <div class="text-cyan-300 font-bold text-sm">
+                              ${formatWorldTimeLabel(x.time)}
+                            </div>
                           </div>
+
                           <div class="mt-1 text-white font-semibold text-sm truncate">
                             ${esc(displayTitle)}
                           </div>
+
                           <div class="mt-1 text-white/60 text-xs leading-snug line-clamp-2">
                             ${esc(x.desc || "")}
                           </div>
@@ -1618,14 +1527,16 @@ try {
               const ts = (() => {
                 const d = new Date();
                 d.setHours(Math.floor(target.min/60), target.min%60, 0, 0);
-                return d.getTime();
+                return d ? d.getTime() : 0;
               })();
+
               localStorage.setItem("abf_remind_next_show", JSON.stringify({
                 day,
                 time: target.time,
                 title: target.title,
                 ts
               }));
+
               if (note) note.classList.remove("hidden");
             }catch{}
           };
@@ -1636,12 +1547,14 @@ try {
         if (window.__abfHomeModalsBound) return;
 
         const lockScroll = (on) => { document.documentElement.style.overflow = on ? "hidden" : ""; };
+
         const openModal = (id) => {
           const modal = document.getElementById(id);
           if (!modal) return;
           modal.setAttribute("aria-hidden", "false");
           lockScroll(true);
         };
+
         const closeModal = (id) => {
           const modal = document.getElementById(id);
           if (!modal) return;
@@ -1679,9 +1592,18 @@ try {
           }
 
           const closeKey = t?.dataset?.close;
-          if (closeKey === "flac") closeModal("flacModal");
-          if (closeKey === "streamquality") closeModal("streamQualityModal");
-          if (closeKey === "support") closeModal("supportModal");
+          if (closeKey === "flac") {
+            closeModal("flacModal");
+            return;
+          }
+          if (closeKey === "streamquality") {
+            closeModal("streamQualityModal");
+            return;
+          }
+          if (closeKey === "support") {
+            closeModal("supportModal");
+            return;
+          }
         });
 
         document.addEventListener("keydown", (e) => {
@@ -1714,13 +1636,12 @@ try {
         }
 
         if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
-        if (window.__abfHomeVoteTimer) clearInterval(window.__abfHomeVoteTimer);
-
         window.__abfHomeTimer = setInterval(async () => {
           await renderNowPlayingAndLast();
           renderOnAirTonight();
         }, 8000);
 
+        if (window.__abfHomeVoteTimer) clearInterval(window.__abfHomeVoteTimer);
         window.__abfHomeVoteTimer = setInterval(async () => {
           await renderTop();
           await renderHeroTop1();
