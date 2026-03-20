@@ -1,10 +1,12 @@
 ---
 import "../styles/global.css";
 import { ViewTransitions } from "astro:transitions";
+
 const {
   title = "RadioABF",
   description = "RadioABF — Alternative Bass Fréquence | The DJs' Frequency. Live electronic music streaming on radioabf.com. Vote for your favorite tracks, discover DJ programs and weekly charts."
 } = Astro.props;
+
 const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf.com").toString();
 ---
 <!DOCTYPE html>
@@ -12,6 +14,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <!-- SEO Core -->
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -22,11 +25,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       name="keywords"
       content="radioabf, radio abf, alternative bass fréquence, electronic music radio, live dj streaming, radioabf.com, house music, deep house, progressive, track voting"
     />
+
     <!-- ===== FAVICONS ===== -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" id="abfFavicon" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" />
     <link rel="icon" href="/favicon-16.png" sizes="16x16" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -37,6 +42,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
     <meta property="og:image:alt" content="RadioABF Logo — Alternative Bass Fréquence" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="fr_FR" />
+
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
@@ -44,6 +50,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
     <meta name="twitter:image" content="https://radioabf.com/og-image.jpg" />
     <meta name="twitter:site" content="@abfonair" />
     <meta name="twitter:domain" content="radioabf.com" />
+
     <!-- Structured Data -->
     <script type="application/ld+json">
       {
@@ -62,15 +69,37 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         "genre": "Electronic, House, Deep House, Progressive, Bass Music"
       }
     </script>
+
     <slot name="head" />
     <ViewTransitions />
+
     <style is:inline>
-      /* ===================== LOGO PULSE (STABLE) ===================== */
+      /* ===================== GLOBAL CLUB FX ===================== */
       @keyframes abfBeatPulse {
         0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(47,194,255,.35)); opacity: .95; }
         25% { transform: scale(1.3); filter: drop-shadow(0 0 52px rgba(47,194,255,1)); opacity: 1; }
         100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(47,194,255,.35)); opacity: .95; }
       }
+
+      @keyframes abfClubGlow {
+        0%   { opacity: .35; transform: scale(1); }
+        50%  { opacity: .58; transform: scale(1.06); }
+        100% { opacity: .35; transform: scale(1); }
+      }
+
+      @keyframes abfShimmer {
+        0%   { transform: translateX(-120%); opacity: 0; }
+        18%  { opacity: .0; }
+        35%  { opacity: .38; }
+        100% { transform: translateX(130%); opacity: 0; }
+      }
+
+      @keyframes abfCastingPulse {
+        0%   { box-shadow: 0 0 0 0 rgba(47,194,255,.45); transform: translateZ(0) scale(1); }
+        60%  { box-shadow: 0 0 0 10px rgba(47,194,255,0); transform: translateZ(0) scale(1.03); }
+        100% { box-shadow: 0 0 0 0 rgba(47,194,255,0); transform: translateZ(0) scale(1); }
+      }
+
       #abfBrandLogo{
         transform: translateZ(0);
         will-change: transform, filter, opacity;
@@ -78,12 +107,97 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       #abfBrandLogo.abf-beat{
         animation: abfBeatPulse 0.55s ease-out;
       }
+
+      .abfClubAura{
+        position: relative;
+        overflow: hidden;
+      }
+      .abfClubAura::before{
+        content:"";
+        position:absolute;
+        inset:-20%;
+        pointer-events:none;
+        background:
+          radial-gradient(40% 40% at 20% 20%, rgba(47,194,255,.12), transparent 70%),
+          radial-gradient(34% 34% at 85% 15%, rgba(20,92,143,.14), transparent 72%),
+          radial-gradient(42% 42% at 55% 90%, rgba(47,194,255,.08), transparent 74%);
+        animation: abfClubGlow 8s ease-in-out infinite;
+        z-index: 0;
+      }
+      .abfClubAura > *{
+        position: relative;
+        z-index: 1;
+      }
+
+      .abfPremiumCard{
+        position: relative;
+        overflow: hidden;
+      }
+      .abfPremiumCard::after{
+        content:"";
+        position:absolute;
+        top:0;
+        bottom:0;
+        width: 30%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.09), transparent);
+        transform: translateX(-120%);
+        animation: abfShimmer 7.5s linear infinite;
+        pointer-events:none;
+      }
+
+      /* ===================== TREND BADGES (shared for home/music/insights) ===================== */
+      .abfTrendBadge{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:6px;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.92);
+        font-size: 11px;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: .10em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        box-shadow: 0 8px 28px rgba(0,0,0,.24);
+      }
+      .abfTrendBadge--new{
+        border-color: rgba(47,194,255,.34);
+        background: rgba(47,194,255,.12);
+        color: rgba(210,245,255,.96);
+      }
+      .abfTrendBadge--hot{
+        border-color: rgba(249,115,22,.34);
+        background: rgba(249,115,22,.12);
+        color: rgba(255,231,214,.96);
+      }
+      .abfTrendBadge--heavy{
+        border-color: rgba(168,85,247,.34);
+        background: rgba(168,85,247,.12);
+        color: rgba(243,232,255,.96);
+      }
+      .abfTrendBadge--rising{
+        border-color: rgba(34,197,94,.34);
+        background: rgba(34,197,94,.12);
+        color: rgba(220,252,231,.96);
+      }
+      .abfTrendBadge--live{
+        border-color: rgba(239,68,68,.34);
+        background: rgba(239,68,68,.14);
+        color: rgba(254,226,226,.96);
+      }
+
       /* Desktop dropdown */
       .abf-dd summary::-webkit-details-marker { display: none; }
       .abf-dd summary { list-style: none; }
       .abf-dd { position: relative; }
       .abf-dd > .abf-dd-panel { display: none; }
       .abf-dd[open] > .abf-dd-panel { display: block; }
+
       /* Fix select option colors */
       #streamSelect option,
       #streamSelectMobile option,
@@ -91,14 +205,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       #yearSelect option{
         background:#050B14; color:#fff;
       }
-      /* Range thumb */
+
       input[type="range"]{ accent-color: #2FC2FF; }
-      /* Canvas: évite certains glitches pendant transitions */
       #visualizerCanvas{ display:block; }
-      /* Fullscreen overlay safety */
       #fsOverlay[aria-hidden="true"]{ pointer-events:none; }
       #fsOverlay[aria-hidden="false"]{ pointer-events:auto; }
-      /* ===================== MODALS (Build + Legal + Cookies) ===================== */
+
+      /* ===================== MODALS ===================== */
       .abfModal{
         position: fixed;
         inset: 0;
@@ -106,11 +219,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         display: none;
       }
       .abfModal[aria-hidden="false"]{ display:block; }
+
       .abfModalBackdrop{
         position:absolute; inset:0;
         background: rgba(5,11,20,0.78);
         backdrop-filter: blur(18px);
       }
+
       .abfModalWrap{
         position:relative;
         height:100%;
@@ -120,6 +235,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         justify-content:center;
         padding: 18px;
       }
+
       .abfModalCard{
         width: min(920px, 100%);
         max-height: min(78vh, 820px);
@@ -129,6 +245,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         background: rgba(5,11,20,0.78);
         box-shadow: 0 30px 120px rgba(0,0,0,0.55);
       }
+
       .abfModalTop{
         display:flex;
         align-items:center;
@@ -138,6 +255,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         border-bottom: 1px solid rgba(255,255,255,0.10);
         background: rgba(255,255,255,0.03);
       }
+
       .abfModalTitle{
         font-weight: 800;
         letter-spacing: .08em;
@@ -145,6 +263,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         font-size: 12px;
         color: rgba(255,255,255,0.75);
       }
+
       .abfModalClose{
         width: 40px;
         height: 40px;
@@ -154,12 +273,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         transition: .15s ease;
       }
       .abfModalClose:hover{ background: rgba(255,255,255,0.10); }
+
       .abfModalBody{
         padding: 14px;
         overflow: auto;
         max-height: calc(min(78vh, 820px) - 60px);
       }
+
       .buildList{ display:flex; flex-direction:column; gap:10px; }
+
       .buildItem{
         display:flex;
         align-items:flex-start;
@@ -170,13 +292,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         border: 1px solid rgba(255,255,255,0.10);
         background: rgba(255,255,255,0.04);
       }
+
       .buildLeft{ min-width:0; }
+
       .buildVer{
         font-weight: 800;
         color: rgba(47,194,255,0.95);
         letter-spacing: .02em;
       }
-      .buildTxt{ color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 4px; line-height: 1.35; }
+
+      .buildTxt{
+        color: rgba(255,255,255,0.75);
+        font-size: 13px;
+        margin-top: 4px;
+        line-height: 1.35;
+      }
+
       .buildDate{
         flex: none;
         font-size: 12px;
@@ -188,6 +319,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         white-space: nowrap;
         text-align: right;
       }
+
       .legal h2{
         font-size: 16px;
         font-weight: 800;
@@ -213,6 +345,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         font-size: 12px;
         margin-top: 14px;
       }
+
       .abfFooterLinkBtn{
         display:inline-flex;
         align-items:center;
@@ -229,7 +362,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         background: rgba(255,255,255,0.08);
         color: rgba(47,194,255,0.95);
       }
-      /* ===================== ABF COVER (fallback gradient + logo fills square) ===================== */
+
+      /* ===================== COVER ===================== */
       .abfCover {
         position: relative;
         overflow: hidden;
@@ -270,7 +404,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         filter: drop-shadow(0 10px 25px rgba(0,0,0,.35));
       }
 
-      /* ===================== PLAYER DESKTOP: align right controls on title line ===================== */
+      /* ===================== PLAYER ===================== */
       .abfPlayerBar {
         display: flex;
         align-items: center;
@@ -301,7 +435,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         }
       }
 
-      /* ===================== PLAYER GLASS (less transparent) ===================== */
       .abf-playerGlass{
         position: relative;
         background: rgba(5,11,20,0.92) !important;
@@ -314,7 +447,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         pointer-events:none;
         background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 55%);
       }
-      /* ===================== ICONS (modern SVG, Android-safe) ===================== */
+
       .abf-ic{
         display:inline-flex;
         width:20px;
@@ -331,7 +464,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      /* ===================== COOKIE BANNER ===================== */
+
+      /* ===================== COOKIE BAR ===================== */
       .abfCookieBar{
         position: fixed;
         left: 0;
@@ -384,6 +518,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         flex-wrap: wrap;
         justify-content:flex-end;
       }
+
       .abfBtn{
         display:inline-flex;
         align-items:center;
@@ -400,30 +535,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         white-space: nowrap;
       }
       .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+
       .abfBtnPrimary{
         border-color: rgba(47,194,255,0.35);
         background: linear-gradient(90deg, rgba(20,92,143,0.9), rgba(47,194,255,0.9));
         color: rgba(255,255,255,0.95);
       }
-      .abfBtnPrimary:hover{
-        filter: brightness(1.05);
-      }
-      .abfBtnGhost{
-        background: transparent;
-      }
+      .abfBtnPrimary:hover{ filter: brightness(1.05); }
+
+      .abfBtnGhost{ background: transparent; }
+
       .abfBtnDanger{
         border-color: rgba(239,68,68,0.35);
         background: rgba(239,68,68,0.10);
         color: rgba(255,255,255,0.90);
       }
-      .abfBtnDanger:hover{
-        background: rgba(239,68,68,0.16);
-      }
+      .abfBtnDanger:hover{ background: rgba(239,68,68,0.16); }
+
       .abfMuted{
         color: rgba(255,255,255,0.55);
         font-size: 12px;
         line-height: 1.35;
       }
+
       .abfToggle{
         display:flex;
         align-items:center;
@@ -446,6 +580,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         color: rgba(255,255,255,0.70);
         line-height: 1.35;
       }
+
       .abfSwitch{
         flex:none;
         width: 48px;
@@ -477,13 +612,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         background: rgba(47,194,255,0.95);
       }
 
-      /* ===================== STATUS BADGE (CASTING) ===================== */
-      @keyframes abfCastingPulse {
-        0%   { box-shadow: 0 0 0 0 rgba(47,194,255,.45); transform: translateZ(0) scale(1); }
-        60%  { box-shadow: 0 0 0 10px rgba(47,194,255,0); transform: translateZ(0) scale(1.03); }
-        100% { box-shadow: 0 0 0 0 rgba(47,194,255,0); transform: translateZ(0) scale(1); }
-      }
-
       .abfStatusCasting{
         border-color: rgba(47,194,255,0.45) !important;
         background: linear-gradient(90deg, rgba(20,92,143,0.55), rgba(47,194,255,0.28)) !important;
@@ -491,7 +619,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         animation: abfCastingPulse 1.15s ease-out infinite;
       }
 
-      /* ===================== PODCAST / LIVE READY ===================== */
       .abfPodcastBadge{
         border-color: rgba(255,255,255,0.16) !important;
         background: rgba(255,255,255,0.08) !important;
@@ -522,7 +649,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         display:none !important;
       }
 
-      /* Dedications emoji buttons */
       #dedEmojiGrid button{
         width: 100%;
         aspect-ratio: 1 / 1;
@@ -541,11 +667,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       }
     </style>
 
-    <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
+    <!-- ===================== GA4 STUB ===================== -->
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
       function gtag(){ dataLayer.push(arguments); }
-      // Default deny until user explicitly accepts analytics
       gtag('consent', 'default', {
         ad_storage: 'denied',
         analytics_storage: 'denied',
@@ -553,8 +678,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         security_storage: 'granted'
       });
     </script>
+
     <script src="/scripts/dedications-global.js" defer></script>
   </head>
+
   <body
     class="bg-[#050B14] text-white min-h-screen flex flex-col"
     style="
@@ -586,6 +713,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                     decoding="async"
                   />
                 </div>
+
                 <div class="min-w-0 leading-tight">
                   <div class="font-extrabold text-white tracking-wide truncate">RadioABF</div>
                   <div class="text-xs text-white/60 truncate">Alternative Bass Fréquence</div>
@@ -608,7 +736,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 <a href="/music" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Music</a>
                 <a href="/studio" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Studio</a>
                 <a href="/programs" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Programs</a>
-				<a href="/podcasts" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Podcasts</a>
+                <a href="/podcasts" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Podcasts</a>
                 <a href="/artists" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Artists</a>
                 <a href="/videos" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Videos</a>
                 <a href="/chat" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Chat</a>
@@ -639,7 +767,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               <a href="/music" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
               <a href="/studio" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Studio</a>
               <a href="/programs" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Programs</a>
-			  <a href="/podcasts" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Podcasts</a>
+              <a href="/podcasts" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Podcasts</a>
               <a href="/artists" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Artists</a>
               <a href="/videos" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Videos</a>
               <a href="/chat" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Chat</a>
@@ -648,49 +776,60 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           <script is:inline data-astro-rerun>
             (() => {
-              const btn = document.getElementById("navBtn");
-              const nav = document.getElementById("mobileNav");
-              if (!btn || !nav) return;
+              if (window.__abfMobileNavInit) return;
+              window.__abfMobileNavInit = true;
 
-              const isOpen = () => !nav.classList.contains("hidden");
+              const boot = () => {
+                const btn = document.getElementById("navBtn");
+                const nav = document.getElementById("mobileNav");
+                if (!btn || !nav) return;
+                if (btn.dataset.bound === "1") return;
+                btn.dataset.bound = "1";
 
-              const open = () => {
-                nav.classList.remove("hidden");
-                btn.setAttribute("aria-expanded", "true");
+                const isOpen = () => !nav.classList.contains("hidden");
+
+                const open = () => {
+                  nav.classList.remove("hidden");
+                  btn.setAttribute("aria-expanded", "true");
+                };
+
+                const close = () => {
+                  nav.classList.add("hidden");
+                  btn.setAttribute("aria-expanded", "false");
+                };
+
+                btn.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  isOpen() ? close() : open();
+                });
+
+                document.addEventListener("click", (e) => {
+                  if (!isOpen()) return;
+                  if (e.target.closest("#mobileNav")) return;
+                  if (e.target.closest("#navBtn")) return;
+                  close();
+                }, { passive: true });
+
+                nav.addEventListener("click", (e) => {
+                  if (e.target.closest("a")) close();
+                });
+
+                window.addEventListener("resize", () => {
+                  if (window.innerWidth >= 768) close();
+                }, { passive: true });
               };
 
-              const close = () => {
-                nav.classList.add("hidden");
-                btn.setAttribute("aria-expanded", "false");
-              };
-
-              btn.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                isOpen() ? close() : open();
-              });
-
-              document.addEventListener("click", (e) => {
-                if (!isOpen()) return;
-                if (e.target.closest("#mobileNav")) return;
-                if (e.target.closest("#navBtn")) return;
-                close();
-              });
-
-              nav.addEventListener("click", (e) => {
-                if (e.target.closest("a")) close();
-              });
-
-              window.addEventListener("resize", () => {
-                if (window.innerWidth >= 768) close();
-              });
+              boot();
+              document.addEventListener("astro:page-load", boot);
+              document.addEventListener("astro:after-swap", boot);
             })();
           </script>
         </div>
       </div>
     </header>
 
-    <!-- DEDICATIONS BAR (global) -->
+    <!-- DEDICATIONS BAR -->
     <div class="dedications-bar" transition:persist="dedications">
       <div class="dedications-inner">
         <div class="dedications-label">
@@ -705,20 +844,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         </button>
       </div>
     </div>
+
     <style is:inline>
       @keyframes marquee {
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
       }
-      .animate-marquee {
-        animation: marquee 90s linear infinite;
-      }
-      .animate-marquee:hover {
-        animation-play-state: paused;
-      }
+      .animate-marquee { animation: marquee 90s linear infinite; }
+      .animate-marquee:hover { animation-play-state: paused; }
     </style>
 
-    <!-- ================= GLOBAL FORMATTER (ARTIST/TITLE) ================= -->
+    <!-- ================= GLOBAL FORMATTER ================= -->
     <script is:inline data-astro-rerun>
       (() => {
         if (window.ABF_FMT) return;
@@ -749,7 +885,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           const parts = s.split(/(\s+)/);
           return parts.map((chunk, idx) => {
             if (/^\s+$/.test(chunk)) return chunk;
-
             if (chunk === chunk.toUpperCase() && /[A-Z]/.test(chunk) && chunk.length <= 6) return chunk;
 
             const hyParts = chunk.split("-");
@@ -828,7 +963,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       <slot />
     </main>
 	
-	    <!-- ================= PLAYER (mobile collapsible, IDs unique) ================= -->
+	    <!-- ================= PLAYER ================= -->
     <div
       id="playerContainer"
       class="fixed left-0 right-0 z-50 pointer-events-none"
@@ -836,13 +971,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       data-mini="true"
     >
       <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-4 pointer-events-auto">
-        <div class="abf-playerGlass rounded-2xl overflow-hidden border border-white/10">
+        <div class="abf-playerGlass rounded-2xl overflow-hidden border border-white/10 abfClubAura">
           <div class="abf-noise" aria-hidden="true"></div>
 
           <div class="px-3 sm:px-4 py-2.5">
-            <!-- TOP BAR -->
             <div class="abfPlayerBar">
-              <!-- LEFT -->
               <div class="abfPlayerLeft relative flex items-center gap-3 flex-1 min-w-0">
                 <div class="abfCover w-11 h-11 rounded-xl border border-white/10 overflow-hidden flex-none">
                   <img id="playerCover" class="hidden" alt="Current cover" />
@@ -867,7 +1000,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 </button>
               </div>
 
-              <!-- RIGHT -->
               <div class="hidden sm:flex abfPlayerRight">
                 <div
                   id="npStatus"
@@ -971,7 +1103,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               </div>
             </div>
 
-            <!-- MOBILE ROW -->
             <div class="mt-2 flex items-center justify-between gap-2 sm:hidden">
               <div
                 id="npStatusMobile"
@@ -1004,7 +1135,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               </div>
             </div>
 
-            <!-- MOBILE EXPANDED -->
             <div id="playerExpandedArea" class="hidden sm:hidden mt-2">
               <input
                 id="volRangeMobile"
@@ -1020,7 +1150,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             </div>
           </div>
 
-          <!-- VISUALIZER -->
           <div id="playerVizWrap" class="border-t border-white/10">
             <canvas id="visualizerCanvas" class="w-full h-8"></canvas>
           </div>
@@ -1050,11 +1179,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (expanded) expanded.classList.toggle("hidden", mini);
 
           if (vizWrap) {
-            if (!isMobile()) {
-              vizWrap.classList.remove("hidden");
-            } else {
-              vizWrap.classList.toggle("hidden", mini);
-            }
+            if (!isMobile()) vizWrap.classList.remove("hidden");
+            else vizWrap.classList.toggle("hidden", mini);
           }
 
           if (volMobile) volMobile.parentElement?.classList.toggle("hidden", mini);
@@ -1104,11 +1230,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         init();
         window.addEventListener("resize", () => {
           if (!isMobile()) setMini(false);
-        });
+        }, { passive: true });
       })();
     </script>
 
-    <!-- ================= FULLSCREEN PLAYER OVERLAY (NO VISUALIZER) ================= -->
+    <!-- ================= FULLSCREEN PLAYER OVERLAY ================= -->
     <div id="fsOverlay" class="fixed inset-0 z-[60] hidden" aria-hidden="true">
       <div class="absolute inset-0 bg-[#050B14]/92 backdrop-blur-2xl"></div>
       <div class="relative h-full w-full">
@@ -1116,6 +1242,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           <div class="text-xs text-white/50 uppercase tracking-wider">RadioABF — Player</div>
           <button id="fsClose" type="button" class="w-10 h-10 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition" aria-label="Close full screen" title="Close">✕</button>
         </div>
+
         <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-6 pt-5 h-[calc(100%-76px)] grid grid-rows-[1fr_auto] gap-5">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center min-h-0">
             <div class="min-h-0">
@@ -1278,7 +1405,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
       </div>
     </div>
 
-    <!-- ================= COOKIES MODAL (RGPD) ================= -->
+    <!-- ================= COOKIES MODAL ================= -->
     <div id="cookiesModal" class="abfModal" aria-hidden="true">
       <div class="abfModalBackdrop" data-close="cookies"></div>
       <div class="abfModalWrap">
@@ -1296,9 +1423,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               <div class="abfToggle">
                 <div class="min-w-0">
                   <h4>Necessary cookies</h4>
-                  <p>
-                    Required for core features (player preferences, security). Always enabled.
-                  </p>
+                  <p>Required for core features (player preferences, security). Always enabled.</p>
                 </div>
                 <div class="abfSwitch" data-on="true" aria-hidden="true" title="Always on"></div>
               </div>
@@ -1306,9 +1431,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               <div class="abfToggle">
                 <div class="min-w-0">
                   <h4>Analytics (GA4)</h4>
-                  <p>
-                    Helps us understand traffic and improve the experience. Disabled by default until you accept.
-                  </p>
+                  <p>Helps us understand traffic and improve the experience. Disabled by default until you accept.</p>
                 </div>
                 <button id="analyticsToggle" type="button" class="abfSwitch" data-on="false" aria-label="Toggle analytics"></button>
               </div>
@@ -1351,16 +1474,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         </div>
       </div>
     </div>
-
-    <!-- ================= PLAYER LOGIC + VISUALIZER + TAB/FAVICON LIVE ================= -->
+	
+	    <!-- ================= PLAYER LOGIC + VISUALIZER + TAB/FAVICON LIVE ================= -->
     <script is:inline data-astro-rerun>
       (() => {
-        // ========= GLOBAL STATE =========
         window.__abf = window.__abf || {};
         const S = window.__abf;
 
         S.isStopped = S.isStopped ?? true;
-        S.mode = S.mode || "live"; // "live" | "podcast"
+        S.mode = S.mode || "live";
         S.liveStreamIndex = S.liveStreamIndex ?? 0;
 
         S.podcast = S.podcast || {
@@ -1387,39 +1509,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         S.audio = S.audio || new Audio();
         const audio = S.audio;
 
-        audio.playsinline = true;
-
-        audio.addEventListener("webkitplaybacktargetavailabilitychanged", () => {});
-
-        (function bindRemotePlaybackAutoPause(){
-          const rp = audio.remotePlayback;
-          if (rp && !audio.__abfRpBound) {
-            audio.__abfRpBound = true;
-            rp.addEventListener("connecting", () => {
-              try { audio.pause(); } catch {}
-            });
-            rp.addEventListener("connect", () => {
-              try { audio.pause(); } catch {}
-              console.log("[RemotePlayback] connected → local paused");
-            });
-            rp.addEventListener("disconnect", () => {
-              console.log("[RemotePlayback] disconnected");
-            });
-          }
-          if (audio.remote && !audio.__abfRemoteBound) {
-            audio.__abfRemoteBound = true;
-            try {
-              audio.remote.addEventListener("connect", () => {
-                try { audio.pause(); } catch {}
-                console.log("[remote] connected → local paused");
-              });
-              audio.remote.addEventListener("disconnect", () => {
-                console.log("[remote] disconnected");
-              });
-            } catch {}
-          }
-        })();
-
+        audio.playsInline = true;
         audio.preload = "none";
         audio.crossOrigin = "anonymous";
 
@@ -1442,16 +1532,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (isPodcastMode()) return String(S.podcast?.title || "").trim();
           return String($("npTitle")?.textContent || "").trim();
         }
-		
-		        function setPlayerCover(url) {
+
+        function fmtApply(){
+          try { window.ABF_FMT?.apply(document); } catch {}
+        }
+
+        function setPlayerCover(url) {
           const img = $("playerCover");
           const fb = $("playerCoverFallback");
           if (!img) return;
+
           img.onerror = () => {
             img.removeAttribute("src");
             img.classList.add("hidden");
             if (fb) fb.style.display = "";
           };
+
           if (url) {
             img.src = url;
             img.classList.remove("hidden");
@@ -1467,11 +1563,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           const img = $("fsCover");
           const fb = $("fsCoverFallback");
           if (!img) return;
+
           img.onerror = () => {
             img.removeAttribute("src");
             img.classList.add("hidden");
             if (fb) fb.style.display = "";
           };
+
           if (url){
             img.src = url;
             img.classList.remove("hidden");
@@ -1517,15 +1615,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (!url) return false;
 
           S.mode = "podcast";
-          S.podcast = {
-            id,
-            url,
-            artist,
-            title,
-            cover,
-            date,
-            show
-          };
+          S.podcast = { id, url, artist, title, cover, date, show };
 
           audio.src = url;
           audio.load();
@@ -1540,6 +1630,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           S.mode = "live";
           S.liveStreamIndex = safe;
           S.currentStreamIndex = safe;
+
           try { localStorage.setItem(LS_KEY, String(safe)); } catch {}
 
           audio.src = S.streams[safe].url;
@@ -1566,7 +1657,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           syncUI();
         }
 
-        // ========= ICONS (SVG) =========
         function setIcon(el, name){
           if (!el) return;
           const icons = {
@@ -1585,15 +1675,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             const name = slot.getAttribute("data-ic") || "";
             setIcon(slot, name);
           });
-        }
-
-        S.lastBeat = S.lastBeat || 0;
-        S.__beat = S.__beat || { ema: 0, ema2: 0, last: 0 };
-        S.__viz = S.__viz || { raf: 0, canvas: null, ctx: null, dpr: 1, w: 0, h: 0 };
-        S.__fs = S.__fs || { active: false };
-
-        function fmtApply(){
-          try { window.ABF_FMT?.apply(document); } catch {}
         }
 
         function setStatus(text){
@@ -1628,9 +1709,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           }, { once: true });
         }
 
-        // ========= LIVE TAB TITLE + FAVICON =========
         function ensureTabFx(){
           if (S.__tabFx) return S.__tabFx;
+
           const state = {
             baseTitle: document.title || "RadioABF",
             titleTimer: 0,
@@ -1697,9 +1778,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             state.liveOn = true;
             state.liveText = String(text || "").trim();
             if (!state.liveText) return stopAll();
+
             const pad = " • ";
             const s = state.liveText + pad;
             let i = 0;
+
             if (!state.titleTimer){
               state.titleTimer = setInterval(() => {
                 const view = s.slice(i) + s.slice(0, i);
@@ -1707,6 +1790,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 i = (i + 1) % s.length;
               }, 220);
             }
+
             if (!state.favTimer){
               state.favFlip = false;
               setFavicon(svgLive);
@@ -1720,17 +1804,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           function update(isLive, artist, title){
             const a = String(artist || "").trim();
             const t = String(title || "").trim();
+
             if (!isLive || !a || !t){
               stopAll();
               return;
             }
+
             const A = (window.ABF_FMT?.artist?.(a) || a);
             const T = (window.ABF_FMT?.title?.(t) || t);
             const txt = `🔴 LIVE • ${A} — ${T} | RadioABF`;
+
             if (state.liveOn && state.liveText === txt) {
               setFavicon(state.favFlip ? svgLive : svgNormal);
               return;
             }
+
             stopAll();
             startAll(txt);
           }
@@ -1740,17 +1828,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           return S.__tabFx;
         }
 
-    function refreshTabFxAfterSwap(){
-  const fx = ensureTabFx();
-  fx.state.baseTitle = document.title || fx.state.baseTitle;
+        function refreshTabFxAfterSwap(){
+          const fx = ensureTabFx();
+          fx.state.baseTitle = document.title || fx.state.baseTitle;
 
-  if (isPodcastMode()) {
-    fx.update(false, "", "");
-    return;
-  }
+          if (isPodcastMode()) {
+            fx.update(false, "", "");
+            return;
+          }
 
-  fx.update(isLiveNow(), getCurrentArtist(), getCurrentTitle());
-}
+          fx.update(isLiveNow(), getCurrentArtist(), getCurrentTitle());
+        }
 
         function resetTabOnNav(){
           const fx = ensureTabFx();
@@ -1758,7 +1846,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           fx.stopAll();
         }
 
-        // ========= AUDIO GRAPH =========
         const ABF_GRAPH = window.__abfGraphState = window.__abfGraphState || {
           audioCtx: null,
           analyser: null,
@@ -1860,8 +1947,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             window.dispatchEvent(new CustomEvent("abf:audio-tools-ready"));
           } catch {}
         }
-		
-		        // ========= VISUALIZER (MAIN) =========
+
+        S.lastBeat = S.lastBeat || 0;
+        S.__beat = S.__beat || { ema: 0, ema2: 0, last: 0 };
+        S.__viz = S.__viz || { raf: 0, canvas: null, ctx: null, dpr: 1, w: 0, h: 0 };
+        S.__fs = S.__fs || { active: false };
+
         function getCanvasAlive(){
           const c = document.getElementById("visualizerCanvas");
           if (!c) return null;
@@ -1885,11 +1976,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           const c = S.__viz.canvas;
           const ctx = S.__viz.ctx;
           if (!c || !ctx) return false;
+
           const rect = c.getBoundingClientRect();
           if (rect.width <= 2 || rect.height <= 2) return false;
+
           const dpr = window.devicePixelRatio || 1;
           const w = Math.max(1, Math.floor(rect.width * dpr));
           const h = Math.max(1, Math.floor(rect.height * dpr));
+
           if (w !== S.__viz.w || h !== S.__viz.h || dpr !== S.__viz.dpr){
             S.__viz.dpr = dpr;
             S.__viz.w = w;
@@ -1897,6 +1991,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             c.width = w;
             c.height = h;
           }
+
           return true;
         }
 
@@ -1905,6 +2000,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             cancelAnimationFrame(S.__viz.raf);
             S.__viz.raf = 0;
           }
+
           const c = getCanvasAlive();
           if (c){
             const ctx = c.getContext("2d");
@@ -2003,6 +2099,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
         function startVisualizer(){
           ensureAudioGraph();
+
           if (S.__viz.raf && !isMainCanvasAlive()){
             cancelAnimationFrame(S.__viz.raf);
             S.__viz.raf = 0;
@@ -2011,6 +2108,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             S.__viz.w = 0;
             S.__viz.h = 0;
           }
+
           if (!S.__viz.raf){
             bindCanvasIfNeeded();
             resizeCanvasIfPossible();
@@ -2021,6 +2119,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         function ensureVisualizerReady(){
           const start = performance.now();
           const maxMs = 1400;
+
           const tick = async () => {
             if (audio.paused) return;
             ensureAudioGraph();
@@ -2033,10 +2132,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             }
             startVisualizer();
           };
+
           requestAnimationFrame(tick);
         }
 
-        // ========= SERVER NOW PLAYING =========
         async function fetchServerNowPlaying(limit = 12){
           try{
             const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
@@ -2051,8 +2150,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         async function fetchNowPlaying() {
           if (isPodcastMode()) return;
 
+          S.__npReqId = (S.__npReqId || 0) + 1;
+          const reqId = S.__npReqId;
+
+          if (S.__npBusy) return;
+          S.__npBusy = true;
+
           try {
             const { now, history } = await fetchServerNowPlaying(12);
+
+            if (reqId !== S.__npReqId) return;
+
             const artist = String(now?.artist || "").trim();
             const title = String(now?.title || "").trim();
             const full = String(now?.raw || "").trim() || (artist || title ? `${artist} - ${title}`.trim() : "");
@@ -2064,6 +2172,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               a.setAttribute("data-abf-artist", artist || "");
               a.textContent = artist || "—";
             }
+
             if (t){
               const rawTitle = title || full || "";
               t.setAttribute("data-abf-title", rawTitle);
@@ -2102,12 +2211,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             };
 
             S.__nowplaying = payload;
+
             try { window.dispatchEvent(new CustomEvent("abf:nowplaying-updated", { detail: payload })); } catch {}
             try { window.dispatchEvent(new CustomEvent("abf:history-updated", { detail: payload })); } catch {}
 
             const fx = ensureTabFx();
             fx.update(isLiveNow(), artist, title);
           } catch {
+            if (reqId !== S.__npReqId) return;
+
             const a = $("npArtist");
             const t = $("npTitle");
             if (a) a.textContent = "—";
@@ -2115,13 +2227,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             setPlayerCover("");
             fmtApply();
             if (S.__fs?.active) syncFullscreenUI();
+
             const fx = ensureTabFx();
             fx.update(false, "", "");
+          } finally {
+            if (reqId === S.__npReqId) {
+              S.__npBusy = false;
+            }
           }
-        }
-
-        function setStream(index) {
-          return setLiveSource(index);
         }
 
         function isLiveNow(){
@@ -2139,7 +2252,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         function syncFullscreenUI(){
           const fa = $("fsArtist");
           const ft = $("fsTitle");
-          const fsStatus = $("fsStatus");
           const fsPlay = $("fsPlay");
           const fsMute = $("fsMute");
           const fsVol = $("fsVol");
@@ -2158,6 +2270,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             fa.setAttribute("data-abf-artist", currentArtist || "");
             fa.textContent = currentArtist || "—";
           }
+
           if (ft){
             ft.setAttribute("data-abf-title", currentTitle || "");
             ft.textContent = currentTitle || "—";
@@ -2169,6 +2282,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           const fsMuteIc = fsMute?.querySelector(".abf-ic");
           setIcon(fsPlayIc, audio.paused ? "play" : "pause");
           setIcon(fsMuteIc, audio.muted ? "mute" : "volume");
+
           if (fsVol) fsVol.value = String(audio.volume);
 
           if (fsSel) {
@@ -2244,21 +2358,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             streamSelectMobile.classList.toggle("cursor-not-allowed", isPodcastMode());
           }
 
-          if (backLiveBtn) {
-            backLiveBtn.classList.toggle("hidden", !isPodcastMode());
-          }
-
-          if (backLiveBtnMobile) {
-            backLiveBtnMobile.classList.toggle("hidden", !isPodcastMode());
-          }
+          if (backLiveBtn) backLiveBtn.classList.toggle("hidden", !isPodcastMode());
+          if (backLiveBtnMobile) backLiveBtnMobile.classList.toggle("hidden", !isPodcastMode());
 
           const fx = ensureTabFx();
           fx.update(!isPodcastMode() && isLiveNow(), getCurrentArtist(), getCurrentTitle());
 
           if (S.__fs?.active) syncFullscreenUI();
         }
-		
-		        function bindUI(){
+
+        function bindUI(){
           initIcons();
 
           const playBtn = $("playBtn");
@@ -2316,7 +2425,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             S.__npTimer = setInterval(fetchNowPlaying, 10000);
           }
 
-          if (!S.__bound){
+          if (!S.__audioCoreBound){
             audio.addEventListener("play", async () => {
               ensureAudioGraph();
               await resumeAudioCtx();
@@ -2332,17 +2441,34 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             });
 
             audio.addEventListener("volumechange", syncUI);
-            S.__bound = true;
-          }
 
-          audio.addEventListener('error', (e) => {
-            console.error("Audio error event:", e);
-            console.error("Error code:", audio.error?.code, "Message:", audio.error?.message);
-          });
-          audio.addEventListener('stalled', () => console.warn("Stream stalled (buffering too long?)"));
-          audio.addEventListener('waiting', () => console.warn("Waiting for more data..."));
-          audio.addEventListener('playing', () => console.log("Audio is playing again"));
-          audio.addEventListener('pause', () => console.log("Audio paused"));
+            audio.addEventListener("error", (e) => {
+              console.error("Audio error event:", e);
+              console.error("Error code:", audio.error?.code, "Message:", audio.error?.message);
+            });
+
+            audio.addEventListener("stalled", () => console.warn("Stream stalled (buffering too long?)"));
+            audio.addEventListener("waiting", () => console.warn("Waiting for more data..."));
+            audio.addEventListener("playing", () => console.log("Audio is playing again"));
+
+            document.addEventListener("visibilitychange", async () => {
+              if (document.visibilityState === "visible" && !audio.paused && !S.isStopped) {
+                try {
+                  await resumeAudioCtx();
+                  await audio.play();
+                  console.log("[visibility] Stream resumed cleanly");
+                } catch (e) {
+                  console.warn("[visibility] Resume failed:", e);
+                }
+              }
+            });
+
+            document.addEventListener("keydown", (e) => {
+              if (e.key === "Escape") closeFullscreen();
+            });
+
+            S.__audioCoreBound = true;
+          }
 
           playBtn.onclick = async () => {
             if (!audio.paused) {
@@ -2410,17 +2536,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (selDesk) selDesk.onchange = (e) => onChangeStream(e.target.value);
           if (selMob) selMob.onchange = (e) => onChangeStream(e.target.value);
 
-          if (backLiveBtn) {
-            backLiveBtn.onclick = () => returnToLive(true);
-          }
-
-          if (backLiveBtnMobile) {
-            backLiveBtnMobile.onclick = () => returnToLive(true);
-          }
-
-          if (fsBackLiveBtn) {
-            fsBackLiveBtn.onclick = () => returnToLive(true);
-          }
+          if (backLiveBtn) backLiveBtn.onclick = () => returnToLive(true);
+          if (backLiveBtnMobile) backLiveBtnMobile.onclick = () => returnToLive(true);
+          if (fsBackLiveBtn) fsBackLiveBtn.onclick = () => returnToLive(true);
 
           if (fsBtn) fsBtn.onclick = () => openFullscreen();
           if (fsClose) fsClose.onclick = () => closeFullscreen();
@@ -2428,38 +2546,23 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           if (fsStop) fsStop.onclick = () => { $("stopBtn")?.click(); syncFullscreenUI(); };
           if (fsMute) fsMute.onclick = () => { $("muteBtn")?.click(); syncFullscreenUI(); };
 
-          if (fsVol) fsVol.oninput = (e) => {
-            audio.volume = Number(e.target.value);
-            try { localStorage.setItem(VOL_KEY, String(audio.volume)); } catch {}
-            syncUI();
-            syncFullscreenUI();
-          };
-
-          if (fsSel) fsSel.onchange = (e) => {
-            const v = e.target.value;
-            if (selDesk) { selDesk.value = v; selDesk.dispatchEvent(new Event("change")); }
-            if (selMob) { selMob.value = v; selMob.dispatchEvent(new Event("change")); }
-            syncFullscreenUI();
-          };
-
-          if (!S.__escBound){
-            document.addEventListener("keydown", (e) => {
-              if (e.key === "Escape") closeFullscreen();
-            });
-            S.__escBound = true;
+          if (fsVol) {
+            fsVol.oninput = (e) => {
+              audio.volume = Number(e.target.value);
+              try { localStorage.setItem(VOL_KEY, String(audio.volume)); } catch {}
+              syncUI();
+              syncFullscreenUI();
+            };
           }
 
-          document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && !audio.paused && !S.isStopped) {
-              try {
-                await resumeAudioCtx();
-                await audio.play();
-                console.log("[visibility] Stream resumed cleanly");
-              } catch (e) {
-                console.warn("[visibility] Resume failed:", e);
-              }
-            }
-          });
+          if (fsSel) {
+            fsSel.onchange = (e) => {
+              const v = e.target.value;
+              if (selDesk) { selDesk.value = v; selDesk.dispatchEvent(new Event("change")); }
+              if (selMob) { selMob.value = v; selMob.dispatchEvent(new Event("change")); }
+              syncFullscreenUI();
+            };
+          }
 
           fmtApply();
           syncUI();
@@ -2488,54 +2591,55 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
           returnToLive(autoplay);
         };
 
-        ensureTabFx();
-        bindUI();
+        const onAstroNav = () => {
+          S.__fs.active = false;
+          closeFullscreen();
+          resetTabOnNav();
+          notifyAudioToolsReady();
+          bindUI();
 
-const onAstroNav = () => {
-  S.__fs.active = false;
-  closeFullscreen();
-  resetTabOnNav();
-  notifyAudioToolsReady();
-  bindUI();
+          if (isPodcastMode()) {
+            setPlayerMeta({
+              artist: S.podcast?.artist || "ABF CLUB",
+              title: S.podcast?.title || "Podcast Replay",
+              cover: S.podcast?.cover || ""
+            });
+          } else {
+            fetchNowPlaying();
+          }
 
-  if (isPodcastMode()) {
-    setPlayerMeta({
-      artist: S.podcast?.artist || "ABF CLUB",
-      title: S.podcast?.title || "Podcast Replay",
-      cover: S.podcast?.cover || ""
-    });
-  } else {
-    fetchNowPlaying();
-  }
+          window.__abfUpdateLayout?.();
 
-  window.__abfUpdateLayout?.();
+          if (!audio.paused){
+            ensureVisualizerReady();
+            requestAnimationFrame(() => ensureVisualizerReady());
+            setTimeout(() => ensureVisualizerReady(), 120);
+          }
 
-  if (!audio.paused){
-    ensureVisualizerReady();
-    requestAnimationFrame(() => ensureVisualizerReady());
-    setTimeout(() => ensureVisualizerReady(), 120);
-  }
+          syncUI();
+          fmtApply();
+        };
 
-  syncUI();
-  fmtApply();
-};
+        if (!S.__astroNavBound) {
+          document.addEventListener("astro:page-load", onAstroNav);
+          document.addEventListener("astro:after-swap", onAstroNav);
+          document.addEventListener("astro:page-load", refreshTabFxAfterSwap);
+          document.addEventListener("astro:after-swap", refreshTabFxAfterSwap);
 
-        document.addEventListener("astro:page-load", onAstroNav);
-        document.addEventListener("astro:after-swap", onAstroNav);
-        document.addEventListener("astro:page-load", refreshTabFxAfterSwap);
-        document.addEventListener("astro:after-swap", refreshTabFxAfterSwap);
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible" && !audio.paused) ensureVisualizerReady();
+          });
 
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible" && !audio.paused) ensureVisualizerReady();
-        });
+          window.addEventListener("pageshow", () => {
+            if (!audio.paused) ensureVisualizerReady();
+          });
 
-        window.addEventListener("pageshow", () => {
-          if (!audio.paused) ensureVisualizerReady();
-        });
+          window.addEventListener("resize", () => {
+            if (!audio.paused) ensureVisualizerReady();
+          });
 
-        window.addEventListener("resize", () => {
-          if (!audio.paused) ensureVisualizerReady();
-        });
+          S.__astroNavBound = true;
+        }
 
         function purgeClientStorage(){
           try {
@@ -2562,6 +2666,9 @@ const onAstroNav = () => {
         }
 
         window.__abfPurge = purgeClientStorage;
+
+        ensureTabFx();
+        bindUI();
       })();
     </script>
 
@@ -2634,9 +2741,12 @@ const onAstroNav = () => {
       </div>
     </footer>
 	
-	    <!-- ================= MODALS + BUILD DATA + PURGE + COOKIE CONSENT ================= -->
+	    <!-- ================= MODALS + BUILD DATA + PURGE ================= -->
     <script is:inline data-astro-rerun>
       (() => {
+        if (window.__abfBuildModalInit) return;
+        window.__abfBuildModalInit = true;
+
         const buildModal = document.getElementById("buildModal");
         const legalModal = document.getElementById("legalModal");
         const cookiesModal = document.getElementById("cookiesModal");
@@ -2653,10 +2763,10 @@ const onAstroNav = () => {
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
 
         const BUILDS = [
-		  {
-          v: "3.5.4",
-          d: "Mar 15, 2026",
-          t: "New Podcasts experience added to RadioABF. This release introduces a dedicated Podcasts page for ABF Club replays, powered by automatic schedule matching and archive retrieval from the latest 7 days of antenna recordings. Podcast sessions now open directly in the global RadioABF player with a dedicated replay mode, while direct source exposure has been removed from the interface. Desktop and mobile navigation were updated to integrate the new Podcasts section across the site."
+          {
+            v: "3.5.4",
+            d: "Mar 15, 2026",
+            t: "New Podcasts experience added to RadioABF. This release introduces a dedicated Podcasts page for ABF Club replays, powered by automatic schedule matching and archive retrieval from the latest 7 days of antenna recordings. Podcast sessions now open directly in the global RadioABF player with a dedicated replay mode, while direct source exposure has been removed from the interface. Desktop and mobile navigation were updated to integrate the new Podcasts section across the site."
           },
           {
             v: "3.5.3",
@@ -2909,6 +3019,9 @@ const onAstroNav = () => {
 
     <script is:inline data-astro-rerun>
       (() => {
+        if (window.__abfContactInit) return;
+        window.__abfContactInit = true;
+
         function initContact(){
           const contactModal = document.getElementById("contactModal");
           const openContact = document.getElementById("openContact");
@@ -2918,10 +3031,7 @@ const onAstroNav = () => {
           const feedback = document.getElementById("contactFeedback");
           const btnSend = document.getElementById("ctSend");
 
-          if (!contactModal || !openContact || !contactClose || !form || !feedback) {
-            return false;
-          }
-
+          if (!contactModal || !openContact || !contactClose || !form || !feedback) return false;
           if (contactModal.dataset.bound === "1") return true;
           contactModal.dataset.bound = "1";
 
@@ -2942,13 +3052,8 @@ const onAstroNav = () => {
           function showFeedback(ok, msg){
             feedback.classList.remove("hidden");
             feedback.className = "text-sm font-medium px-4 py-3 rounded-xl border";
-
-            if (ok){
-              feedback.classList.add("border-cyan-400/30","bg-cyan-400/10","text-cyan-200");
-            } else {
-              feedback.classList.add("border-red-500/35","bg-red-500/10","text-red-200");
-            }
-
+            if (ok) feedback.classList.add("border-cyan-400/30","bg-cyan-400/10","text-cyan-200");
+            else feedback.classList.add("border-red-500/35","bg-red-500/10","text-red-200");
             feedback.textContent = msg;
           }
 
@@ -2976,9 +3081,7 @@ const onAstroNav = () => {
           });
 
           document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && contactModal.getAttribute("aria-hidden") === "false") {
-              close();
-            }
+            if (e.key === "Escape" && contactModal.getAttribute("aria-hidden") === "false") close();
           });
 
           form.addEventListener("submit", async (e) => {
@@ -3046,9 +3149,12 @@ const onAstroNav = () => {
       })();
     </script>
 
-    <!-- ================= COOKIE CONSENT LOGIC (GA4) ================= -->
+    <!-- ================= COOKIE CONSENT LOGIC ================= -->
     <script is:inline data-astro-rerun>
       (() => {
+        if (window.__abfCookieInit) return;
+        window.__abfCookieInit = true;
+
         const GA_ID = "G-8KQY09E05H";
         const CONSENT_COOKIE = "abf_consent_v1";
         const bar = document.getElementById("cookieBar");
@@ -3087,8 +3193,8 @@ const onAstroNav = () => {
           if (!analyticsToggle) return;
           analyticsToggle.setAttribute("data-on", on ? "true" : "false");
         }
-		
-		        function readConsent(){
+
+        function readConsent(){
           const v = getCookie(CONSENT_COOKIE);
           if (v === "a1") return true;
           if (v === "a0") return false;
@@ -3098,6 +3204,7 @@ const onAstroNav = () => {
         function ensureGaLoaded(){
           if (window.__abfGaLoaded) return;
           window.__abfGaLoaded = true;
+
           const s = document.createElement("script");
           s.async = true;
           s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
@@ -3190,9 +3297,7 @@ const onAstroNav = () => {
         document.addEventListener("click", (e) => {
           const t = e.target;
           if (!t) return;
-          if (t.id === "openCookies"){
-            setToggle(readConsent() === true);
-          }
+          if (t.id === "openCookies") setToggle(readConsent() === true);
         });
 
         window.__abfConsentReset = () => {
@@ -3203,35 +3308,51 @@ const onAstroNav = () => {
       })();
     </script>
 
-    <!-- ================= LAYOUT measure ================= -->
+    <!-- ================= LAYOUT MEASURE ================= -->
     <script is:inline data-astro-rerun>
       (() => {
-        const footer = document.getElementById("siteFooter");
-        const player = document.getElementById("playerContainer");
-        if (!footer || !player) return;
+        if (window.__abfLayoutMeasureInit) return;
+        window.__abfLayoutMeasureInit = true;
 
-        const apply = () => {
-          const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-          const fh = isDesktop ? (footer.offsetHeight || 0) : 0;
-          const ph = player.offsetHeight || 0;
-          document.body.style.setProperty("--abf-footer-h", fh + "px");
-          document.body.style.setProperty("--abf-player-h", ph + "px");
+        const boot = () => {
+          const footer = document.getElementById("siteFooter");
+          const player = document.getElementById("playerContainer");
+          if (!footer || !player) return;
+
+          const apply = () => {
+            const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+            const fh = isDesktop ? (footer.offsetHeight || 0) : 0;
+            const ph = player.offsetHeight || 0;
+            document.body.style.setProperty("--abf-footer-h", fh + "px");
+            document.body.style.setProperty("--abf-player-h", ph + "px");
+          };
+
+          window.__abfUpdateLayout = apply;
+
+          if (!window.__abfLayoutRO) {
+            window.__abfLayoutRO = new ResizeObserver(apply);
+          }
+
+          try { window.__abfLayoutRO.disconnect(); } catch {}
+          window.__abfLayoutRO.observe(footer);
+          window.__abfLayoutRO.observe(player);
+
+          apply();
         };
 
-        window.__abfUpdateLayout = apply;
-        const ro = new ResizeObserver(apply);
-        ro.observe(footer);
-        ro.observe(player);
-        apply();
-        window.addEventListener("resize", apply);
-        document.addEventListener("astro:page-load", apply);
-        document.addEventListener("astro:after-swap", apply);
+        boot();
+        window.addEventListener("resize", () => window.__abfUpdateLayout?.(), { passive: true });
+        document.addEventListener("astro:page-load", boot);
+        document.addEventListener("astro:after-swap", boot);
       })();
     </script>
 
     <!-- Back to top button -->
     <script is:inline data-astro-rerun>
       (() => {
+        if (window.__abfBackToTopInit) return;
+        window.__abfBackToTopInit = true;
+
         const btn = document.getElementById("backToTop");
         if (!btn) return;
 
@@ -3248,7 +3369,7 @@ const onAstroNav = () => {
 
         btn.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
         window.addEventListener("scroll", update, { passive: true });
-        window.addEventListener("resize", update);
+        window.addEventListener("resize", update, { passive: true });
         document.addEventListener("astro:page-load", update);
         document.addEventListener("astro:after-swap", update);
         update();
@@ -3264,14 +3385,7 @@ const onAstroNav = () => {
           id="backToTop"
           type="button"
           aria-label="Back to top"
-          class="pointer-events-auto
-                 rounded-2xl border border-white/15
-                 bg-[#050B14]/80 backdrop-blur-xl
-                 w-12 h-12 flex items-center justify-center
-                 text-white/80 hover:text-cyan-200
-                 hover:bg-white/10 transition
-                 shadow-xl shadow-black/40
-                 opacity-0 pointer-events-none"
+          class="pointer-events-auto rounded-2xl border border-white/15 bg-[#050B14]/80 backdrop-blur-xl w-12 h-12 flex items-center justify-center text-white/80 hover:text-cyan-200 hover:bg-white/10 transition shadow-xl shadow-black/40 opacity-0 pointer-events-none"
         >
           ↑
         </button>
@@ -3284,11 +3398,11 @@ const onAstroNav = () => {
         const apply = () => document.documentElement.style.setProperty("--header-height", (h?.offsetHeight || 80) + "px");
         apply();
         document.addEventListener("astro:after-swap", apply);
-        window.addEventListener("resize", apply);
+        window.addEventListener("resize", apply, { passive: true });
       })();
     </script>
 
-    <!-- Cast + AirPlay (PRO) -->
+    <!-- Cast + AirPlay -->
     <script
       type="text/javascript"
       src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"
@@ -3391,16 +3505,12 @@ const onAstroNav = () => {
 
         function pauseLocal() {
           const a = getLocalAudio();
-          if (a && !a.paused) {
-            a.pause();
-          }
+          if (a && !a.paused) a.pause();
         }
 
         function resumeLocal() {
           const a = getLocalAudio();
-          if (a && a.paused && !window.__abf?.isStopped) {
-            a.play().catch(()=>{});
-          }
+          if (a && a.paused && !window.__abf?.isStopped) a.play().catch(()=>{});
         }
 
         let castCtx = null;
@@ -3422,12 +3532,11 @@ const onAstroNav = () => {
           md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
           return md;
         }
-		
-		        function castDevicesAvailable() {
+
+        function castDevicesAvailable() {
           if (!castCtx) return false;
           try {
             const st = castCtx.getCastState?.();
-            if (typeof st === "string") return st !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
             return st !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
           } catch {
             return false;
@@ -3514,8 +3623,7 @@ const onAstroNav = () => {
 
         function bindAirPlayAvailability() {
           const audio = getLocalAudio();
-          if (!audio) return;
-          if (!hasAirPlayPicker()) return;
+          if (!audio || !hasAirPlayPicker()) return;
           audio.addEventListener("webkitplaybacktargetavailabilitychanged", (e) => {
             const available = e?.availability === "available";
             if (available) setBtnMode("airplay");
@@ -3532,24 +3640,6 @@ const onAstroNav = () => {
             return;
           }
           throw new Error("AirPlay not supported");
-        }
-
-        function bindRemotePlaybackAutoPause() {
-          const audio = getLocalAudio();
-          if (!audio) return;
-          if (audio.remotePlayback && !audio.__abfRpBound) {
-            audio.__abfRpBound = true;
-            audio.remotePlayback.addEventListener("connecting", pauseLocal);
-            audio.remotePlayback.addEventListener("connect", pauseLocal);
-            audio.remotePlayback.addEventListener("disconnect", () => {});
-          }
-          if (audio.remote && !audio.__abfRemoteBound) {
-            audio.__abfRemoteBound = true;
-            try {
-              audio.remote.addEventListener("connect", pauseLocal);
-              audio.remote.addEventListener("disconnect", () => {});
-            } catch {}
-          }
         }
 
         if (!window.__abfCastAirplayBound) {
@@ -3588,6 +3678,7 @@ const onAstroNav = () => {
 
               if (!hasDevices) {
                 toast("No Chromecast devices available right now. Check Wi-Fi and try again.", 3600);
+                return;
               }
 
               await startCast();
@@ -3609,11 +3700,8 @@ const onAstroNav = () => {
 
         function boot() {
           setBtnVisible(true);
-          if (isIOS() && hasAirPlayPicker()) {
-            setBtnMode("airplay");
-          } else {
-            setBtnMode("cast");
-          }
+          if (isIOS() && hasAirPlayPicker()) setBtnMode("airplay");
+          else setBtnMode("cast");
 
           if (isIOS()) bindAirPlayAvailability();
 
@@ -3626,8 +3714,6 @@ const onAstroNav = () => {
               initCastFramework();
             }
           }, 900);
-
-          bindRemotePlaybackAutoPause();
         }
 
         boot();
@@ -3639,7 +3725,6 @@ const onAstroNav = () => {
     <!-- ================= CONTACT MODAL ================= -->
     <div id="contactModal" class="abfModal" aria-hidden="true">
       <div class="abfModalBackdrop" data-close="contact"></div>
-
       <div class="abfModalWrap">
         <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Contact RadioABF">
           <div class="abfModalTop">
@@ -3649,12 +3734,8 @@ const onAstroNav = () => {
 
           <div class="abfModalBody">
             <div class="text-sm text-white/75 leading-relaxed">
-              <p class="text-white/85 font-semibold">
-                Send a message to the ABF team.
-              </p>
-              <p class="abfMuted">
-                We usually reply within 24–72h depending on the volume.
-              </p>
+              <p class="text-white/85 font-semibold">Send a message to the ABF team.</p>
+              <p class="abfMuted">We usually reply within 24–72h depending on the volume.</p>
             </div>
 
             <form id="contactForm" class="mt-4 space-y-3">
@@ -3716,9 +3797,7 @@ const onAstroNav = () => {
 
               <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
                 <button id="ctCancel" type="button" class="abfBtn">Cancel</button>
-                <button id="ctSend" type="submit" class="abfBtn abfBtnPrimary">
-                  Send
-                </button>
+                <button id="ctSend" type="submit" class="abfBtn abfBtnPrimary">Send</button>
               </div>
 
               <div class="abfMuted pt-1">
@@ -3760,9 +3839,7 @@ const onAstroNav = () => {
 
         <form id="dedicationForm" class="p-6 space-y-4">
           <div>
-            <label class="block text-xs text-white/60 mb-2">
-              Your name
-            </label>
+            <label class="block text-xs text-white/60 mb-2">Your name</label>
             <input
               id="dedName"
               name="name"
@@ -3782,78 +3859,28 @@ const onAstroNav = () => {
               const $ = (id) => document.getElementById(id);
 
               const EMOJIS = [
-                { e:"😎", k:["cool"] },
-                { e:"😍", k:["love","eyes"] },
-                { e:"🥰", k:["happy","love"] },
-                { e:"😂", k:["lol","funny"] },
-                { e:"🤣", k:["funny"] },
-                { e:"😊", k:["smile"] },
-                { e:"😁", k:["grin"] },
-                { e:"😉", k:["wink"] },
-                { e:"🥳", k:["party"] },
-                { e:"🤩", k:["wow"] },
-                { e:"🙌", k:["hands","yay"] },
-                { e:"👏", k:["clap"] },
-                { e:"🙏", k:["thanks"] },
-
-                { e:"📻", k:["radio","fm","station"] },
-                { e:"🎙️", k:["mic","microphone","radio"] },
-                { e:"🎤", k:["mic","live","sing"] },
-                { e:"🎧", k:["headphones","dj","music"] },
-                { e:"🎚️", k:["mixer","dj","studio"] },
-                { e:"🎛️", k:["studio","mixer","radio"] },
-                { e:"🔊", k:["speaker","sound","volume"] },
-                { e:"🔈", k:["speaker"] },
-                { e:"🔉", k:["volume"] },
-                { e:"📡", k:["signal","broadcast"] },
-                { e:"📀", k:["cd","music"] },
-                { e:"💿", k:["disc"] },
-                { e:"🛰️", k:["satellite","broadcast"] },
-
-                { e:"🎉", k:["party"] },
-                { e:"🎊", k:["celebration"] },
-                { e:"💃", k:["dance"] },
-                { e:"🕺", k:["dance"] },
-                { e:"🍾", k:["champagne"] },
-                { e:"🥂", k:["cheers"] },
-                { e:"🍻", k:["beer"] },
-
-                { e:"🎵", k:["note","music"] },
-                { e:"🎶", k:["notes","music"] },
-                { e:"🎼", k:["score"] },
-                { e:"🎹", k:["piano"] },
-                { e:"🥁", k:["drum"] },
-                { e:"🎸", k:["guitar"] },
-                { e:"🎺", k:["trumpet"] },
-
-                { e:"🔥", k:["fire","hot"] },
-                { e:"💥", k:["boom"] },
-                { e:"⚡", k:["energy","power"] },
-                { e:"🚀", k:["rocket"] },
-                { e:"✨", k:["sparkles"] },
-                { e:"🌟", k:["star"] },
-                { e:"⭐", k:["star"] },
-                { e:"💫", k:["stars"] },
-                { e:"🌊", k:["wave"] },
-                { e:"🌙", k:["night"] },
-                { e:"☀️", k:["sun"] },
-
-                { e:"❤️", k:["heart","love"] },
-                { e:"💙", k:["blue","heart"] },
-                { e:"💜", k:["purple","heart"] },
-                { e:"🧡", k:["orange","heart"] },
-                { e:"💚", k:["green","heart"] },
-                { e:"🖤", k:["black","heart"] },
-                { e:"🤍", k:["white","heart"] },
-                { e:"💛", k:["yellow","heart"] },
-                { e:"🫶", k:["hands","heart"] },
-
-                { e:"🌍", k:["world"] },
-                { e:"🌎", k:["world"] },
-                { e:"🌏", k:["world"] },
-                { e:"🤝", k:["together"] },
-                { e:"👊", k:["support"] },
-                { e:"✌️", k:["peace"] },
+                { e:"😎", k:["cool"] }, { e:"😍", k:["love","eyes"] }, { e:"🥰", k:["happy","love"] },
+                { e:"😂", k:["lol","funny"] }, { e:"🤣", k:["funny"] }, { e:"😊", k:["smile"] },
+                { e:"😁", k:["grin"] }, { e:"😉", k:["wink"] }, { e:"🥳", k:["party"] },
+                { e:"🤩", k:["wow"] }, { e:"🙌", k:["hands","yay"] }, { e:"👏", k:["clap"] },
+                { e:"🙏", k:["thanks"] }, { e:"📻", k:["radio","fm","station"] }, { e:"🎙️", k:["mic","microphone","radio"] },
+                { e:"🎤", k:["mic","live","sing"] }, { e:"🎧", k:["headphones","dj","music"] }, { e:"🎚️", k:["mixer","dj","studio"] },
+                { e:"🎛️", k:["studio","mixer","radio"] }, { e:"🔊", k:["speaker","sound","volume"] }, { e:"🔈", k:["speaker"] },
+                { e:"🔉", k:["volume"] }, { e:"📡", k:["signal","broadcast"] }, { e:"📀", k:["cd","music"] },
+                { e:"💿", k:["disc"] }, { e:"🛰️", k:["satellite","broadcast"] }, { e:"🎉", k:["party"] },
+                { e:"🎊", k:["celebration"] }, { e:"💃", k:["dance"] }, { e:"🕺", k:["dance"] },
+                { e:"🍾", k:["champagne"] }, { e:"🥂", k:["cheers"] }, { e:"🍻", k:["beer"] },
+                { e:"🎵", k:["note","music"] }, { e:"🎶", k:["notes","music"] }, { e:"🎼", k:["score"] },
+                { e:"🎹", k:["piano"] }, { e:"🥁", k:["drum"] }, { e:"🎸", k:["guitar"] },
+                { e:"🎺", k:["trumpet"] }, { e:"🔥", k:["fire","hot"] }, { e:"💥", k:["boom"] },
+                { e:"⚡", k:["energy","power"] }, { e:"🚀", k:["rocket"] }, { e:"✨", k:["sparkles"] },
+                { e:"🌟", k:["star"] }, { e:"⭐", k:["star"] }, { e:"💫", k:["stars"] },
+                { e:"🌊", k:["wave"] }, { e:"🌙", k:["night"] }, { e:"☀️", k:["sun"] },
+                { e:"❤️", k:["heart","love"] }, { e:"💙", k:["blue","heart"] }, { e:"💜", k:["purple","heart"] },
+                { e:"🧡", k:["orange","heart"] }, { e:"💚", k:["green","heart"] }, { e:"🖤", k:["black","heart"] },
+                { e:"🤍", k:["white","heart"] }, { e:"💛", k:["yellow","heart"] }, { e:"🫶", k:["hands","heart"] },
+                { e:"🌍", k:["world"] }, { e:"🌎", k:["world"] }, { e:"🌏", k:["world"] },
+                { e:"🤝", k:["together"] }, { e:"👊", k:["support"] }, { e:"✌️", k:["peace"] },
               ];
 
               function insertAtCursor(textarea, emoji) {
@@ -3874,9 +3901,7 @@ const onAstroNav = () => {
                 grid.innerHTML = "";
                 const q = filter.trim().toLowerCase();
 
-                const list = !q
-                  ? EMOJIS
-                  : EMOJIS.filter(x => (x.k || []).some(kk => kk.includes(q)));
+                const list = !q ? EMOJIS : EMOJIS.filter(x => (x.k || []).some(kk => kk.includes(q)));
 
                 list.forEach((x) => {
                   const b = document.createElement("button");
@@ -3911,7 +3936,6 @@ const onAstroNav = () => {
 
                 const r = btn.getBoundingClientRect();
                 const gap = 10;
-
                 const panelW = Math.min(300, Math.floor(window.innerWidth * 0.88));
                 panel.style.width = panelW + "px";
 
@@ -3920,12 +3944,9 @@ const onAstroNav = () => {
 
                 let top = r.bottom + gap;
                 const maxH = Math.min(window.innerHeight * 0.62, 380);
-
                 const fitsBelow = (top + maxH + 10) <= window.innerHeight;
 
-                if (!fitsBelow) {
-                  top = Math.max(10, r.top - gap - maxH);
-                }
+                if (!fitsBelow) top = Math.max(10, r.top - gap - maxH);
 
                 panel.style.left = left + "px";
                 panel.style.top = top + "px";
@@ -3936,7 +3957,6 @@ const onAstroNav = () => {
                 if (!p) return;
 
                 const willOpen = p.classList.contains("hidden");
-
                 if (!willOpen) {
                   p.classList.add("hidden");
                   return;
@@ -3949,10 +3969,8 @@ const onAstroNav = () => {
                 if (search) search.value = "";
 
                 renderGrid("");
-
                 const grid = $("dedEmojiGrid");
                 if (grid) grid.scrollTop = 0;
-
                 search?.focus();
               }
 
@@ -3960,7 +3978,6 @@ const onAstroNav = () => {
                 const btn = $("dedEmojiBtn");
                 const panel = $("dedEmojiPanel");
                 const search = $("dedEmojiSearch");
-
                 if (!btn || !panel) return;
                 if (btn.dataset.bound === "1") return;
                 btn.dataset.bound = "1";
@@ -4019,12 +4036,9 @@ const onAstroNav = () => {
             })();
           </script>
 
-          <!-- MESSAGE + EMOJIS -->
           <div>
             <div class="flex items-center justify-between gap-3">
-              <label class="block text-xs text-white/60 mb-2">
-                Your message
-              </label>
+              <label class="block text-xs text-white/60 mb-2">Your message</label>
 
               <div class="relative">
                 <button
@@ -4090,15 +4104,10 @@ const onAstroNav = () => {
               required
             ></textarea>
 
-            <div class="text-[11px] text-white/40 mt-2">
-              Max 300 characters.
-            </div>
+            <div class="text-[11px] text-white/40 mt-2">Max 300 characters.</div>
           </div>
 
-          <div
-            id="dedicationFeedback"
-            class="hidden text-sm font-medium transition-all"
-          ></div>
+          <div id="dedicationFeedback" class="hidden text-sm font-medium transition-all"></div>
 
           <div class="flex items-center justify-end gap-3 pt-2">
             <button
@@ -4166,7 +4175,6 @@ const onAstroNav = () => {
 
         window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", boot, { passive: true });
-
         document.addEventListener("astro:page-load", boot);
         document.addEventListener("astro:after-swap", boot);
         document.addEventListener("DOMContentLoaded", boot);
