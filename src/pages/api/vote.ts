@@ -47,6 +47,7 @@ async function dFetch(path: string, init?: RequestInit) {
       Authorization: `Bearer ${TOKEN}`,
       ...(init?.headers || {}),
     },
+    cache: "no-store",
   });
   return res;
 }
@@ -264,8 +265,8 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
       typeof coverVal === "string"
         ? coverVal
         : coverVal?.id
-        ? String(coverVal.id)
-        : "";
+          ? String(coverVal.id)
+          : "";
 
     map.set(normalized, {
       id: r?.id,
@@ -279,105 +280,174 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   return map;
 }
 
+// ----------------------
+// Server cache for GET /api/vote
+// ----------------------
+type VoteTopItem = {
+  track_key: string;
+  artist: string;
+  title: string;
+  count: number;
+  cover_art: string | null;
+  cover_url: string;
+};
+
+type VoteTopPayload = {
+  ok: true;
+  week: string;
+  top: VoteTopItem[];
+};
+
+const VOTE_RESPONSE_CACHE_TTL_MS = 30000; // 30s
+
+const voteResponseCache: Map<string, { exp: number; payload: VoteTopPayload }> =
+  (globalThis as any).__abfVoteResponseCache || new Map();
+
+const voteInflightCache: Map<string, Promise<VoteTopPayload>> =
+  (globalThis as any).__abfVoteInflightCache || new Map();
+
+(globalThis as any).__abfVoteResponseCache = voteResponseCache;
+(globalThis as any).__abfVoteInflightCache = voteInflightCache;
+
+function clonePayload<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+async function buildTopWeekPayload(week: string): Promise<VoteTopPayload> {
+  // 1) Read votes rows
+  const fields = ["week", "track_key", "count"].join(",");
+  const res = await dFetch(
+    `/items/${COLLECTION}?fields=${encodeURIComponent(
+      fields
+    )}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
+  );
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Directus GET failed: ${txt}`);
+  }
+
+  const data = (await res.json()) as { data?: any[] };
+  const rows = Array.isArray(data?.data) ? data.data : [];
+
+  // 2) Aggregate by normalized track_key
+  const map = new Map<string, { track_key: string; count: number }>();
+
+  for (const r of rows) {
+    const raw = cleanText(r?.track_key);
+    if (!raw) continue;
+
+    if (isABFClubTrackKey(raw)) continue;
+
+    const nk = normTrackKey(raw);
+    if (!nk) continue;
+
+    const c = safeCount(r?.count, 1) || 1;
+    const prev = map.get(nk);
+
+    if (!prev) {
+      map.set(nk, { track_key: raw, count: c });
+    } else {
+      prev.count += c;
+    }
+  }
+
+  const topRaw = Array.from(map.entries())
+    .map(([nk, v]) => ({ nk, ...v }))
+    .sort((a, b) => safeCount(b.count) - safeCount(a.count));
+
+  // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
+  const trackKeyList = topRaw.map((x) => x.nk);
+  const tracksByKey = await getTracksByKeys(trackKeyList);
+
+  // 4) Build response items with cover_url
+  const top = await Promise.all(
+    topRaw.map(async (row) => {
+      const tkNorm = row.nk;
+      const trow = tracksByKey.get(tkNorm);
+
+      const displayTrackKey = cleanText(row.track_key) || tkNorm;
+      const split = splitFromTrackKey(displayTrackKey);
+
+      const artist =
+        cleanText(trow?.artist) || cleanText(split.artist);
+
+      const title =
+        cleanText(trow?.title) || cleanText(split.title);
+
+      const cover_art = trow?.cover_art ?? null;
+      let cover_url = cover_art ? fileUrl(cover_art) : "";
+
+      if (!cover_url && artist && title) {
+        cover_url = await fetchItunesCover(artist, title);
+      }
+
+      return {
+        track_key: displayTrackKey,
+        artist,
+        title,
+        count: safeCount(row.count),
+        cover_art,
+        cover_url,
+      };
+    })
+  );
+
+  return { ok: true, week, top };
+}
+
+async function getTopWeekPayload(week: string): Promise<VoteTopPayload> {
+  const key = `week:${week}`;
+  const now = Date.now();
+
+  const cached = voteResponseCache.get(key);
+  if (cached && cached.exp > now) {
+    return clonePayload(cached.payload);
+  }
+
+  const inflight = voteInflightCache.get(key);
+  if (inflight) {
+    return clonePayload(await inflight);
+  }
+
+  const promise = buildTopWeekPayload(week)
+    .then((payload) => {
+      voteResponseCache.set(key, {
+        exp: Date.now() + VOTE_RESPONSE_CACHE_TTL_MS,
+        payload: clonePayload(payload),
+      });
+      return payload;
+    })
+    .finally(() => {
+      voteInflightCache.delete(key);
+    });
+
+  voteInflightCache.set(key, promise);
+
+  return clonePayload(await promise);
+}
+
 // -------- GET /api/vote?week=YYYY-WNN (week optional) --------
 export const GET: APIRoute = async ({ url }) => {
   try {
     const week = pickWeek(url.searchParams.get("week"));
-
-    // 1) Read votes rows
-    const fields = ["week", "track_key", "count"].join(",");
-    const res = await dFetch(
-      `/items/${COLLECTION}?fields=${encodeURIComponent(
-        fields
-      )}&filter[week][_eq]=${encodeURIComponent(week)}&limit=2000`
-    );
-
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      return bad(res.status, `Directus GET failed: ${txt}`);
-    }
-
-    const data = (await res.json()) as { data?: any[] };
-    const rows = Array.isArray(data?.data) ? data.data : [];
-
-    // 2) Aggregate by normalized track_key
-    const map = new Map<string, { track_key: string; count: number }>();
-
-    for (const r of rows) {
-      const raw = cleanText(r?.track_key);
-      if (!raw) continue;
-
-      if (isABFClubTrackKey(raw)) continue;
-
-      const nk = normTrackKey(raw);
-      if (!nk) continue;
-
-      const c = safeCount(r?.count, 1) || 1;
-      const prev = map.get(nk);
-
-      if (!prev) {
-        map.set(nk, { track_key: raw, count: c });
-      } else {
-        prev.count += c;
-      }
-    }
-
-    const topRaw = Array.from(map.entries())
-      .map(([nk, v]) => ({ nk, ...v }))
-      .sort((a, b) => safeCount(b.count) - safeCount(a.count));
-
-    // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
-    const trackKeyList = topRaw.map((x) => x.nk);
-    const tracksByKey = await getTracksByKeys(trackKeyList);
-
     const debug = url.searchParams.get("debug") === "1";
+
     if (debug) {
+      const payload = await getTopWeekPayload(week);
       return json({
         ok: true,
         week,
         debug: {
-          requested: trackKeyList.slice(0, 50),
-          found: tracksByKey.size,
-          found_keys: Array.from(tracksByKey.keys()).slice(0, 50),
+          cache_ttl_ms: VOTE_RESPONSE_CACHE_TTL_MS,
+          items: payload.top.length,
+          sample_keys: payload.top.slice(0, 20).map((x) => x.track_key),
         },
       });
     }
 
-    // 4) Build response items with cover_url
-    const top = await Promise.all(
-      topRaw.map(async (row) => {
-        const tkNorm = row.nk;
-        const trow = tracksByKey.get(tkNorm);
-
-        const displayTrackKey = cleanText(row.track_key) || tkNorm;
-
-        const split = splitFromTrackKey(displayTrackKey);
-
-        const artist =
-          cleanText(trow?.artist) || cleanText(split.artist);
-
-        const title =
-          cleanText(trow?.title) || cleanText(split.title);
-
-        const cover_art = trow?.cover_art ?? null;
-        let cover_url = cover_art ? fileUrl(cover_art) : "";
-
-        if (!cover_url && artist && title) {
-          cover_url = await fetchItunesCover(artist, title);
-        }
-
-        return {
-          track_key: displayTrackKey,
-          artist,
-          title,
-          count: safeCount(row.count),
-          cover_art,
-          cover_url,
-        };
-      })
-    );
-
-    return json({ ok: true, week, top });
+    const payload = await getTopWeekPayload(week);
+    return json(payload);
   } catch (e: any) {
     return bad(500, e?.message || "Server error");
   }
@@ -462,6 +532,10 @@ export const POST: APIRoute = async ({ request }) => {
       const txt = await res.text().catch(() => "");
       return bad(res.status, `Directus POST failed: ${txt}`);
     }
+
+    // Invalidate cache for this week after a successful vote
+    voteResponseCache.delete(`week:${week}`);
+    voteInflightCache.delete(`week:${week}`);
 
     return json({ ok: true, week, track_key });
   } catch (e: any) {

@@ -1805,6 +1805,7 @@ export const prerender = false;
   function startTimer(){
     stopTimer();
     state.timer = setInterval(() => {
+      if (document.hidden) return;
       if (state.inFlight) return;
       render();
     }, 15000);
@@ -1825,15 +1826,26 @@ export const prerender = false;
 
   if (!state.bound){
     state.bound = true;
-    document.addEventListener("astro:page-load", init);
+
     document.addEventListener("astro:after-swap", init);
+
     document.addEventListener("astro:before-swap", () => {
       stopTimer();
     });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!isMusicRoute()) return;
+      if (document.hidden) return;
+      render();
+      startTimer();
+    });
+
     window.addEventListener("abf:history-updated", () => {
       if (!isMusicRoute()) return;
+      if (document.hidden) return;
       render();
     });
+
     window.addEventListener("resize", () => {
       if (!isMusicRoute()) return;
       const t = nowTs();
