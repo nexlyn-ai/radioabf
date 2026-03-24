@@ -8,6 +8,10 @@ const ICECAST_STATUS_URL =
 const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
 const DIRECTUS_TOKEN =
   import.meta.env.DIRECTUS_TOKEN || process.env.DIRECTUS_TOKEN || "";
+const PUBLIC_SITE_URL =
+  import.meta.env.PUBLIC_SITE_URL ||
+  process.env.PUBLIC_SITE_URL ||
+  "https://radioabf.com";
 
 const PLAYS_COLLECTION = "plays";
 const TRACKS_COLLECTION = "tracks";
@@ -151,8 +155,44 @@ function assertEnv() {
   if (!DIRECTUS_TOKEN) throw new Error("DIRECTUS_TOKEN missing");
 }
 
+function stripTrailingSlash(s: string) {
+  return String(s || "").replace(/\/+$/, "");
+}
+
+function publicAssetBase() {
+  return stripTrailingSlash(PUBLIC_SITE_URL || "https://radioabf.com");
+}
+
+function normalizePublicCoverUrl(input: string) {
+  const raw = String(input || "").trim();
+  if (!raw) return "";
+
+  const publicBase = publicAssetBase();
+
+  try {
+    if (raw.startsWith("/assets/")) {
+      return `${publicBase}${raw}`;
+    }
+
+    if (raw.startsWith("assets/")) {
+      return `${publicBase}/${raw}`;
+    }
+
+    const url = new URL(raw);
+
+    if (url.pathname.startsWith("/assets/")) {
+      return `${publicBase}${url.pathname}${url.search}`;
+    }
+
+    return url.toString();
+  } catch {
+    if (raw.startsWith("/")) return `${publicBase}${raw}`;
+    return raw;
+  }
+}
+
 function directusAssetUrl(fileId: string) {
-  return fileId ? `${DIRECTUS_URL}/assets/${fileId}` : "";
+  return fileId ? `${publicAssetBase()}/assets/${fileId}` : "";
 }
 
 function parseRequestedLimit(raw: string | null): number {
@@ -288,15 +328,14 @@ function extractCoverUrlFromTrackRow(row: any): string {
   const coverUrlField = String(row?.[TRACKS_COVER_URL_FIELD] || "").trim();
   const coverOverride = row?.[TRACKS_COVER_OVERRIDE_FIELD] === true;
 
-  // cover_override = booléen de priorité, pas une URL
   if (coverOverride) {
     if (fileId) return directusAssetUrl(fileId);
-    if (coverUrlField) return coverUrlField;
+    if (coverUrlField) return normalizePublicCoverUrl(coverUrlField);
     return "";
   }
 
   if (fileId) return directusAssetUrl(fileId);
-  if (coverUrlField) return coverUrlField;
+  if (coverUrlField) return normalizePublicCoverUrl(coverUrlField);
 
   return "";
 }
@@ -318,7 +357,7 @@ function setTrackMetaCache(
 ) {
   __trackMetaCache.set(track_key, {
     first_played_at,
-    cover_url,
+    cover_url: normalizePublicCoverUrl(cover_url),
     exp:
       Date.now() +
       (cover_url || first_played_at
@@ -374,7 +413,6 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
 
   const missing: string[] = [];
 
-  // 1) cache hits
   for (const key of cleanKeys) {
     const cached = getTrackMetaCacheHit(key);
     if (cached) {
@@ -386,7 +424,6 @@ async function fetchBulkTrackMeta(trackKeys: string[]) {
 
   if (!missing.length) return out;
 
-  // 2) directus bulk by chunks
   for (let i = 0; i < missing.length; i += BULK_TRACK_META_CHUNK_SIZE) {
     const chunk = missing.slice(i, i + BULK_TRACK_META_CHUNK_SIZE);
 
@@ -650,13 +687,13 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
 
       const meta = bulkMeta.get(tk) || { first_played_at: "", cover_url: "" };
 
-      let cover_url = String(meta.cover_url || "").trim();
+      let cover_url = normalizePublicCoverUrl(String(meta.cover_url || "").trim());
       let cover_source = cover_url ? "directus" : "";
 
       if (!cover_url && historyDeezerFallbackCount < DEEZER_HISTORY_FALLBACK_LIMIT) {
         const fallback = await fetchDeezerCover(a, t);
         if (fallback) {
-          cover_url = fallback;
+          cover_url = normalizePublicCoverUrl(fallback);
           cover_source = "deezer";
         }
         historyDeezerFallbackCount++;
@@ -667,19 +704,19 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
       const is_new = isBlockedShow(a) ? false : isNewFromFirstPlayed(first_played_at);
 
       return {
-  id: row.id,
-  raw,
-  artist: a,
-  title: t,
-  track_key: tk,
-  played_at: ts ? new Date(ts).toISOString() : "",
-  played_at_ms: ts,
-  cover_url,
-  cover_source,
-  first_played_at,
-  first_played_at_ms,
-  is_new,
-};
+        id: row.id,
+        raw,
+        artist: a,
+        title: t,
+        track_key: tk,
+        played_at: ts ? new Date(ts).toISOString() : "",
+        played_at_ms: ts,
+        cover_url,
+        cover_source,
+        first_played_at,
+        first_played_at_ms,
+        is_new,
+      };
     })
   );
 
@@ -707,13 +744,13 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
   if (!nowIsBad) {
     const nowMeta = bulkMeta.get(track_key) || (await fetchTrackMetaByTrackKey(track_key));
 
-    nowCover = String(nowMeta.cover_url || "").trim();
+    nowCover = normalizePublicCoverUrl(String(nowMeta.cover_url || "").trim());
     nowCoverSource = nowCover ? "directus" : "";
 
     if (!nowCover) {
       const fallback = await fetchDeezerCover(artist, title);
       if (fallback) {
-        nowCover = fallback;
+        nowCover = normalizePublicCoverUrl(fallback);
         nowCoverSource = "deezer";
       }
     }
