@@ -667,19 +667,19 @@ async function buildNowPlayingPayload(limit: number): Promise<NowPlayingPayload>
       const is_new = isBlockedShow(a) ? false : isNewFromFirstPlayed(first_played_at);
 
       return {
-        id: row.id,
-        raw,
-        artist: a,
-        title: t,
-        track_key: tk,
-        played_at: row.played_at,
-        played_at_ms: ts,
-        cover_url,
-        cover_source,
-        first_played_at,
-        first_played_at_ms,
-        is_new,
-      };
+  id: row.id,
+  raw,
+  artist: a,
+  title: t,
+  track_key: tk,
+  played_at: ts ? new Date(ts).toISOString() : "",
+  played_at_ms: ts,
+  cover_url,
+  cover_source,
+  first_played_at,
+  first_played_at_ms,
+  is_new,
+};
     })
   );
 
