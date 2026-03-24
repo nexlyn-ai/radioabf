@@ -1042,10 +1042,7 @@ try { window.ABF_FMT?.apply(document); } catch {}
     aEl.textContent = artistRaw;
     tEl.textContent = titleRaw;
     const coverByNorm = window.__abfHomeCoverByNorm || {};
-    const url =
-      String(first.cover_url || "").trim() ||
-      coverByNorm[normKey(artistRaw, titleRaw)] ||
-      "";
+    const url = String(first.cover_url || "").trim();
     setHeroTop1Cover(url);
     empty.classList.add("hidden");
     box.classList.remove("hidden");
@@ -1096,10 +1093,7 @@ try { window.ABF_FMT?.apply(document); } catch {}
       const artistRaw = cleanArtistForDisplay(row.artist) || "—";
       const titleRaw = cleanTitleForDisplay(row.title) || "—";
       const count = Number(row.count) || 0;
-      const coverUrl =
-        String(row.cover_url || "").trim() ||
-        coverByNorm[normKey(artistRaw, titleRaw)] ||
-        "";
+      const coverUrl = String(row.cover_url || "").trim();
       if (img){
         if (coverUrl){
           img.src = coverUrl;
