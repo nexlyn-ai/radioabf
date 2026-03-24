@@ -571,9 +571,7 @@ export const prerender = false;
         if (raw) {
           now = {
             t: raw,
-            ts:
-              Number(data?.now?.played_at_ms) ||
-              (data?.now?.played_at ? new Date(data.now.played_at).getTime() : Date.now()),
+            ts: Number(data?.now?.played_at_ms) || Date.now(),
             cover_url: String(data?.now?.cover_url || ""),
             cover_source: String(data?.now?.cover_source || ""),
             is_new: Boolean(data?.now?.is_new),
@@ -589,7 +587,7 @@ export const prerender = false;
           if (!raw) continue;
           history.push({
             t: raw,
-            ts: Number(row?.played_at_ms) || (row?.played_at ? new Date(row.played_at).getTime() : 0),
+            ts: Number(row?.played_at_ms) || 0,
             cover_url: String(row?.cover_url || ""),
             cover_source: String(row?.cover_source || ""),
             is_new: Boolean(row?.is_new),
