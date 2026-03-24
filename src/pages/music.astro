@@ -1603,11 +1603,7 @@ export const prerender = false;
           const aRaw = cleanText(row.artist) || sp.artist || "";
           const tRaw = cleanText(row.title) || sp.title || "";
           const n = normKey(aRaw, tRaw);
-          const coverUrl =
-            String(row.cover_url || "").trim() ||
-            coverByNorm[n] ||
-            getRememberedCover(n) ||
-            "";
+          const coverUrl = String(row.cover_url || "").trim();
 
           if (coverUrl) rememberCover(n, coverUrl);
 
@@ -1653,11 +1649,7 @@ export const prerender = false;
           const aRaw = cleanText(row.artist) || sp.artist || "";
           const tRaw = cleanText(row.title) || sp.title || "";
           const n = normKey(aRaw, tRaw);
-          const coverUrl =
-            String(row.cover_url || "").trim() ||
-            coverByNorm[n] ||
-            getRememberedCover(n) ||
-            "";
+          const coverUrl = String(row.cover_url || "").trim();
 
           if (coverUrl) rememberCover(n, coverUrl);
 
