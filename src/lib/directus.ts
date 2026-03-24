@@ -1,13 +1,20 @@
 // src/lib/directus.ts
 
-const BASE =
+const API_BASE =
   import.meta.env.DIRECTUS_URL ||
-  import.meta.env.PUBLIC_DIRECTUS_URL ||
   (typeof process !== "undefined" ? (process.env.DIRECTUS_URL as string | undefined) : undefined) ||
   "";
 
+const PUBLIC_BASE =
+  import.meta.env.PUBLIC_DIRECTUS_URL ||
+  (typeof process !== "undefined"
+    ? (process.env.PUBLIC_DIRECTUS_URL as string | undefined)
+    : undefined) ||
+  API_BASE ||
+  "";
+
 // ------------------------
-// Micro-cache (best-effort) for Vercel SSR
+// Micro-cache (best-effort) for SSR
 // - TTL: serve fresh for a short time
 // - SWR: serve stale while revalidating in background (within same runtime)
 // ------------------------
@@ -28,9 +35,9 @@ export async function directusGet<T>(
   init?: RequestInit,
   cache?: { ttlMs?: number; swrMs?: number }
 ): Promise<T> {
-  if (!BASE) throw new Error("DIRECTUS_URL / PUBLIC_DIRECTUS_URL is not set");
+  if (!API_BASE) throw new Error("DIRECTUS_URL / PUBLIC_DIRECTUS_URL is not set");
 
-  const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   const ttlMs = cache?.ttlMs ?? DEFAULT_TTL_MS;
   const swrMs = cache?.swrMs ?? DEFAULT_SWR_MS;
 
@@ -115,7 +122,7 @@ export function directusAsset(
   opts?: { w?: number; h?: number; fit?: "cover" | "contain" | "inside" | "outside"; quality?: number }
 ) {
   if (!fileId) return "";
-  if (!BASE) return "";
+  if (!PUBLIC_BASE) return "";
 
   const q = new URLSearchParams();
   if (opts?.w) q.set("width", String(opts.w));
@@ -124,5 +131,5 @@ export function directusAsset(
   if (opts?.quality) q.set("quality", String(opts.quality));
 
   const qs = q.toString();
-  return `${BASE}/assets/${fileId}${qs ? `?${qs}` : ""}`;
+  return `${PUBLIC_BASE}/assets/${fileId}${qs ? `?${qs}` : ""}`;
 }
