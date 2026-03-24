@@ -131,8 +131,46 @@ function extractNowPlaying(json: any): string {
 function toUTCms(v: any): number {
   const s = String(v || "").trim();
   if (!s) return 0;
-  if (/[zZ]$/.test(s) || /[+\-]\d\d:\d\d$/.test(s)) return Date.parse(s);
-  return Date.parse(s + "Z");
+
+  if (/[zZ]$/.test(s) || /[+\-]\d\d:\d\d$/.test(s)) {
+    return Date.parse(s);
+  }
+
+  const m = s.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?$/
+  );
+  if (!m) return Date.parse(s);
+
+  const [, y, mo, d, hh = "00", mi = "00", ss = "00", ms = "0"] = m;
+
+  // Interpréter les timestamps sans fuseau comme heure locale Europe/Paris
+  const utcGuess = Date.UTC(
+    Number(y),
+    Number(mo) - 1,
+    Number(d),
+    Number(hh),
+    Number(mi),
+    Number(ss),
+    Number(ms.slice(0, 3).padEnd(3, "0"))
+  );
+
+  const parisOffsetMinutes = (() => {
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Paris",
+      timeZoneName: "shortOffset",
+      hour: "2-digit",
+    });
+    const parts = dtf.formatToParts(new Date(utcGuess));
+    const tz = parts.find((p) => p.type === "timeZoneName")?.value || "GMT+1";
+    const mm = tz.match(/GMT([+\-]\d{1,2})(?::?(\d{2}))?/i);
+    if (!mm) return 60;
+    const sign = mm[1].startsWith("-") ? -1 : 1;
+    const hours = Math.abs(Number(mm[1]));
+    const mins = Number(mm[2] || "0");
+    return sign * (hours * 60 + mins);
+  })();
+
+  return utcGuess - parisOffsetMinutes * 60 * 1000;
 }
 
 function isNewFromFirstPlayed(firstPlayedAt: string): boolean {
