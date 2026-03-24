@@ -9,8 +9,20 @@ const DIRECTUS_URL =
 const TOKEN =
   import.meta.env.DIRECTUS_VOTES_TOKEN || process.env.DIRECTUS_VOTES_TOKEN || "";
 
+const PUBLIC_SITE_URL =
+  import.meta.env.PUBLIC_SITE_URL ||
+  process.env.PUBLIC_SITE_URL ||
+  "https://radioabf.com";
+
 const COLLECTION = "votes";
 const TRACKS_COLLECTION = "tracks";
+
+const ENABLE_DEEZER_FALLBACK =
+  (import.meta.env.ENABLE_DEEZER_FALLBACK ||
+    process.env.ENABLE_DEEZER_FALLBACK ||
+    "true") === "true";
+
+const DEEZER_TIMEOUT_MS = 2500;
 
 // ----------------------
 // Response helpers
@@ -66,6 +78,40 @@ function cleanText(v: unknown) {
 function safeCount(v: unknown, fallback = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function stripTrailingSlash(s: string) {
+  return String(s || "").replace(/\/+$/, "");
+}
+
+function publicAssetBase() {
+  return stripTrailingSlash(PUBLIC_SITE_URL);
+}
+
+function normalizePublicCoverUrl(input?: string | null) {
+  const raw = cleanText(input);
+  if (!raw) return "";
+
+  try {
+    if (raw.startsWith("/assets/")) {
+      return `${publicAssetBase()}${raw}`;
+    }
+
+    if (raw.startsWith("assets/")) {
+      return `${publicAssetBase()}/${raw}`;
+    }
+
+    const u = new URL(raw);
+
+    if (u.pathname.startsWith("/assets/")) {
+      return `${publicAssetBase()}${u.pathname}${u.search}`;
+    }
+
+    return u.toString();
+  } catch {
+    if (raw.startsWith("/")) return `${publicAssetBase()}${raw}`;
+    return raw;
+  }
 }
 
 // ----------------------
@@ -145,6 +191,27 @@ function splitFromTrackKey(track_key: string) {
   };
 }
 
+function stripMixSuffix(title: string) {
+  return String(title || "")
+    .replace(/\((original|extended|radio|club|edit|mix)[^)]+\)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function cleanDeezerQueryPart(s: string) {
+  return String(s || "")
+    .replace(/\[(.*?)\]/g, " ")
+    .replace(/\((.*?)\)/g, " ")
+    .replace(/\bfeat\.?\b/gi, " ")
+    .replace(/\bft\.?\b/gi, " ")
+    .replace(/\bvs\.?\b/gi, " ")
+    .replace(/\s+&\s+/g, " ")
+    .replace(/\s+and\s+/gi, " ")
+    .replace(/[']/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // ----------------------
 // ✅ ABF CLUB guard (SERVER-SIDE)
 // ----------------------
@@ -181,48 +248,107 @@ function getClientIp(request: Request) {
 // ----------------------
 function fileUrl(fileId?: string | null) {
   if (!fileId) return "";
-  return `${DIRECTUS_URL}/assets/${fileId}`;
+  return `${publicAssetBase()}/assets/${fileId}`;
 }
 
-// iTunes micro-cache (memory)
-type ItunesCacheEntry = { url: string; exp: number };
-const ITUNES_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
-const itunesMemCache: Map<string, ItunesCacheEntry> =
-  (globalThis as any).__abfItunesVoteCache || new Map();
-(globalThis as any).__abfItunesVoteCache = itunesMemCache;
+async function fetchJsonWithTimeout(url: string, timeoutMs: number) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-async function fetchItunesCover(artist: string, title: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "RadioABF/1.0 (+https://radioabf.com)",
+      },
+    });
+
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Deezer micro-cache (memory)
+type DeezerCacheEntry = { url: string; exp: number };
+const DEEZER_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+const deezerMemCache: Map<string, DeezerCacheEntry> =
+  (globalThis as any).__abfDeezerVoteCache || new Map();
+
+(globalThis as any).__abfDeezerVoteCache = deezerMemCache;
+
+async function fetchDeezerCover(artist: string, title: string): Promise<string> {
+  if (!ENABLE_DEEZER_FALLBACK) return "";
+
   const safeArtist = cleanText(artist);
   const safeTitle = cleanText(title);
   const key = normTrackKey(joinTrackKey(safeArtist, safeTitle));
   if (!key) return "";
 
   const now = Date.now();
-  const hit = itunesMemCache.get(key);
+  const hit = deezerMemCache.get(key);
   if (hit && hit.exp > now) return hit.url || "";
 
-  const term = encodeURIComponent(`${safeArtist} ${safeTitle}`.trim());
-  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+  let cover = "";
 
   try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) {
-      itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
-      return "";
-    }
-    const j = await r.json().catch(() => ({} as any));
-    const item = (j as any)?.results?.[0];
-    const art100 = cleanText(item?.artworkUrl100);
-    const art600 = art100
-      ? art100.replace(/100x100bb\.jpg$/i, "600x600bb.jpg")
-      : "";
+    const artistClean = cleanDeezerQueryPart(safeArtist);
+    const titleClean = cleanDeezerQueryPart(safeTitle);
+    const titleNoMix = cleanDeezerQueryPart(stripMixSuffix(safeTitle));
 
-    itunesMemCache.set(key, { url: art600 || "", exp: now + ITUNES_CACHE_TTL_MS });
-    return art600 || "";
-  } catch {
-    itunesMemCache.set(key, { url: "", exp: now + ITUNES_CACHE_TTL_MS });
-    return "";
-  }
+    const queries = [
+      `${safeArtist} ${safeTitle}`,
+      `${artistClean} ${titleClean}`,
+      `${artistClean} ${titleNoMix}`,
+      titleClean,
+      titleNoMix,
+    ]
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
+
+    for (const qRaw of [...new Set(queries)]) {
+      const q = encodeURIComponent(qRaw);
+      const url = `https://api.deezer.com/search?q=${q}`;
+      const j = await fetchJsonWithTimeout(url, DEEZER_TIMEOUT_MS);
+
+      const rows = Array.isArray(j?.data) ? j.data : [];
+      if (!rows.length) continue;
+
+      const wantArtist = artistClean.toLowerCase();
+
+      const best =
+        rows.find((item: any) => {
+          const itemArtist = cleanDeezerQueryPart(String(item?.artist?.name || "")).toLowerCase();
+          return (
+            (wantArtist && itemArtist.includes(wantArtist)) ||
+            (itemArtist && wantArtist.includes(itemArtist))
+          );
+        }) || rows[0];
+
+      cover = String(
+        best?.album?.cover_xl ||
+          best?.album?.cover_big ||
+          best?.album?.cover_medium ||
+          best?.album?.cover ||
+          ""
+      ).trim();
+
+      if (cover) break;
+    }
+  } catch {}
+
+  deezerMemCache.set(key, {
+    url: cover,
+    exp: now + (cover ? DEEZER_CACHE_TTL_MS : 30 * 60 * 1000),
+  });
+
+  return cover;
 }
 
 type TrackRow = {
@@ -231,6 +357,8 @@ type TrackRow = {
   artist?: string | null;
   title?: string | null;
   cover_art: string | null;
+  cover_url?: string | null;
+  cover_override?: boolean | null;
 };
 
 // ✅ Robust: your tracks.track_key are already normalized => _eq works perfectly.
@@ -243,7 +371,10 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
   const slice = clean.slice(0, 200);
 
   const params = new URLSearchParams();
-  params.set("fields", "id,track_key,artist,title,cover_art,cover_art.id");
+  params.set(
+    "fields",
+    "id,track_key,artist,title,cover_art,cover_art.id,cover_url,cover_override"
+  );
   params.set("limit", String(Math.min(500, slice.length)));
 
   slice.forEach((tk, i) => {
@@ -274,10 +405,25 @@ async function getTracksByKeys(keys: string[]): Promise<Map<string, TrackRow>> {
       artist: cleanText(r?.artist) || null,
       title: cleanText(r?.title) || null,
       cover_art: coverId || null,
+      cover_url: cleanText(r?.cover_url) || null,
+      cover_override: r?.cover_override === true,
     });
   }
 
   return map;
+}
+
+function resolveTrackCover(trow?: TrackRow | null) {
+  if (!trow) return "";
+
+  const assetUrl = trow.cover_art ? fileUrl(trow.cover_art) : "";
+  const manualUrl = normalizePublicCoverUrl(trow.cover_url || "");
+
+  if (trow.cover_override === true) {
+    return assetUrl || manualUrl || "";
+  }
+
+  return assetUrl || manualUrl || "";
 }
 
 // ----------------------
@@ -356,7 +502,7 @@ async function buildTopWeekPayload(week: string): Promise<VoteTopPayload> {
     .map(([nk, v]) => ({ nk, ...v }))
     .sort((a, b) => safeCount(b.count) - safeCount(a.count));
 
-  // 3) Fetch tracks to resolve cover_art (and maybe artist/title)
+  // 3) Fetch tracks to resolve covers and maybe artist/title
   const trackKeyList = topRaw.map((x) => x.nk);
   const tracksByKey = await getTracksByKeys(trackKeyList);
 
@@ -369,17 +515,14 @@ async function buildTopWeekPayload(week: string): Promise<VoteTopPayload> {
       const displayTrackKey = cleanText(row.track_key) || tkNorm;
       const split = splitFromTrackKey(displayTrackKey);
 
-      const artist =
-        cleanText(trow?.artist) || cleanText(split.artist);
-
-      const title =
-        cleanText(trow?.title) || cleanText(split.title);
+      const artist = cleanText(trow?.artist) || cleanText(split.artist);
+      const title = cleanText(trow?.title) || cleanText(split.title);
 
       const cover_art = trow?.cover_art ?? null;
-      let cover_url = cover_art ? fileUrl(cover_art) : "";
+      let cover_url = resolveTrackCover(trow);
 
       if (!cover_url && artist && title) {
-        cover_url = await fetchItunesCover(artist, title);
+        cover_url = normalizePublicCoverUrl(await fetchDeezerCover(artist, title));
       }
 
       return {
