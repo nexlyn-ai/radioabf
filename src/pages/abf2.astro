@@ -1710,6 +1710,105 @@ const fmtDate = (iso?: string | null) => {
         };
       }
 
+      /* =========================================================
+         HOME TRACK DISPLAY NORMALIZATION
+         ARTISTE - Titre (English title case)
+         Affichage uniquement : aucune modification des données/API.
+         ========================================================= */
+
+      function formatArtistName(value) {
+        return clean(value).toLocaleUpperCase("en-US");
+      }
+
+      function formatEnglishTitle(value) {
+        const source = clean(value);
+
+        if (!source) {
+          return "";
+        }
+
+        const smallWords = new Set([
+          "a",
+          "an",
+          "and",
+          "as",
+          "at",
+          "but",
+          "by",
+          "for",
+          "from",
+          "in",
+          "into",
+          "nor",
+          "of",
+          "on",
+          "or",
+          "over",
+          "per",
+          "the",
+          "to",
+          "up",
+          "via",
+          "with",
+          "yet"
+        ]);
+
+        const originalWords =
+          source.split(/\s+/);
+
+        const lowerWords =
+          source
+            .toLocaleLowerCase("en-US")
+            .split(/\s+/);
+
+        const capitalizeToken = (token) =>
+          token.replace(
+            /(^|[-/(\"'’\[])([a-zà-öø-ÿ])/gi,
+            (_, prefix, letter) =>
+              prefix + letter.toLocaleUpperCase("en-US")
+          );
+
+        return lowerWords
+          .map((word, index) => {
+            const original =
+              originalWords[index] || word;
+
+            if (
+              /^[A-Z0-9][A-Z0-9.&'+/-]{1,5}$/.test(original) &&
+              /[A-Z]/.test(original)
+            ) {
+              return original;
+            }
+
+            const plain =
+              word
+                .replace(/^[^a-z0-9à-öø-ÿ]+/i, "")
+                .replace(/[^a-z0-9à-öø-ÿ]+$/i, "");
+
+            const previous =
+              lowerWords[index - 1] || "";
+
+            const startsNewPhrase =
+              index === 0 ||
+              /^[([{]/.test(word) ||
+              /[:!?—–]$/.test(previous);
+
+            const isLast =
+              index === lowerWords.length - 1;
+
+            if (
+              !startsNewPhrase &&
+              !isLast &&
+              smallWords.has(plain)
+            ) {
+              return word;
+            }
+
+            return capitalizeToken(word);
+          })
+          .join(" ");
+      }
+
       function trackKey(artist, title) {
         return `${clean(artist)} - ${clean(title)}`
           .toLowerCase()
@@ -2618,11 +2717,15 @@ function restoreABFHeader() {
           );
 
         artistEl.textContent =
-          track.artist ||
+          formatArtistName(
+            track.artist
+          ) ||
           "—";
 
         titleEl.textContent =
-          track.title ||
+          formatEnglishTitle(
+            track.title
+          ) ||
           "—";
 
         if (timeEl) {
@@ -2747,8 +2850,8 @@ function restoreABFHeader() {
                     </div>
 
                     <div class="abf2-last-copy">
-                      <strong>${esc(track.artist || "—")}</strong>
-                      <span>${esc(track.title || "—")}</span>
+                      <strong>${esc(formatArtistName(track.artist) || "—")}</strong>
+                      <span>${esc(formatEnglishTitle(track.title) || "—")}</span>
                       
                     </div>
                   </div>
@@ -2860,13 +2963,17 @@ function restoreABFHeader() {
 
         if (a) {
           a.textContent =
-            firstTrack.artist ||
+            formatArtistName(
+              firstTrack.artist
+            ) ||
             "—";
         }
 
         if (t) {
           t.textContent =
-            firstTrack.title ||
+            formatEnglishTitle(
+              firstTrack.title
+            ) ||
             "—";
         }
 
@@ -2911,8 +3018,8 @@ function restoreABFHeader() {
                       <span class="abf2-mini-rank">#${index + 2}</span>
 
                       <span class="abf2-mini-copy">
-                        <strong>${esc(tr.artist || "—")}</strong>
-                        <span>${esc(tr.title || "—")}</span>
+                        <strong>${esc(formatArtistName(tr.artist) || "—")}</strong>
+                        <span>${esc(formatEnglishTitle(tr.title) || "—")}</span>
                       </span>
 
                      <span class="abf2-mini-count">
