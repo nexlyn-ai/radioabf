@@ -19,7 +19,20 @@ type DirectusListResp = { data: NewsItem[] };
 
 const url = new URL(Astro.request.url);
 
-const ABF2_CATEGORY = "abf2";
+const selectedCatRaw = String(url.searchParams.get("cat") || "all").toLowerCase();
+const selectedCat =
+  selectedCatRaw === "abf2" || selectedCatRaw === "music"
+    ? selectedCatRaw
+    : "all";
+
+function linkWithCat(cat: "all" | "abf2" | "music") {
+  const u = new URL(Astro.request.url);
+  if (cat === "all") u.searchParams.delete("cat");
+  else u.searchParams.set("cat", cat);
+  u.searchParams.delete("page");
+  const qs = u.searchParams.toString();
+  return u.pathname + (qs ? "?" + qs : "");
+}
 
 function linkWithParams(nextPage: number) {
   const u = new URL(Astro.request.url);
@@ -34,10 +47,15 @@ const offset = (page - 1) * PER_PAGE;
 
 // FETCH LIST
 const fields = "id,status,title,slug,excerpt,cover,published_at,date_created,category";
+const categoryFilter =
+  selectedCat === "all"
+    ? ""
+    : `&filter[category][_eq]=${encodeURIComponent(selectedCat)}`;
+
 const listQuery =
   `/items/news?fields=${encodeURIComponent(fields)}` +
   `&filter[status][_eq]=published` +
-  `&filter[category][_eq]=${encodeURIComponent(ABF2_CATEGORY)}` +
+  categoryFilter +
   `&sort=-published_at,-date_created&limit=${PER_PAGE}&offset=${offset}`;
 
 const resp = await directusGet<DirectusListResp>(listQuery);
@@ -45,7 +63,7 @@ const resp = await directusGet<DirectusListResp>(listQuery);
 const totalQuery =
   `/items/news?aggregate[count]=id` +
   `&filter[status][_eq]=published` +
-  `&filter[category][_eq]=${encodeURIComponent(ABF2_CATEGORY)}`;
+  categoryFilter;
 
 const totalResp = await directusGet<{ data: any[] }>(totalQuery);
 
@@ -127,6 +145,12 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
             <p class="text-white/65 mt-3 max-w-2xl">
               Music, releases, events and everything happening on The Hits Frequency.
             </p>
+
+            <div class="mt-5 flex items-center gap-2 flex-wrap">
+              <a class={`catPill ${selectedCat === "all" ? "active" : ""}`} href={linkWithCat("all")}>All</a>
+              <a class={`catPill ${selectedCat === "abf2" ? "active" : ""}`} href={linkWithCat("abf2")}>ABF 2</a>
+              <a class={`catPill ${selectedCat === "music" ? "active" : ""}`} href={linkWithCat("music")}>Music</a>
+            </div>
           </div>
 
           <!-- (menu Year retiré) -->
@@ -144,17 +168,23 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
           {resp.data.map((post) => {
             const dateLabel = fmtDate(post.published_at || post.date_created);
             const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
+            const category = String(post.category || "").trim().toLowerCase();
+            const isABF2News = category === "abf2";
+            const displayCategory =
+              isABF2News ? "ABF 2" :
+              category === "music" ? "MUSIC" :
+              "RADIO ABF";
+            const newsHref = `/abf2/news/${post.slug}`;
+
             return (
-              <a href={`/abf2/news/${post.slug}`} class="newsCard group">
+              <a href={newsHref} class="newsCard group">
                 <div class="newsMedia">
                   {cover ? <img src={cover} alt="" class="newsImg" loading="lazy" decoding="async" /> : null}
                   <div class="newsShade"></div>
                   <div class="newsMeta">
-                    {post.category ? (
-                      <div class={`newsCategory ${post.category}`}>
-                        {post.category}
-                      </div>
-                    ) : null}
+                    <div class={`newsCategory ${isABF2News ? "is-abf2" : "is-radio"}`}>
+                      {displayCategory}
+                    </div>
                     <div class="newsDate">{dateLabel || ""}</div>
                     <div class="newsTitle">{post.title}</div>
                   </div>
@@ -224,6 +254,38 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       max-width: 72rem;
       margin-left: auto;
       margin-right: auto;
+    }
+
+
+    .catPill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.72);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: .18s ease;
+    }
+
+    .catPill:hover {
+      color: #fff;
+      border-color: rgba(255,49,80,.35);
+      background: rgba(255,49,80,.08);
+    }
+
+    .catPill.active {
+      color: #fff;
+      border-color: rgba(255,49,80,.48);
+      background: rgba(255,49,80,.16);
+      box-shadow: 0 8px 24px rgba(255,49,80,.10);
     }
 
     /* ── GRANDE CARD ── */
@@ -331,6 +393,12 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
     }
     
     
+    .newsCategory.is-radio {
+      background: rgba(47,194,255,.12);
+      border-color: rgba(47,194,255,.35);
+      color: rgba(183,235,255,.98);
+    }
+
     .newsDate{
       font-size:11px;
       color: rgba(255,255,255,.65);

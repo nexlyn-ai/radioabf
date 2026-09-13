@@ -25,7 +25,6 @@ try {
   const resp = await directusGet<NewsResp>(
     `/items/news?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
-      `&filter[category][_eq]=${encodeURIComponent("abf2")}` +
       `&sort=-published_at,-date_created&limit=3`
   );
 
@@ -211,12 +210,12 @@ const fmtDate = (iso?: string | null) => {
 
       <div class="abf2-section-title">
         <div>
-          <div class="abf2-kicker">ABF 2 stories</div>
+          <div class="abf2-kicker">ABF Network stories</div>
           <h2>Latest News</h2>
         </div>
 
         <a href="/abf2/news" class="abf2-text-link">
-          All ABF 2 news →
+          All network news →
         </a>
       </div>
 
@@ -235,9 +234,25 @@ const fmtDate = (iso?: string | null) => {
 
               const date = fmtDate(post.published_at || post.date_created);
 
+              const category = String(post.category || "").trim().toLowerCase();
+              const isABF2News = category === "abf2";
+              const isMusicNews = category === "music";
+
+              const newsHref = `/abf2/news/${post.slug}`;
+
+              const newsTag = isABF2News
+                ? "ABF 2"
+                : isMusicNews
+                  ? "MUSIC"
+                  : "RADIO ABF";
+
+              const fallbackLogo = isABF2News
+                ? "/logo-abf2.png"
+                : "/logo-abf.png";
+
               return (
                 <a
-                  href={`/abf2/news/${post.slug}`}
+                  href={newsHref}
                   class="abf2-news-card"
                 >
                   <div class="abf2-news-cover">
@@ -249,18 +264,20 @@ const fmtDate = (iso?: string | null) => {
                         decoding="async"
                       />
                     ) : (
-                      <div class="abf2-news-fallback">
-                        <img src="/logo-abf2.png" alt="ABF 2" />
+                      <div class={`abf2-news-fallback ${isABF2News ? "" : "is-radio"}`}>
+                        <img src={fallbackLogo} alt={isABF2News ? "ABF 2" : "Radio ABF"} />
                       </div>
                     )}
 
                     <div class="abf2-news-shade"></div>
-                    <span class="abf2-news-tag">ABF 2</span>
+                    <span class={`abf2-news-tag ${isABF2News ? "is-abf2" : "is-radio"}`}>
+                      {newsTag}
+                    </span>
                   </div>
 
                   <div class="abf2-news-copy">
                     <div class="abf2-news-date">{date}</div>
-                    <h3>{post.title || "ABF 2 News"}</h3>
+                    <h3>{post.title || (isABF2News ? "ABF 2 News" : "Radio ABF News")}</h3>
                     <p>{post.excerpt || ""}</p>
                     <span class="abf2-news-read">Read more →</span>
                   </div>
@@ -270,7 +287,7 @@ const fmtDate = (iso?: string | null) => {
           </div>
         ) : (
           <div class="abf2-empty-card">
-            No ABF 2 news published yet.
+            No network news published yet.
           </div>
         )
       }
@@ -1015,6 +1032,18 @@ const fmtDate = (iso?: string | null) => {
       font-size: 9px;
       font-weight: 900;
       letter-spacing: .11em;
+    }
+
+    .abf2-news-tag.is-radio {
+      border-color: rgba(47,194,255,.34);
+      background: rgba(5,48,72,.78);
+      color: #9fe7ff;
+    }
+
+    .abf2-news-fallback.is-radio {
+      background:
+        radial-gradient(circle at 50% 30%, rgba(47,194,255,.20), transparent 50%),
+        #07131d;
     }
 
     .abf2-news-copy {

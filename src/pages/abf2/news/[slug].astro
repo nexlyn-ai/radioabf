@@ -31,7 +31,6 @@ try {
     `/items/news?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
       `&filter[slug][_eq]=${encodeURIComponent(safeSlug)}` +
-      `&filter[category][_eq]=${encodeURIComponent("abf2")}` +
       `&limit=1`
   );
   item = resp?.data?.[0] ?? null;
@@ -50,6 +49,13 @@ const fmtDate = (iso?: string | null) => {
 };
 
 const dateLabel = fmtDate(item.published_at || item.date_created);
+
+const category = String(item.category || "").trim().toLowerCase();
+const isABF2News = category === "abf2";
+const displayCategory =
+  isABF2News ? "ABF 2" :
+  category === "music" ? "MUSIC" :
+  "RADIO ABF";
 
 const coverUrl = item.cover
   ? directusAsset(item.cover, { w: 1400, h: 900, fit: "cover", quality: 88 })
@@ -83,7 +89,9 @@ const canonicalPath = `/abf2/news/${item.slug}`;
           <div class="pillRow">
             <a href="/abf2/news" class="pillBack">← Back</a>
 
-            {item.category ? <span class="pillCat">{item.category}</span> : null}
+            <span class={`pillCat ${isABF2News ? "is-abf2" : "is-radio"}`}>
+              {displayCategory}
+            </span>
 
             {dateLabel ? <span class="pillDate">{dateLabel}</span> : null}
           </div>
@@ -288,6 +296,11 @@ const canonicalPath = `/abf2/news/${item.slug}`;
     .pillBack:hover{ background:rgba(255,255,255,.10); color:rgba(255,255,255,.92); }
     .pillCat:hover{ transform: translateY(-1px); }
     .pillCat{ border-color:rgba(255,49,80,.35); background:rgba(255,49,80,.10); color:rgba(255,200,210,.95); }
+    .pillCat.is-radio{
+      border-color:rgba(47,194,255,.38);
+      background:rgba(47,194,255,.10);
+      color:rgba(183,235,255,.98);
+    }
 .heroTitle{
       margin:0;
       font-weight:900;
