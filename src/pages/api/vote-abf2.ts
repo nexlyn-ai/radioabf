@@ -1,0 +1,1450 @@
+// src/pages/api/vote-abf2.ts
+import type { APIRoute } from "astro";
+
+export const prerender = false;
+
+const DIRECTUS_URL =
+  import.meta.env.DIRECTUS_URL || process.env.DIRECTUS_URL || "";
+
+const TOKEN =
+  import.meta.env.DIRECTUS_VOTES_TOKEN ||
+  process.env.DIRECTUS_VOTES_TOKEN ||
+  "";
+
+const PUBLIC_SITE_URL =
+  import.meta.env.PUBLIC_SITE_URL ||
+  process.env.PUBLIC_SITE_URL ||
+  "https://radioabf.com";
+
+// ============================================================
+// ABF 2
+// ============================================================
+
+const COLLECTION = "votes_abf2";
+const TRACKS_COLLECTION = "tracks";
+
+const ENABLE_DEEZER_FALLBACK =
+  (
+    import.meta.env.ENABLE_DEEZER_FALLBACK ||
+    process.env.ENABLE_DEEZER_FALLBACK ||
+    "true"
+  ) === "true";
+
+const DEEZER_TIMEOUT_MS = 2500;
+
+// ----------------------
+// Response helpers
+// ----------------------
+
+function json(body: any, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
+function bad(status: number, message: string) {
+  return json(
+    {
+      ok: false,
+      error: message,
+    },
+    status
+  );
+}
+
+function assertEnv() {
+  if (!DIRECTUS_URL) {
+    throw new Error("DIRECTUS_URL is missing");
+  }
+
+  if (!TOKEN) {
+    throw new Error("DIRECTUS_VOTES_TOKEN is missing");
+  }
+}
+
+function dUrl(path: string) {
+  return `${DIRECTUS_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+async function dFetch(path: string, init?: RequestInit) {
+  assertEnv();
+
+  const res = await fetch(dUrl(path), {
+    ...init,
+
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${TOKEN}`,
+      ...(init?.headers || {}),
+    },
+
+    cache: "no-store",
+  });
+
+  return res;
+}
+
+// ----------------------
+// Small sanitizers
+// ----------------------
+
+function cleanText(v: unknown) {
+  const s = String(v ?? "").trim();
+
+  if (!s) return "";
+
+  if (/^undefined$/i.test(s)) return "";
+  if (/^null$/i.test(s)) return "";
+
+  return s;
+}
+
+function safeCount(v: unknown, fallback = 0) {
+  const n = Number(v);
+
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function stripTrailingSlash(s: string) {
+  return String(s || "").replace(/\/+$/, "");
+}
+
+function publicAssetBase() {
+  return stripTrailingSlash(PUBLIC_SITE_URL);
+}
+
+function normalizePublicCoverUrl(input?: string | null) {
+  const raw = cleanText(input);
+
+  if (!raw) return "";
+
+  try {
+    if (raw.startsWith("/assets/")) {
+      return `${publicAssetBase()}${raw}`;
+    }
+
+    if (raw.startsWith("assets/")) {
+      return `${publicAssetBase()}/${raw}`;
+    }
+
+    const u = new URL(raw);
+
+    if (u.pathname.startsWith("/assets/")) {
+      return `${publicAssetBase()}${u.pathname}${u.search}`;
+    }
+
+    return u.toString();
+  } catch {
+    if (raw.startsWith("/")) {
+      return `${publicAssetBase()}${raw}`;
+    }
+
+    return raw;
+  }
+}
+
+// ----------------------
+// Week helpers
+// ----------------------
+
+// ISO week id: "YYYY-W07"
+function isoWeekId(d = new Date()) {
+  const date = new Date(
+    Date.UTC(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate()
+    )
+  );
+
+  const dayNum = date.getUTCDay() || 7;
+
+  date.setUTCDate(
+    date.getUTCDate() + 4 - dayNum
+  );
+
+  const yearStart = new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      0,
+      1
+    )
+  );
+
+  const weekNo = Math.ceil(
+    (
+      (date.getTime() - yearStart.getTime()) /
+        86400000 +
+      1
+    ) / 7
+  );
+
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(
+    2,
+    "0"
+  )}`;
+}
+
+function pickWeek(input?: string | null) {
+  const w = cleanText(input);
+
+  return w || isoWeekId();
+}
+
+function todayISO() {
+  const d = new Date();
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+// ----------------------
+// Track helpers
+// ----------------------
+
+function joinTrackKey(
+  artist?: string | null,
+  title?: string | null
+) {
+  const a = cleanText(artist);
+  const t = cleanText(title);
+
+  if (a && t) return `${a} - ${t}`;
+  if (a) return a;
+  if (t) return t;
+
+  return "";
+}
+
+// Normalize track_key so we don't store duplicates
+// with different casing/spaces/quotes
+function normTrackKey(k: string) {
+  const s = cleanText(k);
+
+  if (!s) return "";
+
+  return s
+    .toLowerCase()
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[“”"']/g, "")
+    .trim()
+    .replace(/^undefined\s*-\s*/i, "")
+    .replace(/\s*-\s*undefined$/i, "")
+    .trim();
+}
+
+function splitFromTrackKey(track_key: string) {
+  let s = cleanText(track_key);
+
+  if (!s) {
+    return {
+      artist: "",
+      title: "",
+    };
+  }
+
+  s = s
+    .replace(/^undefined\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const idx = s.indexOf(" - ");
+
+  if (idx === -1) {
+    return {
+      artist: cleanText(s),
+      title: "",
+    };
+  }
+
+  return {
+    artist: cleanText(s.slice(0, idx)),
+    title: cleanText(s.slice(idx + 3)),
+  };
+}
+
+function stripMixSuffix(title: string) {
+  return String(title || "")
+    .replace(
+      /\((original|extended|radio|club|edit|mix)[^)]+\)/gi,
+      ""
+    )
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function cleanDeezerQueryPart(s: string) {
+  return String(s || "")
+    .replace(/\[(.*?)\]/g, " ")
+    .replace(/\((.*?)\)/g, " ")
+    .replace(/\bfeat\.?\b/gi, " ")
+    .replace(/\bft\.?\b/gi, " ")
+    .replace(/\bvs\.?\b/gi, " ")
+    .replace(/\s+&\s+/g, " ")
+    .replace(/\s+and\s+/gi, " ")
+    .replace(/[']/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+// ----------------------
+// ABF CLUB guard
+// ----------------------
+
+function isABFClubTrackKey(track_key_raw: string) {
+  const raw = cleanText(track_key_raw);
+
+  if (!raw) return false;
+
+  if (/^abf\s*club\b/i.test(raw)) {
+    return true;
+  }
+
+  const sp = splitFromTrackKey(raw);
+
+  if (/^abf\s*club\b/i.test(cleanText(sp.artist))) {
+    return true;
+  }
+
+  return false;
+}
+
+// ----------------------
+// Simple deterministic IP hash
+// ----------------------
+
+async function ipHash(ip: string) {
+  const enc = new TextEncoder().encode(
+    ip || "0.0.0.0"
+  );
+
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    enc
+  );
+
+  const arr = Array.from(
+    new Uint8Array(buf)
+  );
+
+  return arr
+    .map((b) =>
+      b.toString(16).padStart(2, "0")
+    )
+    .join("")
+    .slice(0, 32);
+}
+
+function getClientIp(request: Request) {
+  const xff =
+    request.headers.get("x-forwarded-for") ||
+    "";
+
+  const first =
+    xff.split(",")[0]?.trim();
+
+  return (
+    first ||
+    request.headers.get("x-real-ip") ||
+    "0.0.0.0"
+  );
+}
+
+// ----------------------
+// Cover resolution
+// ----------------------
+
+function fileUrl(fileId?: string | null) {
+  if (!fileId) return "";
+
+  return `${publicAssetBase()}/assets/${fileId}`;
+}
+
+async function fetchJsonWithTimeout(
+  url: string,
+  timeoutMs: number
+) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(
+    () => controller.abort(),
+    timeoutMs
+  );
+
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+
+      signal: controller.signal,
+
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          "RadioABF/1.0 (+https://radioabf.com)",
+      },
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ----------------------
+// Deezer micro-cache
+// ----------------------
+
+type DeezerCacheEntry = {
+  url: string;
+  exp: number;
+};
+
+const DEEZER_CACHE_TTL_MS =
+  6 * 60 * 60 * 1000;
+
+// ABF2-specific Deezer vote cache
+const deezerMemCache: Map<
+  string,
+  DeezerCacheEntry
+> =
+  (globalThis as any).__abf2DeezerVoteCache ||
+  new Map();
+
+(globalThis as any).__abf2DeezerVoteCache =
+  deezerMemCache;
+
+async function fetchDeezerCover(
+  artist: string,
+  title: string
+): Promise<string> {
+  if (!ENABLE_DEEZER_FALLBACK) {
+    return "";
+  }
+
+  const safeArtist =
+    cleanText(artist);
+
+  const safeTitle =
+    cleanText(title);
+
+  const key = normTrackKey(
+    joinTrackKey(
+      safeArtist,
+      safeTitle
+    )
+  );
+
+  if (!key) {
+    return "";
+  }
+
+  const now = Date.now();
+
+  const hit =
+    deezerMemCache.get(key);
+
+  if (hit && hit.exp > now) {
+    return hit.url || "";
+  }
+
+  let cover = "";
+
+  try {
+    const artistClean =
+      cleanDeezerQueryPart(
+        safeArtist
+      );
+
+    const titleClean =
+      cleanDeezerQueryPart(
+        safeTitle
+      );
+
+    const titleNoMix =
+      cleanDeezerQueryPart(
+        stripMixSuffix(
+          safeTitle
+        )
+      );
+
+    const queries = [
+      `${safeArtist} ${safeTitle}`,
+      `${artistClean} ${titleClean}`,
+      `${artistClean} ${titleNoMix}`,
+      titleClean,
+      titleNoMix,
+    ]
+      .map((s) =>
+        String(s || "").trim()
+      )
+      .filter(Boolean);
+
+    for (
+      const qRaw of [
+        ...new Set(queries),
+      ]
+    ) {
+      const q =
+        encodeURIComponent(qRaw);
+
+      const url =
+        `https://api.deezer.com/search?q=${q}`;
+
+      const j =
+        await fetchJsonWithTimeout(
+          url,
+          DEEZER_TIMEOUT_MS
+        );
+
+      const rows =
+        Array.isArray(j?.data)
+          ? j.data
+          : [];
+
+      if (!rows.length) {
+        continue;
+      }
+
+      const wantArtist =
+        artistClean.toLowerCase();
+
+      const best =
+        rows.find(
+          (item: any) => {
+            const itemArtist =
+              cleanDeezerQueryPart(
+                String(
+                  item?.artist?.name ||
+                    ""
+                )
+              ).toLowerCase();
+
+            return (
+              (wantArtist &&
+                itemArtist.includes(
+                  wantArtist
+                )) ||
+              (itemArtist &&
+                wantArtist.includes(
+                  itemArtist
+                ))
+            );
+          }
+        ) || rows[0];
+
+      cover = String(
+        best?.album?.cover_xl ||
+          best?.album?.cover_big ||
+          best?.album?.cover_medium ||
+          best?.album?.cover ||
+          ""
+      ).trim();
+
+      if (cover) {
+        break;
+      }
+    }
+  } catch {}
+
+  deezerMemCache.set(key, {
+    url: cover,
+
+    exp:
+      now +
+      (
+        cover
+          ? DEEZER_CACHE_TTL_MS
+          : 30 * 60 * 1000
+      ),
+  });
+
+  return cover;
+}
+
+// ----------------------
+// Track metadata
+// ----------------------
+
+type TrackRow = {
+  id: string | number;
+  track_key: string;
+
+  artist?: string | null;
+  title?: string | null;
+
+  cover_art: string | null;
+  cover_url?: string | null;
+  cover_override?: boolean | null;
+};
+
+// Robust:
+// tracks.track_key are already normalized.
+// No _in, safe with commas.
+// Uses OR filters.
+async function getTracksByKeys(
+  keys: string[]
+): Promise<
+  Map<string, TrackRow>
+> {
+  const map =
+    new Map<string, TrackRow>();
+
+  const clean = (keys || [])
+    .map(normTrackKey)
+    .filter(Boolean);
+
+  if (!clean.length) {
+    return map;
+  }
+
+  const slice =
+    clean.slice(0, 200);
+
+  const params =
+    new URLSearchParams();
+
+  params.set(
+    "fields",
+    [
+      "id",
+      "track_key",
+      "artist",
+      "title",
+      "cover_art",
+      "cover_art.id",
+      "cover_url",
+      "cover_override",
+    ].join(",")
+  );
+
+  params.set(
+    "limit",
+    String(
+      Math.min(
+        500,
+        slice.length
+      )
+    )
+  );
+
+  slice.forEach(
+    (tk, i) => {
+      params.set(
+        `filter[_or][${i}][track_key][_eq]`,
+        tk
+      );
+    }
+  );
+
+  const res =
+    await dFetch(
+      `/items/${TRACKS_COLLECTION}?${params.toString()}`
+    );
+
+  if (!res.ok) {
+    return map;
+  }
+
+  const j =
+    (await res
+      .json()
+      .catch(() => ({}))) as any;
+
+  const rows =
+    Array.isArray(j?.data)
+      ? j.data
+      : [];
+
+  for (const r of rows) {
+    const normalized =
+      normTrackKey(
+        r?.track_key || ""
+      );
+
+    if (!normalized) {
+      continue;
+    }
+
+    const coverVal =
+      r?.cover_art;
+
+    const coverId =
+      typeof coverVal ===
+      "string"
+        ? coverVal
+        : coverVal?.id
+          ? String(
+              coverVal.id
+            )
+          : "";
+
+    map.set(
+      normalized,
+      {
+        id: r?.id,
+
+        track_key:
+          cleanText(
+            r?.track_key
+          ),
+
+        artist:
+          cleanText(
+            r?.artist
+          ) || null,
+
+        title:
+          cleanText(
+            r?.title
+          ) || null,
+
+        cover_art:
+          coverId || null,
+
+        cover_url:
+          cleanText(
+            r?.cover_url
+          ) || null,
+
+        cover_override:
+          r?.cover_override ===
+          true,
+      }
+    );
+  }
+
+  return map;
+}
+
+function resolveTrackCover(
+  trow?: TrackRow | null
+) {
+  if (!trow) {
+    return "";
+  }
+
+  const assetUrl =
+    trow.cover_art
+      ? fileUrl(
+          trow.cover_art
+        )
+      : "";
+
+  const manualUrl =
+    normalizePublicCoverUrl(
+      trow.cover_url ||
+        ""
+    );
+
+  if (
+    trow.cover_override ===
+    true
+  ) {
+    return (
+      assetUrl ||
+      manualUrl ||
+      ""
+    );
+  }
+
+  return (
+    assetUrl ||
+    manualUrl ||
+    ""
+  );
+}
+
+// ----------------------
+// Server cache
+// GET /api/vote-abf2
+// ----------------------
+
+type VoteTopItem = {
+  track_key: string;
+
+  artist: string;
+  title: string;
+
+  count: number;
+
+  cover_art: string | null;
+  cover_url: string;
+};
+
+type VoteTopPayload = {
+  ok: true;
+
+  week: string;
+
+  top: VoteTopItem[];
+};
+
+const VOTE_RESPONSE_CACHE_TTL_MS =
+  30000;
+
+// ABF2-specific response cache
+const voteResponseCache: Map<
+  string,
+  {
+    exp: number;
+    payload: VoteTopPayload;
+  }
+> =
+  (globalThis as any)
+    .__abf2VoteResponseCache ||
+  new Map();
+
+// ABF2-specific inflight cache
+const voteInflightCache: Map<
+  string,
+  Promise<VoteTopPayload>
+> =
+  (globalThis as any)
+    .__abf2VoteInflightCache ||
+  new Map();
+
+(globalThis as any)
+  .__abf2VoteResponseCache =
+  voteResponseCache;
+
+(globalThis as any)
+  .__abf2VoteInflightCache =
+  voteInflightCache;
+
+function clonePayload<T>(
+  value: T
+): T {
+  return JSON.parse(
+    JSON.stringify(value)
+  );
+}
+
+async function buildTopWeekPayload(
+  week: string
+): Promise<VoteTopPayload> {
+  // 1) Read votes_abf2 rows
+
+  const fields = [
+    "week",
+    "track_key",
+    "count",
+  ].join(",");
+
+  const res =
+    await dFetch(
+      `/items/${COLLECTION}?fields=${encodeURIComponent(
+        fields
+      )}` +
+        `&filter[week][_eq]=${encodeURIComponent(
+          week
+        )}` +
+        `&limit=2000`
+    );
+
+  if (!res.ok) {
+    const txt =
+      await res
+        .text()
+        .catch(() => "");
+
+    throw new Error(
+      `Directus GET failed: ${txt}`
+    );
+  }
+
+  const data =
+    (await res.json()) as {
+      data?: any[];
+    };
+
+  const rows =
+    Array.isArray(data?.data)
+      ? data.data
+      : [];
+
+  // 2) Aggregate by normalized track_key
+
+  const map =
+    new Map<
+      string,
+      {
+        track_key: string;
+        count: number;
+      }
+    >();
+
+  for (const r of rows) {
+    const raw =
+      cleanText(
+        r?.track_key
+      );
+
+    if (!raw) {
+      continue;
+    }
+
+    if (
+      isABFClubTrackKey(
+        raw
+      )
+    ) {
+      continue;
+    }
+
+    const nk =
+      normTrackKey(raw);
+
+    if (!nk) {
+      continue;
+    }
+
+    const c =
+      safeCount(
+        r?.count,
+        1
+      ) || 1;
+
+    const prev =
+      map.get(nk);
+
+    if (!prev) {
+      map.set(
+        nk,
+        {
+          track_key:
+            raw,
+          count: c,
+        }
+      );
+    } else {
+      prev.count += c;
+    }
+  }
+
+  const topRaw =
+    Array.from(
+      map.entries()
+    )
+      .map(
+        ([nk, v]) => ({
+          nk,
+          ...v,
+        })
+      )
+      .sort(
+        (a, b) =>
+          safeCount(
+            b.count
+          ) -
+          safeCount(
+            a.count
+          )
+      );
+
+  // 3) Fetch shared tracks
+  // to resolve covers / artist / title
+
+  const trackKeyList =
+    topRaw.map(
+      (x) => x.nk
+    );
+
+  const tracksByKey =
+    await getTracksByKeys(
+      trackKeyList
+    );
+
+  // 4) Build response
+
+  const top =
+    await Promise.all(
+      topRaw.map(
+        async (row) => {
+          const tkNorm =
+            row.nk;
+
+          const trow =
+            tracksByKey.get(
+              tkNorm
+            );
+
+          const displayTrackKey =
+            cleanText(
+              row.track_key
+            ) ||
+            tkNorm;
+
+          const split =
+            splitFromTrackKey(
+              displayTrackKey
+            );
+
+          const artist =
+            cleanText(
+              trow?.artist
+            ) ||
+            cleanText(
+              split.artist
+            );
+
+          const title =
+            cleanText(
+              trow?.title
+            ) ||
+            cleanText(
+              split.title
+            );
+
+          const cover_art =
+            trow?.cover_art ??
+            null;
+
+          let cover_url =
+            resolveTrackCover(
+              trow
+            );
+
+          if (
+            !cover_url &&
+            artist &&
+            title
+          ) {
+            cover_url =
+              normalizePublicCoverUrl(
+                await fetchDeezerCover(
+                  artist,
+                  title
+                )
+              );
+          }
+
+          return {
+            track_key:
+              displayTrackKey,
+
+            artist,
+
+            title,
+
+            count:
+              safeCount(
+                row.count
+              ),
+
+            cover_art,
+
+            cover_url,
+          };
+        }
+      )
+    );
+
+  return {
+    ok: true,
+    week,
+    top,
+  };
+}
+
+async function getTopWeekPayload(
+  week: string
+): Promise<VoteTopPayload> {
+  const key =
+    `week:${week}`;
+
+  const now =
+    Date.now();
+
+  const cached =
+    voteResponseCache.get(
+      key
+    );
+
+  if (
+    cached &&
+    cached.exp > now
+  ) {
+    return clonePayload(
+      cached.payload
+    );
+  }
+
+  const inflight =
+    voteInflightCache.get(
+      key
+    );
+
+  if (inflight) {
+    return clonePayload(
+      await inflight
+    );
+  }
+
+  const promise =
+    buildTopWeekPayload(
+      week
+    )
+      .then(
+        (payload) => {
+          voteResponseCache.set(
+            key,
+            {
+              exp:
+                Date.now() +
+                VOTE_RESPONSE_CACHE_TTL_MS,
+
+              payload:
+                clonePayload(
+                  payload
+                ),
+            }
+          );
+
+          return payload;
+        }
+      )
+      .finally(
+        () => {
+          voteInflightCache.delete(
+            key
+          );
+        }
+      );
+
+  voteInflightCache.set(
+    key,
+    promise
+  );
+
+  return clonePayload(
+    await promise
+  );
+}
+
+// ============================================================
+// GET /api/vote-abf2?week=YYYY-WNN
+// week optional
+// ============================================================
+
+export const GET: APIRoute =
+  async ({ url }) => {
+    try {
+      const week =
+        pickWeek(
+          url.searchParams.get(
+            "week"
+          )
+        );
+
+      const debug =
+        url.searchParams.get(
+          "debug"
+        ) === "1";
+
+      if (debug) {
+        const payload =
+          await getTopWeekPayload(
+            week
+          );
+
+        return json({
+          ok: true,
+
+          week,
+
+          debug: {
+            cache_ttl_ms:
+              VOTE_RESPONSE_CACHE_TTL_MS,
+
+            items:
+              payload.top.length,
+
+            sample_keys:
+              payload.top
+                .slice(0, 20)
+                .map(
+                  (x) =>
+                    x.track_key
+                ),
+          },
+        });
+      }
+
+      const payload =
+        await getTopWeekPayload(
+          week
+        );
+
+      return json(
+        payload
+      );
+    } catch (e: any) {
+      return bad(
+        500,
+        e?.message ||
+          "Server error"
+      );
+    }
+  };
+
+// ============================================================
+// POST /api/vote-abf2
+//
+// Body:
+// {
+//   week?,
+//   track_key,
+//   artist?,
+//   title?
+// }
+// ============================================================
+
+export const POST: APIRoute =
+  async ({ request }) => {
+    try {
+      const body =
+        await request
+          .json()
+          .catch(
+            () => null
+          );
+
+      const week =
+        pickWeek(
+          body?.week
+        );
+
+      const bodyTrackKey =
+        cleanText(
+          body?.track_key
+        );
+
+      const bodyArtist =
+        cleanText(
+          body?.artist
+        );
+
+      const bodyTitle =
+        cleanText(
+          body?.title
+        );
+
+      const reconstructedTrackKey =
+        joinTrackKey(
+          bodyArtist,
+          bodyTitle
+        );
+
+      const track_key_raw =
+        bodyTrackKey ||
+        reconstructedTrackKey;
+
+      if (!track_key_raw) {
+        return bad(
+          400,
+          "Missing track_key"
+        );
+      }
+
+      // Keep same ABF CLUB protection
+      if (
+        isABFClubTrackKey(
+          track_key_raw
+        )
+      ) {
+        return json(
+          {
+            ok: false,
+
+            error:
+              "Voting is disabled for ABF CLUB shows.",
+
+            reason:
+              "blocked",
+          },
+          403
+        );
+      }
+
+      const track_key =
+        normTrackKey(
+          track_key_raw
+        );
+
+      if (!track_key) {
+        return bad(
+          400,
+          "Invalid track_key"
+        );
+      }
+
+      const ip =
+        getClientIp(
+          request
+        );
+
+      const iph =
+        await ipHash(
+          ip
+        );
+
+      const vote_day =
+        todayISO();
+
+      // Check if this IP already voted
+      // for this title today
+
+      const checkFields =
+        ["id"].join(",");
+
+      const checkRes =
+        await dFetch(
+          `/items/${COLLECTION}?fields=${encodeURIComponent(
+            checkFields
+          )}` +
+            `&filter[week][_eq]=${encodeURIComponent(
+              week
+            )}` +
+            `&filter[vote_day][_eq]=${encodeURIComponent(
+              vote_day
+            )}` +
+            `&filter[ip_hash][_eq]=${encodeURIComponent(
+              iph
+            )}` +
+            `&filter[track_key][_eq]=${encodeURIComponent(
+              track_key
+            )}` +
+            `&limit=1`
+        );
+
+      if (!checkRes.ok) {
+        const txt =
+          await checkRes
+            .text()
+            .catch(
+              () => ""
+            );
+
+        return bad(
+          checkRes.status,
+
+          `Directus check failed: ${txt}`
+        );
+      }
+
+      const checkJson =
+        (await checkRes
+          .json()
+          .catch(
+            () => ({})
+          )) as any;
+
+      const already =
+        Array.isArray(
+          checkJson?.data
+        ) &&
+        checkJson.data.length >
+          0;
+
+      if (already) {
+        return json(
+          {
+            ok: false,
+
+            error:
+              "You already voted for this track today.",
+
+            reason:
+              "cooldown",
+          },
+          409
+        );
+      }
+
+      // Insert vote in votes_abf2
+
+      const res =
+        await dFetch(
+          `/items/${COLLECTION}`,
+          {
+            method:
+              "POST",
+
+            headers: {
+              "content-type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify(
+                {
+                  week,
+
+                  track_key,
+
+                  ip_hash:
+                    iph,
+
+                  vote_day,
+
+                  count: 1,
+                }
+              ),
+          }
+        );
+
+      if (!res.ok) {
+        const txt =
+          await res
+            .text()
+            .catch(
+              () => ""
+            );
+
+        return bad(
+          res.status,
+
+          `Directus POST failed: ${txt}`
+        );
+      }
+
+      // Invalidate ABF2 cache
+      // after successful vote
+
+      voteResponseCache.delete(
+        `week:${week}`
+      );
+
+      voteInflightCache.delete(
+        `week:${week}`
+      );
+
+      return json({
+        ok: true,
+
+        week,
+
+        track_key,
+      });
+    } catch (e: any) {
+      return bad(
+        500,
+        e?.message ||
+          "Server error"
+      );
+    }
+  };

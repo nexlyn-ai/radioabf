@@ -539,6 +539,167 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         background: rgba(255,255,255,0.10);
         transform: translateY(-1px);
       }
+	  
+	/* =========================================================
+   ABF 2 GLOBAL SKIN
+   Activated only when html has class abf2-theme
+   ========================================================= */
+
+html.abf2-theme input[type="range"] {
+  accent-color: #ff3150;
+}
+
+
+/* HEADER */
+
+html.abf2-theme #abfBrandLogo {
+  filter:
+    drop-shadow(0 0 18px rgba(255,49,80,.55));
+}
+
+html.abf2-theme #siteHeader .bg-cyan-400\/20 {
+  background-color: rgba(255,49,80,.20) !important;
+}
+
+html.abf2-theme #siteHeader .border-cyan-400\/25 {
+  border-color: rgba(255,49,80,.25) !important;
+}
+
+
+/* PLAYER COVER */
+
+html.abf2-theme .abfCoverFallback {
+  background:
+    radial-gradient(
+      120% 120% at 30% 20%,
+      rgba(255,49,80,.30),
+      rgba(150,0,30,.18) 45%,
+      rgba(30,5,12,1) 100%
+    ) !important;
+}
+
+
+/* PLAYER STATUS */
+
+html.abf2-theme #npStatus,
+html.abf2-theme #npStatusMobile,
+html.abf2-theme #fsStatus {
+  color: rgba(255,180,190,.95) !important;
+}
+
+
+/* PLAYER PLAY BUTTON */
+
+html.abf2-theme #playBtn {
+  box-shadow:
+    0 10px 30px rgba(255,49,80,.18) !important;
+}
+
+html.abf2-theme #playBtn:hover {
+  box-shadow:
+    0 14px 40px rgba(255,49,80,.28) !important;
+}
+
+
+/* LIVE BUTTON */
+
+html.abf2-theme .abfLiveBtn {
+  border-color: rgba(255,49,80,.25) !important;
+  background: rgba(255,49,80,.10) !important;
+  color: rgba(255,220,225,.95) !important;
+}
+
+html.abf2-theme .abfLiveBtn:hover {
+  background: rgba(255,49,80,.16) !important;
+}
+
+
+/* CASTING STATUS */
+
+html.abf2-theme .abfStatusCasting {
+  border-color: rgba(255,49,80,.45) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(150,0,30,.55),
+      rgba(255,49,80,.28)
+    ) !important;
+
+  color: rgba(255,220,225,.95) !important;
+}
+
+
+/* FULLSCREEN PLAY BUTTON */
+
+html.abf2-theme #fsPlay {
+  background:
+    linear-gradient(
+      90deg,
+      #9a001f,
+      #ff3150
+    ) !important;
+
+  box-shadow:
+    0 10px 28px rgba(255,49,80,.25) !important;
+}
+
+
+/* FOOTER */
+
+html.abf2-theme #siteFooter .text-cyan-200\/90 {
+  color: rgba(255,180,190,.95) !important;
+}
+
+html.abf2-theme #siteFooter .hover\:text-cyan-300:hover {
+  color: #ff3150 !important;
+}
+
+
+/* BACK TO TOP */
+
+html.abf2-theme #backToTop:hover {
+  color: #ff3150 !important;
+}
+
+
+/* MODALS / BUTTONS */
+
+html.abf2-theme .abfBtnPrimary {
+  border-color:
+    rgba(255,49,80,.35) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(150,0,30,.9),
+      rgba(255,49,80,.9)
+    ) !important;
+}
+
+
+/* SWITCH */
+
+html.abf2-theme .abfSwitch[data-on="true"] {
+  border-color:
+    rgba(255,49,80,.35) !important;
+
+  background:
+    rgba(255,49,80,.18) !important;
+}
+
+html.abf2-theme .abfSwitch[data-on="true"]::after {
+  background:
+    rgba(255,49,80,.95) !important;
+}  
+
+/* Dedication Send button — ABF 2 */
+html.abf2-theme #dedicationSubmitBtn {
+  background: linear-gradient(90deg, #91001d, #ff3150) !important;
+  background-image: linear-gradient(90deg, #91001d, #ff3150) !important;
+  box-shadow: 0 10px 25px rgba(255, 49, 80, .28) !important;
+}
+
     </style>
 
     <!-- ===================== GA4 STUB (Consent Mode default denied) ===================== -->
@@ -847,7 +1008,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
                 <div class="abfCover w-11 h-11 rounded-xl border border-white/10 overflow-hidden flex-none">
                   <img id="playerCover" class="hidden" alt="Current cover" />
                   <div id="playerCoverFallback" class="abfCoverFallback">
-                    <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+                 <img
+  id="playerFallbackLogo"
+  src="/logo-abf.png"
+  alt="ABF"
+  loading="lazy"
+  decoding="async"
+/>
                   </div>
                 </div>
 
@@ -1122,7 +1289,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
               <div class="abfCover aspect-square w-full max-w-[260px] sm:max-w-[400px] lg:max-w-[560px] mx-auto rounded-3xl border border-white/10 overflow-hidden relative">
                 <img id="fsCover" class="hidden" alt="Current cover" />
                 <div id="fsCoverFallback" class="abfCoverFallback">
-                  <img src="/logo-abf.png" alt="ABF" loading="lazy" decoding="async" />
+               <img
+  id="fsFallbackLogo"
+  src="/logo-abf.png"
+  alt="ABF"
+  loading="lazy"
+  decoding="async"
+/>
                 </div>
               </div>
             </div>
@@ -1726,7 +1899,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             }
             const A = (window.ABF_FMT?.artist?.(a) || a);
             const T = (window.ABF_FMT?.title?.(t) || t);
-            const txt = `🔴 LIVE • ${A} — ${T} | RadioABF`;
+            const isABF2 = S.__station === "abf2";
+
+			const stationName = isABF2
+			? "ABF 2"
+			: "RadioABF";
+
+			const liveDot = isABF2
+				? "🔴"
+				: "🔵";
+
+			const txt = `${liveDot} LIVE • ${A} — ${T} | ${stationName}`;
             if (state.liveOn && state.liveText === txt) {
               setFavicon(state.favFlip ? svgLive : svgNormal);
               return;
@@ -1933,26 +2116,52 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
 
           analyser.getByteFrequencyData(freqData);
 
-          const targetBarWidth = 7;
-          const barCount = Math.max(1, Math.floor(W / targetBarWidth));
-          const realBarWidth = W / barCount;
+const targetBarWidth = 7;
+const barCount = Math.max(1, Math.floor(W / targetBarWidth));
+const realBarWidth = W / barCount;
 
-          for (let i = 0; i < barCount; i++) {
-            const x = i * realBarWidth;
-            const freqIndex = Math.floor((i / barCount) * freqData.length);
-            const v = (freqData[freqIndex] || 0) / 255;
-            const vv = Math.pow(v, 1.1);
-            const hh = vv * H;
-            const y = H - hh;
-            const g = vctx.createLinearGradient(0, y, 0, H);
-            g.addColorStop(0, "rgba(47,194,255,0.95)");
-            g.addColorStop(1, "rgba(20,92,143,0.85)");
-            vctx.fillStyle = g;
-            vctx.fillRect(Math.floor(x), y, Math.ceil(realBarWidth), hh);
-          }
+const isABF2 =
+  document.documentElement.classList.contains("abf2-theme");
 
-          vctx.fillStyle = "rgba(20,92,143,0.85)";
-          vctx.fillRect(W - 1, 0, 1, H);
+for (let i = 0; i < barCount; i++) {
+  const x = i * realBarWidth;
+  const freqIndex = Math.floor((i / barCount) * freqData.length);
+  const v = (freqData[freqIndex] || 0) / 255;
+  const vv = Math.pow(v, 1.1);
+  const hh = vv * H;
+  const y = H - hh;
+
+  const g = vctx.createLinearGradient(0, y, 0, H);
+
+  g.addColorStop(
+    0,
+    isABF2
+      ? "rgba(255,49,80,0.95)"
+      : "rgba(47,194,255,0.95)"
+  );
+
+  g.addColorStop(
+    1,
+    isABF2
+      ? "rgba(150,0,30,0.85)"
+      : "rgba(20,92,143,0.85)"
+  );
+
+  vctx.fillStyle = g;
+  vctx.fillRect(
+    Math.floor(x),
+    y,
+    Math.ceil(realBarWidth),
+    hh
+  );
+}
+
+vctx.fillStyle =
+  isABF2
+    ? "rgba(150,0,30,0.85)"
+    : "rgba(20,92,143,0.85)";
+
+vctx.fillRect(W - 1, 0, 1, H);
 
           let bassEnergy = 0;
           const bassBinCount = Math.max(10, Math.floor(analyser.frequencyBinCount * 0.04));
@@ -1990,8 +2199,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
             else vctx.lineTo(x, y);
           }
           vctx.lineWidth = 5;
-          vctx.strokeStyle = "rgba(47,194,255,0.25)";
-          vctx.stroke();
+
+vctx.strokeStyle =
+  isABF2
+    ? "rgba(255,49,80,0.25)"
+    : "rgba(47,194,255,0.25)";
+
+vctx.stroke();
           vctx.lineWidth = 2.5;
           vctx.strokeStyle = "rgba(255,255,255,0.95)";
           vctx.stroke();
@@ -2037,16 +2251,31 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf
         }
 
         // ========= SERVER NOW PLAYING =========
-        async function fetchServerNowPlaying(limit = 12){
-          try{
-            const res = await fetch(`/api/nowplaying?limit=${limit}`, { cache: "no-store" });
-            const data = await res.json().catch(()=> ({}));
-            if (!data?.ok) return { now: null, history: [] };
-            return { now: data.now || null, history: Array.isArray(data.history) ? data.history : [] };
-          }catch{
-            return { now: null, history: [] };
-          }
-        }
+     async function fetchServerNowPlaying(limit = 12){
+  try{
+    const endpoint =
+      S.__station === "abf2"
+        ? "/api/nowplaying-abf2"
+        : "/api/nowplaying";
+
+    const res = await fetch(`${endpoint}?limit=${limit}`, {
+      cache: "no-store"
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!data?.ok) {
+      return { now: null, history: [] };
+    }
+
+    return {
+      now: data.now || null,
+      history: Array.isArray(data.history) ? data.history : []
+    };
+  }catch{
+    return { now: null, history: [] };
+  }
+}
 
         async function fetchNowPlaying() {
           if (isPodcastMode()) return;
@@ -4114,11 +4343,12 @@ const onAstroNav = () => {
               Cancel
             </button>
             <button
-              type="submit"
-              class="px-6 py-3 rounded-2xl font-semibold bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition text-sm"
-            >
-              Send 🎤
-            </button>
+  id="dedicationSubmitBtn"
+  type="submit"
+  class="px-6 py-3 rounded-2xl font-semibold bg-gradient-to-r from-[#145C8F] to-[#2FC2FF] shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition text-sm"
+>
+  Send 🎤
+</button>
           </div>
 
           <div class="text-xs text-white/45 pt-1">

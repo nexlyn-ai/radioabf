@@ -1,0 +1,3005 @@
+---
+import Base from "./Base.astro";
+
+export const prerender = false;
+
+const {
+  title = "ABF 2 — Alternative Bass Fréquence | The Hits Frequency",
+  description = "ABF 2 — The Hits Frequency. Pop, rock, alternative, classics, 80s, 90s and today's hits.",
+  canonical,
+  image = "/og-image.jpg",
+} = Astro.props;
+---
+
+<Base
+  title={title}
+  description={description}
+  canonical={canonical}
+  image={image}
+>
+  <slot />
+
+  <style>
+    :root {
+      --abf2-red: #ff3150;
+      --abf2-red-soft: #ff7188;
+      --abf2-red-dark: #9e001f;
+      --abf2-bg: #05070b;
+    }
+
+    .abf2-page {
+      min-height: 100vh;
+      color: #fff;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(255,49,80,.10), transparent 25%),
+        radial-gradient(circle at 82% 38%, rgba(140,0,30,.06), transparent 30%),
+        #05070b;
+      overflow: hidden;
+    }
+
+    .abf2-shell {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .abf2-section {
+      padding: 40px 0;
+    }
+
+    .abf2-section-top {
+      padding-top: 34px;
+    }
+
+    .abf2-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px;
+      background: rgba(255,255,255,.025);
+      backdrop-filter: blur(12px);
+    }
+
+    .abf2-brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .abf2-brand-mini img {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 14px rgba(255,49,80,.28));
+    }
+
+    .abf2-brand-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+
+    .abf2-brand-claim {
+      margin-top: 2px;
+      color: var(--abf2-red);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .abf2-top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .abf2-primary-btn {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 17px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,49,80,.45);
+      background: linear-gradient(135deg, #9e001f, #ff3150);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(255,49,80,.16);
+      transition: .18s ease;
+    }
+
+    .abf2-primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 15px 36px rgba(255,49,80,.24);
+    }
+
+    .abf2-primary-btn.is-playing {
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.05),
+        0 14px 38px rgba(255,49,80,.28);
+    }
+
+    .abf2-live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 11px rgba(255,255,255,.8);
+    }
+
+    .abf2-primary-btn.is-playing .abf2-live-dot {
+      animation: abf2Pulse 1.35s ease-in-out infinite;
+    }
+
+    @keyframes abf2Pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .35; transform: scale(.75); }
+    }
+
+    .abf2-station-switch {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 14px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.03);
+      color: #fff;
+      text-decoration: none;
+      transition: .18s ease;
+    }
+
+    .abf2-station-switch:hover {
+      border-color: rgba(255,49,80,.28);
+      background: rgba(255,49,80,.055);
+    }
+
+    .abf2-station-switch strong,
+    .abf2-station-switch small {
+      display: block;
+    }
+
+    .abf2-station-switch strong {
+      font-size: 11px;
+    }
+
+    .abf2-station-switch small {
+      margin-top: 2px;
+      color: rgba(255,255,255,.42);
+      font-size: 9px;
+    }
+
+    .station-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex: none;
+    }
+
+    .station-dot-blue {
+      background: #2fc2ff;
+      box-shadow: 0 0 13px rgba(47,194,255,.75);
+    }
+
+    .station-dot-red {
+      background: #ff3150;
+      box-shadow: 0 0 13px rgba(255,49,80,.85);
+    }
+
+    .abf2-main-grid,
+    .abf2-sound-grid {
+      display: grid;
+      grid-template-columns: 1.45fr .85fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .abf2-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255,49,80,.055), transparent 35%),
+        linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.018));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 30px 70px rgba(0,0,0,.18);
+    }
+
+    .abf2-now-card,
+    .abf2-top-card,
+    .abf2-sound-card,
+    .abf2-network-card {
+      padding: 26px;
+    }
+
+    .abf2-card-head,
+    .abf2-section-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .abf2-kicker {
+      color: var(--abf2-red);
+      text-transform: uppercase;
+      letter-spacing: .20em;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .abf2-card-head h1,
+    .abf2-card-head h2,
+    .abf2-section-title h2,
+    .abf2-sound-card h2,
+    .abf2-network-card h2 {
+      margin: 6px 0 0;
+      font-size: clamp(1.7rem, 2.7vw, 2.55rem);
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .abf2-live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      color: #ffc8d2;
+      border: 1px solid rgba(255,49,80,.25);
+      background: rgba(255,49,80,.09);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+
+    .abf2-live-badge span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--abf2-red);
+      box-shadow: 0 0 11px rgba(255,49,80,.9);
+      animation: abf2Pulse 1.4s ease-in-out infinite;
+    }
+
+    .abf2-now-layout {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .abf2-cover {
+      position: relative;
+      flex: none;
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: #16090e;
+      box-shadow: 0 18px 48px rgba(0,0,0,.25);
+    }
+
+    .abf2-cover-main {
+      width: 190px;
+      height: 190px;
+    }
+
+    .abf2-cover-medium {
+      width: 76px;
+      height: 76px;
+      border-radius: 15px;
+    }
+
+    .abf2-cover-small {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+    }
+
+    .abf2-cover > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .abf2-cover-fallback {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 35% 25%, rgba(255,49,80,.24), transparent 42%),
+        #16090e;
+    }
+
+    .abf2-cover-fallback img {
+      width: 60%;
+      height: 60%;
+      object-fit: contain;
+      opacity: .88;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .abf2-now-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .abf2-now-artist {
+      font-size: clamp(1.7rem, 3vw, 2.65rem);
+      font-weight: 900;
+      letter-spacing: -.04em;
+      line-height: 1.04;
+      overflow-wrap: anywhere;
+    }
+
+    .abf2-now-title {
+      margin-top: 8px;
+      color: rgba(255,255,255,.63);
+      font-size: 1.08rem;
+      line-height: 1.4;
+    }
+
+    .abf2-now-time {
+      margin-top: 11px;
+      color: rgba(255,255,255,.40);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+    }
+
+    .abf2-now-actions {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .abf2-vote-btn {
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,49,80,.22);
+      background: rgba(255,49,80,.08);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .16s ease;
+    }
+
+    .abf2-vote-btn:hover {
+      border-color: rgba(255,49,80,.50);
+      background: rgba(255,49,80,.14);
+    }
+
+    .abf2-vote-btn:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    .abf2-text-link {
+      color: #ff7188;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .abf2-text-link:hover {
+      color: #ff9bad;
+    }
+
+    .abf2-inline-message {
+      margin-top: 11px;
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+    }
+
+    .abf2-week-badge {
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      color: rgba(255,255,255,.56);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .abf2-top1 {
+      display: grid;
+      grid-template-columns: 38px 76px minmax(0,1fr);
+      gap: 12px;
+      align-items: center;
+      margin-top: 24px;
+      padding: 13px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,49,80,.15);
+      background: rgba(255,49,80,.045);
+    }
+
+    .abf2-rank {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,49,80,.24);
+      color: #ff9aaa;
+      background: rgba(255,49,80,.08);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .abf2-top1-copy {
+      min-width: 0;
+    }
+
+    .abf2-top1-artist,
+    .abf2-top1-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .abf2-top1-artist {
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .abf2-top1-title {
+      margin-top: 4px;
+      color: rgba(255,255,255,.56);
+      font-size: 10px;
+    }
+
+    .abf2-top1-count {
+      margin-top: 7px;
+      color: #ff8295;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .abf2-mini-chart {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0;
+    }
+
+    .abf2-mini-chart li {
+      display: grid;
+      grid-template-columns: 26px minmax(0,1fr) auto;
+      gap: 9px;
+      align-items: center;
+      padding: 10px 1px;
+      border-top: 1px solid rgba(255,255,255,.05);
+    }
+
+    .abf2-mini-rank {
+      color: rgba(255,255,255,.34);
+      font-size: 9px;
+      font-weight: 900;
+    }
+
+    .abf2-mini-copy {
+      min-width: 0;
+    }
+
+    .abf2-mini-copy strong,
+    .abf2-mini-copy span {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .abf2-mini-copy strong {
+      font-size: 10px;
+    }
+
+    .abf2-mini-copy span {
+      margin-top: 2px;
+      color: rgba(255,255,255,.40);
+      font-size: 9px;
+    }
+
+    .abf2-mini-count {
+      color: #ff8295;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .abf2-empty {
+      margin-top: 17px;
+      color: rgba(255,255,255,.47);
+      font-size: 12px;
+    }
+
+    .abf2-empty-card {
+      padding: 26px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.022);
+      color: rgba(255,255,255,.48);
+      font-size: 12px;
+    }
+
+    .abf2-section-title {
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .abf2-last-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .abf2-last-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      padding: 12px;
+      border-radius: 17px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.022);
+    }
+
+    .abf2-last-copy {
+      min-width: 0;
+    }
+
+    .abf2-last-copy strong,
+    .abf2-last-copy span {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .abf2-last-copy strong {
+      font-size: 11px;
+    }
+
+    .abf2-last-copy span {
+      margin-top: 3px;
+      color: rgba(255,255,255,.44);
+      font-size: 9px;
+    }
+
+    .abf2-news-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 15px;
+    }
+
+    .abf2-news-card {
+      overflow: hidden;
+      border-radius: 21px;
+      border: 1px solid rgba(255,255,255,.075);
+      background: rgba(255,255,255,.022);
+      color: #fff;
+      text-decoration: none;
+      transition: .18s ease;
+    }
+
+    .abf2-news-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,49,80,.22);
+      background: rgba(255,49,80,.03);
+    }
+
+    .abf2-news-cover {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #16090e;
+    }
+
+    .abf2-news-cover > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .abf2-news-fallback {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255,49,80,.20), transparent 50%),
+        #16090e;
+    }
+
+    .abf2-news-fallback img {
+      width: 30%;
+      opacity: .82;
+    }
+
+    .abf2-news-shade {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(5,7,11,.72), transparent 58%);
+    }
+
+    .abf2-news-tag {
+      position: absolute;
+      left: 12px;
+      bottom: 11px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,49,80,.30);
+      background: rgba(75,0,15,.74);
+      color: #ffb0bd;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .11em;
+    }
+
+    .abf2-news-copy {
+      padding: 16px;
+    }
+
+    .abf2-news-date {
+      color: rgba(255,255,255,.36);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+    }
+
+    .abf2-news-copy h3 {
+      margin: 8px 0 0;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .abf2-news-copy p {
+      margin: 8px 0 0;
+      color: rgba(255,255,255,.53);
+      font-size: 11px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .abf2-news-read {
+      display: inline-block;
+      margin-top: 13px;
+      color: #ff7188;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .abf2-sound-card p {
+      max-width: 680px;
+      margin: 15px 0 0;
+      color: rgba(255,255,255,.56);
+      line-height: 1.65;
+      font-size: 13px;
+    }
+
+    .abf2-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .abf2-tags span {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,49,80,.18);
+      background: rgba(255,49,80,.05);
+      color: rgba(255,255,255,.70);
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .abf2-network-row {
+      display: grid;
+      grid-template-columns: 12px minmax(0,1fr) auto;
+      gap: 11px;
+      align-items: center;
+      margin-top: 11px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.022);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .abf2-network-row.current {
+      border-color: rgba(255,49,80,.15);
+      background: rgba(255,49,80,.033);
+    }
+
+    .abf2-network-row strong,
+    .abf2-network-row small {
+      display: block;
+    }
+
+    .abf2-network-row strong {
+      font-size: 11px;
+    }
+
+    .abf2-network-row small {
+      margin-top: 2px;
+      color: rgba(255,255,255,.40);
+      font-size: 9px;
+    }
+
+    .abf2-network-arrow,
+    .abf2-network-current {
+      color: rgba(255,255,255,.34);
+      font-size: 9px;
+      font-weight: 900;
+    }
+
+    .abf2-network-current {
+      color: #ff7188;
+    }
+
+    .abf2-signature {
+      padding: 30px 0 105px;
+    }
+
+    .abf2-signature-card {
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      text-align: left;
+      border-radius: 24px;
+      border: 1px solid rgba(255,49,80,.12);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,49,80,.085), transparent 58%),
+        rgba(255,255,255,.015);
+    }
+
+    .abf2-signature-card img {
+      width: 76px;
+      filter: drop-shadow(0 0 14px rgba(255,49,80,.20));
+    }
+
+    .abf2-signature-card span,
+    .abf2-signature-card strong {
+      display: block;
+    }
+
+    .abf2-signature-card span {
+      color: rgba(255,255,255,.38);
+      font-size: 9px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .abf2-signature-card strong {
+      margin-top: 4px;
+      font-size: clamp(1.45rem, 3vw, 2.4rem);
+      letter-spacing: -.04em;
+    }
+
+    .abf2-back-to-top {
+      position: fixed;
+      right: 22px;
+      bottom: 112px;
+      z-index: 80;
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(255,49,80,.28);
+      background: rgba(18,7,12,.90);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: .2s ease;
+      box-shadow: 0 12px 35px rgba(255,49,80,.16);
+      backdrop-filter: blur(12px);
+    }
+
+    .abf2-back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .abf2-back-to-top:hover {
+      background: rgba(255,49,80,.18);
+      border-color: rgba(255,49,80,.52);
+    }
+
+    /* =========================================================
+       ABF 2 RED GLOBAL SKIN
+       ========================================================= */
+
+    :global(html.abf2-theme) {
+      --abf-accent: #ff3150 !important;
+      --accent: #ff3150 !important;
+      --primary: #ff3150 !important;
+      scrollbar-color: #ff3150 #090b10;
+    }
+
+    :global(html.abf2-theme body) {
+      --abf-accent: #ff3150 !important;
+      --accent: #ff3150 !important;
+      --primary: #ff3150 !important;
+    }
+
+    :global(html.abf2-theme ::selection) {
+      background: rgba(255,49,80,.35);
+      color: #fff;
+    }
+
+    :global(html.abf2-theme #siteHeader) {
+      --abf-accent: #ff3150 !important;
+      border-color: rgba(255,49,80,.15) !important;
+    }
+
+    :global(html.abf2-theme #siteHeader a:hover),
+    :global(html.abf2-theme #siteHeader button:hover) {
+      color: #ff3150 !important;
+    }
+
+    :global(html.abf2-theme #abfBrandLogo) {
+      filter: drop-shadow(0 0 14px rgba(255,49,80,.48)) !important;
+    }
+
+    :global(html.abf2-theme #siteHeader .from-cyan-400),
+    :global(html.abf2-theme #siteHeader .via-blue-400),
+    :global(html.abf2-theme #siteHeader .to-cyan-300) {
+      background-image: none !important;
+      color: #ff3150 !important;
+      -webkit-text-fill-color: #ff3150 !important;
+    }
+
+    :global(html.abf2-theme .text-cyan-50),
+    :global(html.abf2-theme .text-cyan-100),
+    :global(html.abf2-theme .text-cyan-200),
+    :global(html.abf2-theme .text-cyan-300),
+    :global(html.abf2-theme .text-cyan-400),
+    :global(html.abf2-theme .text-cyan-500),
+    :global(html.abf2-theme .text-cyan-600),
+    :global(html.abf2-theme .text-sky-50),
+    :global(html.abf2-theme .text-sky-100),
+    :global(html.abf2-theme .text-sky-200),
+    :global(html.abf2-theme .text-sky-300),
+    :global(html.abf2-theme .text-sky-400),
+    :global(html.abf2-theme .text-sky-500),
+    :global(html.abf2-theme .text-sky-600),
+    :global(html.abf2-theme .text-blue-300),
+    :global(html.abf2-theme .text-blue-400),
+    :global(html.abf2-theme .text-blue-500) {
+      color: #ff3150 !important;
+    }
+
+    :global(html.abf2-theme .bg-cyan-300),
+    :global(html.abf2-theme .bg-cyan-400),
+    :global(html.abf2-theme .bg-cyan-500),
+    :global(html.abf2-theme .bg-cyan-600),
+    :global(html.abf2-theme .bg-sky-300),
+    :global(html.abf2-theme .bg-sky-400),
+    :global(html.abf2-theme .bg-sky-500),
+    :global(html.abf2-theme .bg-sky-600),
+    :global(html.abf2-theme .bg-blue-400),
+    :global(html.abf2-theme .bg-blue-500),
+    :global(html.abf2-theme .bg-blue-600) {
+      background-color: #ff3150 !important;
+    }
+
+    :global(html.abf2-theme .border-cyan-200),
+    :global(html.abf2-theme .border-cyan-300),
+    :global(html.abf2-theme .border-cyan-400),
+    :global(html.abf2-theme .border-cyan-500),
+    :global(html.abf2-theme .border-cyan-600),
+    :global(html.abf2-theme .border-sky-300),
+    :global(html.abf2-theme .border-sky-400),
+    :global(html.abf2-theme .border-sky-500),
+    :global(html.abf2-theme .border-sky-600),
+    :global(html.abf2-theme .border-blue-400),
+    :global(html.abf2-theme .border-blue-500) {
+      border-color: rgba(255,49,80,.55) !important;
+    }
+
+    :global(html.abf2-theme .dedications-bar) {
+      background: linear-gradient(
+        90deg,
+        rgba(65,0,14,.92),
+        rgba(12,8,13,.96),
+        rgba(65,0,14,.92)
+      ) !important;
+      border-top: 1px solid rgba(255,49,80,.18) !important;
+      border-bottom: 1px solid rgba(255,49,80,.22) !important;
+    }
+
+    :global(html.abf2-theme .dedications-label) {
+      color: #ff3150 !important;
+      border-color: rgba(255,49,80,.55) !important;
+      background: rgba(255,49,80,.10) !important;
+    }
+
+    :global(html.abf2-theme .dedications-badge) {
+      color: #fff !important;
+      background: #ff3150 !important;
+      border-color: rgba(255,49,80,.75) !important;
+    }
+
+    :global(html.abf2-theme .dedications-send-btn) {
+      color: #fff !important;
+      border-color: rgba(255,49,80,.55) !important;
+      background: linear-gradient(90deg, #91001d, #ff3150) !important;
+      box-shadow: 0 0 14px rgba(255,49,80,.16) !important;
+    }
+
+    :global(html.abf2-theme .abf-playerGlass) {
+      background: rgba(15,7,11,.96) !important;
+      border-color: rgba(255,49,80,.22) !important;
+      box-shadow:
+        0 -8px 35px rgba(255,49,80,.06),
+        0 15px 45px rgba(0,0,0,.35) !important;
+      backdrop-filter: blur(18px) saturate(140%) !important;
+    }
+
+    :global(html.abf2-theme .abf-playerGlass::before) {
+      background: linear-gradient(
+        135deg,
+        rgba(255,49,80,.075),
+        rgba(255,255,255,.015) 45%,
+        rgba(255,49,80,.025)
+      ) !important;
+    }
+
+    :global(html.abf2-theme #npStatus),
+    :global(html.abf2-theme #npStatusMobile),
+    :global(html.abf2-theme #fsStatus) {
+      color: rgba(255,200,210,.96) !important;
+      border-color: rgba(255,49,80,.30) !important;
+      background: rgba(255,49,80,.09) !important;
+    }
+
+    :global(html.abf2-theme #streamSelect),
+    :global(html.abf2-theme #streamSelectMobile),
+    :global(html.abf2-theme #fsStreamSelect) {
+      color-scheme: dark !important;
+      background-color: #11070a !important;
+      border-color: rgba(255,49,80,.30) !important;
+      color: #fff !important;
+    }
+
+    :global(html.abf2-theme #streamSelect option),
+    :global(html.abf2-theme #streamSelectMobile option),
+    :global(html.abf2-theme #fsStreamSelect option) {
+      background: #11070a !important;
+      color: #fff !important;
+    }
+
+    :global(html.abf2-theme #playBtn),
+    :global(html.abf2-theme #fsPlay) {
+      border-color: rgba(255,49,80,.30) !important;
+      background: linear-gradient(90deg, #9e001f, #ff3150) !important;
+      box-shadow: 0 10px 28px rgba(255,49,80,.22) !important;
+    }
+
+    :global(html.abf2-theme #stopBtn:hover),
+    :global(html.abf2-theme #muteBtn:hover),
+    :global(html.abf2-theme #fullscreenBtn:hover),
+    :global(html.abf2-theme #castBtn:hover),
+    :global(html.abf2-theme #playerToggleBtn:hover) {
+      background: rgba(255,49,80,.09) !important;
+      border-color: rgba(255,49,80,.35) !important;
+    }
+
+    :global(html.abf2-theme #playerCoverFallback),
+    :global(html.abf2-theme #fsCoverFallback) {
+      background: radial-gradient(
+        120% 120% at 30% 20%,
+        rgba(255,49,80,.30),
+        rgba(150,0,30,.18) 45%,
+        rgba(30,5,12,1) 100%
+      ) !important;
+    }
+
+    :global(html.abf2-theme #playerFallbackLogo),
+    :global(html.abf2-theme #fsFallbackLogo) {
+      filter: drop-shadow(0 0 12px rgba(255,49,80,.35)) !important;
+    }
+
+    :global(html.abf2-theme input[type="range"]) {
+      accent-color: #ff3150 !important;
+    }
+
+    :global(html.abf2-theme #playerVizWrap) {
+      border-color: rgba(255,49,80,.16) !important;
+    }
+
+    :global(html.abf2-theme .abfLiveBtn) {
+      border-color: rgba(255,49,80,.30) !important;
+      background: rgba(255,49,80,.10) !important;
+      color: rgba(255,220,225,.96) !important;
+    }
+
+    :global(html.abf2-theme ::-webkit-scrollbar-thumb) {
+      background: rgba(255,49,80,.55);
+    }
+
+    :global(html.abf2-theme ::-webkit-scrollbar-thumb:hover) {
+      background: rgba(255,49,80,.78);
+    }
+
+    @media (max-width: 980px) {
+      .abf2-last-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+
+      .abf2-news-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .abf2-main-grid,
+      .abf2-sound-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .abf2-news-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .abf2-back-to-top {
+        bottom: 104px;
+        right: 14px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .abf2-shell {
+        width: calc(100% - 22px);
+      }
+
+      .abf2-section {
+        padding: 30px 0;
+      }
+
+      .abf2-topbar,
+      .abf2-section-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .abf2-top-actions {
+        width: 100%;
+      }
+
+      .abf2-primary-btn,
+      .abf2-station-switch {
+        flex: 1;
+      }
+
+      .abf2-now-card,
+      .abf2-top-card,
+      .abf2-sound-card,
+      .abf2-network-card {
+        padding: 20px;
+      }
+
+      .abf2-now-layout {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .abf2-cover-main {
+        width: 140px;
+        height: 140px;
+      }
+
+      .abf2-last-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .abf2-signature-card {
+        min-height: 180px;
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+	
+	/* =========================================================
+   ABF 2 — FOOTER LINKS RED
+   ========================================================= */
+
+/* Liens texte du footer : rouge ABF2 */
+:global(html.abf2-theme footer a) {
+  color: #ff3150 !important;
+}
+
+/* Survol : rouge plus clair */
+:global(html.abf2-theme footer a:hover) {
+  color: #ff7188 !important;
+}
+
+/* Boutons/liens éventuels du footer */
+:global(html.abf2-theme footer button),
+:global(html.abf2-theme footer .abfFooterLinkBtn) {
+  color: #ff3150 !important;
+}
+
+:global(html.abf2-theme footer button:hover),
+:global(html.abf2-theme footer .abfFooterLinkBtn:hover) {
+  color: #ff7188 !important;
+}
+
+/* Icônes/SVG : on conserve également l'identité rouge */
+:global(html.abf2-theme footer a svg) {
+  color: #ff3150 !important;
+}
+
+:global(html.abf2-theme footer a:hover svg) {
+  color: #ff7188 !important;
+}
+
+/* =========================================================
+   RADIO ABF — CYAN HOVER ONLY
+   Must stay AFTER the general ABF2 red rules
+   ========================================================= */
+
+:global(html.abf2-theme #siteHeader a[data-abf2-nav][href="/"]:hover) {
+  color: #2FC2FF !important;
+  border-color: rgba(47, 194, 255, .45) !important;
+  background-color: rgba(47, 194, 255, .08) !important;
+}
+
+/* Force le texte interne en cyan également */
+:global(html.abf2-theme #siteHeader a[data-abf2-nav][href="/"]:hover *) {
+  color: #2FC2FF !important;
+}
+
+/* =========================================================
+   ABF2 — DEDICATIONS
+   message blanc / pseudo rouge
+   ========================================================= */
+
+/* Tout le contenu des dédicaces en blanc par défaut */
+:global(html.abf2-theme #dedicationsInner),
+:global(html.abf2-theme #dedicationsInner *) {
+  color: #ffffff !important;
+}
+
+/* Pseudo en rouge */
+:global(html.abf2-theme #dedicationsInner strong),
+:global(html.abf2-theme #dedicationsInner b) {
+  color: #ff3150 !important;
+}
+
+  </style>
+
+  <script is:inline data-astro-rerun>
+    (() => {
+      const RADIO_ABF_STREAMS = [
+        { url: "https://stream.radioabf.com/abf-hd.mp3" },
+        { url: "https://stream.radioabf.com/abf-sd.mp3" },
+        { url: "https://stream.radioabf.com/abf-low.aac" },
+        { url: "https://stream.radioabf.com/abf-uhd.flac" },
+      ];
+
+      const ABF2_STREAMS = [
+        { url: "https://stream.radioabf.com/abf2-hd.mp3" },
+        { url: "https://stream.radioabf.com/abf2-sd.mp3" },
+        { url: "https://stream.radioabf.com/abf2-low.aac" },
+        { url: "https://stream.radioabf.com/abf2-uhd.flac" },
+      ];
+
+      const state = window.__abf2HomeState = window.__abf2HomeState || {
+        timer: null,
+        boundGlobal: false,
+        originalDesktopNav: "",
+        originalMobileNav: "",
+        originalHeaderSaved: false,
+      };
+
+      const clean = (v) => String(v ?? "").trim();
+
+      const esc = (s) => String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+      const normalizePath = () =>
+        window.location.pathname.replace(/\/+$/, "") || "/";
+
+      const isABF2Page = () => {
+        const path = normalizePath();
+        return path === "/abf2" || path.startsWith("/abf2/");
+      };
+
+      const isABF2Home = () => normalizePath() === "/abf2";
+
+      const getPlayer = () => window.__abf || null;
+
+      const getStreamIndex = () => {
+        let index = Number(localStorage.getItem("abf_stream_index"));
+
+        if (
+          !Number.isInteger(index) ||
+          index < 0 ||
+          index >= ABF2_STREAMS.length
+        ) {
+          index = 0;
+        }
+
+        return index;
+      };
+
+      const isABF2Audio = (audio) => {
+        if (!audio) return false;
+
+        const src =
+          audio.currentSrc ||
+          audio.src ||
+          "";
+
+        return src.includes("/abf2-");
+      };
+
+      function getISOWeekId(d = new Date()) {
+        const date = new Date(
+          Date.UTC(
+            d.getFullYear(),
+            d.getMonth(),
+            d.getDate()
+          )
+        );
+
+        const dayNum =
+          date.getUTCDay() ||
+          7;
+
+        date.setUTCDate(
+          date.getUTCDate() +
+          4 -
+          dayNum
+        );
+
+        const yearStart =
+          new Date(
+            Date.UTC(
+              date.getUTCFullYear(),
+              0,
+              1
+            )
+          );
+
+        const weekNo =
+          Math.ceil(
+            (
+              (
+                (date - yearStart) /
+                86400000
+              ) +
+              1
+            ) /
+            7
+          );
+
+        return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
+      }
+
+      function formatTime(ts) {
+        if (!ts) return "";
+
+        const d =
+          new Date(
+            Number(ts)
+          );
+
+        if (
+          Number.isNaN(
+            d.getTime()
+          )
+        ) {
+          return "";
+        }
+
+        return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      }
+
+      function splitTrack(raw, artist = "", title = "") {
+        const a =
+          clean(artist);
+
+        const t =
+          clean(title);
+
+        if (
+          a ||
+          t
+        ) {
+          return {
+            artist: a,
+            title: t
+          };
+        }
+
+        const s =
+          clean(raw)
+            .replace(/\s+—\s+/g, " - ")
+            .replace(/\s+–\s+/g, " - ");
+
+        const idx =
+          s.indexOf(" - ");
+
+        if (
+          idx === -1
+        ) {
+          return {
+            artist: s,
+            title: ""
+          };
+        }
+
+        return {
+          artist:
+            clean(
+              s.slice(
+                0,
+                idx
+              )
+            ),
+
+          title:
+            clean(
+              s.slice(
+                idx + 3
+              )
+            )
+        };
+      }
+
+      function trackKey(artist, title) {
+        return `${clean(artist)} - ${clean(title)}`
+          .toLowerCase()
+          .replace(/\u00a0/g, " ")
+          .replace(/\s+/g, " ")
+          .replace(/[“”"']/g, "")
+          .trim();
+      }
+
+      function setImage(img, fallback, url) {
+        if (!img) return;
+
+        const u =
+          clean(url);
+
+        img.onerror = () => {
+          img.removeAttribute("src");
+          img.classList.add("hidden");
+          fallback?.classList.remove("hidden");
+        };
+
+        if (u) {
+          img.src = u;
+          img.classList.remove("hidden");
+          fallback?.classList.add("hidden");
+        } else {
+          img.removeAttribute("src");
+          img.classList.add("hidden");
+          fallback?.classList.remove("hidden");
+        }
+      }
+
+      /* =========================================================
+         HEADER + ABF2 MENU
+         ========================================================= */
+
+      function replaceHeaderText(from, to) {
+        const header =
+          document.querySelector(
+            "#siteHeader"
+          );
+
+        if (!header) {
+          return;
+        }
+
+        header
+          .querySelectorAll(
+            "div, span, p, strong"
+          )
+          .forEach((el) => {
+            if (
+              el.children.length
+            ) {
+              return;
+            }
+
+            if (
+              clean(
+                el.textContent
+              ) === from
+            ) {
+              el.textContent =
+                to;
+            }
+          });
+      }
+
+      function getHeaderNavs() {
+        const header =
+          document.querySelector(
+            "#siteHeader"
+          );
+
+        if (!header) {
+          return {
+            desktop: null,
+            mobile: null
+          };
+        }
+
+        const mobile =
+          header.querySelector(
+            "#mobileNav"
+          );
+
+        const navs =
+          Array.from(
+            header.querySelectorAll(
+              "nav"
+            )
+          );
+
+        const desktop =
+          navs.find(
+            (n) =>
+              n !== mobile
+          ) ||
+          null;
+
+        return {
+          desktop,
+          mobile
+        };
+      }
+
+      function saveOriginalMenu() {
+        if (
+          state.originalHeaderSaved
+        ) {
+          return;
+        }
+
+        const {
+          desktop,
+          mobile
+        } =
+          getHeaderNavs();
+
+        if (desktop) {
+          state.originalDesktopNav =
+            desktop.innerHTML;
+        }
+
+        if (mobile) {
+          state.originalMobileNav =
+            mobile.innerHTML;
+        }
+
+        if (
+          desktop ||
+          mobile
+        ) {
+          state.originalHeaderSaved =
+            true;
+        }
+      }
+
+     function abf2DesktopMenu() {
+  return `
+    <a href="/abf2" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Home</a>
+    <a href="/abf2/music" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Music</a>
+    <a href="/abf2/music/insights" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Charts</a>
+    <a href="/abf2/news" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
+    <a href="/abf2/about" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">About</a>
+    <a href="/" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition border border-white/10">Radio ABF</a>
+  `;
+}
+
+function abf2MobileMenu() {
+  return `
+    <div class="grid gap-1">
+      <a href="/abf2" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Home</a>
+      <a href="/abf2/music" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Music</a>
+      <a href="/abf2/music/insights" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Charts</a>
+      <a href="/abf2/news" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
+      <a href="/abf2/about" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">About</a>
+      <a href="/" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition border border-white/10">Radio ABF</a>
+    </div>
+  `;
+}
+
+      function setABF2Menu() {
+        saveOriginalMenu();
+
+        const {
+          desktop,
+          mobile
+        } =
+          getHeaderNavs();
+
+        if (
+          desktop &&
+          !desktop.querySelector(
+            "[data-abf2-nav]"
+          )
+        ) {
+          desktop.innerHTML =
+            abf2DesktopMenu();
+        }
+
+        if (
+          mobile &&
+          !mobile.querySelector(
+            "[data-abf2-nav]"
+          )
+        ) {
+          mobile.innerHTML =
+            abf2MobileMenu();
+        }
+      }
+
+      function restoreMainMenu() {
+        if (
+          !state.originalHeaderSaved
+        ) {
+          return;
+        }
+
+        const {
+          desktop,
+          mobile
+        } =
+          getHeaderNavs();
+
+        if (
+          desktop &&
+          state.originalDesktopNav
+        ) {
+          desktop.innerHTML =
+            state.originalDesktopNav;
+        }
+
+        if (
+          mobile &&
+          state.originalMobileNav
+        ) {
+          mobile.innerHTML =
+            state.originalMobileNav;
+        }
+      }
+
+function setABF2Header() {
+  const headerLogo =
+    document.querySelector(
+      "#abfBrandLogo"
+    );
+
+  const playerLogo =
+    document.querySelector(
+      "#playerFallbackLogo"
+    );
+
+  const fsLogo =
+    document.querySelector(
+      "#fsFallbackLogo"
+    );
+
+  if (headerLogo) {
+    headerLogo.setAttribute(
+      "src",
+      "/logo-abf2.png"
+    );
+
+    headerLogo.setAttribute(
+      "alt",
+      "ABF 2"
+    );
+
+    /* Logo ABF 2 -> home ABF 2 */
+    const headerLogoLink =
+      headerLogo.closest("a");
+
+    if (headerLogoLink) {
+      headerLogoLink.setAttribute(
+        "href",
+        "/abf2"
+      );
+    }
+  }
+
+  if (playerLogo) {
+    playerLogo.setAttribute(
+      "src",
+      "/logo-abf2.png"
+    );
+
+    playerLogo.setAttribute(
+      "alt",
+      "ABF 2"
+    );
+  }
+
+  if (fsLogo) {
+    fsLogo.setAttribute(
+      "src",
+      "/logo-abf2.png"
+    );
+
+    fsLogo.setAttribute(
+      "alt",
+      "ABF 2"
+    );
+  }
+
+  replaceHeaderText(
+    "RadioABF",
+    "ABF 2"
+  );
+
+  replaceHeaderText(
+    "The DJs' Frequency",
+    "The Hits Frequency"
+  );
+
+  setABF2Menu();
+  
+  /* Fullscreen Player -> ABF 2 */
+  const allTextElements =
+    document.querySelectorAll(
+      "div, span, p, strong"
+    );
+
+  allTextElements.forEach((el) => {
+    if (el.children.length) {
+      return;
+    }
+
+    const text =
+      (el.textContent || "")
+        .trim();
+
+    if (text === "RadioABF — Player") {
+      el.textContent =
+        "ABF 2 — Player";
+    }
+
+    if (text === "The DJs' Frequency") {
+      el.textContent =
+        "The Hits Frequency";
+    }
+  });
+
+  /* Footer ABF 2 */
+  const footer =
+    document.querySelector("footer");
+
+  if (footer) {
+    const walker =
+      document.createTreeWalker(
+        footer,
+        NodeFilter.SHOW_TEXT
+      );
+
+    const nodes = [];
+
+    while (walker.nextNode()) {
+      nodes.push(
+        walker.currentNode
+      );
+    }
+
+    nodes.forEach((node) => {
+      const text =
+        node.nodeValue || "";
+
+      node.nodeValue =
+        text
+          .replace(
+            /Radio ABF/g,
+            "ABF 2"
+          )
+          .replace(
+            /The DJs' Frequency/g,
+            "The Hits Frequency"
+          );
+    });
+  }
+}
+
+function restoreABFHeader() {
+  const headerLogo =
+    document.querySelector(
+      "#abfBrandLogo"
+    );
+
+  const playerLogo =
+    document.querySelector(
+      "#playerFallbackLogo"
+    );
+
+  const fsLogo =
+    document.querySelector(
+      "#fsFallbackLogo"
+    );
+
+  if (headerLogo) {
+    headerLogo.setAttribute(
+      "src",
+      "/logo-abf.png"
+    );
+
+    headerLogo.setAttribute(
+      "alt",
+      "ABF"
+    );
+
+    /* Logo Radio ABF -> home Radio ABF */
+    const headerLogoLink =
+      headerLogo.closest("a");
+
+    if (headerLogoLink) {
+      headerLogoLink.setAttribute(
+        "href",
+        "/"
+      );
+    }
+  }
+
+  if (playerLogo) {
+    playerLogo.setAttribute(
+      "src",
+      "/logo-abf.png"
+    );
+
+    playerLogo.setAttribute(
+      "alt",
+      "ABF"
+    );
+  }
+
+  if (fsLogo) {
+    fsLogo.setAttribute(
+      "src",
+      "/logo-abf.png"
+    );
+
+    fsLogo.setAttribute(
+      "alt",
+      "ABF"
+    );
+  }
+
+  replaceHeaderText(
+    "ABF 2",
+    "RadioABF"
+  );
+
+  replaceHeaderText(
+    "The Hits Frequency",
+    "The DJs' Frequency"
+  );
+
+  restoreMainMenu();
+}
+
+      /* =========================================================
+         STREAMS
+         ========================================================= */
+
+      function setABF2Streams() {
+        const S =
+          getPlayer();
+
+        if (!S) {
+          return;
+        }
+
+        S.streams =
+          ABF2_STREAMS.map(
+            (stream) => ({
+              ...stream
+            })
+          );
+
+        S.__station =
+          "abf2";
+
+        if (!S.audio) {
+          return;
+        }
+
+        const index =
+          getStreamIndex();
+
+        const currentSrc =
+          S.audio.currentSrc ||
+          S.audio.src ||
+          "";
+
+        if (
+          !currentSrc.includes(
+            "/abf2-"
+          )
+        ) {
+          S.audio.src =
+            ABF2_STREAMS[index].url;
+
+          S.audio.load();
+
+          S.mode =
+            "live";
+
+          S.liveStreamIndex =
+            index;
+
+          S.currentStreamIndex =
+            index;
+        }
+      }
+
+      function setABFStreams() {
+        const S =
+          getPlayer();
+
+        if (!S) {
+          return;
+        }
+
+        S.streams =
+          RADIO_ABF_STREAMS.map(
+            (stream) => ({
+              ...stream
+            })
+          );
+
+        S.__station =
+          "abf";
+      }
+
+      async function startABF2() {
+        const S =
+          getPlayer();
+
+        if (
+          !S ||
+          !S.audio
+        ) {
+          setTimeout(
+            startABF2,
+            150
+          );
+
+          return;
+        }
+
+        setABF2Streams();
+
+        const index =
+          getStreamIndex();
+
+        const audio =
+          S.audio;
+
+        if (
+          !isABF2Audio(
+            audio
+          )
+        ) {
+          audio.src =
+            ABF2_STREAMS[index].url;
+
+          audio.load();
+        }
+
+        S.mode =
+          "live";
+
+        S.isStopped =
+          false;
+
+        try {
+          await audio.play();
+        } catch (error) {
+          console.warn(
+            "[ABF2] Playback error",
+            error
+          );
+        }
+
+        updateListenButton();
+      }
+
+      function restoreMainStation() {
+        const S =
+          getPlayer();
+
+        if (!S) {
+          return;
+        }
+
+        if (
+          S.audio &&
+          isABF2Audio(
+            S.audio
+          )
+        ) {
+          const wasPlaying =
+            !S.audio.paused;
+
+          const index =
+            getStreamIndex();
+
+          setABFStreams();
+
+          S.audio.src =
+            RADIO_ABF_STREAMS[index].url;
+
+          S.audio.load();
+
+          if (wasPlaying) {
+            S.audio
+              .play()
+              .catch(
+                () => {}
+              );
+          }
+        } else {
+          setABFStreams();
+        }
+      }
+
+      function updateListenButton() {
+        const button =
+          document.querySelector(
+            "#abf2ListenLive"
+          );
+
+        if (!button) {
+          return;
+        }
+
+        const S =
+          getPlayer();
+
+        const audio =
+          S?.audio;
+
+        const playing =
+          !!audio &&
+          !audio.paused &&
+          isABF2Audio(
+            audio
+          );
+
+        button.classList.toggle(
+          "is-playing",
+          playing
+        );
+
+        const label =
+          button.querySelector(
+            "span:last-child"
+          );
+
+        if (label) {
+          label.textContent =
+            playing
+              ? "On Air"
+              : "Listen Live";
+        }
+      }
+
+      function bindListenButton() {
+        const button =
+          document.querySelector(
+            "#abf2ListenLive"
+          );
+
+        if (!button) {
+          return;
+        }
+
+        if (
+          button.dataset.bound !== "1"
+        ) {
+          button.dataset.bound =
+            "1";
+
+          button.addEventListener(
+            "click",
+            startABF2
+          );
+        }
+
+        updateListenButton();
+      }
+
+      /* =========================================================
+         ABF2 DATA
+         ========================================================= */
+
+      async function fetchABF2NowPlaying(limit = 8) {
+        try {
+          const res =
+            await fetch(
+              `/api/nowplaying-abf2?limit=${limit}`,
+              {
+                cache: "no-store"
+              }
+            );
+
+          const data =
+            await res
+              .json()
+              .catch(
+                () => ({})
+              );
+
+          if (
+            !res.ok ||
+            !data?.ok
+          ) {
+            return {
+              now: null,
+              history: []
+            };
+          }
+
+          return {
+            now:
+              data.now ||
+              null,
+
+            history:
+              Array.isArray(
+                data.history
+              )
+                ? data.history
+                : []
+          };
+        } catch {
+          return {
+            now: null,
+            history: []
+          };
+        }
+      }
+
+      async function fetchABF2Votes(
+        week =
+          getISOWeekId()
+      ) {
+        try {
+          const res =
+            await fetch(
+              `/api/vote-abf2?week=${encodeURIComponent(week)}`,
+              {
+                cache: "no-store"
+              }
+            );
+
+          const data =
+            await res
+              .json()
+              .catch(
+                () => ({})
+              );
+
+          return {
+            week:
+              data?.week ||
+              week,
+
+            top:
+              Array.isArray(
+                data?.top
+              )
+                ? data.top
+                : []
+          };
+        } catch {
+          return {
+            week,
+            top: []
+          };
+        }
+      }
+
+      async function voteABF2(track) {
+        const week =
+          getISOWeekId();
+
+        const res =
+          await fetch(
+            "/api/vote-abf2",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  week,
+                  track_key:
+                    trackKey(
+                      track.artist,
+                      track.title
+                    ),
+
+                  artist:
+                    track.artist,
+
+                  title:
+                    track.title
+                })
+            }
+          );
+
+        const data =
+          await res
+            .json()
+            .catch(
+              () => ({})
+            );
+
+        return {
+          ok:
+            res.ok &&
+            data?.ok !== false,
+
+          status:
+            res.status,
+
+          error:
+            data?.error ||
+            ""
+        };
+      }
+
+      function getVoteCount(top, artist, title) {
+        const wanted =
+          trackKey(
+            artist,
+            title
+          );
+
+        if (!wanted) {
+          return 0;
+        }
+
+        for (
+          const row
+          of top || []
+        ) {
+          const split =
+            splitTrack(
+              row?.track_key,
+              row?.artist,
+              row?.title
+            );
+
+          if (
+            trackKey(
+              split.artist,
+              split.title
+            ) === wanted
+          ) {
+            return (
+              Number(
+                row?.count
+              ) ||
+              0
+            );
+          }
+        }
+
+        return 0;
+      }
+
+      function renderNow(data, top) {
+        const now =
+          data?.now ||
+          null;
+
+        const artistEl =
+          document.querySelector(
+            "#abf2NowArtist"
+          );
+
+        const titleEl =
+          document.querySelector(
+            "#abf2NowTitle"
+          );
+
+        const timeEl =
+          document.querySelector(
+            "#abf2NowTime"
+          );
+
+        const countEl =
+          document.querySelector(
+            "#abf2NowVoteCount"
+          );
+
+        const voteBtn =
+          document.querySelector(
+            "#abf2NowVote"
+          );
+
+        const img =
+          document.querySelector(
+            "#abf2NowCover"
+          );
+
+        const fallback =
+          document.querySelector(
+            "#abf2NowFallback"
+          );
+
+        if (
+          !artistEl ||
+          !titleEl
+        ) {
+          return;
+        }
+
+        const track =
+          splitTrack(
+            now?.raw,
+            now?.artist,
+            now?.title
+          );
+
+        artistEl.textContent =
+          track.artist ||
+          "—";
+
+        titleEl.textContent =
+          track.title ||
+          "—";
+
+        if (timeEl) {
+  timeEl.textContent =
+    "Live on ABF 2";
+}
+
+        setImage(
+          img,
+          fallback,
+          now?.cover_url ||
+          ""
+        );
+
+        const count =
+          getVoteCount(
+            top,
+            track.artist,
+            track.title
+          );
+
+        if (countEl) {
+          countEl.textContent =
+            String(
+              count
+            );
+        }
+
+        if (voteBtn) {
+          const valid =
+            !!(
+              track.artist ||
+              track.title
+            );
+
+          voteBtn.disabled =
+            !valid;
+
+          voteBtn.dataset.artist =
+            track.artist ||
+            "";
+
+          voteBtn.dataset.title =
+            track.title ||
+            "";
+        }
+      }
+
+      function renderLastPlayed(history) {
+        const host =
+          document.querySelector(
+            "#abf2LastPlayed"
+          );
+
+        const empty =
+          document.querySelector(
+            "#abf2LastEmpty"
+          );
+
+        if (!host) {
+          return;
+        }
+
+        const rows =
+          (history || [])
+            .slice(
+              0,
+              4
+            );
+
+        if (
+          !rows.length
+        ) {
+          host.innerHTML =
+            "";
+
+          empty?.classList.remove(
+            "hidden"
+          );
+
+          return;
+        }
+
+        empty?.classList.add(
+          "hidden"
+        );
+
+        host.innerHTML =
+          rows
+            .map(
+              (row) => {
+                const track =
+                  splitTrack(
+                    row?.raw,
+                    row?.artist,
+                    row?.title
+                  );
+
+                const cover =
+                  clean(
+                    row?.cover_url
+                  );
+
+                return `
+                  <div class="abf2-last-card">
+                    <div class="abf2-cover abf2-cover-small">
+                      ${
+                        cover
+                          ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async" />`
+                          : ""
+                      }
+
+                      <div
+                        class="abf2-cover-fallback"
+                        ${cover ? 'style="display:none"' : ""}
+                      >
+                        <img
+                          src="/logo-abf2.png"
+                          alt="ABF 2"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="abf2-last-copy">
+                      <strong>${esc(track.artist || "—")}</strong>
+                      <span>${esc(track.title || "—")}</span>
+                      
+                    </div>
+                  </div>
+                `;
+              }
+            )
+            .join("");
+      }
+
+      function renderChart(votes) {
+        const week =
+          votes?.week ||
+          getISOWeekId();
+
+        const top =
+          Array.isArray(
+            votes?.top
+          )
+            ? votes.top
+            : [];
+
+        const weekEl =
+          document.querySelector(
+            "#abf2WeekLabel"
+          );
+
+        const top1Box =
+          document.querySelector(
+            "#abf2Top1"
+          );
+
+        const empty =
+          document.querySelector(
+            "#abf2TopEmpty"
+          );
+
+        const list =
+          document.querySelector(
+            "#abf2MiniChart"
+          );
+
+        if (weekEl) {
+          weekEl.textContent =
+            week.replace(
+              "-W",
+              " W"
+            );
+        }
+
+        if (!top.length) {
+          top1Box?.classList.add(
+            "hidden"
+          );
+
+          empty?.classList.remove(
+            "hidden"
+          );
+
+          if (list) {
+            list.innerHTML =
+              "";
+          }
+
+          return;
+        }
+
+        empty?.classList.add(
+          "hidden"
+        );
+
+        top1Box?.classList.remove(
+          "hidden"
+        );
+
+        const first =
+          top[0];
+
+        const firstTrack =
+          splitTrack(
+            first?.track_key,
+            first?.artist,
+            first?.title
+          );
+
+        const a =
+          document.querySelector(
+            "#abf2Top1Artist"
+          );
+
+        const t =
+          document.querySelector(
+            "#abf2Top1Title"
+          );
+
+        const c =
+          document.querySelector(
+            "#abf2Top1Count"
+          );
+
+        const img =
+          document.querySelector(
+            "#abf2Top1Cover"
+          );
+
+        const fallback =
+          img?.parentElement?.querySelector(
+            ".abf2-cover-fallback"
+          );
+
+        if (a) {
+          a.textContent =
+            firstTrack.artist ||
+            "—";
+        }
+
+        if (t) {
+          t.textContent =
+            firstTrack.title ||
+            "—";
+        }
+
+        if (c) {
+          c.textContent =
+            String(
+              Number(
+                first?.count
+              ) ||
+              0
+            );
+        }
+
+        setImage(
+          img,
+          fallback,
+          first?.cover_url ||
+          ""
+        );
+
+        if (list) {
+          list.innerHTML =
+            top
+              .slice(
+                1,
+                5
+              )
+              .map(
+                (
+                  row,
+                  index
+                ) => {
+                  const tr =
+                    splitTrack(
+                      row?.track_key,
+                      row?.artist,
+                      row?.title
+                    );
+
+                  return `
+                    <li>
+                      <span class="abf2-mini-rank">#${index + 2}</span>
+
+                      <span class="abf2-mini-copy">
+                        <strong>${esc(tr.artist || "—")}</strong>
+                        <span>${esc(tr.title || "—")}</span>
+                      </span>
+
+                      <span class="abf2-mini-count">
+                        ${Number(row?.count) || 0}
+                      </span>
+                    </li>
+                  `;
+                }
+              )
+              .join("");
+        }
+      }
+
+      async function refreshABF2Home() {
+        if (
+          !isABF2Home()
+        ) {
+          return;
+        }
+
+        const week =
+          getISOWeekId();
+
+        const [
+          np,
+          votes
+        ] =
+          await Promise.all([
+            fetchABF2NowPlaying(
+              8
+            ),
+
+            fetchABF2Votes(
+              week
+            )
+          ]);
+
+        renderNow(
+          np,
+          votes.top
+        );
+
+       const currentTrack =
+  splitTrack(
+    np?.now?.raw,
+    np?.now?.artist,
+    np?.now?.title
+  );
+
+const currentKey =
+  trackKey(
+    currentTrack.artist,
+    currentTrack.title
+  );
+
+const lastPlayed =
+  (np.history || []).filter(
+    (row) => {
+      const historyTrack =
+        splitTrack(
+          row?.raw,
+          row?.artist,
+          row?.title
+        );
+
+      return (
+        trackKey(
+          historyTrack.artist,
+          historyTrack.title
+        ) !== currentKey
+      );
+    }
+  );
+
+renderLastPlayed(
+  lastPlayed
+);
+
+        renderChart(
+          votes
+        );
+      }
+
+      function bindVoteButton() {
+        const btn =
+          document.querySelector(
+            "#abf2NowVote"
+          );
+
+        if (
+          !btn ||
+          btn.dataset.bound === "1"
+        ) {
+          return;
+        }
+
+        btn.dataset.bound =
+          "1";
+
+        btn.addEventListener(
+          "click",
+          async () => {
+            const artist =
+              clean(
+                btn.dataset.artist
+              );
+
+            const title =
+              clean(
+                btn.dataset.title
+              );
+
+            const msg =
+              document.querySelector(
+                "#abf2VoteMessage"
+              );
+
+            if (
+              !artist &&
+              !title
+            ) {
+              return;
+            }
+
+            btn.disabled =
+              true;
+
+            if (msg) {
+              msg.textContent =
+                "";
+
+              msg.classList.add(
+                "hidden"
+              );
+            }
+
+            const result =
+              await voteABF2({
+                artist,
+                title
+              });
+
+            if (result.ok) {
+              if (msg) {
+                msg.textContent =
+                  "Vote counted. Thank you!";
+
+                msg.classList.remove(
+                  "hidden"
+                );
+              }
+
+              await refreshABF2Home();
+            } else {
+              if (msg) {
+                msg.textContent =
+                  result.status === 409
+                    ? "You already voted for this track today."
+                    : (
+                        result.error ||
+                        "Unable to vote right now."
+                      );
+
+                msg.classList.remove(
+                  "hidden"
+                );
+              }
+            }
+
+            btn.disabled =
+              false;
+          }
+        );
+      }
+
+      /* =========================================================
+         BACK TO TOP
+         ========================================================= */
+
+      function bindBackToTop() {
+        const btn =
+          document.querySelector(
+            "#abf2BackToTop"
+          );
+
+        if (!btn) {
+          return;
+        }
+
+        const update =
+          () => {
+            btn.classList.toggle(
+              "visible",
+              window.scrollY > 420
+            );
+          };
+
+        if (
+          btn.dataset.bound !== "1"
+        ) {
+          btn.dataset.bound =
+            "1";
+
+          btn.addEventListener(
+            "click",
+            () => {
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+              });
+            }
+          );
+
+          window.addEventListener(
+            "scroll",
+            update,
+            {
+              passive: true
+            }
+          );
+        }
+
+        update();
+      }
+
+   /* =========================================================
+   APPLY / RESTORE
+   ========================================================= */
+
+function applyStation() {
+  if (
+    isABF2Page()
+  ) {
+    document
+      .documentElement
+      .classList
+      .add(
+        "abf2-theme"
+      );
+
+    setABF2Header();
+    setABF2Streams();
+
+    if (
+      isABF2Home()
+    ) {
+      bindListenButton();
+      bindVoteButton();
+      bindBackToTop();
+    }
+
+    updateListenButton();
+
+    return;
+  }
+
+  document
+    .documentElement
+    .classList
+    .remove(
+      "abf2-theme"
+    );
+
+  restoreABFHeader();
+  restoreMainStation();
+}
+
+function stopHomeTimer() {
+  if (
+    state.timer
+  ) {
+    clearInterval(
+      state.timer
+    );
+  }
+
+  state.timer =
+    null;
+}
+
+function startHomeTimer() {
+  stopHomeTimer();
+
+  if (
+    !isABF2Home()
+  ) {
+    return;
+  }
+
+  state.timer =
+    setInterval(
+      () => {
+        if (
+          document.hidden
+        ) {
+          return;
+        }
+
+        refreshABF2Home();
+      },
+      30000
+    );
+}
+
+function init() {
+  applyStation();
+
+  if (
+    isABF2Home()
+  ) {
+    refreshABF2Home();
+    startHomeTimer();
+  } else {
+    stopHomeTimer();
+  }
+
+  let attempts =
+    0;
+
+  const retry =
+    setInterval(
+      () => {
+        attempts++;
+
+        applyStation();
+
+        const S =
+          getPlayer();
+
+        const playerLogo =
+          document.querySelector(
+            "#playerFallbackLogo"
+          );
+
+        const fsLogo =
+          document.querySelector(
+            "#fsFallbackLogo"
+          );
+
+        if (
+          (
+            S?.audio &&
+            playerLogo &&
+            fsLogo
+          ) ||
+          attempts > 30
+        ) {
+          clearInterval(
+            retry
+          );
+        }
+      },
+      120
+    );
+}
+
+if (
+  !state.boundGlobal
+) {
+  state.boundGlobal =
+    true;
+
+  document.addEventListener(
+    "astro:page-load",
+    init
+  );
+
+  document.addEventListener(
+    "astro:after-swap",
+    () => {
+      applyStation();
+
+      if (
+        isABF2Home()
+      ) {
+        refreshABF2Home();
+        startHomeTimer();
+      } else {
+        stopHomeTimer();
+      }
+    }
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    stopHomeTimer
+  );
+
+  document.addEventListener(
+    "play",
+    updateListenButton,
+    true
+  );
+
+  document.addEventListener(
+    "pause",
+    updateListenButton,
+    true
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (
+        document.hidden ||
+        !isABF2Home()
+      ) {
+        return;
+      }
+
+      refreshABF2Home();
+    }
+  );
+}
+
+init();
+})();
+</script>
+</Base>

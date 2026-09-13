@@ -1,0 +1,1901 @@
+// src/pages/api/nowplaying-abf2.ts
+import type { APIRoute } from "astro";
+
+export const prerender = false;
+
+const ICECAST_STATUS_URL =
+  import.meta.env.ICECAST_STATUS_URL_ABF2 ||
+  process.env.ICECAST_STATUS_URL_ABF2 ||
+  "";
+
+const DIRECTUS_URL =
+  import.meta.env.DIRECTUS_URL ||
+  process.env.DIRECTUS_URL ||
+  "";
+
+const DIRECTUS_TOKEN =
+  import.meta.env.DIRECTUS_TOKEN ||
+  process.env.DIRECTUS_TOKEN ||
+  "";
+
+const PUBLIC_SITE_URL =
+  import.meta.env.PUBLIC_SITE_URL ||
+  process.env.PUBLIC_SITE_URL ||
+  "https://radioabf.com";
+
+const PLAYS_COLLECTION = "plays_abf2";
+const TRACKS_COLLECTION = "tracks";
+
+// ✅ schéma Directus partagé avec ABF
+const TRACKS_KEY_FIELD = "track_key";
+const TRACKS_COVER_FIELD = "cover_art";
+const TRACKS_FIRST_PLAYED_FIELD = "first_played_at";
+const TRACKS_COVER_URL_FIELD = "cover_url";
+const TRACKS_COVER_OVERRIDE_FIELD = "cover_override";
+
+// ✅ Deezer fallback ON (affichage uniquement)
+const ENABLE_DEEZER_FALLBACK =
+  (
+    import.meta.env.ENABLE_DEEZER_FALLBACK ||
+    process.env.ENABLE_DEEZER_FALLBACK ||
+    "true"
+  ) === "true";
+
+const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000;
+
+const RESPONSE_CACHE_TTL_MS = 30000;
+const TRACK_META_CACHE_TTL_MS = 60 * 60 * 1000;
+const TRACK_META_NEGATIVE_CACHE_TTL_MS = 10 * 60 * 1000;
+const DEEZER_TIMEOUT_MS = 2500;
+const DEEZER_HISTORY_FALLBACK_LIMIT = 0;
+const BULK_TRACK_META_CHUNK_SIZE = 100;
+
+const MAX_NOWPLAYING_LIMIT = Math.min(
+  5000,
+  Math.max(
+    100,
+    Number(
+      import.meta.env.NOWPLAYING_MAX_LIMIT ||
+        process.env.NOWPLAYING_MAX_LIMIT ||
+        "2000"
+    )
+  )
+);
+
+/* -------------------- Helpers -------------------- */
+
+function cleanNowText(s: string) {
+  let out = String(s || "").trim();
+  out = out.replace(/^undefined\s*-\s*/i, "");
+  out = out.replace(/\s+—\s+/g, " - ");
+  out = out.replace(/\s+–\s+/g, " - ");
+  return out.trim();
+}
+
+function isBadRaw(raw: string) {
+  const s = String(raw || "").trim();
+
+  if (!s) return true;
+  if (s === "-" || s === "—" || s === "–") return true;
+  if (/^\s*abf\s*[-—–]\s*$/i.test(s)) return true;
+  if (/^.{1,120}\s-\s*$/.test(s)) return true;
+  if (/^\s*-\s+.{1,200}$/.test(s)) return true;
+
+  return false;
+}
+
+function splitTrack(entry: string) {
+  const cleaned = cleanNowText(entry);
+  const idx = cleaned.indexOf(" - ");
+
+  if (idx === -1) {
+    return {
+      artist: cleaned.trim(),
+      title: "",
+    };
+  }
+
+  return {
+    artist: cleaned.slice(0, idx).trim(),
+    title: cleaned.slice(idx + 3).trim(),
+  };
+}
+
+function fixMojibake(s: string) {
+  const str = String(s || "");
+
+  if (!/[ÃÂâ€“â€”â€˜â€™â€œâ€�]/.test(str)) {
+    return str;
+  }
+
+  try {
+    const bytes = Uint8Array.from(
+      str,
+      (c) => c.charCodeAt(0) & 0xff
+    );
+
+    const decoded = new TextDecoder("utf-8", {
+      fatal: false,
+    }).decode(bytes);
+
+    return decoded || str;
+  } catch {
+    return str;
+  }
+}
+
+function normKey(artist: string, title: string) {
+  return (artist + " - " + title)
+    .toLowerCase()
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[“”"']/g, "")
+    .trim();
+}
+
+function stripMixSuffix(title: string) {
+  return String(title || "")
+    .replace(
+      /\((original|extended|radio|club|edit|mix)[^)]+\)/gi,
+      ""
+    )
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function cleanDeezerQueryPart(s: string) {
+  return String(s || "")
+    .replace(/\[(.*?)\]/g, " ")
+    .replace(/\((.*?)\)/g, " ")
+    .replace(/\bfeat\.?\b/gi, " ")
+    .replace(/\bft\.?\b/gi, " ")
+    .replace(/\bvs\.?\b/gi, " ")
+    .replace(/\s+&\s+/g, " ")
+    .replace(/\s+and\s+/gi, " ")
+    .replace(/[']/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function extractNowPlaying(json: any): string {
+  const src = json?.icestats?.source;
+  const s = Array.isArray(src) ? src[0] : src;
+
+  return (
+    (s?.title && String(s.title)) ||
+    (s?.yp_currently_playing &&
+      String(s.yp_currently_playing)) ||
+    (s?.streamtitle && String(s.streamtitle)) ||
+    ""
+  ).trim();
+}
+
+function toUTCms(v: any): number {
+  const s = String(v || "").trim();
+
+  if (!s) return 0;
+
+  if (
+    /[zZ]$/.test(s) ||
+    /[+\-]\d\d:\d\d$/.test(s)
+  ) {
+    return Date.parse(s);
+  }
+
+  return Date.parse(s + "Z");
+}
+
+function isNewFromFirstPlayed(
+  firstPlayedAt: string
+): boolean {
+  const ts = toUTCms(firstPlayedAt);
+
+  if (!ts) return false;
+
+  return Date.now() - ts <= NEW_TRACK_TTL_MS;
+}
+
+function isBlockedShow(artist: string) {
+  return /^abf\s*club\b/i.test(
+    String(artist || "").trim()
+  );
+}
+
+function assertEnv() {
+  if (!ICECAST_STATUS_URL) {
+    throw new Error(
+      "ICECAST_STATUS_URL_ABF2 missing"
+    );
+  }
+
+  if (!DIRECTUS_URL) {
+    throw new Error("DIRECTUS_URL missing");
+  }
+
+  if (!DIRECTUS_TOKEN) {
+    throw new Error("DIRECTUS_TOKEN missing");
+  }
+}
+
+function stripTrailingSlash(s: string) {
+  return String(s || "").replace(/\/+$/, "");
+}
+
+function publicAssetBase() {
+  return stripTrailingSlash(
+    PUBLIC_SITE_URL ||
+      "https://radioabf.com"
+  );
+}
+
+function normalizePublicCoverUrl(
+  input: string
+) {
+  const raw = String(input || "").trim();
+
+  if (!raw) return "";
+
+  const publicBase = publicAssetBase();
+
+  try {
+    if (raw.startsWith("/assets/")) {
+      return `${publicBase}${raw}`;
+    }
+
+    if (raw.startsWith("assets/")) {
+      return `${publicBase}/${raw}`;
+    }
+
+    const url = new URL(raw);
+
+    if (
+      url.pathname.startsWith("/assets/")
+    ) {
+      return `${publicBase}${url.pathname}${url.search}`;
+    }
+
+    return url.toString();
+  } catch {
+    if (raw.startsWith("/")) {
+      return `${publicBase}${raw}`;
+    }
+
+    return raw;
+  }
+}
+
+function directusAssetUrl(
+  fileId: string
+) {
+  return fileId
+    ? `${publicAssetBase()}/assets/${fileId}`
+    : "";
+}
+
+function parseRequestedLimit(
+  raw: string | null
+): number {
+  const n = Number(raw || "12");
+
+  if (!Number.isFinite(n)) {
+    return 12;
+  }
+
+  return Math.trunc(n);
+}
+
+async function directusFetch(
+  path: string,
+  init: RequestInit = {}
+) {
+  assertEnv();
+
+  const res = await fetch(
+    `${DIRECTUS_URL}${path}`,
+    {
+      ...init,
+
+      headers: {
+        Authorization:
+          `Bearer ${DIRECTUS_TOKEN}`,
+
+        Accept: "application/json",
+
+        ...(init.headers || {}),
+      },
+
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    const txt =
+      await res.text().catch(
+        () => ""
+      );
+
+    throw new Error(
+      `Directus ${path} failed: ` +
+        `${res.status} ` +
+        `${res.statusText}` +
+        `${txt ? ` — ${txt}` : ""}`
+    );
+  }
+
+  return res;
+}
+
+async function fetchJsonWithTimeout(
+  url: string,
+  timeoutMs: number
+) {
+  const controller =
+    new AbortController();
+
+  const timer = setTimeout(
+    () => controller.abort(),
+    timeoutMs
+  );
+
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+
+      signal: controller.signal,
+
+      headers: {
+        Accept: "application/json",
+
+        "User-Agent":
+          "RadioABF/1.0 (+https://radioabf.com)",
+      },
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* -------------------- Tracks: ensure row (RACE-SAFE) -------------------- */
+
+async function ensureTrackRow(
+  track_key: string,
+  artist: string,
+  title: string,
+  first_played_at: string
+) {
+  if (!track_key) {
+    return;
+  }
+
+  try {
+    await directusFetch(
+      `/items/${TRACKS_COLLECTION}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          [TRACKS_KEY_FIELD]:
+            track_key,
+
+          artist:
+            artist || null,
+
+          title:
+            title || null,
+
+          [TRACKS_FIRST_PLAYED_FIELD]:
+            first_played_at || null,
+        }),
+      }
+    );
+  } catch (e: any) {
+    const msg = String(
+      e?.message || e || ""
+    );
+
+    if (
+      /RECORD_NOT_UNIQUE|has to be unique/i.test(
+        msg
+      )
+    ) {
+      return;
+    }
+
+    console.warn(
+      "[nowplaying-abf2] ensureTrackRow failed:",
+      msg
+    );
+  }
+}
+
+async function wasRecentlyPlayed(
+  track_key: string,
+  nowMs: number
+): Promise<boolean> {
+  if (!track_key) {
+    return false;
+  }
+
+  try {
+    const params =
+      new URLSearchParams({
+        fields:
+          "id,track_key,played_at",
+
+        sort: "-played_at",
+
+        limit: "5",
+
+        [`filter[track_key][_eq]`]:
+          track_key,
+      });
+
+    const res =
+      await directusFetch(
+        `/items/${PLAYS_COLLECTION}?${params.toString()}`
+      );
+
+    const json =
+      await res.json();
+
+    const rows =
+      Array.isArray(json?.data)
+        ? json.data
+        : [];
+
+    return rows.some(
+      (row: any) => {
+        const ts =
+          toUTCms(row?.played_at);
+
+        if (!ts) {
+          return false;
+        }
+
+        return (
+          Math.abs(
+            nowMs - ts
+          ) <=
+          PLAY_DEDUP_WINDOW_MS
+        );
+      }
+    );
+  } catch {
+    return false;
+  }
+}
+
+/* -------------------- Directus meta / cover cache -------------------- */
+
+/*
+ * Celui-ci peut rester partagé avec ABF :
+ * les métadonnées et covers viennent de
+ * la collection tracks commune.
+ */
+const __trackMetaCache: Map<
+  string,
+  {
+    first_played_at: string;
+    cover_url: string;
+    exp: number;
+  }
+> =
+  ((globalThis as any)
+    .__trackMetaCache as Map<
+    string,
+    {
+      first_played_at: string;
+      cover_url: string;
+      exp: number;
+    }
+  >) || new Map();
+
+(globalThis as any).__trackMetaCache =
+  __trackMetaCache;
+
+function extractCoverUrlFromTrackRow(
+  row: any
+): string {
+  const coverVal =
+    row?.[TRACKS_COVER_FIELD];
+
+  const fileId =
+    typeof coverVal === "string"
+      ? coverVal
+      : coverVal?.id
+        ? String(coverVal.id)
+        : "";
+
+  const coverUrlField =
+    String(
+      row?.[
+        TRACKS_COVER_URL_FIELD
+      ] || ""
+    ).trim();
+
+  const coverOverride =
+    row?.[
+      TRACKS_COVER_OVERRIDE_FIELD
+    ] === true;
+
+  if (coverOverride) {
+    if (fileId) {
+      return directusAssetUrl(fileId);
+    }
+
+    if (coverUrlField) {
+      return normalizePublicCoverUrl(
+        coverUrlField
+      );
+    }
+
+    return "";
+  }
+
+  if (fileId) {
+    return directusAssetUrl(fileId);
+  }
+
+  if (coverUrlField) {
+    return normalizePublicCoverUrl(
+      coverUrlField
+    );
+  }
+
+  return "";
+}
+
+function getTrackMetaCacheHit(
+  track_key: string
+) {
+  const now = Date.now();
+
+  const hit =
+    __trackMetaCache.get(track_key);
+
+  if (
+    !hit ||
+    hit.exp <= now
+  ) {
+    return null;
+  }
+
+  return {
+    first_played_at:
+      hit.first_played_at,
+
+    cover_url:
+      hit.cover_url,
+  };
+}
+
+function setTrackMetaCache(
+  track_key: string,
+  first_played_at: string,
+  cover_url: string
+) {
+  __trackMetaCache.set(
+    track_key,
+    {
+      first_played_at,
+
+      cover_url:
+        normalizePublicCoverUrl(
+          cover_url
+        ),
+
+      exp:
+        Date.now() +
+        (
+          cover_url ||
+          first_played_at
+            ? TRACK_META_CACHE_TTL_MS
+            : TRACK_META_NEGATIVE_CACHE_TTL_MS
+        ),
+    }
+  );
+}
+
+async function fetchTrackMetaByTrackKey(
+  track_key: string
+): Promise<{
+  first_played_at: string;
+  cover_url: string;
+}> {
+  if (!track_key) {
+    return {
+      first_played_at: "",
+      cover_url: "",
+    };
+  }
+
+  const cached =
+    getTrackMetaCacheHit(
+      track_key
+    );
+
+  if (cached) {
+    return cached;
+  }
+
+  let first_played_at = "";
+  let cover_url = "";
+
+  try {
+    const params =
+      new URLSearchParams({
+        fields: [
+          TRACKS_KEY_FIELD,
+
+          TRACKS_FIRST_PLAYED_FIELD,
+
+          TRACKS_COVER_FIELD,
+
+          `${TRACKS_COVER_FIELD}.id`,
+
+          TRACKS_COVER_URL_FIELD,
+
+          TRACKS_COVER_OVERRIDE_FIELD,
+        ].join(","),
+
+        limit: "1",
+
+        [`filter[${TRACKS_KEY_FIELD}][_eq]`]:
+          track_key,
+      });
+
+    const r =
+      await directusFetch(
+        `/items/${TRACKS_COLLECTION}?${params.toString()}`
+      );
+
+    const j =
+      await r.json();
+
+    const row =
+      j?.data?.[0];
+
+    first_played_at =
+      String(
+        row?.[
+          TRACKS_FIRST_PLAYED_FIELD
+        ] || ""
+      ).trim();
+
+    cover_url =
+      extractCoverUrlFromTrackRow(
+        row
+      );
+
+    setTrackMetaCache(
+      track_key,
+      first_played_at,
+      cover_url
+    );
+  } catch {
+    setTrackMetaCache(
+      track_key,
+      "",
+      ""
+    );
+  }
+
+  return {
+    first_played_at,
+    cover_url,
+  };
+}
+
+async function fetchBulkTrackMeta(
+  trackKeys: string[]
+) {
+  const out =
+    new Map<
+      string,
+      {
+        first_played_at: string;
+        cover_url: string;
+      }
+    >();
+
+  const cleanKeys =
+    [
+      ...new Set(
+        trackKeys
+          .map((k) =>
+            String(k || "").trim()
+          )
+          .filter(Boolean)
+      ),
+    ];
+
+  if (!cleanKeys.length) {
+    return out;
+  }
+
+  const missing: string[] = [];
+
+  for (
+    const key of cleanKeys
+  ) {
+    const cached =
+      getTrackMetaCacheHit(
+        key
+      );
+
+    if (cached) {
+      out.set(
+        key,
+        cached
+      );
+    } else {
+      missing.push(key);
+    }
+  }
+
+  if (!missing.length) {
+    return out;
+  }
+
+  for (
+    let i = 0;
+    i < missing.length;
+    i +=
+      BULK_TRACK_META_CHUNK_SIZE
+  ) {
+    const chunk =
+      missing.slice(
+        i,
+        i +
+          BULK_TRACK_META_CHUNK_SIZE
+      );
+
+    try {
+      const params =
+        new URLSearchParams();
+
+      params.set(
+        "fields",
+        [
+          TRACKS_KEY_FIELD,
+
+          TRACKS_FIRST_PLAYED_FIELD,
+
+          TRACKS_COVER_FIELD,
+
+          `${TRACKS_COVER_FIELD}.id`,
+
+          TRACKS_COVER_URL_FIELD,
+
+          TRACKS_COVER_OVERRIDE_FIELD,
+        ].join(",")
+      );
+
+      params.set(
+        "limit",
+        String(chunk.length)
+      );
+
+      chunk.forEach(
+        (
+          trackKey,
+          idx
+        ) => {
+          params.set(
+            `filter[_or][${idx}][${TRACKS_KEY_FIELD}][_eq]`,
+            trackKey
+          );
+        }
+      );
+
+      const r =
+        await directusFetch(
+          `/items/${TRACKS_COLLECTION}?${params.toString()}`
+        );
+
+      const j =
+        await r.json();
+
+      const rows =
+        Array.isArray(
+          j?.data
+        )
+          ? j.data
+          : [];
+
+      const found =
+        new Set<string>();
+
+      for (
+        const row of rows
+      ) {
+        const key =
+          String(
+            row?.[
+              TRACKS_KEY_FIELD
+            ] || ""
+          ).trim();
+
+        if (!key) {
+          continue;
+        }
+
+        const first_played_at =
+          String(
+            row?.[
+              TRACKS_FIRST_PLAYED_FIELD
+            ] || ""
+          ).trim();
+
+        const cover_url =
+          extractCoverUrlFromTrackRow(
+            row
+          );
+
+        out.set(
+          key,
+          {
+            first_played_at,
+            cover_url,
+          }
+        );
+
+        setTrackMetaCache(
+          key,
+          first_played_at,
+          cover_url
+        );
+
+        found.add(key);
+      }
+
+      for (
+        const key of chunk
+      ) {
+        if (
+          !found.has(key)
+        ) {
+          out.set(
+            key,
+            {
+              first_played_at:
+                "",
+              cover_url:
+                "",
+            }
+          );
+
+          setTrackMetaCache(
+            key,
+            "",
+            ""
+          );
+        }
+      }
+    } catch {
+      for (
+        const key of chunk
+      ) {
+        if (
+          !out.has(key)
+        ) {
+          out.set(
+            key,
+            {
+              first_played_at:
+                "",
+              cover_url:
+                "",
+            }
+          );
+
+          setTrackMetaCache(
+            key,
+            "",
+            ""
+          );
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+/* -------------------- Deezer cover (fallback display-only) -------------------- */
+
+const __deezerCache: Map<
+  string,
+  {
+    url: string;
+    exp: number;
+  }
+> =
+  ((globalThis as any)
+    .__deezerCache as Map<
+    string,
+    {
+      url: string;
+      exp: number;
+    }
+  >) || new Map();
+
+(globalThis as any).__deezerCache =
+  __deezerCache;
+
+async function fetchDeezerCover(
+  artist: string,
+  title: string
+): Promise<string> {
+  if (
+    !ENABLE_DEEZER_FALLBACK
+  ) {
+    return "";
+  }
+
+  if (
+    !artist ||
+    !title
+  ) {
+    return "";
+  }
+
+  const key =
+    normKey(
+      artist,
+      title
+    );
+
+  const now =
+    Date.now();
+
+  const hit =
+    __deezerCache.get(
+      key
+    );
+
+  if (
+    hit &&
+    hit.exp > now
+  ) {
+    return hit.url;
+  }
+
+  let cover = "";
+
+  try {
+    const artistClean =
+      cleanDeezerQueryPart(
+        artist
+      );
+
+    const titleClean =
+      cleanDeezerQueryPart(
+        title
+      );
+
+    const titleNoMix =
+      cleanDeezerQueryPart(
+        stripMixSuffix(
+          title
+        )
+      );
+
+    const queries = [
+      `${artist} ${title}`,
+
+      `${artistClean} ${titleClean}`,
+
+      `${artistClean} ${titleNoMix}`,
+
+      titleClean,
+
+      titleNoMix,
+    ]
+      .map((s) =>
+        String(
+          s || ""
+        ).trim()
+      )
+      .filter(Boolean);
+
+    for (
+      const qRaw of [
+        ...new Set(
+          queries
+        ),
+      ]
+    ) {
+      const q =
+        encodeURIComponent(
+          qRaw
+        );
+
+      const url =
+        `https://api.deezer.com/search?q=${q}`;
+
+      const j =
+        await fetchJsonWithTimeout(
+          url,
+          DEEZER_TIMEOUT_MS
+        );
+
+      const rows =
+        Array.isArray(
+          j?.data
+        )
+          ? j.data
+          : [];
+
+      if (
+        !rows.length
+      ) {
+        continue;
+      }
+
+      const wantArtist =
+        artistClean.toLowerCase();
+
+      const best =
+        rows.find(
+          (item: any) => {
+            const itemArtist =
+              cleanDeezerQueryPart(
+                String(
+                  item?.artist?.name ||
+                    ""
+                )
+              ).toLowerCase();
+
+            return (
+              (
+                wantArtist &&
+                itemArtist.includes(
+                  wantArtist
+                )
+              ) ||
+              (
+                itemArtist &&
+                wantArtist.includes(
+                  itemArtist
+                )
+              )
+            );
+          }
+        ) ||
+        rows[0];
+
+      cover =
+        String(
+          best?.album
+            ?.cover_xl ||
+            best?.album
+              ?.cover_big ||
+            best?.album
+              ?.cover_medium ||
+            best?.album
+              ?.cover ||
+            ""
+        ).trim();
+
+      if (cover) {
+        break;
+      }
+    }
+  } catch {}
+
+  __deezerCache.set(
+    key,
+    {
+      url: cover,
+
+      exp:
+        now +
+        (
+          cover
+            ? 6 *
+              60 *
+              60 *
+              1000
+            : 30 *
+              60 *
+              1000
+        ),
+    }
+  );
+
+  return cover;
+}
+
+/* -------------------- Response cache / in-flight dedupe -------------------- */
+
+type NowPlayingPayload = {
+  ok: true;
+
+  inserted: boolean;
+
+  now: {
+    raw: string;
+
+    artist: string;
+
+    title: string;
+
+    track_key: string;
+
+    played_at: string;
+
+    played_at_ms: number;
+
+    cover_url: string;
+
+    cover_source: string;
+
+    first_played_at: string;
+
+    first_played_at_ms: number;
+
+    is_new: boolean;
+  };
+
+  history: any[];
+};
+
+/*
+ * IMPORTANT :
+ * caches séparés d'ABF.
+ */
+const __responseCache: Map<
+  string,
+  {
+    exp: number;
+    payload: NowPlayingPayload;
+  }
+> =
+  ((globalThis as any)
+    .__nowPlayingABF2ResponseCache as Map<
+    string,
+    {
+      exp: number;
+      payload: NowPlayingPayload;
+    }
+  >) || new Map();
+
+const __inflightCache: Map<
+  string,
+  Promise<NowPlayingPayload>
+> =
+  ((globalThis as any)
+    .__nowPlayingABF2InflightCache as Map<
+    string,
+    Promise<NowPlayingPayload>
+  >) || new Map();
+
+(globalThis as any)
+  .__nowPlayingABF2ResponseCache =
+  __responseCache;
+
+(globalThis as any)
+  .__nowPlayingABF2InflightCache =
+  __inflightCache;
+
+function getResponseCacheKey(
+  limit: number
+) {
+  return `abf2:limit:${limit}`;
+}
+
+function clonePayload<T>(
+  value: T
+): T {
+  return JSON.parse(
+    JSON.stringify(value)
+  );
+}
+
+/* -------------------- Core builder -------------------- */
+
+async function buildNowPlayingPayload(
+  limit: number
+): Promise<NowPlayingPayload> {
+  const ice =
+    await fetch(
+      ICECAST_STATUS_URL,
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  if (!ice.ok) {
+    throw new Error(
+      `Icecast ABF2 failed: ${ice.status}`
+    );
+  }
+
+  const iceJson =
+    await ice.json();
+
+  const nowRaw =
+    extractNowPlaying(
+      iceJson
+    );
+
+  const nowText =
+    cleanNowText(
+      fixMojibake(
+        nowRaw
+      )
+    );
+
+  const nowIsBad =
+    isBadRaw(
+      nowText
+    );
+
+  const {
+    artist,
+    title,
+  } =
+    splitTrack(
+      nowText
+    );
+
+  const track_key =
+    normKey(
+      artist,
+      title
+    );
+
+  const played_at =
+    new Date().toISOString();
+
+  const played_at_ms =
+    Date.parse(
+      played_at
+    );
+
+  const lastRes =
+    await directusFetch(
+      `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
+    );
+
+  const lastJson =
+    await lastRes.json();
+
+  const last =
+    lastJson?.data?.[0];
+
+  let inserted =
+    false;
+
+  if (
+    !nowIsBad &&
+    (
+      !last ||
+      last.track_key !==
+        track_key
+    )
+  ) {
+    const recentDuplicate =
+      await wasRecentlyPlayed(
+        track_key,
+        played_at_ms
+      );
+
+    if (
+      !recentDuplicate
+    ) {
+      await ensureTrackRow(
+        track_key,
+        artist,
+        title,
+        played_at
+      );
+
+      await directusFetch(
+        `/items/${PLAYS_COLLECTION}`,
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            track_key,
+
+            artist:
+              artist || null,
+
+            title:
+              title || null,
+
+            played_at,
+
+            raw:
+              nowText || null,
+          }),
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+        }
+      );
+
+      inserted =
+        true;
+    }
+  }
+
+  const oversample =
+    Math.min(
+      MAX_NOWPLAYING_LIMIT,
+
+      Math.max(
+        limit + 80,
+
+        Math.ceil(
+          limit * 1.2
+        )
+      )
+    );
+
+  const params =
+    new URLSearchParams({
+      fields:
+        "id,track_key,artist,title,played_at,raw",
+
+      sort:
+        "-played_at",
+
+      limit:
+        oversample.toString(),
+    });
+
+  const histRes =
+    await directusFetch(
+      `/items/${PLAYS_COLLECTION}?${params.toString()}`
+    );
+
+  const histJson =
+    await histRes.json();
+
+  const historyRaw =
+    Array.isArray(
+      histJson?.data
+    )
+      ? histJson.data
+      : [];
+
+  const trackKeys = [
+    ...new Set(
+      historyRaw
+        .map(
+          (row: any) =>
+            String(
+              row?.track_key ||
+                ""
+            ).trim()
+        )
+        .filter(Boolean)
+    ),
+  ];
+
+  if (track_key) {
+    trackKeys.unshift(
+      track_key
+    );
+  }
+
+  const bulkMeta =
+    await fetchBulkTrackMeta(
+      trackKeys
+    );
+
+  let historyDeezerFallbackCount =
+    0;
+
+  const historyMaybe =
+    await Promise.all(
+      historyRaw.map(
+        async (
+          row: any
+        ) => {
+          const a =
+            fixMojibake(
+              String(
+                row.artist ||
+                  ""
+              )
+            );
+
+          const t =
+            fixMojibake(
+              String(
+                row.title ||
+                  ""
+              )
+            );
+
+          const tk =
+            String(
+              row.track_key ||
+                ""
+            );
+
+          const raw =
+            fixMojibake(
+              String(
+                row.raw ||
+                  `${a} - ${t}`.trim()
+              ).trim()
+            );
+
+          const ts =
+            toUTCms(
+              row.played_at
+            );
+
+          if (
+            isBadRaw(raw)
+          ) {
+            return null;
+          }
+
+          const meta =
+            bulkMeta.get(
+              tk
+            ) || {
+              first_played_at:
+                "",
+              cover_url:
+                "",
+            };
+
+          let cover_url =
+            normalizePublicCoverUrl(
+              String(
+                meta.cover_url ||
+                  ""
+              ).trim()
+            );
+
+          let cover_source =
+            cover_url
+              ? "directus"
+              : "";
+
+          if (
+            !cover_url &&
+            historyDeezerFallbackCount <
+              DEEZER_HISTORY_FALLBACK_LIMIT
+          ) {
+            const fallback =
+              await fetchDeezerCover(
+                a,
+                t
+              );
+
+            if (
+              fallback
+            ) {
+              cover_url =
+                normalizePublicCoverUrl(
+                  fallback
+                );
+
+              cover_source =
+                "deezer";
+            }
+
+            historyDeezerFallbackCount++;
+          }
+
+          const first_played_at =
+            String(
+              meta.first_played_at ||
+                ""
+            ).trim();
+
+          const first_played_at_ms =
+            toUTCms(
+              first_played_at
+            );
+
+          const is_new =
+            isBlockedShow(a)
+              ? false
+              : isNewFromFirstPlayed(
+                  first_played_at
+                );
+
+          return {
+            id:
+              row.id,
+
+            raw,
+
+            artist:
+              a,
+
+            title:
+              t,
+
+            track_key:
+              tk,
+
+            played_at:
+              ts
+                ? new Date(
+                    ts
+                  ).toISOString()
+                : "",
+
+            played_at_ms:
+              ts,
+
+            cover_url,
+
+            cover_source,
+
+            first_played_at,
+
+            first_played_at_ms,
+
+            is_new,
+          };
+        }
+      )
+    );
+
+  const cleaned =
+    (
+      historyMaybe ||
+      []
+    ).filter(
+      Boolean
+    ) as any[];
+
+  const seen =
+    new Set<string>();
+
+  const uniq:
+    any[] = [];
+
+  for (
+    const it of cleaned
+  ) {
+    const k =
+      `${String(
+        it.track_key ||
+          it.raw ||
+          ""
+      )}__${Number(
+        it.played_at_ms ||
+          0
+      )}`;
+
+    if (!it?.raw) {
+      continue;
+    }
+
+    if (
+      seen.has(k)
+    ) {
+      continue;
+    }
+
+    seen.add(k);
+
+    uniq.push(it);
+  }
+
+  const history =
+    uniq.slice(
+      0,
+      limit
+    );
+
+  let nowCover =
+    "";
+
+  let nowCoverSource =
+    "";
+
+  let nowFirstPlayedAt =
+    "";
+
+  let nowFirstPlayedAtMs =
+    0;
+
+  let nowIsNew =
+    false;
+
+  if (!nowIsBad) {
+    const nowMeta =
+      bulkMeta.get(
+        track_key
+      ) ||
+      (
+        await fetchTrackMetaByTrackKey(
+          track_key
+        )
+      );
+
+    nowCover =
+      normalizePublicCoverUrl(
+        String(
+          nowMeta.cover_url ||
+            ""
+        ).trim()
+      );
+
+    nowCoverSource =
+      nowCover
+        ? "directus"
+        : "";
+
+    if (!nowCover) {
+      const fallback =
+        await fetchDeezerCover(
+          artist,
+          title
+        );
+
+      if (fallback) {
+        nowCover =
+          normalizePublicCoverUrl(
+            fallback
+          );
+
+        nowCoverSource =
+          "deezer";
+      }
+    }
+
+    nowFirstPlayedAt =
+      String(
+        nowMeta.first_played_at ||
+          ""
+      ).trim();
+
+    nowFirstPlayedAtMs =
+      toUTCms(
+        nowFirstPlayedAt
+      );
+
+    nowIsNew =
+      isBlockedShow(
+        artist
+      )
+        ? false
+        : isNewFromFirstPlayed(
+            nowFirstPlayedAt
+          );
+  }
+
+  return {
+    ok: true,
+
+    inserted,
+
+    now: {
+      raw:
+        nowIsBad
+          ? ""
+          : nowText,
+
+      artist:
+        nowIsBad
+          ? ""
+          : artist,
+
+      title:
+        nowIsBad
+          ? ""
+          : title,
+
+      track_key:
+        nowIsBad
+          ? ""
+          : track_key,
+
+      played_at,
+
+      played_at_ms,
+
+      cover_url:
+        nowCover,
+
+      cover_source:
+        nowCoverSource,
+
+      first_played_at:
+        nowIsBad
+          ? ""
+          : nowFirstPlayedAt,
+
+      first_played_at_ms:
+        nowIsBad
+          ? 0
+          : nowFirstPlayedAtMs,
+
+      is_new:
+        nowIsBad
+          ? false
+          : nowIsNew,
+    },
+
+    history,
+  };
+}
+
+async function getNowPlayingPayload(
+  limit: number
+): Promise<NowPlayingPayload> {
+  const key =
+    getResponseCacheKey(
+      limit
+    );
+
+  const now =
+    Date.now();
+
+  const cached =
+    __responseCache.get(
+      key
+    );
+
+  if (
+    cached &&
+    cached.exp > now
+  ) {
+    return clonePayload(
+      cached.payload
+    );
+  }
+
+  const inflight =
+    __inflightCache.get(
+      key
+    );
+
+  if (inflight) {
+    return clonePayload(
+      await inflight
+    );
+  }
+
+  const promise =
+    buildNowPlayingPayload(
+      limit
+    )
+      .then(
+        (
+          payload
+        ) => {
+          __responseCache.set(
+            key,
+            {
+              exp:
+                Date.now() +
+                RESPONSE_CACHE_TTL_MS,
+
+              payload:
+                clonePayload(
+                  payload
+                ),
+            }
+          );
+
+          return payload;
+        }
+      )
+      .finally(
+        () => {
+          __inflightCache.delete(
+            key
+          );
+        }
+      );
+
+  __inflightCache.set(
+    key,
+    promise
+  );
+
+  return clonePayload(
+    await promise
+  );
+}
+
+/* -------------------- API -------------------- */
+
+export const GET: APIRoute =
+  async (
+    {
+      request,
+    }
+  ) => {
+    try {
+      assertEnv();
+
+      const url =
+        new URL(
+          request.url
+        );
+
+      const requestedLimit =
+        parseRequestedLimit(
+          url.searchParams.get(
+            "limit"
+          )
+        );
+
+      const limit =
+        Math.min(
+          MAX_NOWPLAYING_LIMIT,
+
+          Math.max(
+            1,
+            requestedLimit
+          )
+        );
+
+      const payload =
+        await getNowPlayingPayload(
+          limit
+        );
+
+      return new Response(
+        JSON.stringify(
+          payload
+        ),
+        {
+          headers: {
+            "content-type":
+              "application/json; charset=utf-8",
+
+            "cache-control":
+              "public, max-age=2, s-maxage=5, stale-while-revalidate=20",
+          },
+        }
+      );
+    } catch (
+      e: any
+    ) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+
+          error:
+            e?.message ||
+            "Server error",
+        }),
+        {
+          status:
+            500,
+
+          headers: {
+            "content-type":
+              "application/json; charset=utf-8",
+
+            "cache-control":
+              "no-store",
+          },
+        }
+      );
+    }
+  };
