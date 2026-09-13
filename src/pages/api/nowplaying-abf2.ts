@@ -1207,6 +1207,58 @@ function clonePayload<T>(
   );
 }
 
+/* -------------------- ABF2 insert lock -------------------- */
+
+/*
+ * Empêche deux requêtes nowplaying lancées presque
+ * simultanément d'insérer deux fois le même passage.
+ *
+ * Le verrou est global à ABF2 et indépendant du "limit".
+ */
+async function withABF2InsertLock<T>(
+  fn: () => Promise<T>
+): Promise<T> {
+  const g =
+    globalThis as any;
+
+  const previous: Promise<void> =
+    g.__nowPlayingABF2InsertLock ||
+    Promise.resolve();
+
+  let release!: () => void;
+
+  const current =
+    new Promise<void>(
+      (resolve) => {
+        release =
+          resolve;
+      }
+    );
+
+  /*
+   * La requête suivante attendra :
+   * 1. la précédente,
+   * 2. puis la libération de celle-ci.
+   */
+  g.__nowPlayingABF2InsertLock =
+    previous
+      .catch(() => {})
+      .then(
+        () =>
+          current
+      );
+
+  await previous.catch(
+    () => {}
+  );
+
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
 /* -------------------- Core builder -------------------- */
 
 async function buildNowPlayingPayload(
@@ -1269,74 +1321,149 @@ async function buildNowPlayingPayload(
       played_at
     );
 
-  const lastRes =
-    await directusFetch(
-      `/items/${PLAYS_COLLECTION}?fields=track_key&sort=-played_at&limit=1`
-    );
-
-  const lastJson =
-    await lastRes.json();
-
-  const last =
-    lastJson?.data?.[0];
-
   let inserted =
     false;
 
-  if (
-    !nowIsBad &&
-    (
-      !last ||
-      last.track_key !==
-        track_key
-    )
-  ) {
-    const recentDuplicate =
-      await wasRecentlyPlayed(
-        track_key,
-        played_at_ms
-      );
+  /*
+   * IMPORTANT :
+   * la vérification du dernier passage,
+   * la vérification anti-doublon
+   * et l'insertion se font toutes
+   * à l'intérieur du même verrou.
+   */
+  if (!nowIsBad) {
+    inserted =
+      await withABF2InsertLock(
+        async () => {
+          const lastRes =
+            await directusFetch(
+              `/items/${PLAYS_COLLECTION}?fields=track_key,played_at&sort=-played_at&limit=1`
+            );
 
-    if (
-      !recentDuplicate
-    ) {
-      await ensureTrackRow(
-        track_key,
-        artist,
-        title,
-        played_at
-      );
+          const lastJson =
+            await lastRes.json();
 
-      await directusFetch(
-        `/items/${PLAYS_COLLECTION}`,
-        {
-          method: "POST",
+          const last =
+            lastJson?.data?.[0];
 
-          body: JSON.stringify({
+          /*
+           * Si le dernier passage enregistré
+           * est déjà le titre actuel :
+           * aucune insertion.
+           */
+          if (
+            last &&
+            String(
+              last.track_key ||
+                ""
+            ) ===
+              track_key
+          ) {
+            return false;
+          }
+
+          /*
+           * Deuxième sécurité :
+           * même track_key déjà enregistré
+           * dans les 2 dernières minutes.
+           */
+          const recentDuplicate =
+            await wasRecentlyPlayed(
+              track_key,
+              Date.now()
+            );
+
+          if (
+            recentDuplicate
+          ) {
+            return false;
+          }
+
+          await ensureTrackRow(
             track_key,
+            artist,
+            title,
+            played_at
+          );
 
-            artist:
-              artist || null,
+          /*
+           * Dernière vérification juste
+           * avant le POST.
+           *
+           * Le verrou empêche normalement
+           * toute collision dans ce process,
+           * et cette vérification apporte
+           * une sécurité supplémentaire.
+           */
+          const finalCheckRes =
+            await directusFetch(
+              `/items/${PLAYS_COLLECTION}?fields=track_key,played_at&sort=-played_at&limit=1`
+            );
 
-            title:
-              title || null,
+          const finalCheckJson =
+            await finalCheckRes.json();
 
-            played_at,
+          const finalLast =
+            finalCheckJson?.data?.[0];
 
-            raw:
-              nowText || null,
-          }),
+          if (
+            finalLast &&
+            String(
+              finalLast.track_key ||
+                ""
+            ) ===
+              track_key
+          ) {
+            return false;
+          }
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+          const finalRecentDuplicate =
+            await wasRecentlyPlayed(
+              track_key,
+              Date.now()
+            );
+
+          if (
+            finalRecentDuplicate
+          ) {
+            return false;
+          }
+
+          await directusFetch(
+            `/items/${PLAYS_COLLECTION}`,
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify({
+                  track_key,
+
+                  artist:
+                    artist ||
+                    null,
+
+                  title:
+                    title ||
+                    null,
+
+                  played_at,
+
+                  raw:
+                    nowText ||
+                    null,
+                }),
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+            }
+          );
+
+          return true;
         }
       );
-
-      inserted =
-        true;
-    }
   }
 
   const oversample =
@@ -1568,38 +1695,72 @@ async function buildNowPlayingPayload(
       Boolean
     ) as any[];
 
-  const seen =
-    new Set<string>();
-
+  /*
+   * Nettoyage de l'historique renvoyé par l'API.
+   *
+   * On masque également les anciens doublons
+   * techniques déjà présents dans plays_abf2
+   * lorsqu'ils concernent le même track_key
+   * à moins de 2 minutes d'intervalle.
+   */
   const uniq:
     any[] = [];
+
+  const lastSeenByTrack =
+    new Map<
+      string,
+      number
+    >();
 
   for (
     const it of cleaned
   ) {
-    const k =
-      `${String(
-        it.track_key ||
-          it.raw ||
-          ""
-      )}__${Number(
-        it.played_at_ms ||
-          0
-      )}`;
-
     if (!it?.raw) {
       continue;
     }
 
+    const historyKey =
+      String(
+        it.track_key ||
+          it.raw ||
+          ""
+      ).trim();
+
+    const historyTs =
+      Number(
+        it.played_at_ms ||
+          0
+      );
+
     if (
-      seen.has(k)
+      historyKey &&
+      historyTs
     ) {
-      continue;
+      const previousTs =
+        lastSeenByTrack.get(
+          historyKey
+        );
+
+      if (
+        previousTs &&
+        Math.abs(
+          previousTs -
+            historyTs
+        ) <=
+          PLAY_DEDUP_WINDOW_MS
+      ) {
+        continue;
+      }
+
+      lastSeenByTrack.set(
+        historyKey,
+        historyTs
+      );
     }
 
-    seen.add(k);
-
-    uniq.push(it);
+    uniq.push(
+      it
+    );
   }
 
   const history =
