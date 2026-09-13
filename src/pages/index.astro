@@ -158,6 +158,203 @@ try {
 ---
 
 <Base title="Radio ABF — Alternative Bass Fréquence | The DJs' Frequency">
+
+  <!-- =========================================================
+       ABF NETWORK SWITCH — Radio ABF active / ABF 2 navigation
+       ========================================================= -->
+  <section class="abf-network-topbar" aria-label="ABF Network stations">
+    <div class="abf-network-brand-mini">
+      <img src="/logo-abf.png" alt="Radio ABF" />
+      <div>
+        <div class="abf-network-brand-title">Radio ABF</div>
+        <div class="abf-network-brand-claim">The DJs' Frequency</div>
+      </div>
+    </div>
+
+    <div class="abf-network-top-actions">
+      <button id="abfNetworkOnAir" type="button" class="abf-network-onair" aria-label="Listen to Radio ABF live">
+        <span class="abf-network-live-dot"></span>
+        <span id="abfNetworkOnAirLabel">LISTEN LIVE</span>
+      </button>
+
+      <a href="/abf2" class="abf-network-station-switch" aria-label="Switch to ABF 2 — The Hits Frequency">
+        <span class="abf-network-station-dot abf-network-station-dot-red"></span>
+        <span>
+          <strong>ABF 2</strong>
+          <small>The Hits Frequency</small>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <style is:inline>
+    .abf-network-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, rgba(47,194,255,.045), rgba(255,255,255,.018));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .abf-network-brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .abf-network-brand-mini img {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      flex: none;
+      filter: drop-shadow(0 0 14px rgba(47,194,255,.28));
+    }
+
+    .abf-network-brand-title {
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+    }
+
+    .abf-network-brand-claim {
+      margin-top: 3px;
+      color: #2fc2ff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .abf-network-top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .abf-network-onair {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 17px;
+      border-radius: 13px;
+      border: 1px solid rgba(47,194,255,.45);
+      background: linear-gradient(135deg, #145c8f, #2fc2ff);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      box-shadow: 0 12px 30px rgba(47,194,255,.18);
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .abf-network-live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 11px rgba(255,255,255,.85);
+      animation: abfNetworkPulse 1.35s ease-in-out infinite;
+    }
+
+    @keyframes abfNetworkPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .35; transform: scale(.75); }
+    }
+
+    .abf-network-station-switch {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 14px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.03);
+      color: #fff;
+      text-decoration: none;
+      transition: .18s ease;
+    }
+
+    .abf-network-station-switch:hover {
+      border-color: rgba(255,49,80,.32);
+      background: rgba(255,49,80,.06);
+      transform: translateY(-1px);
+    }
+
+    .abf-network-station-switch strong,
+    .abf-network-station-switch small {
+      display: block;
+    }
+
+    .abf-network-station-switch strong {
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .abf-network-station-switch small {
+      margin-top: 2px;
+      color: rgba(255,255,255,.42);
+      font-size: 9px;
+      line-height: 1.2;
+    }
+
+    .abf-network-station-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex: none;
+    }
+
+    .abf-network-station-dot-red {
+      background: #ff3150;
+      box-shadow: 0 0 13px rgba(255,49,80,.82);
+    }
+
+    @media (max-width: 640px) {
+      .abf-network-topbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .abf-network-top-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .abf-network-onair,
+      .abf-network-station-switch {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .abf-network-onair {
+        padding: 0 12px;
+      }
+
+      .abf-network-station-switch {
+        justify-content: flex-start;
+        padding: 0 12px;
+      }
+    }
+  </style>
   <!-- BIG NOW PLAYING HERO -->
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1F33] p-6 md:p-8 shadow-2xl">
     <!-- Background glow -->
@@ -1562,6 +1759,40 @@ function formatWorldTimeLabel(timeHHMM){
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
       };
     }
+
+    // ABF Network card — same behaviour as ABF 2:
+    // LISTEN LIVE before playback, then ON AIR while Radio ABF is playing.
+    const networkOnAir = document.getElementById("abfNetworkOnAir");
+    const networkOnAirLabel = document.getElementById("abfNetworkOnAirLabel");
+
+    const updateNetworkOnAir = () => {
+      const audio = window.__abf?.audio;
+      if (networkOnAirLabel) {
+        networkOnAirLabel.textContent =
+          audio && !audio.paused ? "ON AIR" : "LISTEN LIVE";
+      }
+    };
+
+    if (networkOnAir && !networkOnAir.dataset.bound){
+      networkOnAir.dataset.bound = "1";
+
+      networkOnAir.onclick = () => {
+        const audio = window.__abf?.audio;
+
+        // Start Radio ABF through the existing global player.
+        // When already playing, the button stays an ON AIR indicator.
+        if (!audio || audio.paused) {
+          document.getElementById("playBtn")?.click();
+        }
+
+        setTimeout(updateNetworkOnAir, 80);
+      };
+
+      document.addEventListener("play", updateNetworkOnAir, true);
+      document.addEventListener("pause", updateNetworkOnAir, true);
+    }
+
+    updateNetworkOnAir();
     // timers (nettoyage avant de re-créer)
     if (window.__abfHomeTimer) clearInterval(window.__abfHomeTimer);
    // 🔁 Refresh rapide : now playing + on air
