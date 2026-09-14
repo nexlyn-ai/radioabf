@@ -1028,11 +1028,25 @@ async function fetchDeezerCover(
       const url =
         `https://api.deezer.com/search?q=${q}`;
 
+      console.log(
+        "[ABF2 Deezer] QUERY",
+        qRaw,
+        url
+      );
+
       const j =
         await fetchJsonWithTimeout(
           url,
           DEEZER_TIMEOUT_MS
         );
+
+      console.log(
+        "[ABF2 Deezer] RESPONSE",
+        qRaw,
+        Array.isArray(j?.data)
+          ? j.data.length
+          : "NO DATA"
+      );
 
       const rows =
         Array.isArray(
@@ -1096,7 +1110,15 @@ async function fetchDeezerCover(
         break;
       }
     }
-  } catch {}
+  } catch (e) {
+    console.error(
+      "[ABF2 Deezer] ERROR",
+      artist,
+      "-",
+      title,
+      e
+    );
+  }
 
   __deezerCache.set(
     key,
