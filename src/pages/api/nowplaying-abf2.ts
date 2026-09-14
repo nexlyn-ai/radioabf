@@ -34,12 +34,16 @@ const TRACKS_COVER_URL_FIELD = "cover_url";
 const TRACKS_COVER_OVERRIDE_FIELD = "cover_override";
 
 // ✅ Deezer fallback ON (affichage uniquement)
-const ENABLE_DEEZER_FALLBACK =
-  (
-    import.meta.env.ENABLE_DEEZER_FALLBACK ||
-    process.env.ENABLE_DEEZER_FALLBACK ||
-    "true"
-  ) === "true";
+// IMPORTANT : lu au runtime pour éviter qu'Astro/esbuild ne supprime
+// le code Deezer du bundle lors du build SSR.
+function isDeezerFallbackEnabled(): boolean {
+  const raw =
+    process.env.ENABLE_DEEZER_FALLBACK ??
+    import.meta.env.ENABLE_DEEZER_FALLBACK ??
+    "true";
+
+  return String(raw).trim().toLowerCase() !== "false";
+}
 
 const NEW_TRACK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PLAY_DEDUP_WINDOW_MS = 2 * 60 * 1000;
@@ -941,9 +945,7 @@ async function fetchDeezerCover(
   artist: string,
   title: string
 ): Promise<string> {
-  if (
-    !ENABLE_DEEZER_FALLBACK
-  ) {
+  if (!isDeezerFallbackEnabled()) {
     return "";
   }
 
@@ -1028,25 +1030,11 @@ async function fetchDeezerCover(
       const url =
         `https://api.deezer.com/search?q=${q}`;
 
-      console.log(
-        "[ABF2 Deezer] QUERY",
-        qRaw,
-        url
-      );
-
       const j =
         await fetchJsonWithTimeout(
           url,
           DEEZER_TIMEOUT_MS
         );
-
-      console.log(
-        "[ABF2 Deezer] RESPONSE",
-        qRaw,
-        Array.isArray(j?.data)
-          ? j.data.length
-          : "NO DATA"
-      );
 
       const rows =
         Array.isArray(
@@ -1110,15 +1098,7 @@ async function fetchDeezerCover(
         break;
       }
     }
-  } catch (e) {
-    console.error(
-      "[ABF2 Deezer] ERROR",
-      artist,
-      "-",
-      title,
-      e
-    );
-  }
+  } catch {}
 
   __deezerCache.set(
     key,
