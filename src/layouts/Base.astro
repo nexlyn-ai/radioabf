@@ -2882,6 +2882,16 @@ const onAstroNav = () => {
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
 
         const BUILDS = [
+        {
+          v: "4.1.1",
+          d: "Sep 17, 2026",
+          t: "Website stability and user experience improvements across the ABF Network. Fixed audio switching between Radio ABF and ABF 2 for smoother transitions between stations. Corrected UTF-8 character encoding on the ABF 2 homepage. Improved the ABF 2 voting interface: confirmation messages now reset when the current track changes, previously voted tracks are correctly identified, and unavailable voting buttons display the appropriate disabled state. These refinements improve navigation, playback continuity and the overall listening experience."
+        },
+        {
+          v: "4.1.0",
+          d: "Sep 17, 2026",
+          t: "Major broadcasting infrastructure upgrade across the ABF Network. Deployed a second streaming server with automated DNS failover and recovery, powered by health checks every minute. Added 16 emergency audio streams across both servers for Radio ABF and ABF 2, covering MP3 HD, MP3 SD, AAC and FLAC. Automated weekly recording, validation, synchronization and backup retention ensure that emergency audio remains up to date. Our customized Icecast-KH version also introduces a source-code fix for public stream URLs behind HTTPS reverse proxies, improving Xiph directory registration. Automatic failover and recovery have been successfully tested, strengthening broadcasting continuity and reliability across both stations."
+        },
 		    {
 			v: "4.0.0",
 			d: "Sep 14, 2026",
