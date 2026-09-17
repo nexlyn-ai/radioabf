@@ -744,7 +744,7 @@ const fmtDate = (iso?: string | null) => {
 
     .abf2-vote-btn:disabled {
       opacity: .55;
-      cursor: wait;
+      cursor: not-allowed;
     }
 
     .abf2-text-link {
@@ -2809,8 +2809,12 @@ function restoreABFHeader() {
               track.title
             );
 
+          const currentVoteKey =
+            trackKey(track.artist, track.title);
+
           voteBtn.disabled =
-            !valid;
+            !valid ||
+            voteBtn.dataset.votedKey === currentVoteKey;
 
           voteBtn.dataset.artist =
             track.artist ||
@@ -3123,6 +3127,17 @@ const currentKey =
     currentTrack.title
   );
 
+const voteButton = document.querySelector("#abf2NowVote");
+const voteMessage = document.querySelector("#abf2VoteMessage");
+
+if (voteButton && voteButton.dataset.trackKey !== currentKey) {
+  voteButton.dataset.trackKey = currentKey;
+
+  if (voteMessage) {
+    voteMessage.textContent = "";
+    voteMessage.classList.add("hidden");
+  }
+}
 const lastPlayed =
   (np.history || []).filter(
     (row) => {
@@ -3211,6 +3226,7 @@ renderLastPlayed(
               });
 
             if (result.ok) {
+              btn.dataset.votedKey = trackKey(artist, title);
               if (msg) {
                 msg.textContent =
                   "Vote counted. Thank you!";
@@ -3222,6 +3238,9 @@ renderLastPlayed(
 
               await refreshABF2Home();
             } else {
+              if (result.status === 409) {
+                btn.dataset.votedKey = trackKey(artist, title);
+              }
               if (msg) {
                 msg.textContent =
                   result.status === 409
@@ -3236,9 +3255,7 @@ renderLastPlayed(
                 );
               }
             }
-
-            btn.disabled =
-              false;
+            btn.disabled = !btn.dataset.artist && !btn.dataset.title || btn.dataset.votedKey === trackKey(btn.dataset.artist, btn.dataset.title);
           }
         );
       }
