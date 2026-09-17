@@ -52,13 +52,13 @@ const fmtDate = (iso?: string | null) => {
 ---
 
 <Base
-  title="ABF 2 â€” Alternative Bass FrÃ©quence | The Hits Frequency"
-  description="ABF 2 â€” The Hits Frequency. Pop, rock, alternative, classics, 80s, 90s and today's hits."
+  title="ABF 2 — Alternative Bass Fréquence | The Hits Frequency"
+  description="ABF 2 — The Hits Frequency. Pop, rock, alternative, classics, 80s, 90s and today's hits."
 >
   <main id="abf2Home" class="abf2-page">
 
     <!-- =========================================================
-         TOP / NOW PLAYING â€” no hero
+         TOP / NOW PLAYING — no hero
          ========================================================= -->
     <section class="abf2-section abf2-section-top" id="home">
       <div class="abf2-shell">
@@ -112,15 +112,15 @@ const fmtDate = (iso?: string | null) => {
               </div>
 
               <div class="abf2-now-copy">
-                <div id="abf2NowArtist" class="abf2-now-artist">â€”</div>
-                <div id="abf2NowTitle" class="abf2-now-title">â€”</div>
+                <div id="abf2NowArtist" class="abf2-now-artist">—</div>
+                <div id="abf2NowTitle" class="abf2-now-title">—</div>
                 <div id="abf2NowTime" class="abf2-now-time">Live on ABF 2</div>
 
                 <div class="abf2-now-actions">
                   <button id="abf2NowVote" class="abf2-vote-btn" type="button">
-                    ðŸ‘ Vote <span id="abf2NowVoteCount">0</span>
+                    👍 Vote <span id="abf2NowVoteCount">0</span>
                   </button>
-                  <a href="/abf2/music" class="abf2-text-link">Last played â†’</a>
+                  <a href="/abf2/music" class="abf2-text-link">Last played →</a>
                 </div>
 
                 <div id="abf2VoteMessage" class="abf2-inline-message hidden"></div>
@@ -136,7 +136,7 @@ const fmtDate = (iso?: string | null) => {
                 <h2>This Week</h2>
               </div>
 
-              <span id="abf2WeekLabel" class="abf2-week-badge">â€”</span>
+              <span id="abf2WeekLabel" class="abf2-week-badge">—</span>
             </div>
 
             <div id="abf2Top1" class="abf2-top1 hidden">
@@ -150,8 +150,8 @@ const fmtDate = (iso?: string | null) => {
               </div>
 
               <div class="abf2-top1-copy">
-                <div id="abf2Top1Artist" class="abf2-top1-artist">â€”</div>
-                <div id="abf2Top1Title" class="abf2-top1-title">â€”</div>
+                <div id="abf2Top1Artist" class="abf2-top1-artist">—</div>
+                <div id="abf2Top1Title" class="abf2-top1-title">—</div>
 <div class="abf2-top1-count">
   <span id="abf2Top1Count">0</span> votes
 </div>
@@ -159,12 +159,12 @@ const fmtDate = (iso?: string | null) => {
             </div>
 
             <div id="abf2TopEmpty" class="abf2-empty">
-              No votes yet â€” be the first.
+              No votes yet — be the first.
             </div>
 
             <ol id="abf2MiniChart" class="abf2-mini-chart"></ol>
 			<a href="/abf2/music" class="abf2-text-link abf2-chart-more">
-  View all votes â†’
+  View all votes →
 </a>
           </article>
         </div>
@@ -185,7 +185,7 @@ const fmtDate = (iso?: string | null) => {
     </div>
 
     <a href="/abf2/music/insights" class="abf2-text-link">
-      Weekly chart â†’
+      Weekly chart →
     </a>
   </div>
 
@@ -215,7 +215,7 @@ const fmtDate = (iso?: string | null) => {
         </div>
 
         <a href="/abf2/news" class="abf2-text-link">
-          All network news â†’
+          All network news →
         </a>
       </div>
 
@@ -279,7 +279,7 @@ const fmtDate = (iso?: string | null) => {
                     <div class="abf2-news-date">{date}</div>
                     <h3>{post.title || (isABF2News ? "ABF 2 News" : "Radio ABF News")}</h3>
                     <p>{post.excerpt || ""}</p>
-                    <span class="abf2-news-read">Read more â†’</span>
+                    <span class="abf2-news-read">Read more →</span>
                   </div>
                 </a>
               );
@@ -311,7 +311,7 @@ const fmtDate = (iso?: string | null) => {
         <p>
   ABF 2 combines pop, rock, alternative music,
   iconic classics and today's hits in a contemporary
-  Adult Hits format â€” streamed worldwide in UHD, HD,
+  Adult Hits format — streamed worldwide in UHD, HD,
   SD and Mobile quality.
 		</p>
           
@@ -339,7 +339,7 @@ const fmtDate = (iso?: string | null) => {
               <strong>Radio ABF</strong>
               <small>The DJs' Frequency</small>
             </span>
-            <span class="abf2-network-arrow">â†’</span>
+            <span class="abf2-network-arrow">→</span>
           </a>
 
           <div class="abf2-network-row current">
@@ -364,7 +364,7 @@ const fmtDate = (iso?: string | null) => {
           <img src="/logo-abf2.png" alt="ABF 2" />
 
           <div>
-            <span>Alternative Bass FrÃ©quence</span>
+            <span>Alternative Bass Fréquence</span>
             <strong>The Hits Frequency</strong>
           </div>
         </div>
@@ -1487,7 +1487,7 @@ const fmtDate = (iso?: string | null) => {
     }
 	
 	/* =========================================================
-   ABF 2 â€” FOOTER LINKS RED
+   ABF 2 — FOOTER LINKS RED
    ========================================================= */
 
 /* Liens texte du footer : rouge ABF2 */
@@ -1500,7 +1500,7 @@ const fmtDate = (iso?: string | null) => {
   color: #ff7188 !important;
 }
 
-/* Boutons/liens Ã©ventuels du footer */
+/* Boutons/liens éventuels du footer */
 :global(html.abf2-theme footer button),
 :global(html.abf2-theme footer .abfFooterLinkBtn) {
   color: #ff3150 !important;
@@ -1511,7 +1511,7 @@ const fmtDate = (iso?: string | null) => {
   color: #ff7188 !important;
 }
 
-/* IcÃ´nes/SVG : on conserve Ã©galement l'identitÃ© rouge */
+/* Icônes/SVG : on conserve également l'identité rouge */
 :global(html.abf2-theme footer a svg) {
   color: #ff3150 !important;
 }
@@ -1521,7 +1521,7 @@ const fmtDate = (iso?: string | null) => {
 }
 
 /* =========================================================
-   RADIO ABF â€” CYAN HOVER ONLY
+   RADIO ABF — CYAN HOVER ONLY
    Must stay AFTER the general ABF2 red rules
    ========================================================= */
 
@@ -1531,17 +1531,17 @@ const fmtDate = (iso?: string | null) => {
   background-color: rgba(47, 194, 255, .08) !important;
 }
 
-/* Force le texte interne en cyan Ã©galement */
+/* Force le texte interne en cyan également */
 :global(html.abf2-theme #siteHeader a[data-abf2-nav][href="/"]:hover *) {
   color: #2FC2FF !important;
 }
 
 /* =========================================================
-   ABF2 â€” DEDICATIONS
+   ABF2 — DEDICATIONS
    message blanc / pseudo rouge
    ========================================================= */
 
-/* Tout le contenu des dÃ©dicaces en blanc par dÃ©faut */
+/* Tout le contenu des dédicaces en blanc par défaut */
 :global(html.abf2-theme #dedicationsInner),
 :global(html.abf2-theme #dedicationsInner *) {
   color: #ffffff !important;
@@ -1727,8 +1727,8 @@ const fmtDate = (iso?: string | null) => {
 
         const s =
           clean(raw)
-            .replace(/\s+â€”\s+/g, " - ")
-            .replace(/\s+â€“\s+/g, " - ");
+            .replace(/\s+—\s+/g, " - ")
+            .replace(/\s+–\s+/g, " - ");
 
         const idx =
           s.indexOf(" - ");
@@ -1763,7 +1763,7 @@ const fmtDate = (iso?: string | null) => {
       /* =========================================================
          HOME TRACK DISPLAY NORMALIZATION
          ARTISTE - Titre (English title case)
-         Affichage uniquement : aucune modification des donnÃ©es/API.
+         Affichage uniquement : aucune modification des données/API.
          ========================================================= */
 
       function formatArtistName(value) {
@@ -1813,7 +1813,7 @@ const fmtDate = (iso?: string | null) => {
 
         const capitalizeToken = (token) =>
           token.replace(
-            /(^|[-/(\"'â€™\[])([a-zÃ -Ã¶Ã¸-Ã¿])/gi,
+            /(^|[-/(\"'’\[])([a-zà-öø-ÿ])/gi,
             (_, prefix, letter) =>
               prefix + letter.toLocaleUpperCase("en-US")
           );
@@ -1832,8 +1832,8 @@ const fmtDate = (iso?: string | null) => {
 
             const plain =
               word
-                .replace(/^[^a-z0-9Ã -Ã¶Ã¸-Ã¿]+/i, "")
-                .replace(/[^a-z0-9Ã -Ã¶Ã¸-Ã¿]+$/i, "");
+                .replace(/^[^a-z0-9à-öø-ÿ]+/i, "")
+                .replace(/[^a-z0-9à-öø-ÿ]+$/i, "");
 
             const previous =
               lowerWords[index - 1] || "";
@@ -1841,7 +1841,7 @@ const fmtDate = (iso?: string | null) => {
             const startsNewPhrase =
               index === 0 ||
               /^[([{]/.test(word) ||
-              /[:!?â€”â€“]$/.test(previous);
+              /[:!?—–]$/.test(previous);
 
             const isLast =
               index === lowerWords.length - 1;
@@ -1864,7 +1864,7 @@ const fmtDate = (iso?: string | null) => {
           .toLowerCase()
           .replace(/\u00a0/g, " ")
           .replace(/\s+/g, " ")
-          .replace(/[â€œâ€"']/g, "")
+          .replace(/[“”"']/g, "")
           .trim();
       }
 
@@ -2171,9 +2171,9 @@ function setABF2Header() {
       (el.textContent || "")
         .trim();
 
-    if (text === "RadioABF â€” Player") {
+    if (text === "RadioABF — Player") {
       el.textContent =
-        "ABF 2 â€” Player";
+        "ABF 2 — Player";
     }
 
     if (text === "The DJs' Frequency") {
@@ -2768,13 +2768,13 @@ function restoreABFHeader() {
           formatArtistName(
             track.artist
           ) ||
-          "â€”";
+          "—";
 
         titleEl.textContent =
           formatEnglishTitle(
             track.title
           ) ||
-          "â€”";
+          "—";
 
         if (timeEl) {
   timeEl.textContent =
@@ -2898,8 +2898,8 @@ function restoreABFHeader() {
                     </div>
 
                     <div class="abf2-last-copy">
-                      <strong>${esc(formatArtistName(track.artist) || "â€”")}</strong>
-                      <span>${esc(formatEnglishTitle(track.title) || "â€”")}</span>
+                      <strong>${esc(formatArtistName(track.artist) || "—")}</strong>
+                      <span>${esc(formatEnglishTitle(track.title) || "—")}</span>
                       
                     </div>
                   </div>
@@ -3014,7 +3014,7 @@ function restoreABFHeader() {
             formatArtistName(
               firstTrack.artist
             ) ||
-            "â€”";
+            "—";
         }
 
         if (t) {
@@ -3022,7 +3022,7 @@ function restoreABFHeader() {
             formatEnglishTitle(
               firstTrack.title
             ) ||
-            "â€”";
+            "—";
         }
 
         if (c) {
@@ -3066,8 +3066,8 @@ function restoreABFHeader() {
                       <span class="abf2-mini-rank">#${index + 2}</span>
 
                       <span class="abf2-mini-copy">
-                        <strong>${esc(formatArtistName(tr.artist) || "â€”")}</strong>
-                        <span>${esc(formatEnglishTitle(tr.title) || "â€”")}</span>
+                        <strong>${esc(formatArtistName(tr.artist) || "—")}</strong>
+                        <span>${esc(formatEnglishTitle(tr.title) || "—")}</span>
                       </span>
 
                      <span class="abf2-mini-count">
