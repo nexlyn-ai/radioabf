@@ -358,6 +358,173 @@ const fmtDate = (iso?: string | null) => {
     <!-- =========================================================
          SIGNATURE
          ========================================================= -->
+    <!-- ABF 2 STREAMING + SUPPORT -->
+    <section class="abf2-section" id="abf2-streaming-support">
+      <div class="abf2-shell abf2-feature-grid">
+
+        <article class="abf2-card abf2-feature-card">
+          <div class="abf2-kicker">Premium streaming</div>
+          <h2>ABF 2 Live in UHD &amp; HD</h2>
+          <p>
+            Enjoy ABF 2 in your preferred audio quality through secure HTTPS streams,
+            from lossless FLAC to low-data mobile listening.
+          </p>
+
+          <div class="abf2-feature-tags">
+            <span>UHD</span>
+            <span>HD</span>
+            <span>SD</span>
+            <span>Low Data</span>
+          </div>
+
+          <button id="abf2OpenStreamModal" class="abf2-feature-link" type="button">
+            Learn more →
+          </button>
+        </article>
+
+        <article class="abf2-card abf2-feature-card abf2-feature-support">
+          <div class="abf2-kicker">Independent &amp; Ad-Free</div>
+          <h2>Buy us a coffee? ☕</h2>
+          <p>
+            The ABF Network stays independent thanks to you.
+            A small donation helps cover servers, streaming and music rights
+            for both Radio ABF and ABF 2.
+          </p>
+
+          <button id="abf2OpenSupportModal" class="abf2-feature-button" type="button">
+            Support us →
+          </button>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ABF 2 STREAM QUALITY MODAL -->
+    <div id="abf2StreamQualityModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-abf2-modal-close="stream"></div>
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="ABF 2 stream qualities">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">ABF 2 — Stream Qualities, HTTPS Proxy &amp; HLS</div>
+            <button class="abfModalClose" data-abf2-modal-close="stream" type="button" aria-label="Close">✕</button>
+          </div>
+
+          <div class="abfModalBody abf2-feature-modal-body">
+            <p><strong>ABF 2 offers multiple stream qualities via secure HTTPS endpoints.</strong></p>
+
+            <p>
+              Direct Icecast streams provide low-latency live radio.
+              HLS is a secondary option for compatible devices,
+              including Safari, iOS and Smart TVs.
+            </p>
+
+            <ul>
+              <li><strong>UHD (FLAC ~728kbps):</strong> Lossless audio — maximum fidelity.</li>
+              <li><strong>HD (MP3 320kbps):</strong> High bitrate for excellent clarity.</li>
+              <li><strong>SD (MP3 128kbps):</strong> Balanced quality for everyday listening.</li>
+              <li><strong>Low (AAC+ 32kbps):</strong> Reduced mobile data usage.</li>
+            </ul>
+
+            <p>
+              The embedded player selects a stream automatically.
+              You can also manually choose your preferred quality in its controls.
+            </p>
+
+            <div class="abf2-modal-divider">
+              <h3>How to use in external players</h3>
+              <ul>
+                <li><strong>Windows:</strong> VLC → Media → Open Network Stream → paste URL.</li>
+                <li><strong>Mac:</strong> VLC or IINA → File → Open Network.</li>
+                <li><strong>Android:</strong> VLC or a radio app → Add stream URL.</li>
+                <li><strong>iOS:</strong> Safari (HLS recommended) or VLC → add custom URL.</li>
+                <li><strong>Linux:</strong> VLC, Rhythmbox or mpv → open network stream.</li>
+              </ul>
+            </div>
+
+            <div class="abf2-modal-divider">
+              <div class="abf2-modal-label">⚡ Low Latency • Recommended</div>
+              <h3>Direct HTTPS Streams (Icecast)</h3>
+
+              <ul class="abf2-stream-links">
+                <li>
+                  UHD FLAC ~728kbps:
+                  <a href="https://stream.radioabf.com/abf2-uhd.flac" target="_blank" rel="noopener noreferrer">https://stream.radioabf.com/abf2-uhd.flac</a>
+                </li>
+                <li>
+                  HD MP3 320kbps:
+                  <a href="https://stream.radioabf.com/abf2-hd.mp3" target="_blank" rel="noopener noreferrer">https://stream.radioabf.com/abf2-hd.mp3</a>
+                </li>
+                <li>
+                  SD MP3 128kbps:
+                  <a href="https://stream.radioabf.com/abf2-sd.mp3" target="_blank" rel="noopener noreferrer">https://stream.radioabf.com/abf2-sd.mp3</a>
+                </li>
+                <li>
+                  Low AAC+ 32kbps:
+                  <a href="https://stream.radioabf.com/abf2-low.aac" target="_blank" rel="noopener noreferrer">https://stream.radioabf.com/abf2-low.aac</a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="abf2-modal-divider">
+              <div class="abf2-modal-label">📺 HLS Compatible • iOS / Safari / Smart TV</div>
+              <h3>HLS Streams (Secondary Option)</h3>
+
+              <p>
+                Segmented delivery provides extended compatibility,
+                with slightly higher latency than Icecast.
+              </p>
+
+              <ul class="abf2-stream-links">
+                <li>
+                  Auto (Master HLS):
+                  <a href="https://stream.radioabf.com/hls/abf2.m3u8" target="_blank" rel="noopener noreferrer">https://stream.radioabf.com/hls/abf2.m3u8</a>
+                </li>
+                <li>
+                  Low Data (HLS):
+                  <a href="https://stream.radioabf.com/hls/abf2-low.m3u8" target="_blank" rel="noopener noreferrer">https://stream.radioabf.com/hls/abf2-low.m3u8</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABF 2 SUPPORT MODAL -->
+    <div id="abf2SupportModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-abf2-modal-close="support"></div>
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Support the ABF Network">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">Buy us a coffee to keep the ABF Network alive? ☕</div>
+            <button class="abfModalClose" data-abf2-modal-close="support" type="button" aria-label="Close">✕</button>
+          </div>
+
+          <div class="abfModalBody abf2-feature-modal-body abf2-support-modal">
+            <h3>Two stations. One independent network.</h3>
+
+            <p>
+              Radio ABF and ABF 2 bring you music around the clock, without advertising.
+              Your support helps us cover broadcasting servers, streaming infrastructure
+              and music rights.
+            </p>
+
+            <p>Even <strong>€3</strong> makes a difference. Thank you! ♥</p>
+
+            <a
+              href="https://www.buymeacoffee.com/radioabf"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="abf2-coffee-link"
+            >
+              ☕ Buy us a coffee (or more!)
+            </a>
+
+            <p class="abf2-support-note">Secure payment • One-time or monthly support</p>
+          </div>
+        </div>
+      </div>
+    </div>
     <section class="abf2-signature">
       <div class="abf2-shell">
         <div class="abf2-signature-card">
@@ -1574,8 +1741,253 @@ const fmtDate = (iso?: string | null) => {
   color: #ffd9df !important;
 }
 
+    /* ABF 2 — streaming and support cards */
+
+    .abf2-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .abf2-feature-card {
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-height: 245px;
+    }
+
+    .abf2-feature-card h2 {
+      margin: 8px 0 0;
+      font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+      font-weight: 900;
+      letter-spacing: -.035em;
+    }
+
+    .abf2-feature-card p {
+      margin: 14px 0 0;
+      color: rgba(255,255,255,.66);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .abf2-feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .abf2-feature-tags span {
+      padding: 6px 10px;
+      border: 1px solid rgba(255,49,80,.23);
+      border-radius: 10px;
+      background: rgba(255,49,80,.07);
+      color: #ffc8d2;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .abf2-feature-link {
+      margin-top: auto;
+      padding: 20px 0 0;
+      border: 0;
+      background: transparent;
+      color: #ff7188;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .abf2-feature-link:hover {
+      color: #ff9bad;
+    }
+
+    .abf2-feature-support {
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255,49,80,.16), transparent 45%),
+        linear-gradient(145deg, rgba(255,49,80,.07), rgba(255,255,255,.018));
+    }
+
+    .abf2-feature-button {
+      margin-top: auto;
+      padding: 12px 20px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #9e001f, #ff3150);
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .18s ease;
+    }
+
+    .abf2-feature-button:hover {
+      transform: translateY(-2px);
+    }
+
+    .abf2-feature-modal-body {
+      color: rgba(255,255,255,.76);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .abf2-feature-modal-body p {
+      margin: 0 0 15px;
+    }
+
+    .abf2-feature-modal-body ul {
+      margin: 12px 0;
+      padding-left: 20px;
+      list-style: disc;
+    }
+
+    .abf2-feature-modal-body li {
+      margin-bottom: 9px;
+    }
+
+    .abf2-feature-modal-body h3 {
+      margin: 0 0 12px;
+      color: white;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .abf2-modal-divider {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+
+    .abf2-modal-label {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 5px 9px;
+      border: 1px solid rgba(255,49,80,.25);
+      border-radius: 8px;
+      color: #ff9bad;
+      background: rgba(255,49,80,.08);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .abf2-stream-links a {
+      display: block;
+      color: #ff9bad;
+      text-decoration: underline;
+      overflow-wrap: anywhere;
+    }
+
+    .abf2-stream-links a:hover {
+      color: white;
+    }
+
+    .abf2-support-modal {
+      text-align: center;
+      padding: 28px;
+    }
+
+    .abf2-coffee-link {
+      display: inline-flex;
+      justify-content: center;
+      margin: 14px 0;
+      padding: 14px 20px;
+      border-radius: 13px;
+      background: #ffdd00;
+      color: #111;
+      font-weight: 900;
+      text-decoration: none;
+      transition: transform .18s ease;
+    }
+
+    .abf2-coffee-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .abf2-support-note {
+      color: rgba(255,255,255,.42);
+      font-size: 11px;
+    }
+
+    @media (max-width: 767px) {
+      .abf2-feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .abf2-feature-card {
+        min-height: 220px;
+      }
+
+      .abf2-support-modal {
+        padding: 18px;
+      }
+    }
   </style>
 
+  <script is:inline data-astro-rerun>
+    (() => {
+      if (window.__abf2FeatureModalsBound) return;
+      window.__abf2FeatureModalsBound = true;
+
+      const ids = {
+        stream: "abf2StreamQualityModal",
+        support: "abf2SupportModal"
+      };
+
+      const open = (key) => {
+        const modal = document.getElementById(ids[key]);
+        if (!modal) return;
+
+        modal.setAttribute("aria-hidden", "false");
+        document.documentElement.style.overflow = "hidden";
+      };
+
+      const close = (key) => {
+        const modal = document.getElementById(ids[key]);
+        if (!modal) return;
+
+        modal.setAttribute("aria-hidden", "true");
+
+        if (!document.querySelector('.abfModal[aria-hidden="false"]')) {
+          document.documentElement.style.overflow = "";
+        }
+      };
+
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+
+        if (!(target instanceof Element)) return;
+
+        if (target.closest("#abf2OpenStreamModal")) {
+          open("stream");
+          return;
+        }
+
+        if (target.closest("#abf2OpenSupportModal")) {
+          open("support");
+          return;
+        }
+
+        const closeButton = target.closest("[data-abf2-modal-close]");
+
+        if (closeButton) {
+          close(closeButton.getAttribute("data-abf2-modal-close"));
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+
+        for (const key of Object.keys(ids)) {
+          const modal = document.getElementById(ids[key]);
+
+          if (modal?.getAttribute("aria-hidden") === "false") {
+            close(key);
+          }
+        }
+      });
+    })();
+  </script>
   <script is:inline data-astro-rerun>
     (() => {
       const RADIO_ABF_STREAMS = [
