@@ -646,11 +646,11 @@ try {
   <!-- Feature mini-cards (now with gradients + FLAC modal) -->
   <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
     <!-- Card 1 (darker / UHD-HD) -->
-    <div class="rounded-2xl border border-white/10 p-4 overflow-hidden relative
+    <div class="cursor-pointer rounded-2xl border border-white/10 p-4 overflow-hidden relative
                 bg-gradient-to-br from-[#061220] via-[#0A1F33] to-[#050B14]">
       <div class="absolute -top-24 -right-24 w-[240px] h-[240px] bg-cyan-500/20 rounded-full blur-[80px]"></div>
       <div class="relative">
-        <div class="text-xs text-white/50 uppercase tracking-wider">New</div>
+        <div class="text-xs text-white/50 uppercase tracking-wider">Audio</div>
         <div class="font-extrabold text-lg">ABF Live in UHD &amp; HD</div>
         <p class="text-sm text-white/70 mt-1">
           Ultra-clean HTTPS streams, from Low Data to lossless FLAC (UHD) — maximum fidelity when available.
@@ -674,7 +674,7 @@ try {
     </div>
 
     <!-- Card 2 (ABF Network / ABF 2) -->
-    <div class="rounded-2xl border border-red-400/25 p-4 relative overflow-hidden
+    <div class="cursor-pointer rounded-2xl border border-red-400/25 p-4 relative overflow-hidden
                 bg-gradient-to-br from-[#30121D] via-[#1D1525] to-[#0B1424]">
       <div class="absolute -top-20 -right-20 w-40 h-40 bg-red-500/15 rounded-full blur-3xl"></div>
       <div class="relative z-10">
@@ -695,7 +695,7 @@ try {
       </div>
     </div>
     <!-- Card 3 – Support / Donation call -->
-<div class="rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] relative overflow-hidden">
+<div class="cursor-pointer rounded-2xl border border-white/10 p-4 bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540] relative overflow-hidden">
   <div class="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
   
   <div class="relative z-10">
@@ -716,6 +716,41 @@ try {
   </div>
 </div>
   
+<!-- RADIO ABF SIGNATURE -->
+<section class="mt-8 mb-12">
+  <div class="relative overflow-hidden rounded-3xl border border-cyan-400/15
+              bg-[#0B1623] min-h-[150px] flex items-center justify-center
+              px-6 py-8">
+
+    <div class="absolute inset-0 pointer-events-none
+                bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.085),transparent_58%)]">
+    </div>
+
+    <div class="relative flex flex-col sm:flex-row items-center justify-center
+                gap-5 sm:gap-[22px] text-center sm:text-left">
+
+      <img
+        src="/logo-abf.png"
+        alt="Radio ABF"
+        class="w-[76px] h-auto drop-shadow-[0_0_14px_rgba(34,211,238,0.20)]"
+        loading="lazy"
+        decoding="async"
+      />
+
+      <div>
+        <span class="block text-[9px] tracking-[0.13em] uppercase text-white/40">
+          Alternative Bass Fréquence
+        </span>
+
+        <strong class="block mt-1 text-[clamp(1.45rem,3vw,2.4rem)]
+                       tracking-[-0.04em] text-white">
+          The DJs' Frequency
+        </strong>
+      </div>
+
+    </div>
+  </div>
+</section>
 <!-- STREAM QUALITY MODAL -->
 <div id="streamQualityModal" class="abfModal" aria-hidden="true">
   <div class="abfModalBackdrop" data-close="streamquality"></div>
