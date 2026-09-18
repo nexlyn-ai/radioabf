@@ -638,7 +638,6 @@ const fmtDate = (iso?: string | null) => {
     }
 
     .abf2-primary-btn:hover {
-      transform: translateY(-1px);
       box-shadow: 0 15px 36px rgba(255,49,80,.24);
     }
 
@@ -672,16 +671,17 @@ const fmtDate = (iso?: string | null) => {
       gap: 9px;
       padding: 0 14px;
       border-radius: 13px;
-      border: 1px solid rgba(255,255,255,.09);
-      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(47,194,255,.35);
+      background: rgba(47,194,255,.035);
       color: #fff;
       text-decoration: none;
       transition: .18s ease;
     }
 
     .abf2-station-switch:hover {
-      border-color: rgba(255,49,80,.28);
-      background: rgba(255,49,80,.055);
+      transform: translateY(-2px);
+      border-color: rgba(47,194,255,.65);
+      background: rgba(47,194,255,.08);
     }
 
     .abf2-station-switch strong,
@@ -1286,6 +1286,16 @@ const fmtDate = (iso?: string | null) => {
       background: rgba(255,255,255,.022);
       color: #fff;
       text-decoration: none;
+    }
+
+    .abf2-network-card > a.abf2-network-row {
+      border-color: rgba(47,194,255,.35);
+      transition: transform .18s ease, border-color .18s ease;
+    }
+
+    .abf2-network-card > a.abf2-network-row:hover {
+      transform: translateY(-2px);
+      border-color: rgba(47,194,255,.65);
     }
 
     .abf2-network-row.current {
