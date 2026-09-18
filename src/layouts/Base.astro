@@ -4427,6 +4427,10 @@ const onAstroNav = () => {
       })();
     </script>
 <style is:global>
+  /* Radio ABF : texte cyan au survol, sauf le lien ABF 2 */
+  html:not(.abf2-theme) #siteHeader nav a:not(.abf2-network-link):hover {
+    color: #2FC2FF !important;
+  }
   #siteHeader .abf2-network-link:hover {
     color: #ff7188 !important;
     border-color: rgba(255, 49, 80, .45) !important;
