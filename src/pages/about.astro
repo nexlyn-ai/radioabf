@@ -1,0 +1,708 @@
+---
+import Base from "../layouts/Base.astro";
+
+export const prerender = false;
+
+const metaTitle = "About Radio ABF — The DJs' Frequency";
+const metaDesc =
+  "Discover Radio ABF, the DJs' frequency of the ABF Network: CHR Dance, House, electronic music and DJ culture.";
+const canonicalPath = "/about";
+---
+
+<Base title={metaTitle} description={metaDesc} canonical={canonicalPath} image="/og-image.jpg">
+  <main class="aboutPage">
+    <div class="aboutShell">
+
+      <!-- HERO: RADIO ABF -->
+      <section class="heroCard">
+        <div class="heroGlow heroGlowA"></div>
+        <div class="heroGlow heroGlowB"></div>
+        <div class="heroInner">
+          <div class="heroEyebrow"><span class="heroDot"></span>ABF Network</div>
+          <div class="heroGrid">
+            <div class="heroCopy">
+              <h1>Radio ABF <span>The DJs' Frequency</span></h1>
+              <p class="heroLead">Radio ABF is the Dance and electronic frequency of the ABF Network, driven by contemporary music and DJ culture.</p>
+              <p class="heroText">From House and melodic sounds to carefully selected club tracks, Radio ABF brings together the energy of today's Dance scene and the creativity of DJs.</p>
+              <p class="heroText">Alongside Radio ABF, our second frequency, ABF 2, explores pop, rock, alternative music, timeless classics and today's hits. Two different sounds, one independent network.</p>
+              <div class="heroActions">
+                <a href="/" class="primaryBtn">Listen to Radio ABF</a>
+                <a href="/abf2/about" class="secondaryBtn abf2Btn">Discover ABF 2</a>
+              </div>
+            </div>
+            <div class="heroBrand">
+              <div class="brandFrame"><img src="/logo-abf.png" alt="Radio ABF" loading="eager" decoding="async" /></div>
+              <div class="brandMeta"><div class="brandName">Alternative Bass Fréquence</div><div class="brandClaim">The DJs' Frequency</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TWO FREQUENCIES: RADIO ABF FIRST -->
+      <section class="sectionBlock">
+        <div class="sectionHead">
+          <div class="sectionKicker">ABF Network</div>
+          <h2>Two Frequencies. One Network.</h2>
+          <p>Two distinct musical identities, built around the same independent vision of online radio.</p>
+        </div>
+        <div class="stationGrid">
+          <article class="stationCard stationCardABF">
+            <div class="stationTop">
+              <div class="stationLogoWrap"><img src="/logo-abf.png" alt="Radio ABF" loading="lazy" decoding="async" /></div>
+              <div><div class="stationLabel">Radio ABF</div><h3>The DJs' Frequency</h3></div>
+            </div>
+            <div class="stationTags"><span>CHR Dance</span><span>House</span><span>Electronic</span><span>DJ Culture</span></div>
+            <p>The network's Dance and electronic station, with contemporary tracks, DJ sets and premium club-oriented programming.</p>
+            <a href="/" class="stationLink stationLinkABF">Listen to Radio ABF →</a>
+          </article>
+          <article class="stationCard stationCardABF2">
+            <div class="stationTop">
+              <div class="stationLogoWrap"><img src="/logo-abf2.png" alt="ABF 2" loading="lazy" decoding="async" /></div>
+              <div><div class="stationLabel">ABF 2</div><h3>The Hits Frequency</h3></div>
+            </div>
+            <div class="stationTags"><span>Pop</span><span>Rock</span><span>Alternative</span><span>Classics</span><span>Today's Hits</span></div>
+            <p>A broader Adult Contemporary and Adult Hits format, connecting current music with iconic songs from the 80s, 90s, 2000s and 2010s.</p>
+            <a href="/abf2/about" class="stationLink">Explore ABF 2 →</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- THE SOUND -->
+      <section class="sectionBlock compactSection">
+        <div class="soundCard">
+          <div class="soundGlow"></div>
+          <div class="soundCopy">
+            <div class="sectionKicker">The Sound</div>
+            <h2>Dance music. DJ culture. One frequency.</h2>
+            <p>Radio ABF puts contemporary Dance and electronic music at the heart of the experience, from refined House and melodic sounds to club-ready selections.</p>
+            <p>Music discovery and DJ sets share the same space, bringing listeners closer to the artists, sounds and energy behind the scene.</p>
+          </div>
+          <div class="soundTags"><span>CHR Dance</span><span>House</span><span>Melodic</span><span>Electronic</span><span>DJ Sets</span><span>Club</span></div>
+        </div>
+      </section>
+
+      <!-- SHARED PHILOSOPHY -->
+      <section class="sectionBlock">
+        <div class="sectionHead centered"><div class="sectionKicker">Alternative Bass Fréquence</div><h2>One independent spirit.</h2></div>
+        <div class="valuesGrid">
+          <article class="valueCard"><div class="valueIcon">01</div><h3>Music first</h3><p>Programming is built around music, not around endless advertising breaks or generic automated filler.</p></article>
+          <article class="valueCard"><div class="valueIcon">02</div><h3>Independent</h3><p>ABF Network remains an independent radio project with its own editorial identity and technical infrastructure.</p></article>
+          <article class="valueCard"><div class="valueIcon">03</div><h3>Worldwide</h3><p>Both frequencies are streamed online and designed for listeners beyond borders, with an international on-air identity.</p></article>
+          <article class="valueCard"><div class="valueIcon">04</div><h3>High-quality audio</h3><p>Multiple stream qualities make the stations accessible while preserving a premium listening experience.</p></article>
+        </div>
+      </section>
+
+      <!-- SIGNATURE -->
+      <section class="signatureCard">
+        <div class="signatureLine">Two musical identities.</div>
+        <div class="signatureLine">Two frequencies.</div>
+        <div class="signatureStrong">One ABF Network.</div>
+        <div class="signatureActions">
+          <a href="/" class="primaryBtn">Listen to Radio ABF</a>
+          <a href="/abf2/about" class="secondaryBtn abf2Btn">Discover ABF 2</a>
+        </div>
+      </section>
+    </div>
+  </main>
+  <style is:inline>
+    .aboutPage{
+      width:100%;
+      padding: 10px 0 40px;
+    }
+
+    .aboutShell{
+      width:min(1180px, calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .heroCard,
+    .sectionBlock,
+    .signatureCard{
+      position:relative;
+      overflow:hidden;
+      border-radius:30px;
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 24px 70px rgba(0,0,0,.35);
+    }
+
+    .heroCard{
+      background:
+        linear-gradient(135deg, rgba(47,194,255,.08), transparent 42%),
+        #061322;
+      padding:34px;
+      margin-bottom:28px;
+    }
+
+    .heroGlow{
+      position:absolute;
+      width:520px;
+      height:520px;
+      border-radius:999px;
+      filter:blur(120px);
+      pointer-events:none;
+      opacity:.55;
+    }
+
+    .heroGlowA{
+      top:-260px;
+      left:-230px;
+      background:rgba(47,194,255,.32);
+    }
+
+    .heroGlowB{
+      right:-250px;
+      bottom:-260px;
+      background:rgba(20,100,220,.25);
+    }
+
+    .heroInner{
+      position:relative;
+      z-index:1;
+    }
+
+    .heroEyebrow,
+    .sectionKicker{
+      font-size:12px;
+      letter-spacing:.17em;
+      text-transform:uppercase;
+      font-weight:900;
+      color:rgba(255,255,255,.55);
+    }
+
+    .heroEyebrow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:22px;
+    }
+
+    .heroDot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:#2FC2FF;
+      box-shadow:0 0 0 6px rgba(47,194,255,.12);
+    }
+
+    .heroGrid{
+      display:grid;
+      grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+      gap:42px;
+      align-items:center;
+    }
+
+    .heroCopy h1{
+      margin:0;
+      font-size:clamp(42px, 6vw, 74px);
+      line-height:.98;
+      letter-spacing:-.045em;
+      color:#fff;
+      font-weight:950;
+    }
+
+    .heroCopy h1 span{
+      display:block;
+      margin-top:10px;
+      font-size:clamp(22px, 3vw, 36px);
+      color:#85dcff;
+      letter-spacing:-.025em;
+    }
+
+    .heroLead{
+      margin:26px 0 0;
+      max-width:760px;
+      color:#fff;
+      font-size:19px;
+      line-height:1.7;
+      font-weight:700;
+    }
+
+    .heroText{
+      margin:16px 0 0;
+      max-width:780px;
+      color:rgba(255,255,255,.70);
+      font-size:15px;
+      line-height:1.85;
+    }
+
+    .heroActions,
+    .signatureActions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:28px;
+    }
+
+    .primaryBtn,
+    .secondaryBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:44px;
+      padding:0 18px;
+      border-radius:15px;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:.03em;
+      text-decoration:none;
+      transition:transform .2s ease, background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .primaryBtn{
+      color:#fff;
+      border:1px solid rgba(133,220,255,.48);
+      background:linear-gradient(135deg, #2FC2FF, #087ac6);
+      box-shadow:0 10px 30px rgba(47,194,255,.20);
+    }
+
+    .primaryBtn:hover{
+      transform:translateY(-1px);
+      background:linear-gradient(135deg, #55cfff, #159ee6);
+    }
+
+    .secondaryBtn{
+      color:rgba(255,255,255,.84);
+      border:1px solid rgba(255,255,255,.13);
+      background:rgba(255,255,255,.06);
+    }
+
+    .secondaryBtn:hover{
+      transform:translateY(-1px);
+      background:rgba(255,255,255,.10);
+      color:#fff;
+    }
+
+    .radioAbfBtn:hover{
+      color:#2FC2FF;
+      border-color:rgba(47,194,255,.42);
+      background:rgba(47,194,255,.08);
+    }
+
+    .heroBrand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:18px;
+      min-width:0;
+    }
+
+    .brandFrame{
+      position:relative;
+      width:min(100%, 300px);
+      aspect-ratio:1/1;
+      border-radius:32px;
+      display:grid;
+      place-items:center;
+      padding:30px;
+      border:1px solid rgba(47,194,255,.28);
+      background:
+        radial-gradient(circle at 50% 35%, rgba(47,194,255,.18), transparent 58%),
+        rgba(255,255,255,.035);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.02),
+        0 25px 80px rgba(0,0,0,.30);
+    }
+
+    .brandFrame img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      filter:drop-shadow(0 12px 40px rgba(47,194,255,.24));
+    }
+
+    .brandMeta{
+      text-align:center;
+    }
+
+    .brandName{
+      color:#fff;
+      font-size:16px;
+      font-weight:900;
+    }
+
+    .brandClaim{
+      margin-top:4px;
+      color:#85dcff;
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .sectionBlock{
+      background:rgba(255,255,255,.035);
+      padding:34px;
+      margin-bottom:28px;
+    }
+
+    .sectionHead{
+      max-width:760px;
+      margin-bottom:28px;
+    }
+
+    .sectionHead.centered{
+      text-align:center;
+      margin-left:auto;
+      margin-right:auto;
+    }
+
+    .sectionHead h2,
+    .soundCopy h2{
+      margin:8px 0 0;
+      color:#fff;
+      font-size:clamp(30px, 4vw, 46px);
+      line-height:1.05;
+      letter-spacing:-.035em;
+      font-weight:950;
+    }
+
+    .sectionHead p{
+      margin:14px 0 0;
+      color:rgba(255,255,255,.65);
+      line-height:1.75;
+      font-size:15px;
+    }
+
+    .stationGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:18px;
+    }
+
+    .stationCard{
+      position:relative;
+      overflow:hidden;
+      padding:24px;
+      border-radius:25px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.045);
+    }
+
+    .stationCardABF{
+      box-shadow:inset 0 0 0 1px rgba(47,194,255,.03);
+    }
+
+    .stationCardABF2{
+      box-shadow:inset 0 0 0 1px rgba(255,49,80,.04);
+    }
+
+    .stationTop{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+
+    .stationLogoWrap{
+      width:76px;
+      height:76px;
+      flex:none;
+      display:grid;
+      place-items:center;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.16);
+      padding:10px;
+    }
+
+    .stationLogoWrap img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+
+    .stationLabel{
+      color:rgba(255,255,255,.50);
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.15em;
+      text-transform:uppercase;
+    }
+
+    .stationCard h3{
+      margin:4px 0 0;
+      color:#fff;
+      font-size:24px;
+      line-height:1.15;
+      font-weight:950;
+    }
+
+    .stationTags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin-top:20px;
+    }
+
+    .stationTags span,
+    .soundTags span{
+      display:inline-flex;
+      align-items:center;
+      min-height:28px;
+      padding:0 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.055);
+      color:rgba(255,255,255,.70);
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .stationCardABF .stationTags span{
+      border-color:rgba(47,194,255,.18);
+      color:rgba(190,235,255,.88);
+    }
+
+    .stationCardABF2 .stationTags span{
+      border-color:rgba(255,49,80,.22);
+      color:rgba(255,196,206,.90);
+    }
+
+    .stationCard p{
+      margin:20px 0 0;
+      color:rgba(255,255,255,.65);
+      line-height:1.75;
+      font-size:14px;
+    }
+
+    .stationLink{
+      display:inline-flex;
+      margin-top:20px;
+      color:#ff7188;
+      text-decoration:none;
+      font-size:13px;
+      font-weight:900;
+    }
+
+    .stationLink:hover{
+      color:#ff9aaa;
+    }
+
+    .stationLinkABF{
+      color:#2FC2FF;
+    }
+
+    .stationLinkABF:hover{
+      color:#85dcff;
+    }
+
+    .compactSection{
+      padding:0;
+      background:transparent;
+      border:none;
+      box-shadow:none;
+      overflow:visible;
+    }
+
+    .soundCard{
+      position:relative;
+      overflow:hidden;
+      border-radius:30px;
+      border:1px solid rgba(47,194,255,.16);
+      background:
+        linear-gradient(135deg, rgba(47,194,255,.08), transparent 45%),
+        rgba(7,23,41,.72);
+      padding:34px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:28px;
+      align-items:center;
+      box-shadow:0 24px 70px rgba(0,0,0,.28);
+    }
+
+    .soundGlow{
+      position:absolute;
+      width:460px;
+      height:460px;
+      right:-220px;
+      top:-220px;
+      border-radius:999px;
+      filter:blur(110px);
+      background:rgba(47,194,255,.25);
+      pointer-events:none;
+    }
+
+    .soundCopy{
+      position:relative;
+      z-index:1;
+      max-width:760px;
+    }
+
+    .soundCopy p{
+      margin:14px 0 0;
+      color:rgba(255,255,255,.66);
+      font-size:14px;
+      line-height:1.8;
+    }
+
+    .soundTags{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      gap:8px;
+      max-width:260px;
+    }
+
+    .soundTags span{
+      border-color:rgba(47,194,255,.24);
+      color:rgba(190,235,255,.90);
+      background:rgba(47,194,255,.08);
+    }
+
+    .valuesGrid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:14px;
+    }
+
+    .valueCard{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.09);
+      background:rgba(255,255,255,.04);
+      padding:22px;
+    }
+
+    .valueIcon{
+      width:42px;
+      height:42px;
+      display:grid;
+      place-items:center;
+      border-radius:14px;
+      border:1px solid rgba(47,194,255,.22);
+      background:rgba(47,194,255,.08);
+      color:#85dcff;
+      font-size:11px;
+      font-weight:950;
+    }
+
+    .valueCard h3{
+      margin:16px 0 0;
+      color:#fff;
+      font-size:18px;
+      font-weight:950;
+    }
+
+    .valueCard p{
+      margin:10px 0 0;
+      color:rgba(255,255,255,.62);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .signatureCard{
+      padding:46px 30px;
+      text-align:center;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(47,194,255,.16), transparent 48%),
+        #06101e;
+    }
+
+    .signatureLine{
+      color:rgba(255,255,255,.52);
+      font-size:clamp(22px, 3.5vw, 36px);
+      line-height:1.22;
+      font-weight:850;
+      letter-spacing:-.025em;
+    }
+
+    .signatureStrong{
+      margin-top:5px;
+      color:#85dcff;
+      font-size:clamp(30px, 5vw, 54px);
+      line-height:1.08;
+      font-weight:950;
+      letter-spacing:-.04em;
+    }
+
+    .signatureActions{
+      justify-content:center;
+    }
+
+    @media (max-width: 900px){
+      .heroGrid{
+        grid-template-columns:1fr;
+      }
+
+      .heroBrand{
+        order:-1;
+      }
+
+      .brandFrame{
+        width:190px;
+      }
+
+      .stationGrid{
+        grid-template-columns:1fr;
+      }
+
+      .soundCard{
+        grid-template-columns:1fr;
+      }
+
+      .soundTags{
+        justify-content:flex-start;
+        max-width:none;
+      }
+
+      .valuesGrid{
+        grid-template-columns:repeat(2, minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 600px){
+      .aboutShell{
+        width:min(100% - 20px, 1180px);
+      }
+
+      .heroCard,
+      .sectionBlock{
+        padding:22px;
+        border-radius:24px;
+      }
+
+      .brandFrame{
+        width:150px;
+        border-radius:24px;
+        padding:18px;
+      }
+
+      .heroLead{
+        font-size:17px;
+      }
+
+      .valuesGrid{
+        grid-template-columns:1fr;
+      }
+
+      .stationTop{
+        align-items:flex-start;
+      }
+
+      .stationLogoWrap{
+        width:64px;
+        height:64px;
+      }
+
+      .soundCard{
+        padding:24px;
+        border-radius:24px;
+      }
+
+      .signatureCard{
+        border-radius:24px;
+        padding:34px 20px;
+      }
+
+      .primaryBtn,
+      .secondaryBtn{
+        width:100%;
+      }
+    }
+
+    /* Radio ABF is the primary frequency on this page. */
+    .stationCardABF{border-color:rgba(47,194,255,.22);background:linear-gradient(135deg,rgba(47,194,255,.075),rgba(255,255,255,.035));}
+    .stationCardABF2 .stationLink{color:#ff7188;}
+    .stationCardABF2 .stationLink:hover{color:#ff9aaa;}
+    .abf2Btn:hover{color:#ff7188;border-color:rgba(255,49,80,.42);background:rgba(255,49,80,.08);}
+  </style>
+</Base>
