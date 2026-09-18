@@ -774,6 +774,7 @@ html.abf2-theme #dedicationSubmitBtn {
                 <a href="/videos" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Videos</a>
                 <a href="/chat" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Chat</a>
                   <a href="/about" class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">About</a>
+                <a href="/abf2" class="abf2-network-link px-3 py-2 rounded-xl text-white/80 transition border border-white/10">ABF 2</a>
               </nav>
 
               <!-- Mobile button -->
@@ -806,6 +807,7 @@ html.abf2-theme #dedicationSubmitBtn {
               <a href="/videos" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Videos</a>
               <a href="/chat" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Chat</a>
                 <a href="/about" class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">About</a>
+                <a href="/abf2" class="abf2-network-link block px-3 py-2 rounded-xl text-white/85 transition border border-white/10">ABF 2</a>
             </div>
           </nav>
 
@@ -4424,6 +4426,16 @@ const onAstroNav = () => {
         document.addEventListener("DOMContentLoaded", boot);
       })();
     </script>
+<style is:global>
+  #siteHeader .abf2-network-link:hover {
+    color: #ff7188 !important;
+    border-color: rgba(255, 49, 80, .45) !important;
+    background-color: rgba(255, 49, 80, .08) !important;
+  }
 
-  </body>
+  #siteHeader .abf2-network-link:hover * {
+    color: #ff7188 !important;
+  }
+</style>
+</body>
 </html>
