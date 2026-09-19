@@ -181,7 +181,7 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
                   <div class="newsMeta">
                     {post.category ? (
                       <div class={`newsCategory ${post.category}`}>
-                        {post.category}
+                        {post.category === "radio" ? "RADIO ABF" : post.category === "abf2" ? "ABF 2" : post.category}
                       </div>
                     ) : null}
                     <div class="newsDate">{dateLabel || ""}</div>
@@ -387,6 +387,11 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       border-color: rgba(34,211,238,.35);
       color: rgba(165,243,252,.95);
       background: rgba(34,211,238,.10);
+    }
+    .newsCategory.abf2{
+      border-color: rgba(248,113,113,.40);
+      color: #FECACA;
+      background: rgba(239,68,68,.20);
     }
     .newsCategory.music{
       border-color: rgba(245,158,11,.35);
