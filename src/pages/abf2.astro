@@ -1298,6 +1298,15 @@ const fmtDate = (iso?: string | null) => {
       border-color: rgba(47,194,255,.65);
     }
 
+
+    /* Keep the current ABF 2 link red, including on hover. */
+    .abf2-network-card > a.abf2-network-row.current {
+      border-color: rgba(255,49,80,.35);
+    }
+
+    .abf2-network-card > a.abf2-network-row.current:hover {
+      border-color: rgba(255,49,80,.65);
+    }
     .abf2-network-row.current {
       border-color: rgba(255,49,80,.15);
       background: rgba(255,49,80,.033);
