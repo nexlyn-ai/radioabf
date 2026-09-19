@@ -92,7 +92,7 @@ const canonicalPath = `/abf2/news/${item.slug}`;
           <div class="pillRow">
             <a href="/abf2/news" class="pillBack">← Back</a>
 
-            <span class={`pillCat ${isABF2News ? "is-abf2" : "is-radio"}`}>
+            <span class={`pillCat ${isABF2News ? "is-abf2" : category === "music" ? "is-music" : "is-radio"}`}>
               {displayCategory}
             </span>
 
@@ -304,7 +304,12 @@ const canonicalPath = `/abf2/news/${item.slug}`;
       background:rgba(47,194,255,.10);
       color:rgba(183,235,255,.98);
     }
-.heroTitle{
+    .pillCat.is-music{
+      border-color:rgba(245,158,11,.35);
+      background:rgba(245,158,11,.10);
+      color:#F59E0B;
+    }
+    .heroTitle{
       margin:0;
       font-weight:900;
       letter-spacing:-0.02em;

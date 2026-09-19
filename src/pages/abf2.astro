@@ -276,7 +276,7 @@ const fmtDate = (iso?: string | null) => {
                     )}
 
                     <div class="abf2-news-shade"></div>
-                    <span class={`abf2-news-tag ${isABF2News ? "is-abf2" : "is-radio"}`}>
+                    <span class={`abf2-news-tag ${isABF2News ? "is-abf2" : isMusicNews ? "is-music" : "is-radio"}`}>
                       {newsTag}
                     </span>
                   </div>
@@ -1211,6 +1211,12 @@ const fmtDate = (iso?: string | null) => {
       border-color: rgba(47,194,255,.34);
       background: rgba(5,48,72,.78);
       color: #9fe7ff;
+    }
+
+    .abf2-news-tag.is-music {
+      border-color: rgba(245,158,11,.35);
+      background: rgba(245,158,11,.16);
+      color: #F59E0B;
     }
 
     .abf2-news-fallback.is-radio {
