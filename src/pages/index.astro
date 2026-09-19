@@ -673,24 +673,37 @@ try {
       </div>
     </div>
 
-    <!-- Card 2 (ABF Network / ABF 2) -->
-    <div class="rounded-2xl border border-red-400/25 p-4 relative overflow-hidden
-                bg-gradient-to-br from-[#30121D] via-[#1D1525] to-[#0B1424]">
-      <div class="absolute -top-20 -right-20 w-40 h-40 bg-red-500/15 rounded-full blur-3xl"></div>
+    <!-- Card 2 (ABF Network / mirrored stations) -->
+    <div class="rounded-2xl border border-cyan-400/25 p-4 relative overflow-hidden
+                bg-gradient-to-br from-[#102B44] via-[#0A1F33] to-[#0B2540]">
+      <div class="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+
       <div class="relative z-10">
-        <div class="text-xs text-red-300 uppercase tracking-wider">ABF Network</div>
+        <div class="text-xs text-cyan-300 uppercase tracking-wider">ABF Network</div>
         <div class="font-extrabold text-lg">Two Frequencies. One Network.</div>
-        <p class="text-sm text-white/70 mt-1">
-          Discover ABF 2 — The Hits Frequency.
-        </p>
-        <div class="mt-3 text-xs text-white/60">
-          Pop • Rock • Alternative • 80s to Today
-        </div>
-        <a
-          href="/abf2"
-          class="inline-flex mt-3 items-center gap-2 text-sm text-red-300 hover:text-red-200 transition"
-        >
-          Explore ABF 2 →
+
+        <a href="/about"
+           class="grid grid-cols-[12px_minmax(0,1fr)_auto] items-center gap-3 mt-3 p-3.5
+                  rounded-xl border border-cyan-400/20 bg-cyan-400/5
+                  text-white no-underline transition hover:border-cyan-400/60 hover:-translate-y-0.5">
+          <span class="w-[9px] h-[9px] rounded-full bg-[#2fc2ff] shadow-[0_0_13px_rgba(47,194,255,0.75)]"></span>
+          <span class="min-w-0">
+            <strong class="block text-xs">Radio ABF</strong>
+            <small class="block mt-0.5 text-[10px] text-white/50">The DJs' Frequency</small>
+          </span>
+          <span class="text-[10px] font-black text-cyan-300">ON AIR</span>
+        </a>
+
+        <a href="/abf2"
+           class="grid grid-cols-[12px_minmax(0,1fr)_auto] items-center gap-3 mt-3 p-3.5
+                  rounded-xl border border-red-400/35 bg-red-400/5
+                  text-white no-underline transition hover:border-red-400/65 hover:-translate-y-0.5">
+          <span class="w-[9px] h-[9px] rounded-full bg-[#ff3150] shadow-[0_0_13px_rgba(255,49,80,0.85)]"></span>
+          <span class="min-w-0">
+            <strong class="block text-xs">ABF 2</strong>
+            <small class="block mt-0.5 text-[10px] text-white/50">The Hits Frequency</small>
+          </span>
+          <span class="text-[10px] font-black text-red-300">→</span>
         </a>
       </div>
     </div>
