@@ -87,7 +87,7 @@ const canonicalPath = `/news/${item.slug}`;
 
             {item.category ? (
               <a href={`/news?cat=${item.category}`} class={`pillCat ${item.category}`}>
-                {item.category}
+                {item.category === "radio" ? "RADIO ABF" : item.category}
               </a>
             ) : null}
 
