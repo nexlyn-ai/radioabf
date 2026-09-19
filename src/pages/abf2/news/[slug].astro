@@ -92,9 +92,12 @@ const canonicalPath = `/abf2/news/${item.slug}`;
           <div class="pillRow">
             <a href="/abf2/news" class="pillBack">← Back</a>
 
-            <span class={`pillCat ${isABF2News ? "is-abf2" : category === "music" ? "is-music" : "is-radio"}`}>
+            <a
+              href={isABF2News ? "/abf2/news?cat=abf2" : category === "music" ? "/abf2/news?cat=music" : "/news?cat=radio"}
+              class={`pillCat ${isABF2News ? "is-abf2" : category === "music" ? "is-music" : "is-radio"}`}
+            >
               {displayCategory}
-            </span>
+            </a>
 
             {dateLabel ? <span class="pillDate">{dateLabel}</span> : null}
           </div>
