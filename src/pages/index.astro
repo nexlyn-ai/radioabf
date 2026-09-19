@@ -9,6 +9,7 @@ type NewsItem = {
   status: string;
   title: string;
   slug: string;
+  category?: string | null;
   excerpt?: string | null;
   cover?: string | null;
   published_at?: string | null;
@@ -18,7 +19,7 @@ type NewsItem = {
 type DirectusResp = { data: NewsItem[] };
 
 // Dernières news (3)
-const fields = "id,status,title,slug,excerpt,cover,published_at,date_created";
+const fields = "id,status,title,slug,category,excerpt,cover,published_at,date_created";
 
 // Date actuelle pour les publications programmees
 const now = new Date().toISOString();
@@ -549,6 +550,13 @@ try {
     {latestNews?.length ? (
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         {latestNews.map((post) => {
+          const category = (post.category || "radio").toLowerCase();
+          const categoryLabel = category === "abf2" ? "ABF 2" : category === "music" ? "MUSIC" : "RADIO ABF";
+          const categoryStyle = category === "abf2"
+            ? "border-red-400/40 bg-red-500/20 text-red-200"
+            : category === "music"
+              ? "border-[#F59E0B]/40 bg-[#F59E0B]/15 text-[#F59E0B]"
+              : "border-cyan-400/40 bg-cyan-500/20 text-cyan-200";
           const dateLabel = fmtDate(post.published_at || post.date_created);
           const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
           return (
@@ -569,6 +577,9 @@ try {
                 <div class="absolute inset-0 bg-gradient-to-t from-[#050B14]/75 via-[#050B14]/10 to-transparent"></div>
                 <div class="absolute left-4 bottom-3 right-4 flex items-end justify-between gap-3">
                   <div class="min-w-0">
+                    <span class={`inline-flex items-center rounded-full border px-2.5 py-1 mb-1 text-[10px] font-extrabold uppercase tracking-wider ${categoryStyle}`}>
+                      {categoryLabel}
+                    </span>
                     <div class="text-[11px] text-white/65 uppercase tracking-wider">
                       {dateLabel || ""}
                     </div>
