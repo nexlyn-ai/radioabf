@@ -19,10 +19,17 @@ type DirectusResp = { data: NewsItem[] };
 
 // Dernières news (3)
 const fields = "id,status,title,slug,excerpt,cover,published_at,date_created";
+
+// Date actuelle pour les publications programmees
+const now = new Date().toISOString();
+
+const publicationFilter =
+  `&filter[_or][0][published_at][_null]=true` +
+  `&filter[_or][1][published_at][_lte]=${encodeURIComponent(now)}`;
 let latestNews: NewsItem[] = [];
 try {
   const resp = await directusGet<DirectusResp>(
-    `/items/news?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published&sort=-published_at,-date_created&limit=3`
+    `/items/news?fields=${encodeURIComponent(fields)}&filter[status][_eq]=published${publicationFilter}&sort=-date_created&limit=3`
   );
   latestNews = resp?.data ?? [];
 } catch {
@@ -32,7 +39,7 @@ try {
 // Cache Vercel (home SSR)
 Astro.response.headers.set(
   "Cache-Control",
-  "public, s-maxage=180, stale-while-revalidate=86400"
+  "public, s-maxage=30"
 );
 
 const fmtDate = (iso?: string | null) => {

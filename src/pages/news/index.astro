@@ -44,19 +44,26 @@ const page = Math.max(1, Number(url.searchParams.get("page") || "1") || 1);
 const PER_PAGE = 9;
 const offset = (page - 1) * PER_PAGE;
 
+// Publication scheduling
+const now = new Date().toISOString();
+
+const publicationFilter =
+  `&filter[_or][0][published_at][_null]=true` +
+  `&filter[_or][1][published_at][_lte]=${encodeURIComponent(now)}`;
+
 // FETCH LIST
 const fields = "id,status,title,slug,excerpt,cover,published_at,date_created,category";
 const listQuery =
   `/items/news?fields=${encodeURIComponent(fields)}` +
-  `&filter[status][_eq]=published` +
+  `&filter[status][_eq]=published` + publicationFilter +
   (selectedCat ? `&filter[category][_eq]=${encodeURIComponent(selectedCat)}` : "") +
-  `&sort=-published_at,-date_created&limit=${PER_PAGE}&offset=${offset}`;
+  `&sort=-date_created&limit=${PER_PAGE}&offset=${offset}`;
 
 const resp = await directusGet<DirectusListResp>(listQuery);
 
 const totalQuery =
   `/items/news?aggregate[count]=id` +
-  `&filter[status][_eq]=published` +
+  `&filter[status][_eq]=published` + publicationFilter +
   (selectedCat ? `&filter[category][_eq]=${encodeURIComponent(selectedCat)}` : "");
 
 const totalResp = await directusGet<{ data: any[] }>(totalQuery);
@@ -98,7 +105,7 @@ const fmtDate = (iso?: string | null) => {
 };
 
 // CACHE
-Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+Astro.response.headers.set("Cache-Control", "public, s-maxage=30");
 
 // META
 const metaTitle = "News — RadioABF";

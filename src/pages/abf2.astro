@@ -18,6 +18,12 @@ type NewsItem = {
 
 type NewsResp = { data?: NewsItem[] };
 
+const now = new Date().toISOString();
+
+const publicationFilter =
+  `&filter[_or][0][published_at][_null]=true` +
+  `&filter[_or][1][published_at][_lte]=${encodeURIComponent(now)}`;
+
 let latestNews: NewsItem[] = [];
 
 try {
@@ -25,7 +31,7 @@ try {
   const resp = await directusGet<NewsResp>(
     `/items/news?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
-      `&sort=-published_at,-date_created&limit=3`
+      `${publicationFilter}&sort=-date_created&limit=3`
   );
 
   latestNews = Array.isArray(resp?.data) ? resp.data : [];
@@ -36,7 +42,7 @@ try {
 
 Astro.response.headers.set(
   "Cache-Control",
-  "public, s-maxage=120, stale-while-revalidate=3600"
+  "public, s-maxage=30"
 );
 
 const fmtDate = (iso?: string | null) => {

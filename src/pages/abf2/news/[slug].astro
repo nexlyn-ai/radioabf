@@ -23,6 +23,7 @@ const { slug } = Astro.params;
 const safeSlug = String(slug || "").trim();
 
 const fields = "id,status,title,slug,excerpt,content,cover,category,published_at,date_created";
+const now = new Date().toISOString();
 
 let item: NewsItem | null = null;
 
@@ -30,6 +31,8 @@ try {
   const resp = await directusGet<DirectusListResp>(
     `/items/news?fields=${encodeURIComponent(fields)}` +
       `&filter[status][_eq]=published` +
+      `&filter[_or][0][published_at][_null]=true` +
+      `&filter[_or][1][published_at][_lte]=${encodeURIComponent(now)}` +
       `&filter[slug][_eq]=${encodeURIComponent(safeSlug)}` +
       `&limit=1`
   );
@@ -62,7 +65,7 @@ const coverUrl = item.cover
   : null;
 
 // Cache SSR
-Astro.response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+Astro.response.headers.set("Cache-Control", "public, s-maxage=30");
 
 // Meta
 const metaTitle = `${item.title} — ABF 2`;
