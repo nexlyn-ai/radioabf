@@ -3665,22 +3665,25 @@ const onAstroNav = () => {
         let lastCastState = null;
 
         function getCastMedia() {
-          const idx = Number($("streamSelect")?.value || $("streamSelectMobile")?.value || 0);
-          if (idx === 2) return { url: "https://stream.radioabf.com/abf-low.aac", type: "audio/aac" };
-          if (idx === 1) return { url: "https://stream.radioabf.com/abf-sd.mp3", type: "audio/mpeg" };
-          return { url: "https://stream.radioabf.com/abf-hd.mp3", type: "audio/mpeg" };
+          const S = window.__abf;
+          const idx = Number(S?.currentStreamIndex ?? $("streamSelect")?.value ?? $("streamSelectMobile")?.value ?? 0);
+          const url = S?.streams?.[idx]?.url;
+          if (!url) throw new Error("Cast stream URL unavailable");
+          const type = /\.aac(?:$|[?#])/i.test(url) ? "audio/aac" : /\.flac(?:$|[?#])/i.test(url) ? "audio/flac" : "audio/mpeg";
+          return { url, type };
         }
 
         function buildMetadata() {
           const md = new chrome.cast.media.MusicTrackMediaMetadata();
+          const isABF2 = window.__abf?.__station === "abf2";
           md.metadataType = chrome.cast.media.MetadataType.MUSIC_TRACK;
-          md.title = "RadioABF • LIVE • 24/7 • @ABFonAir";
+          md.title = isABF2 ? "ABF 2 - LIVE" : "Radio ABF - LIVE";
           md.subtitle = "radioabf.com";
-          md.albumName = "The DJs' Frequency • Dive in radioabf.com • 🚀🔥🎧";
-          md.images = [ new chrome.cast.Image(CAST_ARTWORK) ];
+          md.albumName = isABF2 ? "The Hits Frequency" : "The DJs' Frequency";
+          md.images = [new chrome.cast.Image(CAST_ARTWORK)];
           return md;
         }
-		
+
 		        function castDevicesAvailable() {
           if (!castCtx) return false;
           try {
