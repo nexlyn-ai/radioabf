@@ -397,6 +397,16 @@ try {
 
 <div class="mt-4 flex gap-2 flex-nowrap overflow-x-auto">
   <button
+    id="homeNowVote"
+    type="button"
+    disabled
+    class="min-h-10 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+    title="Vote"
+  >
+    <span id="homeNowVoteIcon">👍</span>
+    Vote <span id="homeNowVoteCount">0</span>
+  </button>
+  <button
     id="jumpToPlayer"
     type="button"
     class="bg-gradient-to-r from-[#145C8F] to-[#2FC2FF]
@@ -428,6 +438,7 @@ try {
   </a>
 </div>
 
+              <div id="homeVoteMessage" class="mt-3 hidden text-sm text-cyan-200" role="status" aria-live="polite"></div>
               <div class="mt-3 text-sm text-white/50">
                 The player stays pinned at the bottom of the screen.
               </div>
@@ -1205,6 +1216,61 @@ try {
   // -------------------------
   // ✅ NOW PLAYING + LAST PLAYED (server cover_url, no cover cache)
   // -------------------------
+  // Synchronise le vote avec le titre réellement diffusé.
+  async function syncHomeVoteButton(artist, title){
+    const btn = document.getElementById("homeNowVote");
+    const icon = document.getElementById("homeNowVoteIcon");
+    const countEl = document.getElementById("homeNowVoteCount");
+    const msg = document.getElementById("homeVoteMessage");
+    if (!btn) return;
+
+    const a = String(artist || "").trim();
+    const t = String(title || "").trim();
+    const key = normKey(a, t);
+    const valid = !!(a && t);
+    const blocked = /^abf\s*club\b/i.test(a);
+
+    // Effacer le message seulement quand le morceau change.
+    if (btn.dataset.trackKey !== key){
+      btn.dataset.trackKey = key;
+      if (msg){
+        msg.textContent = "";
+        msg.classList.add("hidden");
+      }
+    }
+
+    btn.dataset.artist = a;
+    btn.dataset.title = t;
+    btn.dataset.blocked = blocked ? "1" : "0";
+
+    if (icon) icon.textContent = blocked ? "🚫" : "👍";
+
+    const voted = homeVotedKeys.has(key) || btn.dataset.votedKey === key;
+    btn.disabled = !valid || blocked || voted || btn.dataset.pending === "1";
+    btn.title = blocked
+      ? "Voting disabled for ABF CLUB"
+      : voted
+        ? "Already voted today"
+        : "Vote";
+
+    if (countEl){
+      try {
+        const top = await getTopWeekCached(getISOWeekId());
+
+        // Ne pas afficher le compteur d'un ancien titre si le morceau
+        // a changé pendant la requête.
+        if (btn.dataset.trackKey !== key) return;
+
+        const row = top.find((item) =>
+          normKey(item.artist || "", item.title || "") === key
+        );
+
+        countEl.textContent = String(Number(row?.count) || 0);
+      } catch {
+        if (btn.dataset.trackKey === key) countEl.textContent = "0";
+      }
+    }
+  }
   async function renderNowPlayingAndLast(){
     const artistEl = document.getElementById("homeArtist");
     const titleEl = document.getElementById("homeTitle");
@@ -1218,6 +1284,7 @@ try {
       setCover("");
       host.innerHTML = `<div class="text-white/50">No history yet — start the player.</div>`;
       window.__abfHomeCoverByNorm = {};
+      await syncHomeVoteButton("", "");
       return;
     }
     // Build cover map from server payload (Top can reuse)
@@ -1236,6 +1303,8 @@ try {
     // ✅ RAW → ABF_FMT fera: uppercase artist + titleCase + strip suffixes
 const artistRaw = (current.artist || "").trim();
 const titleRaw  = (current.title  || "").trim();
+
+await syncHomeVoteButton(artistRaw, titleRaw);
 
 artistEl.textContent = artistRaw || "—";
 titleEl.textContent  = titleRaw  || "—";
@@ -1804,9 +1873,90 @@ function formatWorldTimeLabel(timeHHMM){
   // -------------------------
   // Boot
   // -------------------------
+  // Votes conservés pendant la session, même si un titre revient plus tard.
+  const homeVotedKeys = window.__abfHomeVotedKeys ||= new Set();
+
+  function bindHomeVoteButton(){
+    const btn = document.getElementById("homeNowVote");
+    const msg = document.getElementById("homeVoteMessage");
+
+    if (!btn || btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+
+    btn.addEventListener("click", async () => {
+      const artist = btn.dataset.artist || "";
+      const title = btn.dataset.title || "";
+      const key = btn.dataset.trackKey || "";
+
+      if (!artist || !title || !key ||
+          btn.dataset.blocked === "1" ||
+          homeVotedKeys.has(key) ||
+          btn.dataset.pending === "1") return;
+
+      btn.dataset.pending = "1";
+      btn.disabled = true;
+
+      try {
+        const week = getISOWeekId();
+
+        const response = await fetch("/api/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            week,
+            track_key: artist + " - " + title,
+            artist,
+            title
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.ok !== false) {
+          homeVotedKeys.add(key);
+          btn.dataset.votedKey = key;
+
+          // Forcer la prochaine lecture à récupérer les nouveaux votes.
+          __homeVotesCache = { week: "", ts: 0, top: [] };
+          window.__abfHomeVotesCache = __homeVotesCache;
+
+          if (btn.dataset.trackKey === key && msg) {
+            msg.textContent = "Vote counted. Thank you!";
+            msg.classList.remove("hidden");
+          }
+
+          await Promise.all([renderTop(), renderHeroTop1()]);
+        } else {
+          if (response.status === 409) {
+            homeVotedKeys.add(key);
+            btn.dataset.votedKey = key;
+          }
+
+          if (btn.dataset.trackKey === key && msg) {
+            msg.textContent = response.status === 409
+              ? "You already voted for this track today."
+              : (data.error || "Unable to vote. Please try again.");
+            msg.classList.remove("hidden");
+          }
+        }
+      } catch {
+        if (btn.dataset.trackKey === key && msg) {
+          msg.textContent = "Unable to vote. Please try again.";
+          msg.classList.remove("hidden");
+        }
+      } finally {
+        btn.dataset.pending = "0";
+        await syncHomeVoteButton(
+          btn.dataset.artist || "",
+          btn.dataset.title || ""
+        );
+      }
+    });
+  }
   async function initHome(){
     injectOnAirStylesOnce();
     bindHomeModalsOnce();
+    bindHomeVoteButton();
     await renderNowPlayingAndLast(); // crée coverByNorm
     renderOnAirTonight();
     await renderTop();
