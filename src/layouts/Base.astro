@@ -3680,7 +3680,7 @@ const onAstroNav = () => {
           md.title = isABF2 ? "ABF 2 - LIVE" : "Radio ABF - LIVE";
           md.subtitle = "radioabf.com";
           md.albumName = isABF2 ? "The Hits Frequency" : "The DJs' Frequency";
-          md.images = [new chrome.cast.Image(CAST_ARTWORK)];
+          md.images = [new chrome.cast.Image(isABF2 ? "https://radioabf.com/logo-abf2.png" : CAST_ARTWORK)];
           return md;
         }
 
