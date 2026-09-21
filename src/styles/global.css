@@ -344,3 +344,28 @@ main#mainContent{
     padding-bottom: calc(var(--abf-player-h) + env(safe-area-inset-bottom, 0px) + 2px) !important;
   }
 }
+/* =========================================
+   RADIO ABF — CYAN SCROLLBARS
+   ========================================= */
+
+html:not(.abf2-theme) {
+  scrollbar-color: #2fc2ff #0a1f33;
+}
+
+html:not(.abf2-theme)::-webkit-scrollbar {
+  width: 10px;
+}
+
+html:not(.abf2-theme)::-webkit-scrollbar-track {
+  background: #0a1f33;
+}
+
+html:not(.abf2-theme)::-webkit-scrollbar-thumb {
+  background: rgba(47,194,255,.55);
+  border-radius: 10px;
+}
+
+html:not(.abf2-theme)::-webkit-scrollbar-thumb:hover {
+  background: rgba(47,194,255,.78);
+}
+
