@@ -1,0 +1,138 @@
+    <script is:inline data-astro-rerun>
+      (() => {
+        function initContact(){
+          const contactModal = document.getElementById("contactModal");
+          const openContact = document.getElementById("openContact");
+          const contactClose = document.getElementById("contactClose");
+          const ctCancel = document.getElementById("ctCancel");
+          const form = document.getElementById("contactForm");
+          const feedback = document.getElementById("contactFeedback");
+          const btnSend = document.getElementById("ctSend");
+
+          if (!contactModal || !openContact || !contactClose || !form || !feedback) {
+            return false;
+          }
+
+          if (contactModal.dataset.bound === "1") return true;
+          contactModal.dataset.bound = "1";
+
+          const lockScroll = (on) => {
+            document.documentElement.style.overflow = on ? "hidden" : "";
+          };
+
+          const open = () => {
+            contactModal.setAttribute("aria-hidden","false");
+            lockScroll(true);
+          };
+
+          const close = () => {
+            contactModal.setAttribute("aria-hidden","true");
+            lockScroll(false);
+          };
+
+          function showFeedback(ok, msg){
+            feedback.classList.remove("hidden");
+            feedback.className = "text-sm font-medium px-4 py-3 rounded-xl border";
+
+            if (ok){
+              feedback.classList.add("border-cyan-400/30","bg-cyan-400/10","text-cyan-200");
+            } else {
+              feedback.classList.add("border-red-500/35","bg-red-500/10","text-red-200");
+            }
+
+            feedback.textContent = msg;
+          }
+
+          openContact.addEventListener("click", (e) => {
+            e.preventDefault();
+            feedback.classList.add("hidden");
+            open();
+          });
+
+          contactClose.addEventListener("click", (e) => {
+            e.preventDefault();
+            close();
+          });
+
+          if (ctCancel){
+            ctCancel.addEventListener("click", (e) => {
+              e.preventDefault();
+              close();
+            });
+          }
+
+          document.addEventListener("click", (e) => {
+            const t = e.target;
+            if (t?.dataset?.close === "contact") close();
+          });
+
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && contactModal.getAttribute("aria-hidden") === "false") {
+              close();
+            }
+          });
+
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const name = String(document.getElementById("ctName")?.value || "").trim();
+            const email = String(document.getElementById("ctEmail")?.value || "").trim();
+            const subject = String(document.getElementById("ctSubject")?.value || "").trim();
+            const message = String(document.getElementById("ctMessage")?.value || "").trim();
+            const page = window.location?.href || "";
+
+            if (!name || !email || !message){
+              showFeedback(false, "Please fill in name, email and message.");
+              return;
+            }
+
+            try{
+              if (btnSend){
+                btnSend.disabled = true;
+                btnSend.textContent = "Sending…";
+              }
+
+              const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ name, email, subject, message, page }),
+              });
+
+              const data = await res.json().catch(() => ({}));
+
+              if (res.ok && data?.ok){
+                showFeedback(true, "Message sent! Thanks — we’ll get back to you soon.");
+                form.reset();
+                setTimeout(() => close(), 900);
+              } else {
+                showFeedback(false, data?.error || "Unable to send message. Please try again.");
+              }
+            } catch {
+              showFeedback(false, "Network error. Please try again.");
+            } finally {
+              if (btnSend){
+                btnSend.disabled = false;
+                btnSend.textContent = "Send";
+              }
+            }
+          });
+
+          document.addEventListener("astro:after-swap", close);
+          document.addEventListener("astro:page-load", close);
+
+          return true;
+        }
+
+        function boot(){
+          if (initContact()) return;
+          requestAnimationFrame(() => initContact());
+          setTimeout(() => initContact(), 50);
+          setTimeout(() => initContact(), 250);
+        }
+
+        boot();
+        document.addEventListener("DOMContentLoaded", boot);
+        document.addEventListener("astro:page-load", boot);
+        document.addEventListener("astro:after-swap", boot);
+      })();
+    </script>

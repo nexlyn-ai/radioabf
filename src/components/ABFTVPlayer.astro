@@ -1,0 +1,75 @@
+<div class="abftv-player">
+  <video
+    id="abftvVideo"
+    controls
+    playsinline
+    preload="none"
+    poster="/logo-abftv.png"
+    aria-label="ABF TV live stream"
+  ></video>
+</div>
+
+<div class="abftv-player-footer">
+  <span>ABF TV — LIVE</span>
+  <span>HD 720p · H.264 · AAC</span>
+</div>
+
+<script>
+  import Hls from "hls.js";
+
+  const stream = "https://stream.radioabf.com/hls-tv/abf-tv.m3u8";
+
+  function initABFTVPlayer() {
+    const video = document.querySelector<HTMLVideoElement>("#abftvVideo");
+
+    if (!video || video.dataset.abftvInitialized === "true") return;
+
+    video.dataset.abftvInitialized = "true";
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = stream;
+    } else if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false
+      });
+
+      hls.loadSource(stream);
+      hls.attachMedia(video);
+
+      document.addEventListener("astro:before-swap", () => hls.destroy(), {
+        once: true
+      });
+    }
+  }
+
+  initABFTVPlayer();
+  document.addEventListener("astro:page-load", initABFTVPlayer);
+</script>
+
+<style>
+  .abftv-player {
+    overflow: hidden;
+    border: 1px solid rgba(168, 85, 247, .45);
+    border-radius: 18px;
+    background: black;
+    box-shadow: 0 0 55px rgba(147, 51, 234, .16);
+  }
+
+  .abftv-player video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: black;
+  }
+
+  .abftv-player-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 18px 5px;
+    color: #c4b5fd;
+    font-size: 12px;
+    font-weight: 800;
+  }
+</style>

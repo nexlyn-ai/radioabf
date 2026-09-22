@@ -1,0 +1,578 @@
+---
+import Base from "../../../layouts/Base.astro";
+import { directusGet, directusAsset } from "../../../lib/directus";
+export const prerender = false;
+
+type NewsItem = {
+  id: number;
+  status: string;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  cover?: string | null;
+  published_at?: string | null;
+  date_created?: string | null;
+  category?: string | null;
+};
+
+type DirectusListResp = { data: NewsItem[] };
+
+const url = new URL(Astro.request.url);
+
+const selectedCatRaw = String(url.searchParams.get("cat") || "all").toLowerCase();
+const selectedCat =
+  selectedCatRaw === "abf2" || selectedCatRaw === "radio" || selectedCatRaw === "music" || selectedCatRaw === "abftv"
+    ? selectedCatRaw
+    : "all";
+
+function linkWithCat(cat: "all" | "abf2" | "radio" | "music" | "abftv") {
+  const u = new URL(Astro.request.url);
+  if (cat === "all") u.searchParams.delete("cat");
+  else u.searchParams.set("cat", cat);
+  u.searchParams.delete("page");
+  const qs = u.searchParams.toString();
+  return u.pathname + (qs ? "?" + qs : "");
+}
+
+function linkWithParams(nextPage: number) {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set("page", String(nextPage));
+  return u.pathname + "?" + u.searchParams.toString();
+}
+
+// PAGINATION
+const page = Math.max(1, Number(url.searchParams.get("page") || "1") || 1);
+const PER_PAGE = 9;
+const offset = (page - 1) * PER_PAGE;
+
+// Publication scheduling
+const now = new Date().toISOString();
+
+const publicationFilter =
+  `&filter[_or][0][published_at][_null]=true` +
+  `&filter[_or][1][published_at][_lte]=${encodeURIComponent(now)}`;
+
+// FETCH LIST
+const fields = "id,status,title,slug,excerpt,cover,published_at,date_created,category";
+const categoryFilter =
+  selectedCat === "all"
+    ? ""
+    : `&filter[category][_eq]=${encodeURIComponent(selectedCat)}`;
+
+const listQuery =
+  `/items/news?fields=${encodeURIComponent(fields)}` +
+  `&filter[status][_eq]=published` + publicationFilter +
+  categoryFilter +
+  `&sort=-date_created&limit=${PER_PAGE}&offset=${offset}`;
+
+const resp = await directusGet<DirectusListResp>(listQuery);
+
+const totalQuery =
+  `/items/news?aggregate[count]=id` +
+  `&filter[status][_eq]=published` + publicationFilter +
+  categoryFilter;
+
+const totalResp = await directusGet<{ data: any[] }>(totalQuery);
+
+function normalizeAggregateCount(v: any): number {
+  if (v == null) return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  if (typeof v === "object") {
+    if (typeof v.id === "number") return v.id;
+    if (typeof v.id === "string") {
+      const n = Number(v.id);
+      return Number.isFinite(n) ? n : 0;
+    }
+    if (typeof v.count === "number") return v.count;
+    if (typeof v.count === "string") {
+      const n = Number(v.count);
+      return Number.isFinite(n) ? n : 0;
+    }
+    if (typeof v.count === "object") return normalizeAggregateCount(v.count);
+  }
+  return 0;
+}
+
+const total = normalizeAggregateCount(totalResp?.data?.[0]?.count);
+const pageCount = Math.max(1, Math.ceil(total / PER_PAGE));
+const prev = page > 1 ? page - 1 : null;
+const next = page < pageCount ? page + 1 : null;
+
+// DATE FORMAT
+const fmtDate = (iso?: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
+};
+
+// CACHE
+Astro.response.headers.set("Cache-Control", "public, s-maxage=30");
+
+// META
+const metaTitle = "News — ABF TV";
+const metaDesc = "Latest updates from ABF Network — The Visual Frequency.";
+const canonicalPath = "/abftv/news";
+const ogSvgPath = `/og/news.svg?title=${encodeURIComponent("News — ABF TV")}`;
+const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toString();
+---
+
+<Base isABFTV={true} title={metaTitle} description={metaDesc} canonical={canonicalPath} image={ogSvgPath}>
+  <Fragment slot="head">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:url" content={new URL(Astro.request.url).toString()} />
+    <meta property="og:image" content={ogImageAbs} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={metaTitle} />
+    <meta name="twitter:description" content={metaDesc} />
+    <meta name="twitter:image" content={ogImageAbs} />
+  </Fragment>
+
+  <div class="abfPageWrap">
+    <!-- HERO – inchangé (sans menu Year) -->
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-[#170D27] p-7 sm:p-10 mb-10 shadow-2xl">
+      <div class="absolute -top-40 -left-40 w-[520px] h-[520px] bg-purple-500/20 rounded-full blur-[120px]"></div>
+      <div class="absolute -bottom-40 -right-40 w-[520px] h-[520px] bg-violet-600/20 rounded-full blur-[120px]"></div>
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3 text-sm tracking-widest text-white/60 uppercase mb-3">
+              <span class="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
+              News
+            </div>
+            <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight">
+              Latest updates from <span class="text-purple-200">ABF Network</span>
+            </h1>
+            <p class="text-white/65 mt-3 max-w-2xl">
+              News, music, visual culture and updates from across ABF Network.
+            </p>
+
+            <div class="mt-5 flex items-center gap-2 flex-wrap">
+              <a class={`catPill ${selectedCat === "all" ? "active" : ""}`} href={linkWithCat("all")}>All</a>
+              <a class={`catPill ${selectedCat === "radio" ? "active" : ""}`} href={linkWithCat("radio")}>Radio ABF</a>
+              <a class={`catPill ${selectedCat === "abf2" ? "active" : ""}`} href={linkWithCat("abf2")}>ABF 2</a>
+              <a class={`catPill ${selectedCat === "abftv" ? "active" : ""}`} href={linkWithCat("abftv")}>ABF TV</a>
+              <a class={`catPill ${selectedCat === "music" ? "active" : ""}`} href={linkWithCat("music")}>Music</a>
+            </div>
+          </div>
+
+          <!-- (menu Year retiré) -->
+        </div>
+      </div>
+    </section>
+
+    <!-- GRANDE CARD UNIQUE pour les news + pagination -->
+    <section class="bigCard">
+      <div class="glow a"></div>
+      <div class="glow b"></div>
+
+      {resp.data?.length ? (
+        <div class="newsGrid">
+          {resp.data.map((post) => {
+            const dateLabel = fmtDate(post.published_at || post.date_created);
+            const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
+            const category = String(post.category || "").trim().toLowerCase();
+            const isABF2News = category === "abf2";
+            const isABFTVNews = category === "abftv";
+            const displayCategory =
+              isABFTVNews ? "ABF TV" :
+              isABF2News ? "ABF 2" :
+              category === "music" ? "MUSIC" :
+              "RADIO ABF";
+            const newsHref = `/abftv/news/${post.slug}`;
+
+            return (
+              <a href={newsHref} class="newsCard group">
+                <div class="newsMedia">
+                  {cover ? <img src={cover} alt="" class="newsImg" loading="lazy" decoding="async" /> : null}
+                  <div class="newsShade"></div>
+                  <div class="newsMeta">
+                    <div class={`newsCategory ${isABFTVNews ? "is-abftv" : isABF2News ? "is-abf2" : category === "music" ? "is-music" : "is-radio"}`}>
+                      {displayCategory}
+                    </div>
+                    <div class="newsDate">{dateLabel || ""}</div>
+                    <div class="newsTitle">{post.title}</div>
+                  </div>
+                  <div class="newsArrow">→</div>
+                </div>
+                <div class="newsBody">
+                  <p class="newsExcerpt">{post.excerpt ?? ""}</p>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="noNews">
+          No news yet.
+        </div>
+      )}
+
+      <!-- PAGINATION -->
+      <div class="pagerWrap">
+        <div class="pagerBar" id="pagerBar">
+          <div class="pagerInfo">
+            Page {page} / {pageCount} • {total} item(s)
+            
+          </div>
+          <div class="pagerBtns">
+            {prev ? (
+              <a class="pagerBtn" href={linkWithParams(prev)}>← Prev</a>
+            ) : (
+              <span class="pagerBtn disabled">← Prev</span>
+            )}
+            {next ? (
+              <a class="pagerBtn" href={linkWithParams(next)}>Next →</a>
+            ) : (
+              <span class="pagerBtn disabled">Next →</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script is:inline>
+    // back-to-top bump
+    const btt = document.getElementById("backToTopBtn");
+    const pager = document.getElementById("pagerBar");
+    function bumpBtt(){
+      if (!btt || !pager) return;
+      const r = pager.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const overlapZone = 120;
+      const distFromBottom = vh - r.bottom;
+      if (distFromBottom < overlapZone) {
+        btt.style.transform = "translateY(-78px)";
+      } else {
+        btt.style.transform = "";
+      }
+    }
+    bumpBtt();
+    window.addEventListener("scroll", bumpBtt, { passive: true });
+    window.addEventListener("resize", bumpBtt);
+  </script>
+
+  <style is:inline>
+    .abfPageWrap {
+      width: 100%;
+      max-width: 72rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+
+    .catPill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.72);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: .18s ease;
+    }
+
+    .catPill:hover {
+      color: #fff;
+      border-color: rgba(255,49,80,.35);
+      background: rgba(255,49,80,.08);
+    }
+
+    .catPill.active {
+      color: #fff;
+      border-color: rgba(255,49,80,.48);
+      background: rgba(255,49,80,.16);
+      box-shadow: 0 8px 24px rgba(255,49,80,.10);
+    }
+
+    /* ── GRANDE CARD ── */
+    .bigCard {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(26,11,16,0.52);
+      backdrop-filter: blur(8px);
+      padding: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.38);
+    }
+
+    @media (min-width: 640px) {
+      .bigCard { padding: 36px; }
+    }
+
+    .glow {
+      position: absolute;
+      width: 520px;
+      height: 520px;
+      border-radius: 999px;
+      filter: blur(120px);
+      opacity: .45;
+      pointer-events: none;
+    }
+    .glow.a { top: -220px; left: -220px; background: rgba(255,49,80,.28); }
+    .glow.b { bottom: -220px; right: -220px; background: rgba(190,24,93,.24); }
+
+    /* Le reste de tes styles reste identique */
+.newsGrid{
+      display:grid;
+      gap:16px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px){
+      .newsGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px){
+      .newsGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .newsCard{
+      display:flex;
+      flex-direction:column;
+      border-radius:24px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      overflow:hidden;
+      transition: background .2s ease, transform .2s ease;
+      height:100%;
+      text-decoration:none;
+    }
+    .newsCard:hover{
+      background: rgba(255,255,255,.10);
+      transform: translateY(-1px);
+    }
+    .newsMedia{
+      position:relative;
+      aspect-ratio:16/9;
+      background: linear-gradient(135deg, #8F142B, #FF3150);
+      overflow:hidden;
+    }
+    .newsImg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.92;
+      transition: opacity .2s ease, transform .25s ease;
+    }
+    .newsCard:hover .newsImg{
+      opacity:1;
+      transform: scale(1.02);
+    }
+    .newsShade{
+      position:absolute;
+      inset:0;
+      background: linear-gradient(to top, rgba(8,3,6,.82), rgba(8,3,6,.18), transparent);
+    }
+    .newsMeta{
+      position:absolute;
+      left:16px;
+      right:56px;
+      bottom:14px;
+      min-width:0;
+    }
+    .newsCategory{
+      display:inline-flex;
+      align-items:center;
+      height:18px;
+      padding:0 8px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      margin-bottom:6px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,49,80,.12);
+      border-color: rgba(255,49,80,.35);
+      color: rgba(255,210,218,.96);
+      width: fit-content;
+    }
+    
+    
+    .newsCategory.is-radio {
+      background: rgba(47,194,255,.12);
+      border-color: rgba(47,194,255,.35);
+      color: rgba(183,235,255,.98);
+    }
+
+    .newsCategory.is-music {
+      background: rgba(245,158,11,.10);
+      border-color: rgba(245,158,11,.35);
+      color: #F59E0B;
+    }
+
+    .newsDate{
+      font-size:11px;
+      color: rgba(255,255,255,.65);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+    }
+    .newsTitle{
+      margin-top:4px;
+      font-weight:900;
+      font-size:18px;
+      line-height:1.15;
+      color:#fff;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .newsArrow{
+      position:absolute;
+      right:14px;
+      bottom:14px;
+      width:40px;
+      height:40px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06);
+      display:grid;
+      place-items:center;
+      color: rgba(255, 113, 136, .95);
+    }
+    .newsBody{
+      padding:16px 18px 18px;
+      flex:1;
+      display:flex;
+    }
+    .newsExcerpt{
+      margin:0;
+      font-size:13px;
+      line-height:1.6;
+      color: rgba(255,255,255,.70);
+      display:-webkit-box;
+      -webkit-line-clamp:3;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+    .pagerWrap{
+      display:flex;
+      justify-content:center;
+      padding-bottom: 84px;
+      margin-top: 2rem;
+    }
+    .pagerBar{
+      width: min(820px, 100%);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(8px);
+    }
+    .pagerInfo{
+      font-size:12px;
+      color: rgba(255,255,255,.55);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .pagerBtns{
+      display:flex;
+      gap:10px;
+      flex: none;
+    }
+    .pagerBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:34px;
+      padding:0 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.88);
+      font-size:13px;
+      font-weight:700;
+      transition: background .2s ease, transform .2s ease;
+      text-decoration: none;
+    }
+    .pagerBtn:hover{
+      background: rgba(255,255,255,.10);
+      transform: translateY(-1px);
+    }
+    .pagerBtn.disabled{
+      opacity:.35;
+      pointer-events:none;
+    }
+    .noNews {
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: rgba(255,255,255,.70);
+      font-size: 1.1rem;
+    }
+    @media (max-width: 560px){
+      .pagerWrap{ padding-bottom: 96px; }
+      .pagerBar{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .pagerBtns{
+        width:100%;
+      }
+      .pagerBtn{
+        flex:1;
+      }
+    }
+
+    /* ABF TV NEWS ADAPTATION */
+    .newsCategory.is-abftv {
+      background: rgba(168, 85, 247, .18);
+      border-color: rgba(192, 132, 252, .50);
+      color: #e9d5ff;
+    }
+
+    .abfPageWrap .catPill:hover {
+      border-color: rgba(168, 85, 247, .40);
+      background: rgba(168, 85, 247, .10);
+    }
+
+    .abfPageWrap .catPill.active {
+      border-color: rgba(168, 85, 247, .55);
+      background: rgba(168, 85, 247, .18);
+      box-shadow: 0 8px 24px rgba(168, 85, 247, .12);
+    }
+
+    .abfPageWrap .bigCard {
+      background: rgba(23, 13, 39, .65);
+      border-color: rgba(192, 132, 252, .20);
+    }
+
+    .abfPageWrap .glow.a {
+      background: rgba(147, 51, 234, .30);
+    }
+
+    .abfPageWrap .glow.b {
+      background: rgba(109, 40, 217, .25);
+    }
+
+    .abfPageWrap .newsMedia {
+      background: linear-gradient(135deg, #4c1d95, #9333ea);
+    }
+
+    .abfPageWrap .newsArrow {
+      color: #d8b4fe;
+    }
+  </style>
+</Base>

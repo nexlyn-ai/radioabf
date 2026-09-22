@@ -1,0 +1,496 @@
+---
+import Base from "../../layouts/Base.astro";
+
+export const prerender = false;
+
+const metaTitle = "About ABF TV — The Visual Frequency";
+const metaDesc =
+  "Discover ABF TV, the visual channel of ABF Network: cinema, anime, documentaries, Creative Commons works and cyber-inspired audiovisual culture.";
+---
+
+<Base isABFTV={true} title={metaTitle} description={metaDesc}>
+  <main class="aboutPage">
+    <div class="aboutShell">
+
+      <!-- HERO -->
+      <section class="heroCard">
+        <div class="heroEyebrow">● ABF NETWORK</div>
+
+        <div class="heroGrid">
+          <div>
+            <h1>ABF TV <span>The Visual Frequency</span></h1>
+
+            <p class="heroLead">
+              ABF TV is the visual channel of ABF Network, bringing cinema,
+              animation, anime, documentaries and digital creativity together.
+            </p>
+
+            <p>
+              Inspired by cyber culture, science fiction and technology,
+              ABF TV explores moving images, imagination and audiovisual storytelling.
+            </p>
+
+            <p>
+              Creative Commons works are an important part of our approach.
+              Every programme must be used in accordance with its applicable
+              licence and distribution permissions.
+            </p>
+
+            <div class="heroActions">
+              <a class="primaryBtn" href="/abftv">Watch ABF TV</a>
+              <a class="secondaryBtn radioAbfBtn" href="/">Radio ABF</a>
+              <a class="secondaryBtn abf2Btn" href="/abf2">ABF 2</a>
+            </div>
+          </div>
+
+          <div class="brandFrame">
+            <img src="/logo-abftv.png" alt="ABF TV logo" />
+            <strong>Alternative Bass Fréquence</strong>
+            <span>The Visual Frequency</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- NETWORK -->
+      <section class="sectionBlock networkCard">
+        <div class="sectionHead">
+          <div class="sectionKicker">ABF Network</div>
+          <h2>Three Media. One Network.</h2>
+          <p>
+            Three complementary editorial identities connected by one
+            independent media project.
+          </p>
+        </div>
+
+        <div class="mediaGrid">
+          <article class="mediaCard radio">
+            <img src="/logo-abf.png" alt="Radio ABF" loading="lazy" />
+            <h3>Radio ABF</h3>
+            <strong>The DJs' Frequency</strong>
+            <p>CHR Dance, House, electronic music and DJ culture.</p>
+            <a class="mediaLink" href="/">Discover Radio ABF →</a>
+          </article>
+
+          <article class="mediaCard abf2">
+            <img src="/logo-abf2.png" alt="ABF 2" loading="lazy" />
+            <h3>ABF 2</h3>
+            <strong>The Hits Frequency</strong>
+            <p>Pop, rock, alternative music, classics and today's hits.</p>
+            <a class="mediaLink" href="/abf2">Explore ABF 2 →</a>
+          </article>
+
+          <article class="mediaCard tv">
+            <img src="/logo-abftv.png" alt="ABF TV" loading="lazy" />
+            <h3>ABF TV</h3>
+            <strong>The Visual Frequency</strong>
+            <p>Cinema, anime, documentaries and audiovisual discovery.</p>
+            <a class="mediaLink" href="/abftv/live">Watch ABF TV →</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- THE VISION -->
+      <section class="sectionBlock visionCard">
+        <div class="sectionKicker">The Vision</div>
+        <h2>Beyond sound. Into the image.</h2>
+
+        <p>
+          From science-fiction cinema and anime to documentaries and
+          independent audiovisual creations, ABF TV brings different
+          visual worlds together.
+        </p>
+
+        <p>
+          Its cyber and technological identity shapes the atmosphere
+          of the channel without limiting the diversity of its programmes.
+        </p>
+
+        <div class="tags">
+          <span>Cinema</span>
+          <span>Anime</span>
+          <span>Animation</span>
+          <span>Documentaries</span>
+          <span>Creative Commons</span>
+          <span>Sci-Fi</span>
+          <span>Cyber Culture</span>
+        </div>
+      </section>
+
+      <!-- VALUES -->
+      <section class="sectionBlock valuesCard">
+        <div class="sectionHead centered">
+          <div class="sectionKicker">Alternative Bass Fréquence</div>
+          <h2>One independent spirit.</h2>
+        </div>
+
+        <div class="valuesGrid">
+          <article><span>01</span><h3>Content first</h3><p>Audiovisual discovery and editorial identity are at the heart of ABF TV.</p></article>
+          <article><span>02</span><h3>Independent</h3><p>ABF TV belongs to the independent ABF Network project.</p></article>
+          <article><span>03</span><h3>Open to creativity</h3><p>Independent works and appropriately licensed Creative Commons content have a place on our screen.</p></article>
+          <article><span>04</span><h3>Respect for creators</h3><p>Programmes are selected and distributed according to their applicable rights and permissions.</p></article>
+        </div>
+      </section>
+
+      <!-- SIGNATURE -->
+      <section class="signatureCard">
+        <div>Two radio frequencies.</div>
+        <div>One visual channel.</div>
+        <strong>One ABF Network.</strong>
+
+        <div class="signatureActions">
+          <a class="primaryBtn" href="/abftv">Watch ABF TV</a>
+          <a class="secondaryBtn radioAbfBtn" href="/">Radio ABF</a>
+          <a class="secondaryBtn abf2Btn" href="/abf2">ABF 2</a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <style>
+    .aboutPage {
+      min-height: 100vh;
+      padding: 24px 0 70px;
+      color: #fff;
+      background: radial-gradient(circle at 50% 0%, rgba(147,51,234,.18), transparent 40%), #080611;
+    }
+    .aboutShell { width: min(1180px, calc(100% - 32px)); margin: auto; }
+    .heroCard, .visionCard, .signatureCard {
+      border: 1px solid rgba(192,132,252,.28);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(88,28,135,.25), rgba(17,10,30,.96));
+      padding: clamp(24px, 5vw, 55px);
+    }
+    .heroGrid { display: grid; grid-template-columns: 1.5fr 1fr; align-items: center; gap: 40px; }
+    .heroEyebrow, .sectionKicker { color: #c084fc; font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { font-size: clamp(42px, 6vw, 72px); line-height: 1.08; margin: 18px 0 25px; }
+    h1 span { display: block; color: #c084fc; font-size: .48em; margin-top: 12px; }
+    h2 { font-size: clamp(28px, 4vw, 40px); margin: 12px 0 20px; }
+    p { color: #c9bfd7; line-height: 1.75; }
+    .heroLead { color: #fff; font-size: 19px; }
+    .heroActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .heroActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .primaryBtn, .secondaryBtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .03em;
+      text-decoration: none;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .primaryBtn {
+      color: #fff;
+      border: 1px solid rgba(192,132,252,.48);
+      background: linear-gradient(135deg, #9333ea, #6b21a8);
+      box-shadow: 0 10px 30px rgba(147,51,234,.20);
+    }
+
+    .primaryBtn:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, #a855f7, #7e22ce);
+    }
+
+    .secondaryBtn {
+      color: rgba(255,255,255,.84);
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(255,255,255,.06);
+    }
+
+    .secondaryBtn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.10);
+      color: #fff;
+    }
+
+    @media (max-width: 500px) {
+      .heroActions .primaryBtn,
+      .heroActions .secondaryBtn {
+        width: 100%;
+      }
+    }
+    .brandFrame { text-align: center; padding: 25px; border: 1px solid rgba(192,132,252,.25); border-radius: 20px; background: rgba(0,0,0,.2); }
+    .brandFrame img { display: block; width: min(250px, 100%); margin: 0 auto 20px; }
+    .brandFrame strong, .brandFrame span { display: block; }
+    .brandFrame span { color: #c4b5fd; margin-top: 8px; }
+    .sectionBlock { margin: 60px 0; }
+
+    /* Grande carte ABF Network — même logique que les pages About radio */
+    .networkCard {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid rgba(192,132,252,.28);
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(147,51,234,.13), transparent 45%),
+        #110a1e;
+      box-shadow: 0 24px 70px rgba(0,0,0,.35);
+    }
+
+    .networkCard .sectionHead {
+      position: relative;
+      z-index: 1;
+    }
+
+    .networkCard .mediaGrid {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Boutons des trois médias */
+    .radioAbfBtn:hover {
+      color: #67e8f9;
+      border-color: rgba(34,211,238,.48);
+      background: rgba(34,211,238,.10);
+    }
+
+    .abf2Btn:hover {
+      color: #fca5a5;
+      border-color: rgba(239,68,68,.48);
+      background: rgba(239,68,68,.10);
+    }
+
+    .signatureActions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 500px) {
+      .signatureActions .primaryBtn,
+      .signatureActions .secondaryBtn {
+        width: 100%;
+      }
+    }
+    .sectionHead { margin-bottom: 26px; }
+    .centered { text-align: center; }
+    .mediaGrid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+    .mediaCard, .valuesGrid article {
+      padding: 25px; border: 1px solid rgba(192,132,252,.2);
+      border-radius: 18px; background: rgba(25,16,40,.85);
+    }
+    .mediaCard img { width: 78px; height: 78px; object-fit: contain; }
+    .mediaCard h3 { font-size: 23px; margin: 15px 0 5px; }
+    .mediaCard strong { color: #c4b5fd; }
+    .mediaCard a { display: inline-block; margin-top: 15px; font-weight: 800; text-decoration: none; }
+    .radio a { color: #67e8f9; }
+    .abf2 a { color: #f87171; }
+    .tv a { color: #d8b4fe; }
+    .radio { border-color: rgba(34,211,238,.3); }
+    .abf2 { border-color: rgba(239,68,68,.3); }
+    .tv { border-color: rgba(168,85,247,.45); }
+    .visionCard { margin: 60px 0; }
+    .tags { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; }
+    .tags span { padding: 8px 12px; border: 1px solid rgba(192,132,252,.3); border-radius: 20px; color: #e9d5ff; font-size: 12px; }
+    .valuesGrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 15px; }
+    .valuesGrid article span { color: #c084fc; font-weight: 900; }
+    .valuesGrid h3 { margin: 12px 0; }
+    .signatureCard { text-align: center; font-size: 22px; font-weight: 700; }
+    .signatureCard strong { display: block; margin-top: 12px; color: #d8b4fe; font-size: clamp(30px, 5vw, 48px); }
+    .signatureCard .heroActions { justify-content: center; }
+    @media (max-width: 800px) {
+      .heroGrid, .mediaGrid { grid-template-columns: 1fr; }
+      .valuesGrid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 500px) {
+      .valuesGrid { grid-template-columns: 1fr; }
+    }
+
+    /* ABFTV ABOUT FINAL NETWORK STYLES */
+
+    .aboutPage .networkCard,
+    .aboutPage .valuesCard {
+      position: relative;
+      display: block;
+      margin: 28px 0;
+      padding: clamp(26px, 4vw, 44px);
+      overflow: hidden;
+      border: 1px solid rgba(192,132,252,.30);
+      border-radius: 30px;
+      background:
+        radial-gradient(
+          circle at 100% 0%,
+          rgba(147,51,234,.16),
+          transparent 48%
+        ),
+        linear-gradient(135deg, #170d27, #0e0918);
+      box-shadow: 0 24px 70px rgba(0,0,0,.35);
+    }
+
+    .aboutPage .networkCard .sectionHead {
+      margin-bottom: 30px;
+    }
+
+    .aboutPage .networkCard .sectionKicker {
+      color: #c084fc;
+    }
+
+    .aboutPage .networkCard .mediaGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 18px;
+    }
+
+    .aboutPage .networkCard .mediaCard {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 0;
+      padding: 26px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .aboutPage .networkCard .mediaCard p {
+      flex: 1;
+    }
+
+    /* Radio ABF : cyan permanent */
+    .aboutPage .radioAbfBtn,
+    .aboutPage .radio .mediaLink {
+      color: #fff;
+      border: 1px solid rgba(47,194,255,.65);
+      background: linear-gradient(135deg, #159bd0, #0877aa);
+      box-shadow: 0 10px 30px rgba(47,194,255,.15);
+    }
+
+    .aboutPage .radioAbfBtn:hover,
+    .aboutPage .radio .mediaLink:hover {
+      color: #fff;
+      border-color: #67e8f9;
+      background: linear-gradient(135deg, #2fc2ff, #159bd0);
+      transform: translateY(-1px);
+    }
+
+    /* ABF 2 : rouge permanent */
+    .aboutPage .abf2Btn,
+    .aboutPage .abf2 .mediaLink {
+      color: #fff;
+      border: 1px solid rgba(255,113,136,.65);
+      background: linear-gradient(135deg, #ff3150, #d8193d);
+      box-shadow: 0 10px 30px rgba(255,49,80,.15);
+    }
+
+    .aboutPage .abf2Btn:hover,
+    .aboutPage .abf2 .mediaLink:hover {
+      color: #fff;
+      border-color: #ff7188;
+      background: linear-gradient(135deg, #ff4561, #e92547);
+      transform: translateY(-1px);
+    }
+
+    /* ABF TV : violet permanent */
+    .aboutPage .primaryBtn,
+    .aboutPage .tv .mediaLink {
+      color: #fff;
+      border: 1px solid rgba(192,132,252,.65);
+      background: linear-gradient(135deg, #9333ea, #6b21a8);
+      box-shadow: 0 10px 30px rgba(147,51,234,.20);
+    }
+
+    .aboutPage .primaryBtn:hover,
+    .aboutPage .tv .mediaLink:hover {
+      color: #fff;
+      border-color: #d8b4fe;
+      background: linear-gradient(135deg, #a855f7, #7e22ce);
+      transform: translateY(-1px);
+    }
+
+    /* Les liens des cartes deviennent de vrais boutons */
+    .aboutPage .mediaCard .mediaLink {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      margin-top: 20px;
+      padding: 0 16px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-align: center;
+      text-decoration: none;
+      transition:
+        transform .2s ease,
+        background .2s ease,
+        border-color .2s ease;
+    }
+
+    .aboutPage .signatureActions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 800px) {
+      .aboutPage .networkCard .mediaGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .aboutPage .heroActions > a,
+      .aboutPage .signatureActions > a,
+      .aboutPage .mediaCard .mediaLink {
+        width: 100%;
+      }
+    }
+
+    /* ABFTV VALUES CARD FIX */
+
+    .aboutPage .valuesCard {
+      display: block;
+      position: relative;
+      margin: 28px 0;
+      padding: clamp(26px, 4vw, 44px);
+      border: 1px solid rgba(192,132,252,.30);
+      border-radius: 30px;
+      background:
+        radial-gradient(
+          circle at 50% 0%,
+          rgba(147,51,234,.14),
+          transparent 55%
+        ),
+        linear-gradient(135deg, #170d27, #0e0918);
+      box-shadow: 0 24px 70px rgba(0,0,0,.35);
+    }
+
+    .aboutPage .valuesCard .sectionHead {
+      margin-bottom: 30px;
+    }
+
+    .aboutPage .valuesCard .valuesGrid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    @media (max-width: 800px) {
+      .aboutPage .valuesCard .valuesGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 500px) {
+      .aboutPage .valuesCard .valuesGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</Base>

@@ -1,0 +1,877 @@
+---
+import "../styles/global.css";
+import SharedFooterTools from "../components/SharedFooterTools.astro";
+import SharedModals from "../components/SharedModals.astro";
+import SharedModalStyles from "../components/SharedModalStyles.astro";
+import SharedModalLogic from "../components/SharedModalLogic.astro";
+import SharedContactModal from "../components/SharedContactModal.astro";
+import SharedContactLogic from "../components/SharedContactLogic.astro";
+import SharedCookieBanner from "../components/SharedCookieBanner.astro";
+import SharedCookieConsent from "../components/SharedCookieConsent.astro";
+
+const {
+  title = "ABF Network — Réseau média indépendant",
+  description = "ABF Network : un réseau média indépendant réunissant Radio ABF, ABF 2 et ABF TV. Découvrez nos médias, notre infrastructure et nos partenariats."
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf.com").toString();
+
+const pathname = Astro.url.pathname;
+const isFrench = pathname === "/network/fr" || pathname.startsWith("/network/fr/");
+
+const currentSection = pathname
+  .replace(/^\/network\/fr\/?/, "")
+  .replace(/^\/network\/?/, "")
+  .replace(/\/$/, "");
+
+const languageHref = isFrench
+  ? `/network${currentSection ? `/${currentSection}` : ""}`
+  : `/network/fr${currentSection ? `/${currentSection}` : ""}`;
+const navigation = isFrench
+  ? [
+      { label: "Accueil", href: "/network/fr" },
+      { label: "Le réseau", href: "/network/fr/about" },
+      { label: "Technologie", href: "/network/fr/technology" },
+      { label: "Presse", href: "/network/fr/press" },
+      { label: "Partenariats", href: "/network/fr/partnerships" }
+    ]
+  : [
+      { label: "Home", href: "/network" },
+      { label: "The Network", href: "/network/about" },
+      { label: "Technology", href: "/network/technology" },
+      { label: "Press", href: "/network/press" },
+      { label: "Partnerships", href: "/network/partnerships" }
+    ];
+---
+
+<!doctype html>
+<html lang={isFrench ? "fr" : "en"}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <meta name="robots" content="index, follow" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:site_name" content="ABF Network" />
+
+    <slot name="head" />
+  </head>
+
+  <body class="network-site">
+    <header class="network-header">
+      <div class="network-container">
+        <div class="network-header-inner">
+          <a class="network-brand" href="/network" aria-label="ABF Network — Accueil">
+            <img src="/logo-abf-network.png" alt="ABF Network" />
+            <span class="network-brand-copy">
+              <strong>ABF NETWORK</strong>
+              <span>Alternative Bass Fréquence</span>
+              <small>INDEPENDENT MEDIA NETWORK</small>
+            </span>
+          </a>
+
+          <div class="network-media-switch" aria-label="Les médias ABF Network">
+            <a class="network-media-link radio" href="/" aria-label="Radio ABF — The DJs' Frequency">
+              <span class="network-media-dot"></span>
+              <span><strong>RADIO ABF</strong><small>The DJs' Frequency</small></span>
+            </a>
+
+            <a class="network-media-link abf2" href="/abf2" aria-label="ABF 2 — The Hits Frequency">
+              <span class="network-media-dot"></span>
+              <span><strong>ABF 2</strong><small>The Hits Frequency</small></span>
+            </a>
+
+            <a class="network-media-link tv" href="/abftv" aria-label="ABF TV — The Visual Frequency">
+              <span class="network-media-dot"></span>
+              <span><strong>ABF TV</strong><small>The Visual Frequency</small></span>
+            </a>
+          </div>
+
+          <div class="network-language-switch" aria-label="Language">
+            <a
+              href={isFrench ? `/network${currentSection ? `/${currentSection}` : ""}` : "/network"}
+              class:list={{ active: !isFrench }}
+            >EN</a>
+            <span aria-hidden="true">|</span>
+            <a
+              href={isFrench ? "/network/fr" : `/network/fr${currentSection ? `/${currentSection}` : ""}`}
+              class:list={{ active: isFrench }}
+            >FR</a>
+          </div>
+        </div>
+
+        <nav class="network-nav" aria-label="Navigation institutionnelle">
+          {navigation.map((item) => (
+            <a
+              href={item.href}
+              aria-current={Astro.url.pathname === item.href ? "page" : undefined}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <footer id="siteFooter" class="network-footer">
+  <div class="network-container network-footer-inner">
+
+    <div class="network-footer-identity">
+      © {new Date().getFullYear()} ABF Network – INDEPENDENT MEDIA NETWORK
+      <span class="network-footer-separator">|</span>
+      ))) Alternative Bass Fréquence (((
+      <span class="network-footer-separator">|</span>
+      www.radioabf.com
+    </div>
+
+    <div class="network-footer-actions">
+      <a href="/" class="network-footer-btn">Radio ABF</a>
+      <a href="/abf2" class="network-footer-btn">ABF 2</a>
+      <a href="/abftv" class="network-footer-btn">ABF TV</a>
+
+      <span class="network-footer-divider" aria-hidden="true"></span>
+
+      <a href="https://x.com/abfonair" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter" class="network-footer-social">
+            <svg class="network-footer-social" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231z"/>
+            </svg>
+          </a>
+      <a href="https://www.instagram.com/abfonair/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="network-footer-social">
+            <svg class="network-footer-social" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm4.25 5.5A4.75 4.75 0 1 1 7.25 12 4.756 4.756 0 0 1 12 7.5zm5.25-.75a1 1 0 1 1-1 1 1 1 0 0 1 1-1z"/>
+            </svg>
+          </a>
+      <a href="https://www.facebook.com/abfonair" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="network-footer-social">
+            <svg class="network-footer-social" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22 12a10 10 0 1 0-11.63 9.88v-6.99h-2.4V12h2.4V9.8c0-2.37 1.41-3.68 3.57-3.68 1.03 0 2.11.18 2.11.18v2.32h-1.19c-1.18 0-1.55.73-1.55 1.48V12h2.64l-.42 2.89h-2.22v6.99A10 10 0 0 0 22 12z"/>
+            </svg>
+          </a>
+      <a href="https://www.tiktok.com/@abfonair" target="_blank" rel="noopener noreferrer" aria-label="TikTok" class="network-footer-social">
+            <svg class="network-footer-social" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2v14.5a3.5 3.5 0 1 1-3-3.465V10a7 7 0 1 0 7 7V8.5a5.5 5.5 0 0 0 4 1.5V6.5A3.5 3.5 0 0 1 12 2z"/>
+            </svg>
+          </a>
+      <a href="https://www.youtube.com/@abfonair" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="network-footer-social">
+            <svg class="network-footer-social" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21.8 8.001a3.003 3.003 0 0 0-2.112-2.124C17.5 5.25 12 5.25 12 5.25s-5.5 0-7.688.627A3.003 3.003 0 0 0 2.2 8.001C1.575 10.19 1.575 12 1.575 12s0 1.81.625 3.999a3.003 3.003 0 0 0 2.112 2.124C6.5 18.75 12 18.75 12 18.75s5.5 0 7.688-.627a3.003 3.003 0 0 0 2.112-2.124C22.425 13.81 22.425 12 22.425 12s0-1.81-.625-3.999zM10 15.5v-7l6 3.5-6 3.5z"/>
+            </svg>
+          </a>
+    </div>
+
+    <div class="network-footer-tools" aria-label="Informations et outils ABF Network">
+      <SharedFooterTools theme="network" />
+    </div>
+
+  </div>
+</footer>
+
+    <SharedModals />
+    <SharedContactModal />
+    <SharedCookieBanner />
+    <SharedModalStyles />
+    <SharedModalLogic />
+    <SharedContactLogic />
+    <SharedCookieConsent />
+
+
+
+    <div class="network-back-to-top-wrap">
+      <button
+        id="backToTop"
+        type="button"
+        aria-label="Back to top"
+        class="network-back-to-top"
+      >
+        ↑
+      </button>
+    </div>
+    <!-- ================= BACK TO TOP — NETWORK ================= -->
+    <script is:inline data-astro-rerun>
+      (() => {
+        const btn = document.getElementById("backToTop");
+        if (!btn) return;
+
+        const update = () => {
+          const y = window.scrollY || document.documentElement.scrollTop;
+
+          if (y > 320) {
+            btn.classList.remove("opacity-0", "pointer-events-none");
+            btn.classList.add("opacity-100");
+          } else {
+            btn.classList.add("opacity-0", "pointer-events-none");
+            btn.classList.remove("opacity-100");
+          }
+        };
+
+        btn.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+        window.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("resize", update);
+        document.addEventListener("astro:page-load", update);
+        document.addEventListener("astro:after-swap", update);
+
+        update();
+      })();
+    </script>
+
+  </body>
+</html>
+
+<style is:global>
+  /* ===================== BACK TO TOP — NETWORK ===================== */
+  .network-back-to-top-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 140px;
+    z-index: 55;
+    pointer-events: none;
+  }
+
+  .network-back-to-top-wrap > button {
+    margin-left: auto;
+    margin-right: max(16px, calc((100vw - 72rem) / 2));
+  }
+
+  .network-back-to-top {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 16px;
+    background: rgba(8,9,11,.88);
+    backdrop-filter: blur(16px);
+    color: rgba(255,255,255,.80);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 0;
+    transition:
+      opacity .2s ease,
+      background .2s ease,
+      color .2s ease,
+      transform .2s ease;
+  }
+
+  .network-back-to-top.opacity-100 {
+    opacity: 1;
+  }
+
+  .network-back-to-top.opacity-0 {
+    opacity: 0;
+  }
+
+  .network-back-to-top:hover {
+    background: rgba(255,255,255,.10);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 600px) {
+    .network-back-to-top-wrap {
+      bottom: 100px;
+    }
+
+    .network-back-to-top-wrap > button {
+      margin-right: 16px;
+    }
+
+    .network-back-to-top {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+    }
+  }
+
+  .network-language-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 18px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    color: #7f8794;
+  }
+
+  .network-language-switch a {
+    color: #7f8794;
+    transition: color .2s ease, opacity .2s ease;
+  }
+
+  .network-language-switch a:hover,
+  .network-language-switch a.active {
+    color: #f3f4f6;
+  }
+
+  .network-language-switch span {
+    opacity: .35;
+  }
+
+  @media (max-width: 900px) {
+    .network-language-switch {
+      margin-left: 10px;
+    }
+  }
+  .network-site {
+    min-height: 100vh;
+    margin: 0;
+    background: #090a0c;
+    color: #f3f4f6;
+    font-family: Inter, system-ui, sans-serif;
+  }
+
+  .network-site * {
+    box-sizing: border-box;
+  }
+
+  .network-site a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .network-container {
+    width: min(1200px, calc(100% - 40px));
+    margin-inline: auto;
+  }
+
+  .network-header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+    background: #111216;
+  }
+
+  .network-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    min-height: 100px;
+  }
+
+  .network-brand {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .network-brand img {
+    display: block;
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+  }
+
+  .network-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+  }
+
+  .network-nav a {
+    color: #b8bbc3;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color .2s ease;
+  }
+
+  .network-nav a:hover,
+  .network-nav a[aria-current="page"] {
+    color: #fff;
+  }
+
+  /* ABF NETWORK — FOOTER */
+  .network-site {
+    padding-bottom: 110px;
+  }
+
+  .network-footer {
+    position: fixed;
+    z-index: 40;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255,255,255,.10);
+    background: rgba(9,10,12,.88);
+    backdrop-filter: blur(16px);
+  }
+
+  .network-footer-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 10px;
+    max-width: 1152px;
+  }
+
+  .network-footer-tools {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .network-footer-tools:empty {
+    display: none;
+  }
+
+  .network-footer-identity {
+    color: rgba(255,255,255,.60);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .network-footer-separator {
+    margin: 0 5px;
+    color: rgba(255,255,255,.25);
+  }
+
+  .network-footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .network-footer-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 999px;
+    background: rgba(255,255,255,.04);
+    color: rgba(255,255,255,.72);
+    font-size: 12px;
+    white-space: nowrap;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .network-footer-btn:hover {
+    background: rgba(255,255,255,.08);
+    color: #cbd5e1;
+  }
+
+  .network-footer-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,.10);
+  }
+
+  .network-footer-social {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: rgba(255,255,255,.60);
+    transition: color .15s ease;
+  }
+
+  .network-footer-social svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+
+  .network-footer-social:hover {
+    color: #cbd5e1;
+  }
+
+  @media (max-width: 900px) {
+  .network-site {
+      padding-bottom: 0;
+    }
+
+    .network-footer {
+      position: relative;
+      padding: 18px 0;
+    }
+
+    .network-footer-inner {
+      flex-direction: column;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .network-footer-actions {
+      gap: 8px;
+    }
+
+    .network-footer-divider {
+      display: none;
+    }
+  }
+  /* ABF NETWORK — MEDIA SWITCH */
+  .network-brand {
+    gap: 14px;
+  }
+
+  .network-brand-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .network-brand-copy strong {
+    color: #f3f4f6;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: .08em;
+  }
+
+  .network-brand-copy span {
+    color: #d1d5db;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .015em;
+  }
+
+  .network-brand-copy small {
+    color: #9299a5;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .network-media-switch {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .network-media-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 13px;
+    background: rgba(255,255,255,.035);
+    transition: border-color .2s ease, background .2s ease, transform .2s ease;
+  }
+
+  .network-media-link:hover {
+    transform: translateY(-1px);
+  }
+
+  .network-media-link strong,
+  .network-media-link small {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .network-media-link strong {
+    color: #f3f4f6;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .network-media-link small {
+    margin-top: 3px;
+    color: #9ca3af;
+    font-size: 9px;
+  }
+
+  .network-media-dot {
+    width: 9px;
+    height: 9px;
+    flex: none;
+    border-radius: 50%;
+  }
+
+  .network-media-link.radio .network-media-dot {
+    background: #2fc2ff;
+    box-shadow: 0 0 12px rgba(47,194,255,.75);
+  }
+
+  .network-media-link.abf2 .network-media-dot {
+    background: #ff3150;
+    box-shadow: 0 0 12px rgba(255,49,80,.75);
+  }
+
+  .network-media-link.tv .network-media-dot {
+    background: #a855f7;
+    box-shadow: 0 0 12px rgba(168,85,247,.75);
+  }
+
+  .network-media-link.radio:hover {
+    border-color: rgba(47,194,255,.5);
+    background: rgba(47,194,255,.07);
+  }
+
+  .network-media-link.abf2:hover {
+    border-color: rgba(255,49,80,.5);
+    background: rgba(255,49,80,.07);
+  }
+
+  .network-media-link.tv:hover {
+    border-color: rgba(168,85,247,.5);
+    background: rgba(168,85,247,.07);
+  }
+
+  .network-header .network-nav {
+    justify-content: center;
+    padding: 15px 0;
+    border-top: 1px solid rgba(255,255,255,.09);
+  }
+
+  @media (max-width: 800px) {
+    .network-media-switch {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .network-brand {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .network-media-switch {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .network-media-link {
+      justify-content: center;
+      padding: 9px 6px;
+      gap: 6px;
+    }
+
+    .network-media-link strong {
+      font-size: 9px;
+    }
+
+    .network-media-link small {
+      font-size: 8px;
+    }
+
+    .network-brand img {
+      width: 68px;
+      height: 68px;
+    }
+  }
+  /* NETWORK HEADER — MEDIA ALIGNMENT */
+  .network-header-inner {
+    min-height: 0;
+    padding: 14px 16px;
+    gap: 20px;
+  }
+
+  .network-header .network-brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .network-header .network-brand img {
+    width: 52px;
+    height: 52px;
+    flex: none;
+    object-fit: contain;
+    filter: drop-shadow(0 0 14px rgba(203,213,225,.22));
+  }
+
+  .network-header .network-brand-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .network-header .network-brand-copy strong {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+  }
+
+  .network-header .network-brand-copy span {
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .network-header .network-brand-copy small {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .network-header .network-media-switch {
+    gap: 10px;
+  }
+
+  .network-header .network-media-link {
+    min-height: 46px;
+    border-radius: 13px;
+  }
+
+  @media (max-width: 800px) {
+    .network-header .network-brand {
+      justify-content: flex-start;
+      width: 100%;
+    }
+
+    .network-header .network-header-inner {
+      align-items: stretch;
+      padding-inline: 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .network-header .network-brand img {
+      width: 52px;
+      height: 52px;
+    }
+
+    .network-header .network-media-switch {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+    /* ================= NETWORK SHARED UI THEME ================= */
+
+    /* Global Network scrollbar — overrides Radio ABF cyan */
+    html:has(body.network-site) {
+      scrollbar-color: #94a3b8 #0b0d10;
+    }
+
+    html:has(body.network-site)::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    html:has(body.network-site)::-webkit-scrollbar-track {
+      background: #0b0d10;
+    }
+
+    html:has(body.network-site)::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #cbd5e1, #64748b);
+      border-radius: 999px;
+      border: 2px solid #0b0d10;
+    }
+
+    html:has(body.network-site)::-webkit-scrollbar-thumb:hover {
+      background: #e2e8f0;
+    }
+
+    /* Modal scrollbars */
+    .network-site .abfModal ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .network-site .abfModal ::-webkit-scrollbar-track {
+      background: #0b0d10;
+    }
+
+    .network-site .abfModal ::-webkit-scrollbar-thumb {
+      background: #94a3b8 !important;
+      border-radius: 999px;
+    }
+
+    .network-site .abfModal ::-webkit-scrollbar-thumb:hover {
+      background: #e2e8f0 !important;
+    }
+
+    /* Shared modal accent */
+    .network-site .abfModalTitle {
+      color: #e2e8f0;
+    }
+
+    .network-site .abfModalClose:hover {
+      color: #e2e8f0;
+      border-color: rgba(226,232,240,.35);
+      background: rgba(226,232,240,.08);
+    }
+
+    /* Primary / action buttons */
+    .network-site .abfBtnPrimary {
+      background: linear-gradient(135deg, #475569, #cbd5e1) !important;
+      color: #080a0d !important;
+      border-color: rgba(203,213,225,.45) !important;
+      box-shadow: 0 8px 24px rgba(148,163,184,.18) !important;
+    }
+
+    .network-site .abfBtnPrimary:hover {
+      background: linear-gradient(135deg, #64748b, #e2e8f0) !important;
+    }
+
+    .network-site .abfBtn:hover,
+    .network-site .abfBtnGhost:hover {
+      border-color: rgba(203,213,225,.35) !important;
+      color: #e2e8f0 !important;
+    }
+
+    /* Build / Legal / Cookies shared accent */
+    .network-site .buildItem {
+      border-color: rgba(148,163,184,.30) !important;
+      background: rgba(148,163,184,.06) !important;
+    }
+
+    .network-site .buildItem * {
+      --tw-ring-color: rgba(148,163,184,.35);
+    }
+
+    /* Shared inline cyan blocks generated by Build logic */
+    .network-site .buildItem [style*="47,194,255"] {
+      border-color: rgba(148,163,184,.35) !important;
+      background: rgba(148,163,184,.10) !important;
+    }
+
+    /* Contact feedback / focus states */
+    .network-site .border-cyan-400\/30 {
+      border-color: rgba(148,163,184,.30) !important;
+    }
+
+    .network-site .bg-cyan-400\/10 {
+      background: rgba(148,163,184,.10) !important;
+    }
+
+    .network-site .text-cyan-200 {
+      color: #cbd5e1 !important;
+    }
+
+    /* Keep media buttons visually independent */
+    .network-site .network-footer-btn[href="/"],
+    .network-site .network-footer-btn[href="/abf2"],
+    .network-site .network-footer-btn[href="/abftv"] {
+      color: inherit;
+    }
+
+    /* ================= END NETWORK SHARED UI THEME ================= */
+</style>

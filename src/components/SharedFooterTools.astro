@@ -1,0 +1,62 @@
+---
+const { theme = "radio" } = Astro.props;
+---
+
+<div class:list={["shared-footer-tools", `shared-footer-tools--${theme}`]}>
+  <button id="openBuild" type="button" class="shared-footer-btn" aria-label="Open build updates" title="Build / Updates">
+    Build <span id="buildVersion">—</span>
+  </button>
+
+  <button id="openLegal" type="button" class="shared-footer-btn" aria-label="Open legal notices" title="Legal notices">
+    Legal
+  </button>
+
+  <button id="openCookies" type="button" class="shared-footer-btn" aria-label="Cookie preferences" title="Cookies">
+    Cookies
+  </button>
+
+  <button id="purgeBtn" type="button" class="shared-footer-btn" aria-label="Purge local data" title="Purge local data">
+    Purge
+  </button>
+
+  <button id="openContact" type="button" class="shared-footer-btn" aria-label="Contact" title="Contact">
+    Contact
+  </button>
+</div>
+<style>
+  .shared-footer-tools {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .shared-footer-btn {
+    padding: 7px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+
+  .shared-footer-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .shared-footer-tools--radio .shared-footer-btn:hover {
+    border-color: rgba(47, 194, 255, 0.5);
+  }
+
+  .shared-footer-tools--abf2 .shared-footer-btn:hover {
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+
+  .shared-footer-tools--network .shared-footer-btn:hover {
+    border-color: rgba(200, 210, 220, 0.55);
+  }
+</style>

@@ -1,0 +1,325 @@
+<style is:global>
+      /* ===================== MODALS (Build + Legal + Cookies) ===================== */
+      .abfModal{
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        display: none;
+      }
+      .abfModal[aria-hidden="false"]{ display:block; }
+      .abfModalBackdrop{
+        position:absolute; inset:0;
+        background: rgba(5,11,20,0.78);
+        backdrop-filter: blur(18px);
+      }
+      .abfModalWrap{
+        position:relative;
+        height:100%;
+        width:100%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding: 18px;
+      }
+      .abfModalCard{
+        width: min(920px, 100%);
+        max-height: min(78vh, 820px);
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(5,11,20,0.78);
+        box-shadow: 0 30px 120px rgba(0,0,0,0.55);
+      }
+      .abfModalTop{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap: 12px;
+        padding: 14px 14px 10px 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.03);
+      }
+      .abfModalTitle{
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: rgba(255,255,255,0.75);
+      }
+      .abfModalClose{
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.05);
+        transition: .15s ease;
+      }
+      .abfModalClose:hover{ background: rgba(255,255,255,0.10); }
+      .abfModalBody{
+        padding: 14px;
+        overflow: auto;
+        max-height: calc(min(78vh, 820px) - 60px);
+      }
+      .buildList{ display:flex; flex-direction:column; gap:10px; }
+      .buildItem{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.04);
+      }
+      .buildLeft{ min-width:0; }
+      .buildVer{
+        font-weight: 800;
+        color: rgba(210,218,226,0.95);
+        letter-spacing: .02em;
+      }
+      .buildTxt{ color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 4px; line-height: 1.35; }
+      .buildDate{
+        flex: none;
+        font-size: 12px;
+        color: rgba(255,255,255,0.55);
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.03);
+        padding: 6px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+        text-align: right;
+      }
+      .legal h2{
+        font-size: 16px;
+        font-weight: 800;
+        margin: 0 0 10px 0;
+      }
+      .legal h3{
+        font-size: 13px;
+        font-weight: 800;
+        margin: 16px 0 6px 0;
+        color: rgba(255,255,255,0.85);
+      }
+      .legal p, .legal li{
+        font-size: 13px;
+        color: rgba(255,255,255,0.75);
+        line-height: 1.45;
+      }
+      .legal ol{
+        padding-left: 18px;
+        margin: 0;
+      }
+      .legal .muted{
+        color: rgba(255,255,255,0.55);
+        font-size: 12px;
+        margin-top: 14px;
+      }
+      /* ===================== COOKIE BANNER ===================== */
+      .abfCookieBar{
+        position: fixed;
+        left: 0;
+        right: 0;
+        z-index: 65;
+        pointer-events: none;
+        bottom: calc(var(--abf-footer-h) + var(--abf-player-h) + 14px);
+      }
+      .abfCookieBarInner{
+        pointer-events: auto;
+        width: min(980px, 100%);
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      .abfCookieCard{
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(5,11,20,0.92);
+        backdrop-filter: blur(18px) saturate(140%);
+        box-shadow: 0 20px 80px rgba(0,0,0,0.55);
+        padding: 12px;
+        display:flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .abfCookieRow{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .abfCookieTitle{
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        font-size: 11px;
+        color: rgba(255,255,255,0.75);
+      }
+      .abfCookieTxt{
+        color: rgba(255,255,255,0.72);
+        font-size: 13px;
+        line-height: 1.35;
+        margin-top: 4px;
+        max-width: 62ch;
+      }
+      .abfCookieActions{
+        display:flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content:flex-end;
+      }
+      .abfBtn{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        padding: 9px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.86);
+        transition: .15s ease;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .abfBtn:hover{ background: rgba(255,255,255,0.10); }
+      .abfBtnPrimary{
+        border-color: rgba(200,208,216,0.35);
+        background: linear-gradient(90deg, rgba(70,78,88,0.95), rgba(150,160,170,0.95));
+        color: rgba(255,255,255,0.95);
+      }
+      .abfBtnPrimary:hover{
+        filter: brightness(1.05);
+      }
+      .abfBtnGhost{
+        background: transparent;
+      }
+      .abfBtnDanger{
+        border-color: rgba(239,68,68,0.35);
+        background: rgba(239,68,68,0.10);
+        color: rgba(255,255,255,0.90);
+      }
+      .abfBtnDanger:hover{
+        background: rgba(239,68,68,0.16);
+      }
+      .abfMuted{
+        color: rgba(255,255,255,0.55);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .abfToggle{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.04);
+      }
+      .abfToggle h4{
+        margin:0;
+        font-size: 13px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.88);
+      }
+      .abfToggle p{
+        margin: 4px 0 0 0;
+        font-size: 13px;
+        color: rgba(255,255,255,0.70);
+        line-height: 1.35;
+      }
+      .abfSwitch{
+        flex:none;
+        width: 48px;
+        height: 28px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06);
+        position: relative;
+        cursor:pointer;
+        transition: .15s ease;
+      }
+      .abfSwitch::after{
+        content:"";
+        position:absolute;
+        top: 3px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.85);
+        transition: .15s ease;
+      }
+      .abfSwitch[data-on="true"]{
+        border-color: rgba(200,208,216,0.35);
+        background: rgba(200,208,216,0.16);
+      }
+      .abfSwitch[data-on="true"]::after{
+        left: 23px;
+        background: rgba(210,218,226,0.95);
+      }
+      /* Network : aucun player, bandeau en bas de la fenêtre */
+      .network-site .abfCookieBar {
+        bottom: 14px;
+      }
+</style>
+
+<style is:global>
+  /* ===================== NETWORK THEME OVERRIDE ===================== */
+
+  .network-site .abfModal {
+    --modal-accent: #c8d0d8;
+    --modal-accent-soft: rgba(200, 208, 216, 0.16);
+    --modal-accent-border: rgba(200, 208, 216, 0.32);
+  }
+
+  .network-site .abfModal .abfBtnPrimary {
+    border-color: rgba(200, 208, 216, 0.32);
+    background: linear-gradient(
+      90deg,
+      rgba(70, 78, 88, 0.95),
+      rgba(150, 160, 170, 0.95)
+    );
+    color: #fff;
+  }
+
+  .network-site .abfModal .abfBtnPrimary:hover {
+    filter: brightness(1.08);
+  }
+
+  .network-site .abfModal .abfBtn:focus-visible,
+  .network-site .abfModal input:focus,
+  .network-site .abfModal textarea:focus {
+    border-color: rgba(200, 208, 216, 0.55);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(200, 208, 216, 0.10);
+  }
+
+  .network-site .abfModal .abfSwitch[data-on="true"] {
+    border-color: rgba(200, 208, 216, 0.35);
+    background: rgba(200, 208, 216, 0.16);
+  }
+
+  .network-site .abfModal .abfSwitch[data-on="true"]::after {
+    background: rgba(210, 218, 226, 0.95);
+  }
+
+  .network-site .abfModal ::-webkit-scrollbar-thumb {
+    background: rgba(190, 200, 210, 0.45);
+  }
+
+  .network-site .abfModal ::-webkit-scrollbar-thumb:hover {
+    background: rgba(210, 218, 226, 0.65);
+  }
+
+  .network-site .abfModal ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  /* Network footer tools */
+  .network-site .shared-footer-btn:hover {
+    border-color: rgba(200, 208, 216, 0.55);
+    color: rgba(235, 240, 245, 0.95);
+  }
+</style>

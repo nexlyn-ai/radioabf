@@ -2,13 +2,14 @@
 import "../styles/global.css";
 import { ViewTransitions } from "astro:transitions";
 const {
+  isABFTV = false,
   title = "RadioABF",
   description = "RadioABF — Alternative Bass Fréquence | The DJs' Frequency. Live electronic music streaming on radioabf.com. Vote for your favorite tracks, discover DJ programs and weekly charts."
 } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site || "https://radioabf.com").toString();
 ---
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class:list={{ "abftv-theme": isABFTV }}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -725,6 +726,7 @@ html.abf2-theme #dedicationSubmitBtn {
     "
   >
     <!-- ================= HEADER ================= -->
+    {!isABFTV && (
     <header id="siteHeader" class="sticky top-0 z-50">
       <div class="bg-[#050B14]/80 backdrop-blur-xl border-b border-white/10">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-4">
@@ -855,6 +857,43 @@ html.abf2-theme #dedicationSubmitBtn {
       </div>
     </header>
 
+    )}
+
+    {isABFTV && (
+      <header id="siteHeader" class="sticky top-0 z-50 border-b border-purple-400/20 bg-[#10091c]/95 backdrop-blur-xl">
+        <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3">
+          <div class="flex items-center justify-between gap-4">
+            <a href="/abftv" class="flex items-center gap-3 min-w-0">
+              <img src="/logo-abftv.png" alt="ABF TV" class="w-14 h-14 sm:w-16 sm:h-16 object-contain" />
+              <div class="min-w-0">
+                <div class="font-extrabold tracking-wide text-white">ABF TV</div>
+                <div class="text-xs text-white/60">Alternative Bass Fréquence</div>
+                <div class="text-xs uppercase tracking-wider text-purple-300">The Visual Frequency</div>
+              </div>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-2" aria-label="ABF TV">
+              <a href="/abftv" class="px-3 py-2 rounded-xl hover:bg-purple-400/10">Home</a>
+              <a href="/abftv/live" class="px-3 py-2 rounded-xl hover:bg-purple-400/10">Live</a>
+              <a href="/abftv/news" class="px-3 py-2 rounded-xl hover:bg-purple-400/10">News</a>
+              <a href="/abftv/about" class="px-3 py-2 rounded-xl hover:bg-purple-400/10">About</a>
+              <a href="/network" class="px-3 py-2 rounded-xl border border-purple-400/30 hover:bg-purple-400/10">Network</a>
+            </nav>
+
+            <details class="relative md:hidden">
+              <summary class="cursor-pointer list-none rounded-xl border border-purple-400/30 px-3 py-2" aria-label="Open ABF TV menu">☰</summary>
+              <nav class="absolute right-0 top-full mt-3 w-48 rounded-xl border border-purple-400/30 bg-[#10091c] p-2 shadow-2xl" aria-label="ABF TV mobile">
+                <a href="/abftv" class="block rounded-lg px-3 py-2 hover:bg-purple-400/10">Home</a>
+                <a href="/abftv/live" class="block rounded-lg px-3 py-2 hover:bg-purple-400/10">Live</a>
+                <a href="/abftv/news" class="block rounded-lg px-3 py-2 hover:bg-purple-400/10">News</a>
+                <a href="/abftv/about" class="block rounded-lg px-3 py-2 hover:bg-purple-400/10">About</a>
+                <a href="/network" class="block rounded-lg px-3 py-2 hover:bg-purple-400/10">Network</a>
+              </nav>
+            </details>
+          </div>
+        </div>
+      </header>
+    )}
     <!-- DEDICATIONS BAR (global) -->
     <div class="dedications-bar" transition:persist="dedications">
       <div class="dedications-inner">
@@ -996,7 +1035,7 @@ html.abf2-theme #dedicationSubmitBtn {
 	    <!-- ================= PLAYER (mobile collapsible, IDs unique) ================= -->
     <div
       id="playerContainer"
-      class="fixed left-0 right-0 z-50 pointer-events-none"
+      class:list={["fixed left-0 right-0 z-50 pointer-events-none", { hidden: isABFTV }]}
       style="bottom: calc(var(--abf-footer-h) + var(--abf-gap) + env(safe-area-inset-bottom, 0px));"
       data-mini="true"
     >
@@ -2808,7 +2847,11 @@ const onAstroNav = () => {
     >
       <div class="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/60">
         <div class="text-center md:text-left">
-          © {new Date().getFullYear()} Radio ABF – The DJs' Frequency | ))) Alternative Bass Fréquence ((( | www.radioabf.com
+          {isABFTV ? (
+            <>© {new Date().getFullYear()} ABF TV – The Visual Frequency | ))) Alternative Bass Fréquence ((( | www.radioabf.com</>
+          ) : (
+            <>© {new Date().getFullYear()} Radio ABF – The DJs' Frequency | ))) Alternative Bass Fréquence ((( | www.radioabf.com</>
+          )}
         </div>
 
         <div class="flex items-center gap-3 flex-wrap justify-center">
@@ -4441,7 +4484,7 @@ const onAstroNav = () => {
     </script>
 <style is:global>
   /* Radio ABF : texte cyan au survol, sauf le lien ABF 2 */
-  html:not(.abf2-theme) #siteHeader nav a:not(.abf2-network-link):hover {
+  html:not(.abf2-theme):not(.abftv-theme) #siteHeader nav a:not(.abf2-network-link):hover {
     color: #2FC2FF !important;
   }
   #siteHeader .abf2-network-link:hover {
@@ -4452,6 +4495,19 @@ const onAstroNav = () => {
 
   #siteHeader .abf2-network-link:hover * {
     color: #ff7188 !important;
+  }
+
+  /* ABF TV — PURPLE HEADER NAVIGATION */
+  html.abftv-theme #siteHeader nav a:hover,
+  html.abftv-theme #siteHeader details a:hover {
+    color: #d8b4fe !important;
+    background-color: rgba(168, 85, 247, 0.14);
+  }
+
+  html.abftv-theme #siteHeader nav a[aria-current="page"],
+  html.abftv-theme #siteHeader details a[aria-current="page"] {
+    color: #e9d5ff !important;
+    background-color: rgba(168, 85, 247, 0.20);
   }
 </style>
 </body>

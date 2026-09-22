@@ -1,0 +1,146 @@
+    <!-- ================= BUILD MODAL ================= -->
+    <div id="buildModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-close="build"></div>
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Build updates">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">Build / Updates</div>
+            <button class="abfModalClose" id="buildClose" type="button" aria-label="Close">✕</button>
+          </div>
+          <div class="abfModalBody">
+            <div id="buildList" class="buildList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= LEGAL MODAL ================= -->
+    <div id="legalModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-close="legal"></div>
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Legal notices">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">Legal Notices</div>
+            <button class="abfModalClose" id="legalClose" type="button" aria-label="Close">✕</button>
+          </div>
+          <div class="abfModalBody legal">
+            <h2>Legal Notices</h2>
+            <h3>1. Website Publisher / Editor</h3>
+            <p>
+              This website radioabf.com is published by: <b>Radio ABF</b><br />
+              Email: <b>contact@radioabf.com</b>
+            </p>
+            <p>
+              Director of Publication: <b>Loic Mounier</b><br />
+              Editorial Manager: <b>Loic Mounier</b><br />
+              Technical Manager: <b>Loic Mounier</b>
+            </p>
+            <h3>2. Hosting Provider</h3>
+            <p>The website is hosted by: <b>SpaceShip</b></p>
+            <h3>3. Intellectual Property – Copyright</h3>
+            <p>
+              All content available on radioabf.com (text, graphics, logos, sounds, streams, mixes, photos, videos, software, etc.)
+              is protected by French and international copyright laws. Unless expressly authorized in writing, any reproduction,
+              representation, modification, publication, total or partial adaptation of the site or its content, by any means whatsoever
+              and on any medium whatsoever, is prohibited (art. L.122-4 of the French Intellectual Property Code).
+            </p>
+            <p>
+              The logos, brands and distinctive signs appearing on the site are the property of Radio ABF and/or its partners.
+              Any reproduction, in whole or in part, without authorization constitutes an infringement punishable by law.
+            </p>
+            <h3>4. Personal Data – GDPR</h3>
+            <p>
+              Personal data collected on this website (contact form, newsletter subscription, comments, listening statistics, etc.)
+              are processed in accordance with the General Data Protection Regulation (GDPR – EU 2016/679) and the French Data Protection Act.
+            </p>
+            <p>
+              Data controller: Same as Publisher above. Purpose of processing: site operation, audience measurement, newsletter,
+              response to contact requests. Legal basis: consent and/or legitimate interest. Retention period: time strictly necessary
+              for the purposes pursued (max. 3 years for prospects). Recipients: only the publisher and technical service providers
+              (host, statistics tool, email service).
+            </p>
+            <p>
+              You have the right to access, rectify, erase, restrict processing, object, and data portability.
+              To exercise these rights: contact@radioabf.com.
+              You also have the right to lodge a complaint with the CNIL: https://www.cnil.fr
+            </p>
+            <h3>5. Streaming &amp; Music Broadcasting</h3>
+            <p>
+              Radio ABF broadcasts music under licenses obtained from the relevant collective management organizations (SACEM, SPPF, SCPP, etc.)
+              and, for online streaming, under agreements with relevant performers' and producers' rights societies.
+            </p>
+            <p>
+              Any unauthorized rebroadcasting, recording or commercial use of the streams is strictly prohibited.
+            </p>
+            <h3>6. External Links</h3>
+            <p>
+              The site may contain hyperlinks to external websites. Radio ABF has no control over these sites and cannot be held responsible
+              for their content or practices.
+            </p>
+            <h3>7. Limitation of Liability</h3>
+            <p>
+              Radio ABF makes every effort to ensure the accuracy and updating of information published on the site. However, it cannot guarantee
+              the completeness, accuracy or absence of modification by a third party (intrusion, virus, etc.). Consequently, Radio ABF cannot be
+              held liable for any direct or indirect damage resulting from the use of the site or the impossibility of accessing it.
+            </p>
+            <h3>8. Applicable Law – Jurisdiction</h3>
+            <p>
+              These legal notices are governed by French law. Any dispute relating to the validity, interpretation or execution of these legal notices
+              will be subject to the exclusive jurisdiction of the competent courts of Paris.
+            </p>
+            <p class="muted">Last updated: March 2026</p>
+            <p class="muted">Thank you for visiting radioabf.com!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= COOKIES MODAL (RGPD) ================= -->
+    <div id="cookiesModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-close="cookies"></div>
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Cookie preferences">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">Cookie preferences</div>
+            <button class="abfModalClose" id="cookiesClose" type="button" aria-label="Close">✕</button>
+          </div>
+          <div class="abfModalBody">
+            <div class="space-y-3 text-sm text-white/75 leading-relaxed">
+              <p class="text-white/85 font-semibold">
+                We use cookies to keep the site working and (optionally) to measure audience with Google Analytics (GA4).
+              </p>
+
+              <div class="abfToggle">
+                <div class="min-w-0">
+                  <h4>Necessary cookies</h4>
+                  <p>
+                    Required for core features (player preferences, security). Always enabled.
+                  </p>
+                </div>
+                <div class="abfSwitch" data-on="true" aria-hidden="true" title="Always on"></div>
+              </div>
+
+              <div class="abfToggle">
+                <div class="min-w-0">
+                  <h4>Analytics (GA4)</h4>
+                  <p>
+                    Helps us understand traffic and improve the experience. Disabled by default until you accept.
+                  </p>
+                </div>
+                <button id="analyticsToggle" type="button" class="abfSwitch" data-on="false" aria-label="Toggle analytics"></button>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button id="cookiesAccept" type="button" class="abfBtn abfBtnPrimary">Accept analytics</button>
+                <button id="cookiesDecline" type="button" class="abfBtn">Decline</button>
+                <button id="cookiesSave" type="button" class="abfBtn abfBtnGhost">Save</button>
+              </div>
+
+              <p class="abfMuted">
+                You can change your choice any time from the footer (“Cookies”).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

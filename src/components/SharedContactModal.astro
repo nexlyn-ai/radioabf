@@ -1,0 +1,94 @@
+    <!-- ================= CONTACT MODAL ================= -->
+    <div id="contactModal" class="abfModal" aria-hidden="true">
+      <div class="abfModalBackdrop" data-close="contact"></div>
+
+      <div class="abfModalWrap">
+        <div class="abfModalCard" role="dialog" aria-modal="true" aria-label="Contact RadioABF">
+          <div class="abfModalTop">
+            <div class="abfModalTitle">Contact</div>
+            <button class="abfModalClose" id="contactClose" type="button" aria-label="Close">✕</button>
+          </div>
+
+          <div class="abfModalBody">
+            <div class="text-sm text-white/75 leading-relaxed">
+              <p class="text-white/85 font-semibold">
+                Send a message to the ABF team.
+              </p>
+              <p class="abfMuted">
+                We usually reply within 24–72h depending on the volume.
+              </p>
+            </div>
+
+            <form id="contactForm" class="mt-4 space-y-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-white/60 mb-2">Your name</label>
+                  <input
+                    id="ctName"
+                    name="name"
+                    type="text"
+                    maxlength="60"
+                    required
+                    class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+                    placeholder="Your name"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs text-white/60 mb-2">Your email</label>
+                  <input
+                    id="ctEmail"
+                    name="email"
+                    type="email"
+                    maxlength="120"
+                    required
+                    class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+                    placeholder="you@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs text-white/60 mb-2">Subject</label>
+                <input
+                  id="ctSubject"
+                  name="subject"
+                  type="text"
+                  maxlength="120"
+                  class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+                  placeholder="What’s this about?"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs text-white/60 mb-2">Message</label>
+                <textarea
+                  id="ctMessage"
+                  name="message"
+                  rows="6"
+                  maxlength="2000"
+                  required
+                  class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-cyan-400/40 transition"
+                  placeholder="Write your message…"
+                ></textarea>
+                <div class="text-[11px] text-white/40 mt-2">Max 2000 characters.</div>
+              </div>
+
+              <div id="contactFeedback" class="hidden text-sm font-medium px-4 py-3 rounded-xl border"></div>
+
+              <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
+                <button id="ctCancel" type="button" class="abfBtn">Cancel</button>
+                <button id="ctSend" type="submit" class="abfBtn abfBtnPrimary">
+                  Send
+                </button>
+              </div>
+
+              <div class="abfMuted pt-1">
+                This will send an email directly to <span class="text-white/70">contact@radioabf.com</span>.
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+

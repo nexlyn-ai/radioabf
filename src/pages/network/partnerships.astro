@@ -1,0 +1,336 @@
+---
+import Network from "../../layouts/Network.astro";
+---
+
+<Network
+  title="ABF Network — Partnerships"
+  description="Discover collaboration and partnership opportunities with ABF Network and its different media."
+>
+  <section class="network-hero">
+    <div class="network-container">
+      <p class="network-eyebrow">PARTNERSHIPS & COLLABORATION</p>
+
+      <h1>Build projects<br /><span>together.</span></h1>
+
+      <p class="network-intro">
+        ABF Network is open to collaborations with organizations in media,
+        technology, creative industries and culture.
+      </p>
+    </div>
+  </section>
+
+  <section class="network-section" aria-labelledby="collaboration-title">
+    <div class="network-container network-two-column">
+      <div>
+        <p class="network-eyebrow">COLLABORATION</p>
+        <h2 id="collaboration-title">Collaborations tailored to each project.</h2>
+      </div>
+
+      <div class="network-copy">
+        <p>
+          A partnership can take different forms depending on the project’s objectives
+          technical collaboration, technical partnership,
+          digital development or media project.
+        </p>
+
+        <p>
+          ABF Network favors clearly defined collaborations,
+          with objectives and roles identified for each party.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="network-section network-section-dark" aria-labelledby="opportunities-title">
+    <div class="network-container">
+      <div class="network-section-heading">
+        <p class="network-eyebrow">OPPORTUNITIES</p>
+        <h2 id="opportunities-title">Several ways to collaborate.</h2>
+        <p>
+          Opportunities depend on the project, its audience and the
+          skills or resources required.
+        </p>
+      </div>
+
+      <div class="network-partner-grid">
+        <article class="network-partner-card">
+          <span class="network-card-index">01 / MEDIA</span>
+          <h3>Media partnerships</h3>
+          <p>
+            Editorial collaborations, special operations, content
+            and joint projects with other media organizations.
+          </p>
+        </article>
+
+        <article class="network-partner-card">
+          <span class="network-card-index">02 / TECHNOLOGY</span>
+          <h3>Partnerships techniques</h3>
+          <p>
+            Collaboration around technology, broadcasting,
+            digital services and media infrastructure.
+          </p>
+        </article>
+
+        <article class="network-partner-card">
+          <span class="network-card-index">03 / CREATIVE</span>
+          <h3>Creative projects</h3>
+          <p>
+            Projects combining music, audiovisual, digital creation,
+            design or new formats.
+          </p>
+        </article>
+
+        <article class="network-partner-card">
+          <span class="network-card-index">04 / PROFESSIONAL</span>
+          <h3>Professional relations</h3>
+          <p>
+            Exchanges with companies, agencies, institutions,
+            creators and professionals wishing to discover the network.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="network-section" aria-labelledby="network-fit-title">
+    <div class="network-container network-feature-grid">
+      <div class="network-feature-card">
+        <p class="network-eyebrow">THE NETWORK</p>
+        <h2 id="network-fit-title">An evolving ecosystem.</h2>
+        <p>
+          ABF Network projects evolve progressively. New
+          media, services and experiences can join the ecosystem
+          as it develops.
+        </p>
+      </div>
+
+      <div class="network-feature-card">
+        <p class="network-eyebrow">OUR PRINCIPLES</p>
+        <h2>Collaborations aligned with our identity.</h2>
+        <p>
+          Partnerships are considered with respect for the network’s independence,
+          the identity of its media and the nature of each project.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="network-section network-section-dark" aria-labelledby="contact-title">
+    <div class="network-container network-contact-card">
+      <p class="network-eyebrow">START A CONVERSATION</p>
+
+      <h2 id="contact-title">Do you have a project?</h2>
+
+      <p>
+        Introduce your project, activity or collaboration proposal.
+        Together, we can determine whether it
+        fits the ABF Network ecosystem.
+      </p>
+
+      <a class="network-contact-button" href="mailto:contact@radioabf.com">
+        Contact ABF Network
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </section>
+</Network>
+
+<style>
+  .network-hero {
+    padding: 112px 0 120px;
+    background:
+      radial-gradient(ellipse at 82% 18%, rgba(148,163,184,.13), transparent 48%),
+      linear-gradient(145deg, #17191e, #090a0c 72%);
+    border-bottom: 1px solid rgba(255,255,255,.09);
+  }
+
+  .network-eyebrow {
+    margin: 0 0 22px;
+    color: #aeb4c0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .24em;
+  }
+
+  .network-hero h1 {
+    max-width: 920px;
+    margin: 0;
+    font-size: clamp(48px, 7.5vw, 104px);
+    font-weight: 850;
+    line-height: 1.03;
+    letter-spacing: -.065em;
+  }
+
+  .network-hero h1 span {
+    color: #aeb4c0;
+  }
+
+  .network-intro {
+    max-width: 720px;
+    margin: 34px 0 0;
+    color: #b8bdc7;
+    font-size: clamp(17px, 2vw, 21px);
+    line-height: 1.7;
+  }
+
+  .network-section {
+    padding: 96px 0;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+
+  .network-section-dark {
+    background: linear-gradient(145deg, #111318, #08090b);
+  }
+
+  .network-two-column,
+  .network-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 80px;
+    align-items: start;
+  }
+
+  .network-section h2 {
+    margin: 0;
+    color: #f3f4f6;
+    font-size: clamp(34px, 4.5vw, 62px);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -.045em;
+  }
+
+  .network-copy {
+    max-width: 720px;
+    color: #b8bdc7;
+    font-size: 17px;
+    line-height: 1.8;
+  }
+
+  .network-copy p {
+    margin: 0 0 24px;
+  }
+
+  .network-section-heading {
+    max-width: 760px;
+    margin-bottom: 48px;
+  }
+
+  .network-section-heading > p:last-child {
+    margin: 24px 0 0;
+    color: #8f96a3;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  .network-partner-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .network-partner-card,
+  .network-feature-card {
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 14px;
+    background: rgba(255,255,255,.025);
+  }
+
+  .network-partner-card {
+    min-height: 230px;
+    padding: 30px;
+  }
+
+  .network-card-index {
+    color: #8f96a3;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .18em;
+  }
+
+  .network-partner-card h3 {
+    margin: 40px 0 12px;
+    color: #f3f4f6;
+    font-size: 23px;
+  }
+
+  .network-partner-card p {
+    margin: 0;
+    color: #969eaa;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .network-feature-card {
+    padding: 38px;
+  }
+
+  .network-feature-card h2 {
+    font-size: clamp(30px, 4vw, 52px);
+  }
+
+  .network-feature-card > p:not(.network-eyebrow) {
+    max-width: 650px;
+    margin: 24px 0 0;
+    color: #aeb4c0;
+    line-height: 1.75;
+  }
+
+  .network-contact-card {
+    max-width: 920px;
+  }
+
+  .network-contact-card > p:not(.network-eyebrow) {
+    max-width: 680px;
+    margin: 24px 0 32px;
+    color: #aeb4c0;
+    font-size: 17px;
+    line-height: 1.75;
+  }
+
+  .network-contact-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 24px;
+    min-height: 48px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background: #e5e7eb;
+    color: #101114;
+    font-size: 13px;
+    font-weight: 750;
+    text-decoration: none;
+    transition: transform .2s ease;
+  }
+
+  .network-contact-button:hover {
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 900px) {
+    .network-two-column,
+    .network-feature-grid,
+    .network-partner-grid {
+      grid-template-columns: 1fr;
+      gap: 38px;
+    }
+
+    .network-section {
+      padding: 72px 0;
+    }
+
+    .network-hero {
+      padding: 76px 0 84px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .network-partner-card,
+    .network-feature-card {
+      padding: 24px;
+    }
+
+    .network-hero h1 {
+      letter-spacing: -.045em;
+    }
+  }
+</style>
