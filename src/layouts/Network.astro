@@ -874,4 +874,65 @@ const navigation = isFrench
     }
 
     /* ================= END NETWORK SHARED UI THEME ================= */
+  /* ================= NETWORK MOBILE LAYOUT FIX ================= */
+  @media (max-width: 800px) {
+    .network-header .network-header-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .network-header .network-brand {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .network-header .network-media-switch {
+      width: 100%;
+      margin: 0;
+    }
+
+    .network-header .network-language-switch {
+      width: 100%;
+      margin: 0;
+      justify-content: center;
+    }
+
+    .network-footer-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .network-footer-identity,
+    .network-footer-actions,
+    .network-footer-tools {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .network-header .network-media-switch {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .network-header .network-media-link {
+      min-width: 0;
+      padding: 9px 5px;
+    }
+
+    .network-header .network-nav {
+      gap: 12px 18px;
+    }
+
+    .network-footer-identity {
+      overflow-wrap: anywhere;
+    }
+  }
+  /* ================= END NETWORK MOBILE LAYOUT FIX ================= */
 </style>
