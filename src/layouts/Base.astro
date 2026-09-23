@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { BUILDS } from "../data/builds";
 import { ViewTransitions } from "astro:transitions";
 const {
   isABFTV = false,
@@ -2911,6 +2912,9 @@ const onAstroNav = () => {
     </footer>
 	
 	    <!-- ================= MODALS + BUILD DATA + PURGE + COOKIE CONSENT ================= -->
+    <script is:inline define:vars={{ BUILDS }}>
+  window.__abfBuilds = BUILDS;
+</script>
     <script is:inline data-astro-rerun>
       (() => {
         const buildModal = document.getElementById("buildModal");
@@ -2928,193 +2932,7 @@ const onAstroNav = () => {
 
         if (!buildModal || !legalModal || !cookiesModal || !openBuild || !buildClose || !buildList || !buildVersion) return;
 
-        const BUILDS = [
-        {
-          v: "4.2.0",
-          d: "Sep 23, 2026",
-          t: "Major ABF ecosystem expansion with the introduction of ABF Network and ABF TV. ABF Network now provides the central structure for the development, coordination and technical operation of the ecosystem, bringing together Radio ABF, ABF 2 and ABF TV under a unified network identity. Dedicated ABF Network pages have been introduced to present the network, its technology, media activities and institutional information, alongside expanded cross-network navigation. ABF TV has also been integrated as the third media outlet of the ecosystem, with its own purple visual identity and dedicated interface. Footer tools, shared modals, contact, cookies, dedications and build information have been refined to preserve the distinct visual identity of each ABF media outlet while maintaining a consistent network-wide experience."
-        },
-        {
-          v: "4.1.3",
-          d: "Sep 20, 2026",
-          t: "Chromecast and listener experience improvements across the ABF Network. Fixed station-specific Chromecast stream selection so Radio ABF and ABF 2 each cast their correct audio feed. Added dedicated Chromecast artwork for ABF 2 and enhanced on-screen metadata for both stations, including their respective identities and live broadcasting titles. Refined ABF 2 metadata with a single heart emoji for better readability on Chromecast displays. Integrated listener voting into the Radio ABF homepage, making it easier to interact with the music directly from the main page. These updates strengthen the listening experience and audience engagement across the network."
-        },
-        {
-          v: "4.1.2",
-          d: "Sep 19, 2026",
-          t: "ABF Network website refinements across Radio ABF and ABF 2. Improved the visual consistency of both stations with clearer station-specific colors and harmonized news category badges. Updated Radio ABF news labels and added clickable category navigation to ABF 2 articles. Refined Radio ABF homepage section headings with cyan accents and unified the homepage news heading as ABF Network stories. These updates strengthen the shared network identity while preserving each station's distinct visual experience."
-        },
-        {
-          v: "4.1.1",
-          d: "Sep 18, 2026",
-          t: "Website stability and user experience improvements across the ABF Network. Fixed audio switching between Radio ABF and ABF 2 for smoother transitions between stations. Corrected UTF-8 character encoding on the ABF 2 homepage. Improved the ABF 2 voting interface: confirmation messages now reset when the current track changes, previously voted tracks are correctly identified, and unavailable voting buttons display the appropriate disabled state. These refinements improve navigation, playback continuity and the overall listening experience. Added two new feature cards to the ABF 2 homepage: ABF 2 Live in UHD & HD, with a dedicated modal detailing audio qualities, HTTPS streams and HLS links; and Buy us a coffee, with a support modal for the independent ABF Network."
-        },
-        {
-          v: "4.1.0",
-          d: "Sep 17, 2026",
-          t: "Major broadcasting infrastructure upgrade across the ABF Network. Deployed a second streaming server with automated DNS failover and recovery, powered by health checks every minute. Added 16 emergency audio streams across both servers for Radio ABF and ABF 2, covering MP3 HD, MP3 SD, AAC and FLAC. Automated weekly recording, validation, synchronization and backup retention ensure that emergency audio remains up to date. Our customized Icecast-KH version also introduces a source-code fix for public stream URLs behind HTTPS reverse proxies, improving Xiph directory registration. Automatic failover and recovery have been successfully tested, strengthening broadcasting continuity and reliability across both stations."
-        },
-		    {
-			v: "4.0.0",
-			d: "Sep 14, 2026",
-			t: "Major ABF Network expansion. ABF 2 — The Hits Frequency officially joins RadioABF as a second fully integrated station, with its own live streams, Now Playing, music history, community voting, charts, news and dedicated visual identity. Cross-station navigation and network-wide news have been introduced, alongside shared music metadata and automated artwork enrichment. Streaming, Directus integration and deployment infrastructure have also been refined for a more reliable multi-station platform."
-			},
-			{
-          v: "3.5.5",
-          d: "Mar 24, 2026",
-          t: "Improved artwork consistency across RadioABF. Fixed mismatched covers between Now Playing, Votes, Homepage and Insights. Artwork delivery is now more reliable and optimized, ensuring consistent visuals across all sections. Background processing and asset handling have been enhanced for better stability. API refresh logic has also been optimized for smoother updates and improved realtime performance."
-          },
-		  {
-          v: "3.5.4",
-          d: "Mar 15, 2026",
-          t: "New Podcasts experience added to RadioABF. This release introduces a dedicated Podcasts page for ABF Club replays, powered by automatic schedule matching and archive retrieval from the latest 7 days of antenna recordings. Podcast sessions now open directly in the global RadioABF player with a dedicated replay mode, while direct source exposure has been removed from the interface. Desktop and mobile navigation were updated to integrate the new Podcasts section across the site."
-          },
-          {
-            v: "3.5.3",
-            d: "Mar 13, 2026",
-            t: "This update introduces the new Studio Monitoring page, a real-time audio analysis environment integrated directly with the RadioABF player. It provides live VU meters, waveform monitoring, stereo field visualization, spectrum analysis, frequency band energy tracking and advanced signal metrics such as crest factor, stereo width and spectral centroid. The interface follows the RadioABF design system and offers a premium studio-style monitoring experience directly from the web player."
-          },
-          {
-            v: "3.5.2",
-            d: "Mar 10, 2026",
-            t: "This update introduces a new Airplay Insights subpage integrated into the Music Portal, separating listener features from automatic rotation analytics while keeping a consistent interface. The Insights page includes a live Now Playing block, expanded Most Played, Trending Now and Most Played Today charts, and a larger New Entries panel. Airplay counting logic was also refined to eliminate duplicate spins and improve realtime chart accuracy."
-          },
-          {
-            v: "3.5.1",
-            d: "Mar 09, 2026",
-            t: "Music Portal refinements and stability improvements. This update introduces a smarter track lifecycle system powered by Directus, allowing RadioABF to track the first time a track enters rotation and display accurate NEW badges across Now Playing, Last Played and New Entries sections. Live show identifiers such as ABF CLUB are now excluded from the new-track logic to avoid false positives. Cover artwork reliability was improved with better fallback handling and smarter caching behavior, ensuring covers remain stable across page navigation and auto-refresh."
-          },
-          {
-            v: "3.5.0",
-            d: "Mar 05, 2026",
-            t: "Major infrastructure update. RadioABF now operates on a dedicated three-server architecture: abf-front hosts the main website radioabf.com, abf-cms runs the content management and monitoring environment, and abf-stream serves as the public streaming edge delivering listener traffic via HTTPS relay and HLS proxy at stream.radioabf.com. Audio automation and encoding continue to run through a private provider source. Streaming endpoints were simplified with a universal HLS master playlist and a low-bandwidth fallback, improving compatibility across Safari, mobile devices and external players."
-          },
-          {
-            v: "3.4.2",
-            d: "Mar 02, 2026",
-            t: "Mobile layout refinement and player UI improvements. Optimized Now Playing display (better title handling & artist formatting), compact action buttons, improved Programs page live highlighting with Paris • UTC • Local time display, and overall stability enhancements for smoother experience across devices."
-          },
-          {
-            v: "3.4.1",
-            d: "Mar 02, 2026",
-            t: "Major streaming infrastructure update: added HLS support alongside existing Icecast streams with secure HTTPS proxy routing via stream.radioabf.com (abf-hd, abf-sd, abf-low naming unified). Migrated HLS to new channel-based backend paths. Added direct HTTP Icecast routes for compatibility (FLAC/MP3/AAC). Improved mobile performance and layout optimizations for smoother playback, faster loading, and enhanced responsiveness across devices."
-          },
-          {
-            v: "3.4.0",
-            d: "Feb 25, 2026",
-            t: "Official Chat integration: new /chat page fully integrated into the RadioABF design (desktop + mobile). Header navigation updated, layout harmonized with News, Music, Programs and Videos sections. Seamless UI integration without impacting player or streaming scripts."
-          },
-          {
-            v: "3.3.10",
-            d: "Feb 24, 2026",
-            t: "Videos section added: new /videos entry in the main navigation (desktop + mobile) after Artists. No script changes — UI-only update for faster access to the Video Portal."
-          },
-          {
-            v: "3.3.9",
-            d: "Feb 24, 2026",
-            t: "Dual contact system implemented. Added DJ Casting form (Directus collection + Flow + SMTP via Zoho) with automated applicant confirmation and internal ABF notification. Added global Contact modal (Astro + Brevo API) integrated in the footer for direct messages to RadioABF. Domain authentication (DKIM + DMARC) configured for compliant email delivery. Production-ready messaging pipeline fully operational."
-          },
-          {
-            v: "3.3.8",
-            d: "Feb 23, 2026",
-            t: "Artists fully migrated to Directus. The /artists listing and dynamic profile pages now fetch published content directly from the CMS. Portraits are served via Directus Files, local JSON and legacy HTML bios removed from runtime. Public API permissions configured for published artists only. Production-ready headless integration completed."
-          },
-          {
-            v: "3.3.7",
-            d: "Feb 23, 2026",
-            t: "Programs fully migrated to Directus with dynamic schedule rendering across Homepage and Programs page. Global timezone upgrade implemented: all schedule times now display Paris local time (auto CET/CEST detection) alongside UTC for worldwide clarity. Removed hardcoded timezone suffixes and refined On Air logic for cleaner, production-ready rendering."
-          },
-          {
-            v: "3.3.6",
-            d: "Feb 21, 2026",
-            t: "Music page refresh: renamed the Music hero/title to “Music Portal” (UI + SEO title), keeping ABF premium layout. Also applied the track title cleanup rule across the player/base so titles display without suffix noise (e.g. Radio Edit, Extended Mix, Original Mix, Remaster, etc.) for a cleaner Now Playing experience."
-          },
-          {
-            v: "3.3.5",
-            d: "Feb 20, 2026",
-            t: "Casting support added: unified Chromecast + AirPlay PRO button with auto-detection (button only appears when a target is available). Chromecast streaming stabilized by casting directly from stream.radioabf.com endpoints (HD/SD MP3 + Low AAC) and auto-pausing local playback to prevent double audio. Improved compatibility with Android \"Cast on this device\" routing and Xiaomi TV stick receivers. Metadata display simplified for default receivers."
-          },
-          {
-            v: "3.3.4",
-            d: "Feb 20, 2026",
-            t: "Directus cover resolution fully stabilized across Now Playing, Last Played and Weekly Top charts. Track-key normalization aligned between plays, votes and tracks collections. Vote API matching fixed with strict normalized _eq lookup, ensuring manual Directus uploads always override iTunes fallback. Access Policies and token permissions refined for secure tracks + files read access. Cover fallback chain finalized: Directus → iTunes → ABF default. Cleanup of temporary debug endpoints and production-ready permission structure completed."
-          },
-          {
-            v: "3.3.3",
-            d: "Feb 19, 2026",
-            t: "Directus-first cover system implemented. Top charts and Music page now prioritize manual cover uploads with lock support. Vote API enriched and legacy cover cache removed. Added 'Buy us a coffee' support card and dedicated modal on homepage (right card), with clean BuyMeACoffee button integration and Astro-compatible event delegation in bindHomeModalsOnce(). HTTPS Proxy Streams rollout from 3.3.1 preserved."
-          },
-          {
-            v: "3.3.2",
-            d: "Feb 18, 2026",
-            t: "Added complete Dedications feature: submission modal, Directus integration, marquee scrolling, feedback UI and badge. Improved marquee with 10× text duplication and reflow fix for long messages."
-          },
-          {
-            v: "3.3.1",
-            d: "Feb 17, 2026",
-            t: "HTTPS Proxy Streams rollout: stable fixed HTTPS endpoints for all qualities (UHD FLAC, HD 320k MP3, SD 128k MP3, Low 32k AAC+). Bypass firewalls/corporate networks. Updated left mini-card with proxy info and \"Details & URLs\" button. Enhanced Stream Qualities modal with detailed explanations, external player instructions (VLC etc. per OS), and direct copy-paste URLs."
-          },
-          {
-            v: "3.3.0",
-            d: "Feb 16, 2026",
-            t: "UI & UX refinements: fixed vote display and modal persistence on homepage (server-only covers, no local fallbacks), redesigned Artists page with all artist cards unified in a single large container card, moved filter buttons to hero section for cleaner layout and improved visual flow."
-          },
-          {
-            v: "3.2.0",
-            d: "Feb 16, 2026",
-            t: "Infrastructure & data stabilization: full GitHub → Vercel production deployment, Directus live integration hardened (SSR + cache headers), vote API normalization to prevent duplicate track keys, ABF CLUB vote restriction, improved weekly aggregation logic, cleaned and standardized Artists base (local assets + naming), and overall front/back sync reliability improvements."
-          },
-          {
-            v: "3.1.0",
-            d: "Feb 15, 2026",
-            t: "Home + player stability milestone: Latest News now uses Directus SSR with Vercel cache headers, dates switched to English (US), improved On Air live detection + countdowns + stronger live highlight, Hero Top #1 weekly card added, and safer rebind after Astro page swaps (fullscreen/listeners). Minor UI polish across sections."
-          },
-          {
-            v: "3.0.8",
-            d: "Feb 14, 2026",
-            t: "UI & stability fixes: fixed cover fallbacks (no broken-image square after navigation), adjusted ABF logo sizing in fallback blocks, reduced visual glitches during page swaps (player + covers), and improved card image ratio handling/centering."
-          },
-          {
-            v: "3.0.7",
-            d: "Feb 14, 2026",
-            t: "Programs & On Air improvements: ensured Programs lands on the correct current day, restored On Air cues and improved current show highlight styling, tightened schedule cards while preserving artwork ratios, and reduced excess spacing under the pinned player / footer."
-          },
-          {
-            v: "3.0.6",
-            d: "Feb 13, 2026",
-            t: "Fullscreen + view transitions fix: fullscreen now remains usable after navigation (re-initialized listeners after Astro swaps), improved player control stability across pages, and refined floating 'Back to top' button placement."
-          },
-          {
-            v: "3.0.5",
-            d: "Feb 13, 2026",
-            t: "News routing + SEO: stabilized SSR dynamic news routes, added year filtering and cleaner /news listing grid, improved OG preview logic, and tuned Directus micro-cache + Vercel caching behavior."
-          },
-          {
-            v: "3.0.4",
-            d: "Feb 12, 2026",
-            t: "Player UI refinement: made the bottom player more compact, restored missing controls (incl. volume) with clearer play/pause states, upgraded the visualizer to a thinner modern full-width style, and improved header pulse behavior consistency."
-          },
-          {
-            v: "3.0.3",
-            d: "Feb 12, 2026",
-            t: "Music + charts UX: restored title-casing rules for readability, improved Last Played rendering consistency, and hardened weekly vote aggregation + cover usage."
-          },
-          {
-            v: "3.0.2",
-            d: "Feb 11, 2026",
-            t: "Build system + modals: Build/Updates modal cleanup (dates aligned, better spacing), footer build version now reads dynamically from latest entry, and added/normalized Stream Quality + FLAC info modals."
-          },
-          {
-            v: "3.0.1",
-            d: "Feb 11, 2026",
-            t: "Directus integration stabilization: safer handling of optional published_at, reduced unnecessary fallbacks where local assets exist, and general cleanup for deployment readiness."
-          },
-          {
-            v: "3.0.0",
-            d: "Feb 08, 2026",
-            t: "Major redesign: new ABF UI system (modern cards, gradients, spacing), persistent pinned player architecture foundations, refreshed layout/navigation, and the first Home structure (Now Playing hero, Last Played carousel, schedule preview)."
-          }
-        ];
+        const BUILDS = window.__abfBuilds ?? [];
 
         const latest = BUILDS[0]?.v || "—";
         buildVersion.textContent = latest;
