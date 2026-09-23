@@ -250,15 +250,18 @@ const fmtDate = (iso?: string | null) => {
 
               const category = String(post.category || "").trim().toLowerCase();
               const isABF2News = category === "abf2";
+              const isABFTVNews = category === "abftv";
               const isMusicNews = category === "music";
 
               const newsHref = `/abf2/news/${post.slug}`;
 
               const newsTag = isABF2News
                 ? "ABF 2"
-                : isMusicNews
-                  ? "MUSIC"
-                  : "RADIO ABF";
+                : isABFTVNews
+                  ? "ABF TV"
+                  : isMusicNews
+                    ? "MUSIC"
+                    : "RADIO ABF";
 
               const fallbackLogo = isABF2News
                 ? "/logo-abf2.png"
@@ -284,7 +287,7 @@ const fmtDate = (iso?: string | null) => {
                     )}
 
                     <div class="abf2-news-shade"></div>
-                    <span class={`abf2-news-tag ${isABF2News ? "is-abf2" : isMusicNews ? "is-music" : "is-radio"}`}>
+                    <span class={`abf2-news-tag ${isABF2News ? "is-abf2" : isABFTVNews ? "is-abftv" : isMusicNews ? "is-music" : "is-radio"}`}>
                       {newsTag}
                     </span>
                   </div>
@@ -1234,6 +1237,12 @@ const fmtDate = (iso?: string | null) => {
       border-color: rgba(47,194,255,.34);
       background: rgba(5,48,72,.78);
       color: #9fe7ff;
+    }
+
+    .abf2-news-tag.is-abftv {
+      border-color: rgba(167,139,250,.40);
+      background: rgba(139,92,246,.20);
+      color: #DDD6FE;
     }
 
     .abf2-news-tag.is-music {
