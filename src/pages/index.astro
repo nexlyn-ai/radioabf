@@ -192,6 +192,14 @@ try {
           <small>The Hits Frequency</small>
         </span>
       </a>
+
+      <a href="/abftv" class="abf-network-station-switch abf-network-station-switch-tv" aria-label="Switch to ABF TV — The Visual Frequency">
+        <span class="abf-network-station-dot abf-network-station-dot-purple"></span>
+        <span>
+          <strong>ABF TV</strong>
+          <small>The Visual Frequency</small>
+        </span>
+      </a>
     </div>
   </section>
 
@@ -304,6 +312,20 @@ try {
       transform: translateY(-1px);
     }
 
+    .abf-network-station-switch-tv {
+      border-color: rgba(168,85,247,.28);
+    }
+
+    .abf-network-station-switch-tv:hover {
+      border-color: rgba(168,85,247,.65);
+      background: rgba(168,85,247,.09);
+    }
+
+    .abf-network-station-dot-purple {
+      background: #a855f7;
+      box-shadow: 0 0 13px rgba(168,85,247,.8);
+    }
+
     .abf-network-station-switch strong,
     .abf-network-station-switch small {
       display: block;
@@ -344,7 +366,7 @@ try {
       .abf-network-top-actions {
         width: 100%;
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .abf-network-onair,

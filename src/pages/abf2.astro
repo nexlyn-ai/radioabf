@@ -90,6 +90,14 @@ const fmtDate = (iso?: string | null) => {
                 <small>The DJs' Frequency</small>
               </span>
             </a>
+
+            <a href="/abftv" class="abf2-station-switch abf2-station-switch-tv" aria-label="Switch to ABF TV — The Visual Frequency">
+              <span class="station-dot station-dot-purple"></span>
+              <span>
+                <strong>ABF TV</strong>
+                <small>The Visual Frequency</small>
+              </span>
+            </a>
           </div>
         </div>
 
@@ -710,6 +718,21 @@ const fmtDate = (iso?: string | null) => {
       height: 9px;
       border-radius: 50%;
       flex: none;
+    }
+
+    .abf2-station-switch-tv {
+      border-color: rgba(168,85,247,.35);
+      background: rgba(168,85,247,.035);
+    }
+
+    .abf2-station-switch-tv:hover {
+      border-color: rgba(168,85,247,.65);
+      background: rgba(168,85,247,.08);
+    }
+
+    .station-dot-purple {
+      background: #a855f7;
+      box-shadow: 0 0 13px rgba(168,85,247,.8);
     }
 
     .station-dot-blue {
@@ -2447,7 +2470,7 @@ function abf2DesktopMenu() {
     <a href="/abf2/music/insights" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">Charts</a>
     <a href="/abf2/news" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">News</a>
     <a href="/abf2/about" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition">About</a>
-    <a href="/" data-abf2-nav class="px-3 py-2 rounded-xl text-white/80 hover:text-white hover:bg-white/5 transition border border-white/10">Radio ABF</a>
+    <a href="/network" data-abf2-nav class="px-3 py-2 rounded-xl text-xs whitespace-nowrap text-white/80 hover:text-white hover:bg-white/5 transition border border-white/10">ABF NETWORK</a>
   `;
 }
 
@@ -2459,7 +2482,7 @@ function abf2MobileMenu() {
       <a href="/abf2/music/insights" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">Charts</a>
       <a href="/abf2/news" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">News</a>
       <a href="/abf2/about" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition">About</a>
-      <a href="/" data-abf2-nav class="block px-3 py-2 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition border border-white/10">Radio ABF</a>
+      <a href="/network" data-abf2-nav class="block px-3 py-2 rounded-xl text-xs whitespace-nowrap text-white/85 hover:text-white hover:bg-white/5 transition border border-white/10">ABF NETWORK</a>
     </div>
   `;
 }
