@@ -175,6 +175,7 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
             const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
             const category = String(post.category || "radio").trim().toLowerCase();
             const categoryLabel = category === "abftv" ? "ABF TV" : category === "abf2" ? "ABF 2" : category === "music" ? "MUSIC" : "RADIO ABF";
+            const categoryClass = category === "abftv" ? "abftv" : category === "abf2" ? "abf2" : category === "music" ? "music" : "radio";
             return (
               <a href={`/news/${post.slug}`} class="newsCard group">
                 <div class="newsMedia">
@@ -182,7 +183,7 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
                   <div class="newsShade"></div>
                   <div class="newsMeta">
                     {post.category ? (
-                      <div class={`newsCategory ${post.category}`}>
+                      <div class={`newsCategory ${categoryClass}`}>
                         {categoryLabel}
                       </div>
                     ) : null}
@@ -394,6 +395,11 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
       border-color: rgba(248,113,113,.40);
       color: #FECACA;
       background: rgba(239,68,68,.20);
+    }
+    .newsCategory.abftv{
+      border-color: rgba(167,139,250,.40);
+      color: #DDD6FE;
+      background: rgba(139,92,246,.20);
     }
     .newsCategory.music{
       border-color: rgba(245,158,11,.35);
