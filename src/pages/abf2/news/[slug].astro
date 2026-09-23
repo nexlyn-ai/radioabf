@@ -55,8 +55,10 @@ const dateLabel = fmtDate(item.published_at || item.date_created);
 
 const category = String(item.category || "").trim().toLowerCase();
 const isABF2News = category === "abf2";
+const isABFTVNews = category === "abftv";
 const displayCategory =
   isABF2News ? "ABF 2" :
+  isABFTVNews ? "ABF TV" :
   category === "music" ? "MUSIC" :
   "RADIO ABF";
 
@@ -93,8 +95,8 @@ const canonicalPath = `/abf2/news/${item.slug}`;
             <a href="/abf2/news" class="pillBack">← Back</a>
 
             <a
-              href={isABF2News ? "/abf2/news?cat=abf2" : category === "music" ? "/abf2/news?cat=music" : "/news?cat=radio"}
-              class={`pillCat ${isABF2News ? "is-abf2" : category === "music" ? "is-music" : "is-radio"}`}
+              href={isABF2News ? "/abf2/news?cat=abf2" : isABFTVNews ? "/abf2/news?cat=abftv" : category === "music" ? "/abf2/news?cat=music" : "/news?cat=radio"}
+              class={`pillCat ${isABF2News ? "is-abf2" : isABFTVNews ? "is-abftv" : category === "music" ? "is-music" : "is-radio"}`}
             >
               {displayCategory}
             </a>
@@ -306,6 +308,11 @@ const canonicalPath = `/abf2/news/${item.slug}`;
       border-color:rgba(47,194,255,.38);
       background:rgba(47,194,255,.10);
       color:rgba(183,235,255,.98);
+    }
+    .pillCat.is-abftv{
+      border-color:rgba(167,139,250,.40);
+      background:rgba(139,92,246,.20);
+      color:#DDD6FE;
     }
     .pillCat.is-music{
       border-color:rgba(245,158,11,.35);
