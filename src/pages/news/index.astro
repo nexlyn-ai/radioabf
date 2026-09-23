@@ -173,6 +173,8 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
           {resp.data.map((post) => {
             const dateLabel = fmtDate(post.published_at || post.date_created);
             const cover = directusAsset(post.cover, { w: 900, h: 540, fit: "cover", quality: 85 });
+            const category = String(post.category || "radio").trim().toLowerCase();
+            const categoryLabel = category === "abftv" ? "ABF TV" : category === "abf2" ? "ABF 2" : category === "music" ? "MUSIC" : "RADIO ABF";
             return (
               <a href={`/news/${post.slug}`} class="newsCard group">
                 <div class="newsMedia">
@@ -181,7 +183,7 @@ const ogImageAbs = new URL(ogSvgPath, Astro.site || "https://radioabf.com").toSt
                   <div class="newsMeta">
                     {post.category ? (
                       <div class={`newsCategory ${post.category}`}>
-                        {post.category === "radio" ? "RADIO ABF" : post.category === "abf2" ? "ABF 2" : post.category}
+                        {categoryLabel}
                       </div>
                     ) : null}
                     <div class="newsDate">{dateLabel || ""}</div>
