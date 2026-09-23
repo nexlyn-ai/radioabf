@@ -1,4 +1,9 @@
 export const BUILDS = [
+  {
+    v: "4.2.1",
+    d: "Sep 23, 2026",
+    t: "Mobile interface refinements and visual consistency improvements across the ABF Network. Improved responsive layouts on ABF Network and Radio ABF, including mobile navigation, footer presentation and Now Playing content. Refined station-specific interface colors to provide a more consistent visual identity across Radio ABF, ABF 2 and ABF TV. Build information has also been centralized across the network, ensuring Radio ABF, ABF 2, ABF TV and ABF Network automatically share the same version history and current build number."
+  },
         {
           v: "4.2.0",
           d: "Sep 23, 2026",
