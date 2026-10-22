@@ -187,6 +187,7 @@ import Network from "../../layouts/Network.astro";
       <div class="network-tech-grid">
         <article class="network-tech-card">
           <span class="network-card-index">01 / HOSTING</span>
+          <img class="provider-logo" src="/images/providers/ovhcloud.png" alt="OVHcloud" loading="lazy" />
           <h3>OVHcloud</h3>
           <p>
             Hosting and server infrastructure services supporting
@@ -196,10 +197,11 @@ import Network from "../../layouts/Network.astro";
 
         <article class="network-tech-card">
           <span class="network-card-index">02 / DOMAINS & VPS</span>
-          <h3>Spaceship</h3>
+          <img class="provider-logo" src="/images/providers/spaceship.png" alt="SpaceShip" loading="lazy" />
+          <h3>SpaceShip</h3>
           <p>
             Domain registration and management for radioabf.com,
-            alongside hosting services for two virtual private servers (VPS).
+            alongside VPS hosting services.
           </p>
         </article>
       </div>
@@ -409,5 +411,15 @@ import Network from "../../layouts/Network.astro";
       flex-direction: column;
       gap: 14px;
     }
+  }
+  .provider-logo {
+    display: block;
+    width: 100%;
+    max-width: 240px;
+    height: 110px;
+    object-fit: contain;
+    object-position: left center;
+    margin-top: 24px;
+    border-radius: 8px;
   }
 </style>
